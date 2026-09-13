@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ラダー工房 PLCシミュレータ｜電子計測制御31</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#d7d1c2;--face:#e9e4d7;--face2:#dcd5c4;--panel:#fbf9f3;--panel2:#f2eee4;--ink:#ffffff;
+  --line:#c3bba8;--line-lo:#e0d9ca;--edge:#b1a68f;--shade:#00000014;
+  --txt:#26231d;--dim:#6d6555;--dim2:#948b77;
+  --hot:#15a34a;--hot-dk:#0f7a37;--hot-lo:#d8f5e3;
+  --lamp:#f59e0b;--lamp-hi:#fbbf24;--lamp-off:#cdc5b3;--lamp-bg:#fff6e3;
+  --blue:#2563eb;--blue-lo:#e3edff;--red:#d93b2b;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:10px;font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
+  font-size:14px;color:var(--txt);min-height:100vh;
+  background:var(--bg) radial-gradient(1200px 600px at 50% -10%,#eae5d8 0%,rgba(215,209,194,0) 72%) no-repeat}
+.app{max-width:1400px;margin:0 auto}
+
+/* ===== フェイスプレート（CPUユニットの顔） ===== */
+.face{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  background:linear-gradient(#f2eee3,#ded7c6);border:1px solid var(--line);
+  border-radius:12px 12px 6px 6px;padding:8px 14px;margin-bottom:7px;
+  box-shadow:inset 0 1px 0 #fffdf8,0 2px 6px #00000018}
+.brand{display:flex;align-items:center;gap:11px;flex:1 1 auto;min-width:210px}
+.mark{width:38px;height:38px;flex:0 0 38px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.06em;color:#f0ede4;
+  background:linear-gradient(#544f45,#3a362e);border:1px solid #2c2923;
+  box-shadow:inset 0 1px 0 #ffffff30,0 1px 2px #00000030}
+h1{font-size:17px;margin:0;letter-spacing:.02em}
+.sub{font-size:10.5px;color:var(--dim);margin-top:3px;font-family:var(--mono);letter-spacing:.05em}
+.leds{display:flex;gap:15px;padding:2px 15px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.led{display:flex;flex-direction:column;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.13em;color:var(--dim2)}
+.led i{width:10px;height:10px;border-radius:50%;display:block;background:var(--lamp-off);
+  border:1px solid #a89e89;box-shadow:inset 0 1px 2px #00000038}
+.led.on{color:var(--txt)}
+.led.on i{background:radial-gradient(circle at 35% 30%,#8dffb4,#16a34a 70%);border-color:#0f7a37;
+  box-shadow:0 0 8px #16a34aaa}
+.led.red.on i{background:radial-gradient(circle at 35% 30%,#ff9a8e,#d93b2b 70%);border-color:#a32a1e;
+  box-shadow:0 0 8px #d93b2baa}
+.led.red.on{color:#a32a1e}
+.ctl{display:flex;gap:8px;align-items:center}
+
+/* ===== ステータス帯 ===== */
+.statusbar{display:flex;flex-wrap:wrap;align-items:stretch;overflow:hidden;
+  background:var(--ink);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;
+  font-family:var(--mono);font-size:11.5px;color:var(--dim);box-shadow:0 1px 2px #0000000f}
+.st{padding:7px 14px;border-right:1px solid var(--line-lo);display:flex;gap:8px;align-items:center}
+.st .k{font-size:8.5px;letter-spacing:.14em;color:var(--dim2)}
+.st .v{color:var(--txt);font-weight:600}
+.st.live{background:#eefaf1}
+.st.live .v{color:var(--hot-dk)}
+
+/* ===== レッスンタブ ===== */
+.tabs{margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+.tabrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.grplab{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--dim2);
+  width:56px;flex:0 0 56px;text-align:right;padding-right:8px}
+.tab{cursor:pointer;padding:8px 13px;border-radius:7px;font-size:12.5px;font-weight:700;user-select:none;
+  background:linear-gradient(#fbf9f3,#e7e1d2);color:var(--dim);border:1px solid var(--line);
+  box-shadow:inset 0 1px 0 #fffdf8,0 1px 1px #0000000d}
+.tab.now{background:linear-gradient(#e8f0ff,#d3e2ff);color:#17408f;border-color:#7aa5ef;
+  box-shadow:inset 0 1px 0 #ffffff,0 0 0 1px #2563eb33}
+.tab.done{background:linear-gradient(#e6f8ec,#cdf0da);color:#0f6b33;border-color:#69c78d}
+.tab:hover{border-color:var(--blue);color:var(--txt)}
+.tab.sub{margin-left:12px;background:linear-gradient(#f5f2ea,#e9e4d7);color:var(--dim2);border-style:dashed}
+
+/* ===== 版組み ===== */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px;margin-bottom:9px;
+  box-shadow:inset 0 1px 0 #fffdf8,0 1px 3px #00000012}
+/* 右カラムは幅に応じて 320〜460px で伸び縮みする。狭くなっても2カラムのまま＝ボタンは常に右 */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,460px);gap:10px;align-items:start}
+.colside{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow-y:auto}
+/* 1カラムに落とすのは、2カラムが成立しないほど狭いときだけ（タブレット縦持ちなど） */
+@media(max-width:820px){
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .colside{position:static;max-height:none;overflow:visible}
+}
+/* 高さの狭い横長画面（Chromebook 1366x768 など）では余白をさらに詰める */
+/* 4:3 など横が足りない画面では、回路の寸法をさらに詰めて横スクロールを避ける */
+@media(max-width:1150px){
+  .cont{width:44px}
+  .coilsym{width:44px}
+  .wire{min-width:11px;flex:0 0 11px}
+  .ins{flex:0 0 15px;width:15px}
+  .rungno{width:28px;flex:0 0 28px;margin-right:8px}
+  .el .dv,.coil .dv{font-size:10px}
+  .par{padding:0 8px}
+}
+@media(min-width:821px) and (max-height:820px){
+  .face{padding:6px 14px}
+  .panel,.board{padding:11px;margin-bottom:8px}
+  .rung{min-height:70px;padding:9px 12px 9px 0}
+  .goal p{margin:4px 0;line-height:1.7}
+  .secthead{margin-bottom:8px;padding-bottom:6px}
+  .sectk{padding:3px 7px}
+  .io2{margin-bottom:11px}
+  .devcol{margin-bottom:11px}
+}
+.goal{border-left:3px solid var(--lamp);background:linear-gradient(90deg,#fdf6e4,var(--panel) 45%);position:relative}
+.fold{position:absolute;top:11px;right:12px;padding:7px 12px;font-size:11px;color:var(--dim);box-shadow:none}
+.goal h2{font-size:16px;margin:0 0 6px;color:#9a6a06;letter-spacing:.02em;padding-right:78px}
+.goal p{margin:5px 0;line-height:1.8;font-size:13.5px}
+.goal .hint{font-size:12.5px;color:var(--dim)}
+
+/* ===== 制御盤 ===== */
+.board{background:linear-gradient(#eee9dc,#e0d9c8);border:1px solid var(--line);border-radius:10px;
+  padding:13px;margin-bottom:9px;box-shadow:inset 0 1px 0 #fffdf8,0 1px 3px #00000014}
+.blab{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:#7d7461;
+  display:flex;align-items:center;gap:9px;margin-bottom:9px}
+/* ===== 「回路を組む」と「動かして確かめる」の見出し ===== */
+.secthead{display:flex;align-items:center;gap:9px;margin-bottom:11px;padding-bottom:9px;
+  border-bottom:1px solid var(--line)}
+.sectk{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:#fff;background:#8a8170;
+  padding:4px 8px;border-radius:4px;flex:0 0 auto}
+.sectt{font-size:13px;font-weight:700;color:var(--txt)}
+.sectstate{margin-left:auto;font-size:11px;color:var(--dim2);text-align:right;line-height:1.4}
+/* 編集モード = 回路側が主役 / 運転モード = 制御盤が主役 */
+body[data-mode="edit"] #progPanel{border-color:#7aa5ef;box-shadow:inset 0 1px 0 #fffdf8,0 0 0 1px #2563eb22}
+body[data-mode="edit"] #progPanel .sectk{background:var(--blue)}
+body[data-mode="edit"] #progPanel .sectstate{color:#17408f}
+body[data-mode="run"] #monPanel{border-color:#6fbf90;box-shadow:inset 0 1px 0 #fffdf8,0 0 0 1px #15a34a33}
+body[data-mode="run"] #monPanel .sectk{background:var(--hot-dk)}
+body[data-mode="run"] #monPanel .sectstate{color:var(--hot-dk);font-weight:700}
+body[data-mode="run"] .ladderwrap{background-color:#f8fdfa}
+body[data-mode="run"] #progPanel .sectstate{color:#8f5a12}
+/* 運転中は回路を触れない（実機と同じ） */
+body[data-mode="run"] .el,body[data-mode="run"] .coil{cursor:default}
+body[data-mode="run"] .el:hover,body[data-mode="run"] .coil:hover{background:none}
+body[data-mode="run"] #ladder .addbtn{display:none}
+/* 入力 → 出力 を横に並べる */
+.io2{display:grid;grid-template-columns:1fr 22px 1fr;gap:9px;align-items:start;margin-bottom:14px}
+.ioarrow{align-self:center;text-align:center;color:#b1a68f;font-size:17px;font-weight:700;padding-top:16px}
+.iocol .devrow{flex-direction:column;gap:7px}
+@media(max-width:560px){.io2{grid-template-columns:1fr}.ioarrow{display:none}}
+.blab:after{content:"";flex:1;height:1px;background:#bfb6a2}
+.dev{display:block}
+.devcol{margin-bottom:14px}
+.devcol:last-child{margin-bottom:0}
+.devrow{display:flex;gap:7px;flex-wrap:wrap}
+.xbtn{min-width:58px;min-height:46px;padding:9px 12px;border-radius:8px;cursor:pointer;
+  user-select:none;-webkit-tap-highlight-color:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(#fefdfa,#e4ddcd);border:1px solid var(--edge);color:var(--txt);
+  box-shadow:0 2px 0 #b3a892,inset 0 1px 0 #ffffff;
+  font-family:var(--mono);font-weight:700;font-size:13px;line-height:1.3;
+  transition:transform .07s,box-shadow .07s}
+.xbtn:hover{border-color:var(--blue)}
+.xbtn:active,.xbtn.on{transform:translateY(2px);box-shadow:0 0 0 #0000,inset 0 2px 5px #00000030}
+.xbtn.on{background:linear-gradient(#fbbf24,#ef9c07);color:#4a2f00;border-color:#c47f06;
+  text-shadow:0 1px 0 #ffffff66}
+.xbtn.wide{width:100%;font-size:12.5px}
+.xbtn .tag{font-family:var(--mono);font-size:9.5px;color:var(--dim);font-weight:400;margin-top:3px;letter-spacing:.08em}
+.xbtn.on .tag{color:#7a4f00}
+/* 切替スイッチ（タップでON/OFFが切りかわる）。押しボタンとは形で区別する */
+.xbtn.sw{border-radius:6px}
+.xbtn.sw:active{transform:none;box-shadow:0 2px 0 #b3a892,inset 0 1px 0 #ffffff}
+.xbtn.sw.on{background:var(--lamp-bg);border-color:#e0a93a;color:#7a4f00;
+  transform:none;box-shadow:0 2px 0 #c9a86f,inset 0 1px 0 #ffffff}
+.swknob{display:block;width:34px;height:18px;border-radius:9px;background:#cdc5b3;
+  border:1px solid #a89e89;position:relative;margin-bottom:5px;
+  box-shadow:inset 0 1px 3px #00000033;transition:background .12s}
+.swknob:after{content:"";position:absolute;top:1px;left:1px;width:14px;height:14px;border-radius:50%;
+  background:#fdfcf8;box-shadow:0 1px 2px #00000050;transition:left .12s}
+.xbtn.sw.on .swknob{background:#ef9c07;border-color:#c47f06}
+.xbtn.sw.on .swknob:after{left:17px}
+.ylamp{display:flex;align-items:center;gap:11px;min-height:48px;padding:8px 12px;border-radius:8px;
+  background:var(--panel);border:1px solid var(--line);font-size:12.5px;color:var(--dim);
+  font-family:var(--mono);font-weight:700;box-shadow:inset 0 1px 0 #fffdf8}
+/* 制御盤のパイロットランプ（φ22 表示灯を模した見た目） */
+.ylamp:before{content:"";width:28px;height:28px;flex:0 0 28px;border-radius:50%;
+  background:radial-gradient(circle at 36% 30%,#efe9dc 0%,#cec6b4 45%,#a79e8c 100%);
+  border:2px solid #8b8271;
+  box-shadow:inset 0 3px 6px #00000045,inset 0 -2px 3px #ffffff55,0 1px 2px #00000022}
+.ylamp.on{color:#7a4f00;border-color:#e0a93a;background:var(--lamp-bg)}
+.ylamp.on:before{
+  background:radial-gradient(circle at 36% 28%,#fffdf2 0%,#ffe08a 28%,#f59e0b 62%,#d97c05 100%);
+  border-color:#b87406;
+  box-shadow:0 0 20px #f59e0bdd,0 0 40px #f59e0b55,inset 0 -2px 4px #b8700455,inset 0 2px 5px #ffffff88}
+.ylamp.wide{width:100%}
+.ylamp .tag{font-size:9.5px;color:var(--dim2);font-weight:400;letter-spacing:.06em;margin-left:auto}
+.sens{display:flex;align-items:center;gap:11px;width:100%;min-height:48px;padding:8px 12px;border-radius:8px;
+  background:repeating-linear-gradient(45deg,#efebe0 0 7px,#e5dfd1 7px 14px);
+  border:1px dashed #a89e89;font-size:12.5px;color:var(--dim);font-family:var(--mono);font-weight:700}
+.sens:before{content:"";width:24px;height:24px;flex:0 0 24px;border-radius:4px;
+  background:linear-gradient(#ded7c8,#bab2a0);border:2px solid #8b8271;
+  box-shadow:inset 0 2px 4px #00000038,inset 0 -1px 2px #ffffff44}
+.sens.on{color:#7a4f00;border-color:#e0a93a;border-style:solid;background:var(--lamp-bg)}
+.sens.on:before{background:linear-gradient(#ffe08a,#ef9c07);border-color:#b87406;
+  box-shadow:0 0 14px #f59e0bcc,inset 0 2px 4px #ffffff77}
+.sens .tag{font-size:9.5px;color:var(--dim2);font-weight:400;letter-spacing:.06em;margin-left:auto}
+.tbox{font-family:var(--mono);font-size:11.5px;color:var(--dim);background:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:9px 11px;line-height:1.95;
+  box-shadow:inset 0 1px 3px #00000012}
+.tbox b{color:var(--hot-dk);font-weight:700}
+.mrow{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-bottom:8px}
+/* タイマは数字だけでなく、溜まっていくゲージで見せる */
+.tmr{display:flex;align-items:center;gap:8px;margin-top:7px;font-family:var(--mono);font-size:11px}
+.tmr:first-child{margin-top:0}
+.tn{flex:0 0 26px;font-weight:700;color:var(--txt)}
+.tbar{flex:1 1 auto;height:13px;background:#e6e0d1;border:1px solid #bfb6a2;border-radius:7px;
+  overflow:hidden;box-shadow:inset 0 1px 2px #00000022}
+.tbar i{display:block;height:100%;width:0;background:linear-gradient(#8fd3a9,#4aa877);
+  transition:width .05s linear}
+.tmr.on .tbar{border-color:#69c78d}
+.tmr.on .tbar i{background:linear-gradient(#6ee7a8,#15a34a)}
+.tv{flex:0 0 82px;text-align:right;color:var(--dim)}
+.ts{flex:0 0 28px;font-weight:700;color:var(--dim2)}
+.tmr.on .ts{color:var(--hot-dk)}
+#machbox{max-width:none}
+#toolbox{background:var(--ink);border:1px solid var(--line);border-radius:7px;padding:9px 11px;
+  box-shadow:inset 0 1px 3px #00000012}
+.toolrow{display:flex;gap:8px;align-items:baseline;font-family:var(--mono);font-size:11px;
+  color:var(--dim2);margin-bottom:5px}
+.toolrow .tk{flex:0 0 84px}
+.toolrow b{color:var(--txt);font-weight:700;margin-right:7px}
+.toolnote{font-size:10.5px;color:var(--dim2);margin-top:7px;padding-top:7px;
+  border-top:1px solid var(--line-lo);line-height:1.65}
+/* お手本の回路（読むだけ。触れない） */
+.ro .el,.ro .coil{cursor:default}
+.ro .el:hover,.ro .coil:hover{background:none}
+.ro .addbtn{display:none}
+.refnote{margin-top:11px;background:#eef4ff;border-left:3px solid var(--blue);border-radius:8px;
+  padding:12px 14px;font-size:13px;line-height:1.9}
+.linkbtn{background:none;border:none;box-shadow:none;color:var(--blue);font-size:10.5px;font-weight:700;
+  padding:2px 0;margin-left:4px;text-decoration:underline;cursor:pointer}
+.linkbtn:hover{filter:none;color:#17408f}
+.linkbtn:active{transform:none}
+#mach{width:100%;height:auto;display:block;background:var(--ink);border:1px solid var(--line);border-radius:8px}
+
+/* ===== ラダー図 ===== */
+.ladderwrap{background:var(--ink);min-height:118px;
+  background-image:linear-gradient(#0000000a 1px,transparent 1px),linear-gradient(90deg,#0000000a 1px,transparent 1px);
+  background-size:26px 26px;border:1px solid var(--line);border-radius:9px;overflow-x:auto;
+  box-shadow:inset 0 1px 4px #00000014}
+.rung{display:flex;align-items:stretch;min-height:76px;padding:11px 12px 11px 0;position:relative;
+  border-bottom:1px solid #e6e0d2}
+.rung:last-child{border-bottom:none}
+.rung.scanning{background:#eaf2ff;box-shadow:inset 4px 0 0 var(--blue)}
+.rungno{width:34px;flex:0 0 34px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;user-select:none;
+  font-family:var(--mono);font-size:11px;color:var(--dim2);background:#f6f3ec;
+  border-right:1px solid #e6e0d2;margin-right:10px;-webkit-tap-highlight-color:transparent}
+.rungno:hover{background:#e8f0ff;color:var(--blue)}
+.rmore{font-size:11px;line-height:1;color:#c4bbaa}
+.rungno:hover .rmore{color:var(--blue)}
+body[data-mode="run"] .rungno{cursor:default}
+body[data-mode="run"] .rungno:hover{background:#f6f3ec;color:var(--dim2)}
+body[data-mode="run"] .rmore,.ro .rmore{visibility:hidden}
+.rail{width:6px;flex:0 0 6px;background:linear-gradient(90deg,#8b8271,#5d564a);border-radius:2px}
+.rail.hot{background:linear-gradient(90deg,#3fc472,#0f7a37);box-shadow:0 0 6px #15a34a66}
+.series .rail{align-self:stretch;min-height:46px}
+.series{display:flex;align-items:center;flex:1 1 auto;flex-wrap:nowrap;min-width:0}
+.wire{height:4px;min-width:14px;flex:0 0 14px;background:#9a917d;align-self:center;border-radius:2px}
+.wire.hot{background:var(--hot);box-shadow:0 0 6px #15a34a55}
+.wire.grow{flex:1 1 auto}
+.el{display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;
+  padding:6px 2px;border-radius:7px;-webkit-tap-highlight-color:transparent}
+.el:hover{background:#00000008}
+.el .dv{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:4px;font-weight:700;
+  white-space:nowrap;letter-spacing:.04em}
+.cont{display:flex;align-items:center;justify-content:center;width:50px;height:32px;position:relative}
+.cont .bar{width:4px;height:30px;background:#3d3830;border-radius:1px}
+.cont .gap{width:16px}
+.cont.hot .bar{background:var(--hot);box-shadow:0 0 7px #15a34a66}
+.cont .slash{position:absolute;width:32px;height:4px;background:#3d3830;transform:rotate(-34deg);border-radius:2px}
+.cont.hot .slash{background:var(--hot)}
+.el.sel{background:#2563eb14}
+.el.sel .cont{outline:2px solid var(--blue);outline-offset:4px;border-radius:4px}
+.par{display:flex;flex-direction:column;gap:9px;position:relative;padding:0 10px}
+/* 分岐と合流の縦線。上の枝の中心から下の枝の中心まで引く（実機のラダーと同じ） */
+.par:before,.par:after{content:"";position:absolute;top:28px;bottom:28px;width:4px;
+  background:#9a917d;border-radius:2px}
+.par:before{left:0}.par:after{right:0}
+.par.hot:before,.par.hot:after{background:var(--hot);box-shadow:0 0 6px #15a34a55}
+/* 行の先頭の並列は、母線が分岐点。左に縦線を立てない（二重線にしない） */
+.par.first{padding-left:0}
+.par.first:before{display:none}
+.par .brrow{display:flex;align-items:center}
+.coil{display:flex;flex-direction:column;align-items:center;cursor:pointer;padding:6px 4px;border-radius:7px}
+.coil:hover{background:#00000008}
+.coil .dv{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:4px;font-weight:700;
+  white-space:nowrap;letter-spacing:.04em}
+.coilsym{width:50px;height:32px;border-radius:50%;border:4px solid #3d3830;
+  border-left-color:transparent;border-right-color:transparent}
+.coilsym.on{border-color:var(--hot);border-left-color:transparent;border-right-color:transparent;
+  box-shadow:0 0 10px #15a34a55}
+.coil.sel .coilsym{outline:2px solid var(--blue);outline-offset:4px}
+/* 接点と接点の「あいだ」に出る挿入ボタン。どこに入るかが図の上で分かる */
+/* 見た目は控えめ・当たり判定は44px。接点より目立たせない */
+.ins{flex:0 0 18px;width:18px;min-height:44px;align-self:center;
+  display:flex;align-items:center;justify-content:center;
+  color:#cdc5b4;font-size:14px;font-weight:700;line-height:1;cursor:pointer;user-select:none;
+  border:none;background:none;border-radius:6px;-webkit-tap-highlight-color:transparent}
+.ins:hover{color:#fff;background:var(--blue)}
+/* 運転中と、お手本の表示では挿入ボタンを出さない */
+body[data-mode="run"] .ins{display:none}
+.ro .ins{display:none}
+
+/* ===== 操作 ===== */
+button{font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #1d4fc4;
+  border-radius:8px;padding:10px 15px;color:#fff;
+  background:linear-gradient(#4b86f0,#2563eb);box-shadow:inset 0 1px 0 #ffffff4d,0 2px 0 #16409e}
+button:hover{filter:brightness(1.07)}
+button:active{transform:translateY(1px);box-shadow:inset 0 1px 0 #ffffff4d}
+button.ghost{background:linear-gradient(#fefdfa,#e6e0d1);border-color:var(--edge);color:var(--txt);
+  box-shadow:inset 0 1px 0 #ffffff,0 2px 0 #bdb39e}
+button.run{background:linear-gradient(#2fbb68,#15a34a);border-color:#0f7a37;box-shadow:inset 0 1px 0 #ffffff4d,0 2px 0 #0b5f2b}
+button.stop{background:linear-gradient(#e8604c,#d93b2b);border-color:#a32a1e;box-shadow:inset 0 1px 0 #ffffff4d,0 2px 0 #7d2016}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;align-items:center}
+.btnsep{width:1px;align-self:stretch;background:var(--edge);margin:2px 6px;opacity:.8}
+.pop{position:fixed;inset:0;background:#2b271fa8;display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.pop.show{display:flex}
+.popbox{background:linear-gradient(#fdfcf8,#f5f1e8);border:1px solid var(--line);border-radius:12px;padding:17px;
+  max-width:460px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 18px 44px #00000045}
+.popbox h3{margin:0 0 11px;font-size:15px}
+.askmsg{line-height:1.95;font-size:13.5px;margin:0 0 14px;white-space:pre-line}
+.devgrid{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
+.pkgrp{margin-bottom:11px}
+.pkgrp .devgrid{margin-bottom:0}
+.pklab{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--dim2);
+  display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pklab:after{content:"";flex:1;height:1px;background:var(--line)}
+.dpick{padding:10px 13px;border-radius:8px;background:linear-gradient(#fefdfa,#e9e3d4);border:1px solid var(--edge);
+  cursor:pointer;font-weight:700;font-size:12.5px;font-family:var(--mono);min-height:44px;color:var(--txt);
+  display:flex;align-items:center;box-shadow:inset 0 1px 0 #ffffff}
+.dpick:hover{border-color:var(--blue)}
+.dpick.sel{border-color:var(--blue);background:linear-gradient(#e8f0ff,#d3e2ff);color:#17408f;
+  box-shadow:0 0 0 1px #2563eb44}
+.fieldrow{display:flex;gap:9px;align-items:center;margin-bottom:11px;font-size:12.5px;color:var(--dim)}
+input[type=number],input[type=text]{padding:10px;background:var(--ink);color:var(--txt);border:1px solid var(--edge);
+  border-radius:8px;font-family:inherit;font-size:14px;width:100%;box-shadow:inset 0 1px 3px #00000010}
+.verdict{margin-top:11px;padding:12px 14px;border-radius:9px;font-size:13.5px;line-height:1.85;display:none}
+.verdict.ok{display:block;background:linear-gradient(#eefaf1,#dcf4e5);border:1px solid #69c78d;color:#0d5c2c}
+.verdict.bad{display:block;background:linear-gradient(#fdeeec,#fadcd8);border:1px solid #e09084;color:#8f2517}
+.verdict b{display:block;margin-bottom:4px;font-size:14.5px;color:inherit}
+.hintbox{display:none;margin-top:11px;background:#eef4ff;border-left:3px solid var(--blue);
+  border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.9}
+.hintbox .hl{font-weight:700;color:#17408f;margin-bottom:4px}
+.hintbox .hitem{margin-bottom:10px;white-space:pre-line}
+.hintbox .hitem:last-child{margin-bottom:0}
+.note{font-size:11.5px;color:var(--dim2);line-height:1.75}
+.submit{display:none}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+th{background:#f0ece1;width:42%;font-weight:700;color:var(--dim)}
+.err{color:#c0281a;font-size:12.5px;margin-top:6px;display:none}
+textarea{width:100%;min-height:80px;padding:11px;font-family:inherit;font-size:13.5px;background:var(--ink);
+  color:var(--txt);border:1px solid var(--edge);border-radius:8px;resize:vertical;box-shadow:inset 0 1px 3px #00000010}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12.5px;font-weight:700;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="face">
+  <div class="brand">
+    <div class="mark">PLC</div>
+    <div>
+      <h1>ラダー工房</h1>
+      <div class="sub">LADDER SIMULATOR ／ 三菱系　X:入力　Y:出力　M:内部リレー　T:タイマ</div>
+    </div>
+  </div>
+  <div class="leds">
+    <div class="led on"><i></i><span>POWER</span></div>
+    <div class="led" id="ledRun"><i></i><span>RUN</span></div>
+    <div class="led red" id="ledErr"><i></i><span>ERR</span></div>
+  </div>
+  <div class="ctl">
+    <button id="runBtn" class="run">▶ RUN</button>
+    <button id="stepBtn" class="ghost">▶❙ 1スキャン</button>
+    <button id="resetBtn" class="ghost">リセット</button>
+  </div>
+</header>
+
+<div class="statusbar" id="scanbar"></div>
+
+<nav class="tabs" id="tabs"></nav>
+
+<div class="cols">
+  <main>
+
+    <div class="panel goal">
+      <button id="gFold" class="ghost fold">たたむ</button>
+      <h2 id="gTitle"></h2>
+      <div id="gWrap">
+        <p id="gBody"></p>
+        <p class="hint" id="gHint"></p>
+      </div>
+    </div>
+
+
+    <div class="panel" id="progPanel">
+      <div class="secthead">
+        <span class="sectk">PROGRAM</span>
+        <span class="sectt">回路を組む</span>
+        <span class="sectstate" id="progState"></span>
+      </div>
+      <div class="ladderwrap"><div id="ladder"></div></div>
+      <div class="btnrow" id="edrow">
+        <button id="addRung" class="ghost">＋ 行を追加</button>
+        <button id="resetProg" class="ghost">最初からやり直す</button>
+        <div class="btnsep"></div>
+        <button id="checkBtn">動作を確かめる</button>
+        <button id="hintBtn" class="ghost">ヒントを見る</button>
+        <button id="ansBtn" class="ghost">お手本を見る</button>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <div id="hintbox" class="hintbox"></div>
+      <div class="btnrow" id="navrow"></div>
+    </div>
+
+    <div class="panel" id="refbox" style="display:none">
+      <div class="blab">ANSWER ／ お手本の回路</div>
+      <div class="ladderwrap ro"><div id="refladder"></div></div>
+      <div class="refnote" id="refnote"></div>
+      <div class="btnrow">
+        <button id="refUse" class="ghost">この回路を入れて試す</button>
+        <button id="refClose" class="ghost">閉じる</button>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="colside">
+    <div class="board" id="machbox" style="display:none">
+      <div class="blab">MACHINE ／ 動かす機械</div>
+      <svg id="mach" viewBox="0 0 560 190"></svg>
+    </div>
+    <div class="board dev" id="monPanel">
+      <div class="secthead">
+        <span class="sectk">MONITOR</span>
+        <span class="sectt">動かして確かめる</span>
+        <span class="sectstate" id="monState"></span>
+      </div>
+      <div class="io2">
+        <div class="iocol">
+          <div class="blab" id="xlab">INPUT X ／ 入力</div>
+          <div class="devrow" id="xrow"></div>
+        </div>
+        <div class="ioarrow">→</div>
+        <div class="iocol">
+          <div class="blab">OUTPUT Y ／ 出力リレー</div>
+          <div class="devrow" id="yrow"></div>
+        </div>
+      </div>
+      <div class="devcol" id="mtwrap">
+        <div class="blab">INTERNAL ／ 内部リレー・タイマ</div>
+        <div class="tbox" id="mtbox"></div>
+      </div>
+      <div class="devcol">
+        <div class="blab">DEVICE ／ つかえるデバイス</div>
+        <div id="toolbox"></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="panel submit" id="submitPanel">
+  <h2 style="margin-top:0">提出</h2>
+  <div class="field"><label>出席番号（4ケタ）</label><input type="text" id="inNo" maxlength="4" inputmode="numeric" placeholder="3101"></div>
+  <div class="field"><label>氏名</label><input type="text" id="inName" placeholder="山田 太郎"></div>
+  <div class="field"><label>ふり返り：どの課題がむずかしかったですか。どう気づきましたか。</label><textarea id="inMemo"></textarea></div>
+  <div class="err" id="submitErr">出席番号（4ケタの数字）と氏名を入力してください。</div>
+  <table id="repTable"></table>
+  <div class="btnrow">
+    <button id="btnCopy">記録を出す（コピー）</button>
+    <button id="btnDl" class="ghost">ファイルで保存</button>
+    <button id="btnBack" class="ghost">工房に戻る</button>
+  </div>
+  <p class="note" id="msg"></p>
+  <div class="field" id="recWrap" style="display:none">
+    <label for="recOut">この内容を Classroom に貼りつけてください</label>
+    <textarea id="recOut" readonly rows="12"></textarea>
+  </div>
+</div>
+
+</div>
+
+<!-- 要素の編集 -->
+<div class="pop" id="pop"><div class="popbox" id="popbox"></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const VER="2026-09-14b";
+const SCAN=0.05;
+
+/* ================= PLC 心臓部 ================= */
+function newPLC(){return {X:{},Y:{},M:{},T:{},Tacc:{},scans:0,t:0};}
+function bit(p,dev){const k=dev[0],n=dev.slice(1);
+  return k==="X"?!!p.X[n]:k==="Y"?!!p.Y[n]:k==="M"?!!p.M[n]:k==="T"?!!p.T[n]:false;}
+function evalSer(els,p,inc,marks){
+  let flow=inc;
+  for(const el of els){
+    const before=flow; let cond;
+    if(el.t==="c"){const b=bit(p,el.dev);cond=el.neg?!b:b;}
+    else{let any=false;for(const br of el.br){if(evalSer(br,p,before,marks))any=true;}cond=any;}
+    if(marks)marks.set(el,{in:before,cond,out:before&&cond});
+    flow=flow&&cond;
+  }
+  return flow;
+}
+/* onRow は「その行を評価し終えた」ところで呼ばれるだけの覗き窓。
+   評価順・計算結果には一切関与しない。省略時は従来どおり */
+function scanOnce(p,prog,marks,onRow){
+  for(let ri=0;ri<prog.length;ri++){
+    const r=prog[ri];
+    const on=evalSer(r.elems,p,true,marks);
+    if(marks)marks.set(r,{on});
+    const c=r.coil,n=c.dev.slice(1);
+    if(c.t==="OUT"){ if(c.dev[0]==="Y")p.Y[n]=on; else if(c.dev[0]==="M")p.M[n]=on; }
+    else if(c.t==="TON"){
+      if(on){p.Tacc[n]=(p.Tacc[n]||0)+SCAN; p.T[n]=p.Tacc[n]>=c.k*0.1;}
+      else {p.Tacc[n]=0;p.T[n]=false;}
+    }
+    if(onRow) onRow(ri);
+  }
+  p.scans++; p.t+=SCAN;
+}
+/* 要素づくり */
+const C=(dev,neg)=>({t:"c",dev,neg:!!neg});
+const PAR=(...br)=>({t:"p",br});
+const R=(elems,coil)=>({elems,coil});
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+/* ================= 課題 ================= */
+const DEVS={X:["X0","X1","X2","X3"],Y:["Y0","Y1","Y2"],M:["M0","M1"],T:["T0","T1"]};
+
+/* ================= 仮想機械：エレベーター ================= */
+const MACHINES={
+ door:{
+  name:"自動ドア",
+  io:[{dev:"X0",role:"btn",lab:"人感センサ（人が来る）"},
+      {dev:"Y0",role:"out",lab:"ドア開"}],
+  init(){return {op:0};},
+  sense(){},
+  act(st,p){ st.op += (p.Y["0"]?1:-1)*0.10; st.op=Math.max(0,Math.min(1,st.op)); },
+  draw(st,p){
+    const w=Math.round(52*(1-st.op));
+    return `<rect x="0" y="0" width="560" height="190" fill="#ffffff"/>
+    <rect x="150" y="30" width="260" height="130" fill="none" stroke="#a89e89" stroke-width="3"/>
+    <rect x="228" y="34" width="${w}" height="122" fill="#3b82f6" opacity=".9"/>
+    <rect x="${332-w}" y="34" width="${w}" height="122" fill="#3b82f6" opacity=".9"/>
+    <circle cx="280" cy="22" r="9" fill="${p.X["0"]?"#f59e0b":"#cdc5b3"}" stroke="#8b8271" stroke-width="2"/>
+    <text x="296" y="27" fill="#6d6555" font-size="13">人感センサ</text>
+    ${p.X["0"]?`<circle cx="95" cy="100" r="15" fill="#f59e0b"/><rect x="88" y="116" width="15" height="30" fill="#f59e0b"/>`:""}
+    <text x="20" y="178" fill="${st.op>0.5?"#15a34a":"#948b77"}" font-size="15" font-weight="700">ドア：${st.op>0.9?"全開":st.op<0.1?"閉":"動作中"}</text>`;
+  }
+ },
+ cross:{
+  name:"踏切",
+  io:[{dev:"X0",role:"btn",lab:"進入センサ（列車が来る）"},
+      {dev:"X1",role:"btn",lab:"通過センサ（列車が去る）"},
+      {dev:"Y0",role:"out",lab:"警報機"},
+      {dev:"Y1",role:"out",lab:"遮断機"}],
+  init(){return {x:-90,run:false,bar:0};},
+  sense(){},
+  act(st,p){
+    if(p.X["0"])st.run=true;
+    if(p.X["1"]){st.run=false;st.x=-90;}
+    if(st.run)st.x+=2.2;
+    if(st.x>600)st.x=-90;
+    st.bar += (p.Y["1"]?1:-1)*0.12; st.bar=Math.max(0,Math.min(1,st.bar));
+  },
+  draw(st,p){
+    const ang=-70+70*st.bar;
+    return `<rect x="0" y="0" width="560" height="190" fill="#ffffff"/>
+    <rect x="0" y="118" width="560" height="5" fill="#8b8271"/>
+    <rect x="0" y="136" width="560" height="5" fill="#8b8271"/>
+    <rect x="${st.x}" y="96" width="86" height="42" rx="6" fill="#3b82f6"/>
+    <circle cx="430" cy="52" r="11" fill="${p.Y["0"]?"#d93b2b":"#cdc5b3"}" stroke="#8b8271" stroke-width="2"/>
+    <circle cx="462" cy="52" r="11" fill="#cdc5b3" stroke="#8b8271" stroke-width="2"/>
+    <text x="388" y="34" fill="#6d6555" font-size="13">警報機</text>
+    <rect x="330" y="62" width="6" height="78" fill="#6d6555"/>
+    <g transform="rotate(${ang} 333 68)"><rect x="333" y="64" width="115" height="9" rx="3" fill="#f59e0b"/></g>
+    <text x="20" y="178" fill="#6d6555" font-size="14">警報：${p.Y["0"]?"鳴動":"停止"}　遮断機：${st.bar>0.9?"下降":st.bar<0.1?"上昇":"動作中"}</text>`;
+  }
+ },
+ vend:{
+  name:"自動販売機",
+  io:[{dev:"X0",role:"btn",lab:"硬貨投入"},
+      {dev:"X1",role:"btn",lab:"商品ボタン"},
+      {dev:"Y0",role:"out",lab:"商品排出"}],
+  init(){return {drop:-1};},
+  sense(){},
+  act(st,p){
+    if(p.Y["0"]&&st.drop<0)st.drop=0;
+    if(st.drop>=0){st.drop+=4; if(st.drop>60)st.drop=-1;}
+  },
+  draw(st,p){
+    const ready=!!p.M["0"];
+    return `<rect x="0" y="0" width="560" height="190" fill="#ffffff"/>
+    <rect x="170" y="12" width="220" height="166" rx="8" fill="#efebe0" stroke="#a89e89" stroke-width="3"/>
+    <rect x="186" y="28" width="86" height="52" rx="4" fill="#e2dccd"/>
+    <text x="200" y="60" fill="#6d6555" font-size="15">商品</text>
+    <circle cx="332" cy="44" r="13" fill="${ready?"#15a34a":"#cdc5b3"}" stroke="#8b8271" stroke-width="2"/>
+    <text x="298" y="74" fill="#6d6555" font-size="12.5">投入済 M0</text>
+    <circle cx="332" cy="110" r="17" fill="${p.X["1"]?"#f59e0b":"#cdc5b3"}" stroke="#948b77" stroke-width="2"/>
+    <text x="304" y="142" fill="#6d6555" font-size="12.5">ボタン</text>
+    <rect x="186" y="108" width="62" height="10" rx="3" fill="${p.X["0"]?"#f59e0b":"#e2dccd"}"/>
+    <text x="186" y="102" fill="#6d6555" font-size="12.5">投入口</text>
+    <rect x="186" y="140" width="86" height="28" rx="4" fill="#3d3830" stroke="#8b8271" stroke-width="2"/>
+    ${st.drop>=0?`<rect x="206" y="${84+st.drop}" width="44" height="22" rx="3" fill="#d93b2b"/>`:""}
+    <text x="404" y="100" fill="#15a34a" font-size="14">${st.drop>=0?"商品が出た":""}</text>`;
+  }
+ },
+ elev:{
+  name:"エレベーター（2階建て）",
+  spd:0.012,
+  io:[
+   {dev:"X0",role:"btn",  lab:"1階 呼びボタン"},
+   {dev:"X1",role:"btn",  lab:"2階 呼びボタン"},
+   {dev:"X2",role:"sens", lab:"1階 リミットスイッチ"},
+   {dev:"X3",role:"sens", lab:"2階 リミットスイッチ"},
+   {dev:"Y0",role:"out",  lab:"上昇モータ"},
+   {dev:"Y1",role:"out",  lab:"下降モータ"}
+  ],
+  init(){return {pos:0,short:false};},
+  // スキャン前：センサをかごの位置で決める
+  sense(st,p){ p.X["2"]= st.pos<=0.02; p.X["3"]= st.pos>=0.98; },
+  // スキャン後：出力でかごを動かす
+  act(st,p,spd){
+    const up=!!p.Y["0"], dn=!!p.Y["1"];
+    if(up&&dn){st.short=true;return;}
+    if(up)st.pos=Math.min(1,st.pos+spd);
+    if(dn)st.pos=Math.max(0,st.pos-spd);
+  },
+  draw(st,p){
+    const H=150, top=14;
+    const y = top + (1-st.pos)*H;        // かごの上端
+    const s1=st.pos<=0.02, s2=st.pos>=0.98;
+    return `
+    <rect x="0" y="0" width="560" height="190" fill="#ffffff"/>
+    <rect x="200" y="${top}" width="120" height="${H+30}" fill="#f4f1e9" stroke="#a89e89" stroke-width="2"/>
+    <line x1="200" y1="${top+14}" x2="320" y2="${top+14}" stroke="#a89e89" stroke-dasharray="4 4"/>
+    <line x1="200" y1="${top+H+14}" x2="320" y2="${top+H+14}" stroke="#a89e89" stroke-dasharray="4 4"/>
+    <text x="328" y="${top+19}" fill="#6d6555" font-size="14">2階</text>
+    <text x="328" y="${top+H+19}" fill="#6d6555" font-size="14">1階</text>
+    <rect x="212" y="${y}" width="96" height="30" rx="4" fill="#3b82f6"/>
+    <text x="246" y="${y+20}" fill="#ffffff" font-size="15" font-weight="700">かご</text>
+    <circle cx="350" cy="${top+H+14}" r="8" fill="${s1?"#f59e0b":"#cdc5b3"}" stroke="#8b8271" stroke-width="2"/>
+    <text x="364" y="${top+H+19}" fill="${s1?"#f59e0b":"#948b77"}" font-size="13">1階センサ ${s1?"ON":"OFF"}</text>
+    <circle cx="350" cy="${top+14}" r="8" fill="${s2?"#f59e0b":"#cdc5b3"}" stroke="#8b8271" stroke-width="2"/>
+    <text x="364" y="${top+19}" fill="${s2?"#f59e0b":"#948b77"}" font-size="13">2階センサ ${s2?"ON":"OFF"}</text>
+    <text x="20" y="40" fill="${p.Y["0"]?"#15a34a":"#cdc5b3"}" font-size="15" font-weight="700">▲ 上昇モータ ${p.Y["0"]?"ON":"OFF"}</text>
+    <text x="20" y="62" fill="${p.Y["1"]?"#15a34a":"#cdc5b3"}" font-size="15" font-weight="700">▼ 下降モータ ${p.Y["1"]?"ON":"OFF"}</text>
+    ${st.short?`<text x="20" y="96" fill="#d93b2b" font-size="16" font-weight="700">短絡！ 上昇と下降が同時にONです</text>`:""}
+    `;
+  }
+ }
+};
+
+const LESSONS=[
+{id:1,kind:"t",name:"① 接点とコイル",
+ title:"基本1　スイッチでランプを点ける",
+ body:"一番かんたんな回路です。<b>X0を押している間だけ Y0 が点く</b>ようにします。",
+ hint:"左の母線から、接点 X0 を通ってコイル Y0 へ。すでに置いてあるので、RUNを押してX0をタップしてみてください。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[12,"X0",0],[18,"X0",1],[24,"X0",0]], len:30,
+ watch:["Y0"],
+ after:"接点が閉じると電気が流れ、コイルが働きます。ラダー図は「左から右へ電気が流れる」と読みます。"},
+{id:2,kind:"t",name:"② 直列（AND）",
+ title:"基本2　両方押したときだけ点ける",
+ body:"<b>X0 と X1 の両方</b>を押したときだけ Y0 が点くようにします。安全のため両手で押すボタンなどに使います。",
+ hint:"接点を横に並べる（直列）と AND になります。X0 の右にある「＋接点」を押して X1 を追加してください。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0"),C("X1")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[8,"X1",1],[14,"X0",0],[20,"X0",1],[26,"X1",0]], len:32,
+ watch:["Y0"],
+ after:"横に並べる＝直列＝AND。両方の接点が閉じないと電気は通りません。"},
+{id:3,kind:"t",name:"③ 並列（OR）",
+ title:"基本3　どちらかを押せば点ける",
+ body:"<b>X0 か X1 のどちらか</b>を押せば Y0 が点くようにします。2か所から操作したいときに使います。",
+ hint:"接点をタップして「並列に追加」を選ぶと、下に枝分かれします。そこに X1 を置いてください。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("X1")])],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[9,"X0",0],[14,"X1",1],[19,"X1",0],[24,"X0",1],[26,"X1",1],[29,"X0",0]], len:34,
+ watch:["Y0"],
+ after:"縦に分ける＝並列＝OR。どちらかの道が通れば電気は流れます。"},
+{id:4,kind:"t",name:"④ b接点（NOT）",
+ title:"基本4　押していないときに点ける",
+ body:"<b>X0 を押していないとき</b>に Y0 が点くようにします。非常停止や「〜でないとき」の条件に使います。",
+ hint:"接点をタップして「a接点 ⇄ b接点」で切りかえます。b接点は斜線が入り、押していないときに通ります。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0",true)],{t:"OUT",dev:"Y0"})],
+ tl:[[5,"X0",1],[12,"X0",0],[18,"X0",1],[25,"X0",0]], len:30,
+ watch:["Y0"],
+ after:"斜線の入った接点が b接点。「押していないとき通る」ので、NOT の働きをします。"},
+{id:5,kind:"t",name:"⑤ 自己保持",
+ title:"基本5　押してはなしても点いたまま",
+ body:"押しボタンは押している間しか信号が出ません。<b>X0 を一度押したら点いたまま、X1 で消える</b>ようにします。<br>出力 <b>Y0 はリレー</b>です。コイルであると同時に<b>接点としても使えます</b>。これを使います。",
+ hint:"X0 に並列で<b>出力リレー Y0 の a接点</b>を入れ、その後ろに X1 の b接点を直列に入れます。自分の出力を条件に戻すのがコツです。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("X1",true)],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[6,"X0",0],[18,"X1",1],[20,"X1",0]], len:30,
+ watch:["Y0"],
+ after:"これが<b>自己保持回路</b>。シーケンス制御でもっともよく使う形です。<br>リレーの接点を自分の条件に戻すので、有接点リレー回路の自己保持とまったく同じ考え方です。"},
+{id:6,kind:"t",name:"⑥ タイマ",
+ title:"基本6　3秒後に動かす",
+ body:"タイマ T0 を使います。<b>X0 を押し続けて3秒たったら Y0 が点く</b>ようにします。",
+ hint:"1行目：X0 でコイル T0（K30 ＝ 3.0秒）。2行目：接点 T0 でコイル Y0。行はすでに2つ用意してあります。",
+ start:[R([C("X0")],{t:"TON",dev:"T0",k:30}), R([C("X1")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0")],{t:"TON",dev:"T0",k:30}), R([C("T0")],{t:"OUT",dev:"Y0"})],
+ tl:[[5,"X0",1],[95,"X0",0],[115,"X0",1],[145,"X0",0]], len:200,
+ watch:["Y0"],
+ after:"K値は0.1秒単位。K30＝3.0秒です。条件が切れると積算はリセットされます。"},
+{id:7,kind:"t",name:"⑦ 内部リレー M",
+ title:"基本7　内部リレーを使う",
+ body:"M は外に出ない「メモ用」のリレーです。<b>X0 で M0 を自己保持し、M0 で Y0 を点ける</b>形にします。",
+ hint:"1行目のコイルを M0 にして自己保持（X1のb接点で解除）。2行目は接点 M0 でコイル Y0。",
+ start:[R([C("X0")],{t:"OUT",dev:"M0"}), R([C("X2")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("M0")]),C("X1",true)],{t:"OUT",dev:"M0"}), R([C("M0")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[6,"X0",0],[20,"X1",1],[22,"X1",0]], len:30,
+ watch:["Y0"],
+ after:"内部リレーを使うと、条件のまとまりに名前をつけて整理できます。大きなプログラムほど効きます。"},
+
+/* ===== 課題 ===== */
+{id:8,kind:"q",name:"課題1 自動ドア",machine:"door",
+ hints:["人がいる間だけでなく「開いた状態を保つ」必要があります。基本5の自己保持を思い出してください。解除のきっかけはタイマです。",
+  "1行目：Y0 のコイル。条件は（X0 と Y0 の並列）＋ T0 の b接点。\n2行目：T0 のコイル（K30）。条件は Y0 と X0 の b接点の直列。",
+  "1行目はできています。2行目の「いつタイマを動かすか」を考えてください。ドアが開いていて、かつ人がいないときです。"],
+ halfway:[R([PAR([C("X0")],[C("Y0")]),C("T0",true)],{t:"OUT",dev:"Y0"}), R([C("X1")],{t:"TON",dev:"T0",k:30})],
+ title:"課題1　自動ドアをつくる",
+ body:"人感センサ <b>X0</b> が反応したらドア <b>Y0</b> を開けます。<b>人がいなくなっても3秒は開けたまま</b>にして、はさまれ事故を防ぎます。",
+ hint:"開いた状態を自己保持し、「ドアが開いている かつ 人がいない」でタイマを動かして、そのタイマで解除します。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"}), R([C("X1")],{t:"TON",dev:"T0",k:30})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("T0",true)],{t:"OUT",dev:"Y0"}),
+        R([C("Y0"),C("X0",true)],{t:"TON",dev:"T0",k:30})],
+ tl:[[5,"X0",1],[25,"X0",0],[150,"X0",1],[158,"X0",0]], len:260,
+ watch:["Y0"],
+ after:"「開いている かつ 人がいない」状態が3秒続いたら閉じる。タイマの動かし方が肝でした。"},
+{id:9,kind:"q",name:"課題2 踏切",machine:"cross",
+ hints:["3つに分けて考えます。①警報を自己保持して鳴らし続ける ②警報でタイマを動かす ③警報とタイマの両方がそろったら遮断機。",
+  "1行目：Y0＝（X0 と Y0 の並列）＋ X1 の b接点。\n2行目：T0 のコイル（K30）、条件は Y0。\n3行目：Y1＝Y0 と T0 の直列。",
+  "1行目と2行目はできています。3行目だけ考えてください。遮断機が下りる条件は「警報が鳴っている」かつ「3秒たった」です。"],
+ halfway:[R([PAR([C("X0")],[C("Y0")]),C("X1",true)],{t:"OUT",dev:"Y0"}), R([C("Y0")],{t:"TON",dev:"T0",k:30}), R([C("X3")],{t:"OUT",dev:"Y1"})],
+ title:"課題2　踏切をつくる",
+ body:"進入センサ <b>X0</b> で警報機 <b>Y0</b> を鳴らし続けます。<b>警報が3秒続いたら遮断機 Y1 を下ろします</b>。通過センサ <b>X1</b> で両方とも解除します。",
+ hint:"警報は自己保持（X1のb接点で解除）。タイマは警報で動かし、遮断機は「警報 かつ タイマ」の直列です。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"}), R([C("X2")],{t:"TON",dev:"T0",k:30}), R([C("X3")],{t:"OUT",dev:"Y1"})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("X1",true)],{t:"OUT",dev:"Y0"}),
+        R([C("Y0")],{t:"TON",dev:"T0",k:30}),
+        R([C("Y0"),C("T0")],{t:"OUT",dev:"Y1"})],
+ tl:[[5,"X0",1],[10,"X0",0],[100,"X1",1],[105,"X1",0]], len:130,
+ watch:["Y0","Y1"],
+ after:"警報が先、遮断機は3秒後。この時間差が人の安全を守ります。"},
+{id:10,kind:"q",name:"課題3 自動販売機",machine:"vend",
+ hints:["「投入済み」を覚えておく係が要ります。内部リレー M0 を自己保持で使いましょう。解除するきっかけは、商品が出たことです。",
+  "1行目：M0＝（X0 と M0 の並列）＋ Y0 の b接点。\n2行目：Y0＝M0 と X1 の直列。",
+  "1行目はできています。2行目を考えてください。商品が出る条件は「投入済み」かつ「ボタンが押された」です。"],
+ halfway:[R([PAR([C("X0")],[C("M0")]),C("Y0",true)],{t:"OUT",dev:"M0"}), R([C("X2")],{t:"OUT",dev:"Y0"})],
+ title:"課題3　自動販売機をつくる",
+ body:"硬貨投入 <b>X0</b> で「投入済み」を保持し、商品ボタン <b>X1</b> を押したら商品 <b>Y0</b> を出します。<b>1回の投入で出せるのは1本だけ</b>です。",
+ hint:"投入済みは M0 で自己保持。ただし商品 Y0 のb接点を直列に入れると、商品が出た瞬間に解除されます。",
+ start:[R([C("X0")],{t:"OUT",dev:"M0"}), R([C("X2")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("M0")]),C("Y0",true)],{t:"OUT",dev:"M0"}),
+        R([C("M0"),C("X1")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[7,"X0",0],[14,"X1",1],[24,"X1",0],[34,"X0",1],[37,"X0",0],[44,"X1",1],[48,"X1",0]], len:60,
+ watch:["Y0"],
+ after:"ボタンを押し続けても1本しか出ません。自分の出力で自分を解除する形です。"},
+{id:11,kind:"q",name:"課題4 正逆転",
+ hints:["正転も逆転も、まず基本5の自己保持です。そのうえで、止める条件を2つ足します。停止ボタンと、相手が動いていないこと。",
+  "1行目：Y0＝（X0 と Y0 の並列）＋ X2 の b接点 ＋ Y1 の b接点。\n2行目：Y1＝（X1 と Y1 の並列）＋ X2 の b接点 ＋ Y0 の b接点。",
+  "1行目はできています。2行目を同じ形で作ってください。ただし相手は Y0 です。"],
+ halfway:[R([PAR([C("X0")],[C("Y0")]),C("X2",true),C("Y1",true)],{t:"OUT",dev:"Y0"}), R([PAR([C("X1")],[C("Y1")]),C("X2",true)],{t:"OUT",dev:"Y1"})],
+ title:"課題4　モータの正逆転とインターロック",
+ body:"<b>X0</b> で正転 <b>Y0</b>、<b>X1</b> で逆転 <b>Y1</b>、<b>X2</b> で停止。どちらも自己保持します。<br><b>Y0とY1が同時にONになると短絡します。絶対に防いでください。</b>",
+ hint:"それぞれの行に、相手の出力の b接点 を直列に入れます。停止 X2 の b接点も両方に必要です。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"}), R([C("X1")],{t:"OUT",dev:"Y1"})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("X2",true),C("Y1",true)],{t:"OUT",dev:"Y0"}),
+        R([PAR([C("X1")],[C("Y1")]),C("X2",true),C("Y0",true)],{t:"OUT",dev:"Y1"})],
+ tl:[[4,"X0",1],[6,"X0",0],[12,"X1",1],[16,"X1",0],[26,"X2",1],[28,"X2",0],[34,"X1",1],[36,"X1",0]], len:48,
+ watch:["Y0","Y1"], noBoth:true,
+ after:"インターロックの完成です。「起きてはいけない状態」を回路の段階で作れなくする——安全設計の基本です。"},
+{id:13,kind:"q",name:"課題5 エレベーター",machine:"elev",closed:true,
+ hints:["上昇と下降、それぞれを課題4の正逆転と同じ形で作ります。違うのは「止めるきっかけ」がリミットスイッチであることです。",
+  "1行目：Y0＝（X1 と Y0 の並列）＋ X3 の b接点 ＋ Y1 の b接点。\n2行目：Y1＝（X0 と Y1 の並列）＋ X2 の b接点 ＋ Y0 の b接点。",
+  "1行目はできています。2行目を同じ形で。下降を止めるのは1階のリミットスイッチ X2 です。"],
+ halfway:[R([PAR([C("X1")],[C("Y0")]),C("X3",true),C("Y1",true)],{t:"OUT",dev:"Y0"}), R([C("X0")],{t:"OUT",dev:"Y1"})],
+ title:"課題5　エレベーターを動かす",
+ body:"下の絵が本物の機械です。<b>呼びボタンは自分でタップ</b>しますが、<b>リミットスイッチはかごが着くと勝手に入ります</b>。<br>2階呼びで上昇し2階で停止、1階呼びで下降し1階で停止するようにしてください。",
+ hint:"上昇は「2階呼び」で自己保持し、2階リミットのb接点で止めます。下降も同じ形。さらに<b>上昇と下降が同時にONになると短絡</b>するので、相手のb接点も直列に入れます。",
+ start:[R([C("X1")],{t:"OUT",dev:"Y0"}), R([C("X0")],{t:"OUT",dev:"Y1"})],
+ ref:  [R([PAR([C("X1")],[C("Y0")]),C("X3",true),C("Y1",true)],{t:"OUT",dev:"Y0"}),
+        R([PAR([C("X0")],[C("Y1")]),C("X2",true),C("Y0",true)],{t:"OUT",dev:"Y1"})],
+ press:[{d:"X1",a:5},{d:"X0",a:30},{d:"X0",a:150}], len:280,
+ watch:["Y0","Y1"],
+ after:"リミットスイッチで止める、相手が動いていたら動かない——この2つが機械を守ります。実機のエレベーターも考え方は同じです。"},
+{id:12,kind:"free",name:"自由に組む",
+ title:"自由制作　好きな回路を組んでみよう",
+ body:"制限はありません。行を足し、接点・コイル・タイマを自由に組んで動かしてください。思いついた装置を再現してみましょう。",
+ hint:"使えるデバイス：入力 X0〜X3／出力 Y0〜Y2／内部リレー M0・M1／タイマ T0・T1。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})], free:true}
+];
+
+/* ================= 状態 ================= */
+let idx=0, prog=[], plc=newPLC(), marks=new Map(), running=false, timer=null;
+let sel=null, done={}, checks={}, scanIdx=-1, mach=null, mstate=null, btnTimers={};
+let hintLv={}, sawAns={}, folded=false;
+function L(){return LESSONS[idx];}
+
+function tabs(){
+  const one=(l,i)=>`<div class="tab ${done[l.id]?"done":(i===idx?"now":"")}" data-i="${i}">${done[l.id]?"✓ ":""}${l.name}</div>`;
+  const row=(lab,html)=>`<div class="tabrow"><div class="grplab">${lab}</div>${html}</div>`;
+  const pick=k=>LESSONS.map((l,i)=>[l,i]).filter(([l])=>l.kind===k);
+  const other=LESSONS.map((l,i)=>[l,i]).filter(([l])=>l.kind!=="t"&&l.kind!=="q"&&l.kind!=="free");
+  let h="";
+  if(pick("t").length) h+=row("基本",pick("t").map(([l,i])=>one(l,i)).join(""));
+  const rest=pick("q").concat(pick("free"),other);
+  const sub=`<div class="tab sub" data-sub="1">記録して提出</div>`;
+  if(rest.length) h+=row("課題",rest.map(([l,i])=>one(l,i)).join("")+sub);
+  else            h+=row("提出",sub);
+  $("tabs").innerHTML=h;
+  document.querySelectorAll("#tabs .tab").forEach(el=>{
+    el.onclick=()=>{ if(el.dataset.sub){openSubmit();return;}
+      idx=+el.dataset.i; load(); window.scrollTo({top:0,behavior:"smooth"}); };
+  });
+}
+
+function load(){
+  stop();
+  const l=L();
+  prog=clone(l.start); plc=newPLC(); marks=new Map(); sel=null; scanIdx=-1;
+  mach = l.machine ? MACHINES[l.machine] : null;
+  mstate = mach ? mach.init() : null;
+  $("machbox").style.display = mach ? "" : "none";
+  tabs();
+  folded=false; $("gWrap").style.display=""; $("gFold").textContent="たたむ";
+  closeRef();
+  $("gTitle").textContent=l.title;
+  $("gBody").innerHTML=l.body;
+  $("gHint").innerHTML="ヒント："+l.hint;
+  $("verdict").className="verdict";
+  if($("ledErr")) $("ledErr").classList.remove("on");
+  $("submitPanel").style.display="none";
+  $("checkBtn").style.display=l.free?"none":"";
+  const hasH=!!(l.hints&&l.hints.length);
+  $("hintBtn").style.display=hasH?"":"none";
+  $("ansBtn").style.display=l.free?"none":"";
+  drawHints();
+  drawDev(); drawLadder(); nav();
+}
+function nav(){
+  const l=L();
+  let h="";
+  if(idx>0)h+=`<button id="pv" class="ghost">← 前へ</button>`;
+  h+=`<button id="nx" class="${done[l.id]?"":"ghost"}">${idx===LESSONS.length-1?"記録して提出":"次へ →"}</button>`;
+  $("navrow").innerHTML=h;
+  $("nx").onclick=()=>{ if(idx<LESSONS.length-1){idx++;load();window.scrollTo({top:0,behavior:"smooth"});} else openSubmit(); };
+  if($("pv"))$("pv").onclick=()=>{idx--;load();window.scrollTo({top:0,behavior:"smooth"});};
+}
+
+/* 最初の回路に戻す。組んだものが消えるので、変わっているときだけ確認する */
+function resetProg(){
+  const st=clone(L().start);
+  const go=()=>{ prog=clone(L().start); plc=newPLC(); marks=new Map(); sel=null; scanIdx=-1;
+    if(mach) mstate=mach.init(); stop(); drawLadder(); drawDev(); };
+  if(JSON.stringify(prog)===JSON.stringify(st)){ go(); return; }
+  ask("いま組んでいる回路を消して、最初の状態に戻します。よろしいですか。", go, "戻す");
+}
+
+/* ================= デバイス盤 ================= */
+/* 回路で実際に使われているデバイスだけを拾う */
+function collectDevs(){
+  const use={X:new Set(),Y:new Set(),M:new Set(),T:new Set()};
+  const walk=els=>els.forEach(el=>{
+    if(el.t==="c"){ const k=el.dev[0]; if(use[k])use[k].add(el.dev); }
+    else el.br.forEach(walk);
+  });
+  prog.forEach(r=>{
+    walk(r.elems);
+    const k=r.coil.dev[0]; if(use[k])use[k].add(r.coil.dev);
+  });
+  const srt=set=>[...set].sort();
+  return {X:srt(use.X),Y:srt(use.Y),M:srt(use.M),T:srt(use.T)};
+}
+function drawDev(){
+  if(mach){ drawDevMachine(); return; }
+  const u=collectDevs();
+  $("xlab").innerHTML = "INPUT X ／ 入力（タップで切りかえ）";
+  $("xrow").innerHTML = u.X.length
+    ? u.X.map(d=>{const on=!!plc.X[d.slice(1)];
+        return `<div class="xbtn sw ${on?"on":""}" data-x="${d.slice(1)}">`
+          +`<span class="swknob"></span>${d}<div class="tag">${on?"入 ON":"切 OFF"}</div></div>`;}).join("")
+    : `<div class="note">この回路では入力Xを使っていません</div>`;
+  document.querySelectorAll("#xrow .xbtn").forEach(el=>{
+    el.onclick=()=>{const n=el.dataset.x; plc.X[n]=!plc.X[n];
+      if(!running){marks=new Map();scanOnce(plc,prog,marks);drawLadder();}
+      drawDev(); };
+  });
+  $("yrow").innerHTML = u.Y.length
+    ? u.Y.map(d=>`<div class="ylamp ${plc.Y[d.slice(1)]?"on":""}">${d}</div>`).join("")
+    : `<div class="note">この回路では出力Yを使っていません</div>`;
+  drawExtra(u);
+}
+/* 機械つきのときは、名前つきのボタン／センサ表示にする */
+function drawDevMachine(){
+  const io=mach.io;
+  const btn=io.filter(x=>x.role==="btn"), sen=io.filter(x=>x.role==="sens"), out=io.filter(x=>x.role==="out");
+  $("xlab").innerHTML = "INPUT X ／ 入力（押している間だけON）";
+  $("xrow").innerHTML =
+    btn.map(x=>`<div class="xbtn wide ${plc.X[x.dev.slice(1)]?"on":""}" data-x="${x.dev.slice(1)}">
+        ${x.lab}<div class="tag">${x.dev}</div></div>`).join("")
+   +sen.map(x=>`<div class="sens ${plc.X[x.dev.slice(1)]?"on":""}">
+        ${x.lab}<div class="tag">${x.dev}（機械が入れる）</div></div>`).join("");
+  document.querySelectorAll("#xrow .xbtn").forEach(el=>{
+    const n=el.dataset.x;
+    const press=e=>{e.preventDefault();plc.X[n]=true;drawDev();
+      if(!running){marks=new Map();scanOnce(plc,prog,marks);drawLadder();}};
+    const release=e=>{e.preventDefault();plc.X[n]=false;drawDev();};
+    el.onmousedown=press; el.onmouseup=release; el.onmouseleave=release;
+    el.ontouchstart=press; el.ontouchend=release;
+    el.onclick=()=>{ // タップでも一瞬押される
+      plc.X[n]=true; drawDev();
+      clearTimeout(btnTimers[n]);
+      btnTimers[n]=setTimeout(()=>{plc.X[n]=false;drawDev();},300);
+    };
+  });
+  $("yrow").innerHTML = out.map(x=>
+    `<div class="ylamp wide ${plc.Y[x.dev.slice(1)]?"on":""}">${x.lab}<div class="tag">${x.dev}</div></div>`).join("");
+  drawExtra(collectDevs());
+  if($("mach")) $("mach").innerHTML = mach.draw(mstate,plc);
+}
+function drawExtra(u){
+  let extra="";
+  if(u.M.length) extra+=`<div class="mrow">内部リレー　`+
+    u.M.map(d=>`${d}:<b>${plc.M[d.slice(1)]?"ON":"OFF"}</b>`).join("　")+`</div>`;
+  if(u.T.length){
+    extra+=u.T.map(d=>{
+      const n=d.slice(1);
+      const r=prog.find(x=>x.coil.t==="TON"&&x.coil.dev===d);
+      const lim=r?r.coil.k*0.1:0, acc=plc.Tacc[n]||0, on=!!plc.T[n];
+      const pct=lim?Math.min(100,acc/lim*100):0;
+      return `<div class="tmr ${on?"on":""}">`
+        +`<span class="tn">${d}</span>`
+        +`<span class="tbar"><i style="width:${pct.toFixed(1)}%"></i></span>`
+        +`<span class="tv">${acc.toFixed(1)}${lim?" / "+lim.toFixed(1)+"s":""}</span>`
+        +`<span class="ts">${on?"ON":"OFF"}</span></div>`;
+    }).join("");
+  }
+  $("mtbox").innerHTML=extra;
+  $("mtwrap").style.display=extra?"":"none";
+  const st=[["MODE",running?"RUN":"STOP",running],["SCAN",plc.scans,0],
+            ["TIME",plc.t.toFixed(2)+"s",0],["CYCLE",Math.round(SCAN*1000)+"ms",0],["VER",VER,0]];
+  $("scanbar").innerHTML=st.map(([k,v,live])=>
+    `<div class="st ${live?"live":""}"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  if($("ledRun")) $("ledRun").classList.toggle("on",running);
+  drawTools();
+}
+
+/* このレッスンで接点に使えるデバイスの一覧。答えは出さない（常に同じ顔ぶれを出す） */
+function drawTools(){
+  let xs=DEVS.X.slice(), ys=DEVS.Y.slice();
+  if(mach){
+    xs=mach.io.filter(x=>x.role!=="out").map(x=>x.dev);
+    ys=mach.io.filter(x=>x.role==="out").map(x=>x.dev);
+  }
+  $("toolbox").innerHTML=[["X",xs],["Y",ys],["M",DEVS.M],["T",DEVS.T]]
+    .filter(([,l])=>l.length).map(([k,l])=>
+      `<div class="toolrow"><span class="tk">${DEVLAB[k]}</span><span>${
+        l.map(d=>`<b>${d}</b>`).join("")}</span></div>`).join("")
+   +`<div class="toolnote">接点をタップすると、この中から選べます。<br>
+      <b>Y</b> と <b>M</b> はリレーなので、その接点を条件に使えます。
+      <button class="linkbtn" id="relayHelp">リレーってなに？</button></div>`;
+  if($("relayHelp")) $("relayHelp").onclick=relayHelp;
+}
+
+/* 「盤のランプ Y0」と「接点の Y0」が同じものだ、という説明 */
+function relayHelp(){
+  pop(`<h3>リレーってなに？　Y0 は1つ、使い道が2つ</h3>
+  <svg viewBox="0 0 430 232" style="width:100%;height:auto;background:#fff;border:1px solid #c3bba8;border-radius:8px">
+    <rect x="6" y="24" width="262" height="200" rx="8" fill="#f7f4ec" stroke="#c3bba8"/>
+    <text x="14" y="18" font-size="11" fill="#6d6555">PLC の中（プログラム）</text>
+    <rect x="278" y="24" width="146" height="200" rx="8" fill="#fdfcf8" stroke="#c3bba8"/>
+    <text x="286" y="18" font-size="11" fill="#6d6555">外（機械）</text>
+
+    <text x="20" y="46" font-size="11" fill="#6d6555">コイル（1つだけ）</text>
+    <text x="96" y="68" font-size="12" font-weight="700" fill="#15a34a">Y0</text>
+    <line x1="20" y1="88" x2="92" y2="88" stroke="#5d564a" stroke-width="3"/>
+    <path d="M 92 74 A 14 14 0 0 0 92 102" fill="none" stroke="#15a34a" stroke-width="4"/>
+    <path d="M 122 74 A 14 14 0 0 1 122 102" fill="none" stroke="#15a34a" stroke-width="4"/>
+    <line x1="122" y1="88" x2="200" y2="88" stroke="#5d564a" stroke-width="3"/>
+
+    <line x1="107" y1="106" x2="107" y2="150" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="116" y="134" font-size="11" font-weight="700" fill="#b07b06">同じ1つのリレー</text>
+
+    <text x="20" y="170" font-size="11" fill="#6d6555">接点（何個でも使える）</text>
+    <text x="32" y="190" font-size="10.5" fill="#6d6555">Y0</text>
+    <line x1="34" y1="196" x2="34" y2="218" stroke="#3d3830" stroke-width="4"/>
+    <line x1="50" y1="196" x2="50" y2="218" stroke="#3d3830" stroke-width="4"/>
+    <text x="102" y="190" font-size="10.5" fill="#6d6555">Y0</text>
+    <line x1="104" y1="196" x2="104" y2="218" stroke="#3d3830" stroke-width="4"/>
+    <line x1="120" y1="196" x2="120" y2="218" stroke="#3d3830" stroke-width="4"/>
+    <text x="140" y="212" font-size="11" fill="#948b77">… いくつでも</text>
+
+    <line x1="200" y1="88" x2="316" y2="88" stroke="#5d564a" stroke-width="3"/>
+    <circle cx="316" cy="88" r="5" fill="#5d564a"/>
+    <text x="292" y="70" font-size="10.5" fill="#6d6555">端子 Y0</text>
+    <circle cx="368" cy="88" r="18" fill="#f59e0b" stroke="#c47f06" stroke-width="2"/>
+    <text x="322" y="132" font-size="11" fill="#6d6555">ランプ・モータ</text>
+  </svg>
+  <p style="line-height:1.9;font-size:13px;margin:12px 0 0">
+    <b>Y0 は「出力リレー」</b>です。実物のリレーと同じで、<b>コイルは1つ、接点は何個でも</b>あります。<br>
+    コイル <b>( Y0 )</b> に電気が来ると、外の端子 Y0 が入って<b>ランプやモータが動き</b>、
+    <b>同時に</b>プログラムの中で <b>┤├ Y0</b> の接点が使えるようになります。<br>
+    <b>制御盤のランプと、接点の Y0 は同じ1つのリレーです。</b>別々のものではありません。
+  </p>
+  <table style="margin-top:12px">
+    <tr><th>X（入力リレー）</th><td>外のスイッチが入れる。<b>接点だけ</b>使える（コイルは書けない）</td></tr>
+    <tr><th>Y（出力リレー）</th><td>外に端子がある。<b>コイルも接点も</b>使える</td></tr>
+    <tr><th>M（内部リレー）</th><td>外に端子が<b>ない</b>。PLCの中だけのリレー。コイルも接点も使える</td></tr>
+  </table>
+  <p class="note" style="margin-top:10px">
+    実機の三菱PLCもまったく同じしくみです。PLCは、もともと有接点リレー回路を
+    置きかえるために作られました。だから、わざと実物のリレーを真似てあります。</p>
+  <div class="btnrow"><button id="pClose">閉じる</button></div>`);
+  $("pClose").onclick=closePop;
+}
+
+/* ================= ラダー描画 ================= */
+function contHTML(el,path){
+  const m=marks.get(el)||{};
+  const hot=m.out?"hot":"";
+  const slash=el.neg?`<div class="slash"></div>`:"";
+  return `<div class="el ${sel&&sel.path===path?"sel":""}" data-path="${path}">
+    <div class="dv">${el.dev}</div>
+    <div class="cont ${hot}"><div class="bar"></div><div class="gap"></div><div class="bar"></div>${slash}</div>
+  </div>`;
+}
+function elHTML(el,path,first){
+  if(el.t==="c")return contHTML(el,path);
+  const m=marks.get(el)||{};
+  const rows=el.br.map((br,bi)=>
+    `<div class="brrow">${serHTML(br,path+".b"+bi)}</div>`).join("");
+  // 行の先頭にある並列は、左の母線そのものが分岐点になる（実機のラダーと同じ）
+  return `<div class="par ${m.out?"hot":""} ${first?"first":""}">${rows}</div>`;
+}
+const insHTML=(path,i)=>`<div class="ins" data-ins="${path}.${i}" title="ここに接点を入れる">＋</div>`;
+function serHTML(els,path){
+  if(!els.length)return `<div class="wire grow"></div>`;
+  let h="";
+  els.forEach((el,i)=>{
+    const m=marks.get(el)||{};
+    const headPar = (i===0 && el.t==="p");    // 母線から直に枝が出る形
+    if(!headPar){                             // 母線と枝のあいだには何も挟まない
+      h+=`<div class="wire ${m.in?"hot":""}"></div>`;
+      h+=insHTML(path,i);                     // この接点の「左」に入れる
+    }
+    h+=elHTML(el,path+"."+i,headPar);
+  });
+  const last=marks.get(els[els.length-1])||{};
+  h+=insHTML(path,els.length);                // いちばん右に入れる
+  h+=`<div class="wire ${last.out?"hot":""}"></div>`;
+  return h;
+}
+function ladderHTML(){
+  return prog.map((r,ri)=>{
+    const rm=marks.get(r)||{};
+    const coilOn=rm.on;
+    const kt=r.coil.t==="TON"?` K${r.coil.k}`:"";
+    return `<div class="rung ${scanIdx===ri?"scanning":""}" data-r="${ri}">
+      <div class="rungno" data-r="${ri}">${ri+1}<span class="rmore">⋮</span></div>
+      <div class="rail hot"></div>
+      <div class="series">${serHTML(r.elems,"r"+ri)}
+        <div class="wire grow ${coilOn?"hot":""}"></div>
+        <div class="coil ${sel&&sel.path==="coil"+ri?"sel":""}" data-coil="${ri}">
+          <div class="dv">${r.coil.dev}${kt}</div>
+          <div class="coilsym ${coilOn?"on":""}"></div>
+        </div>
+        <div class="wire" style="min-width:10px;flex:0 0 10px"></div>
+        <div class="rail"></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+function drawLadder(){
+  $("ladder").innerHTML=ladderHTML();
+  document.querySelectorAll("#ladder .el").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();openEl(el.dataset.path);};
+  });
+  document.querySelectorAll("#ladder .coil").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();openCoil(+el.dataset.coil);};
+  });
+  document.querySelectorAll("#ladder .ins").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();
+      if(running) return;
+      const L2=locate(el.dataset.ins);
+      L2.arr.splice(L2.i,0,C("X0"));
+      redrawLive();};
+  });
+  document.querySelectorAll("#ladder .rungno").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();
+      if(running) return;
+      openRung(+el.dataset.r);};
+  });
+}
+function redrawLive(){ marks=new Map(); scanOnce(plc,prog,marks); drawLadder(); drawDev(); }
+
+/* 行番号をタップしたときのメニュー。右端にボタンを置くと図の横幅を食うので左に寄せた */
+function openRung(ri){
+  pop(`<h3>${ri+1}行目</h3>
+    <div class="note" style="margin-bottom:10px">この行をどうしますか。</div>
+    <div class="btnrow">
+      <button id="rAdd">この行の下に新しい行を足す</button>
+      <button id="rDel" class="ghost">この行を消す</button>
+      <button id="pClose" class="ghost">閉じる</button>
+    </div>`);
+  $("rAdd").onclick=()=>{ prog.splice(ri+1,0,R([C("X0")],{t:"OUT",dev:"Y0"}));
+    closePop(); sel=null; redrawLive(); };
+  $("rDel").onclick=()=>{
+    if(prog.length<=1){ tell("行は1つ以上必要です。"); return; }
+    ask(`${ri+1}行目を消します。よろしいですか。`,
+        ()=>{ prog.splice(ri,1); sel=null; redrawLive(); }, "消す"); };
+  $("pClose").onclick=closePop;
+}
+
+/* パス "r0.1.b0.2" から要素と親配列を得る */
+function locate(path){
+  const p=path.split(".");
+  const ri=+p[0].slice(1);
+  let arr=prog[ri].elems, el=null, parent=null, i=0;
+  for(let k=1;k<p.length;k++){
+    const seg=p[k];
+    if(seg[0]==="b"){ el=arr[i]; arr=el.br[+seg.slice(1)]; }
+    else { i=+seg; parent=arr; el=arr[i]; }
+  }
+  return {el,arr:parent,i,ri};
+}
+
+/* ================= 編集ポップ ================= */
+function pop(html){ $("popbox").innerHTML=html; $("pop").classList.add("show"); }
+/* ブラウザの confirm / alert は、サンドボックスの中では何も出さずに false を返すことがある。
+   （実測: この環境では confirm() が即 false）。だからアプリ自前の画面で聞く。 */
+function ask(msg,onYes,yesLabel){
+  pop(`<h3>確認</h3>
+    <p class="askmsg">${msg}</p>
+    <div class="btnrow">
+      <button id="okBtn">${yesLabel||"はい"}</button>
+      <button id="pClose" class="ghost">やめる</button>
+    </div>`);
+  $("okBtn").onclick=()=>{ closePop(); onYes(); };
+  $("pClose").onclick=closePop;
+}
+function tell(msg){
+  pop(`<h3>お知らせ</h3><p class="askmsg">${msg}</p>
+    <div class="btnrow"><button id="pClose">閉じる</button></div>`);
+  $("pClose").onclick=closePop;
+}
+function closePop(){ $("pop").classList.remove("show"); }
+$("pop").onclick=e=>{ if(e.target===$("pop"))closePop(); };
+
+const DEVLAB={X:"入力 X",Y:"出力リレー Y",M:"内部リレー M",T:"タイマ T"};
+function devPicker(cur,allow){
+  return allow.map(k=>
+    `<div class="pkgrp"><div class="pklab">${DEVLAB[k]}</div><div class="devgrid">${
+      DEVS[k].map(d=>`<div class="dpick ${d===cur?"sel":""}" data-d="${d}">${d}</div>`).join("")
+    }</div></div>`).join("");
+}
+function openEl(path){
+  if(running) return;                 // 運転中は回路を変えられない（実機と同じ）
+  const {el}=locate(path);
+  if(el.t!=="c"){ return; }
+  sel={path};
+  pop(`<h3>接点の編集</h3>
+    <div class="note" style="margin-bottom:8px">デバイスを選ぶ</div>
+    ${devPicker(el.dev,["X","Y","M","T"])}
+    <div class="btnrow">
+      <button id="pNeg">${el.neg?"b接点 → a接点":"a接点 → b接点"}</button>
+      <button id="pPar" class="ghost">下に並列で足す</button>
+      <button id="pDel" class="ghost">この接点を消す</button>
+      <button id="pClose" class="ghost">閉じる</button>
+    </div>`);
+  document.querySelectorAll("#popbox .dpick").forEach(d=>{
+    d.onclick=()=>{ el.dev=d.dataset.d; closePop(); sel=null; redrawLive(); };
+  });
+  $("pNeg").onclick=()=>{el.neg=!el.neg;closePop();sel=null;redrawLive();};
+  $("pPar").onclick=()=>{
+    const L2=locate(path);
+    const cur=L2.arr[L2.i];
+    if(cur.t==="c") L2.arr[L2.i]=PAR([cur],[C("Y0")]);
+    else cur.br.push([C("X1")]);
+    closePop();sel=null;redrawLive();
+  };
+  $("pDel").onclick=()=>{
+    const L2=locate(path);
+    if(L2.arr.length<=1&&L2.arr===prog[L2.ri].elems){ tell("行に接点が1つは必要です。"); return; }
+    L2.arr.splice(L2.i,1); closePop();sel=null;redrawLive();
+  };
+  $("pClose").onclick=()=>{closePop();sel=null;drawLadder();};
+}
+function openCoil(ri){
+  if(running) return;                 // 運転中は回路を変えられない（実機と同じ）
+  const c=prog[ri].coil; sel={path:"coil"+ri};
+  pop(`<h3>コイルの編集（${ri+1}行目）</h3>
+    <div class="note" style="margin-bottom:8px">種類</div>
+    <div class="devgrid">
+      <div class="dpick ${c.t==="OUT"?"sel":""}" data-t="OUT">OUT（出力）</div>
+      <div class="dpick ${c.t==="TON"?"sel":""}" data-t="TON">TON（タイマ）</div>
+    </div>
+    <div class="note" style="margin-bottom:8px">デバイス</div>
+    ${devPicker(c.dev, c.t==="TON"?["T"]:["Y","M"])}
+    ${c.t==="TON"?`<div class="fieldrow"><span style="white-space:nowrap">K値（0.1秒単位）</span>
+      <input type="number" id="pK" value="${c.k}" min="1" max="600"></div>`:""}
+    <div class="btnrow"><button id="pOk">決定</button><button id="pClose" class="ghost">閉じる</button></div>`);
+  document.querySelectorAll("#popbox .dpick[data-t]").forEach(d=>{
+    d.onclick=()=>{ c.t=d.dataset.t;
+      c.dev = c.t==="TON" ? "T0" : "Y0";
+      if(c.t==="TON"&&!c.k)c.k=30;
+      closePop(); openCoil(ri); };
+  });
+  document.querySelectorAll("#popbox .dpick[data-d]").forEach(d=>{
+    d.onclick=()=>{ c.dev=d.dataset.d; closePop(); openCoil(ri); };
+  });
+  $("pOk").onclick=()=>{ if($("pK"))c.k=Math.max(1,+$("pK").value||30); closePop();sel=null;redrawLive(); };
+  $("pClose").onclick=()=>{closePop();sel=null;drawLadder();};
+}
+$("gFold").onclick=()=>{ folded=!folded;
+  $("gWrap").style.display=folded?"none":"";
+  $("gFold").textContent=folded?"課題文を開く":"たたむ"; };
+
+$("resetProg").onclick=resetProg;
+$("addRung").onclick=()=>{ prog.push(R([C("X0")],{t:"OUT",dev:"Y0"})); redrawLive(); };
+
+function drawHints(){
+  const l=L(), lv=hintLv[l.id]||0, box=$("hintbox");
+  if(!l.hints||lv===0){box.style.display="none";box.innerHTML="";return;}
+  box.style.display="";
+  box.innerHTML=l.hints.slice(0,lv).map((h,i)=>
+    `<div class="hitem"><div class="hl">ヒント${i+1}${i===2?"（半分できた回路を入れました）":""}</div>${h}</div>`).join("");
+  if(lv>=l.hints.length)$("hintBtn").textContent="ヒントは全部出ました";
+  else $("hintBtn").textContent=`ヒントを見る（${lv+1}／${l.hints.length}）`;
+}
+$("hintBtn").onclick=()=>{
+  const l=L(); if(!l.hints)return;
+  const lv=(hintLv[l.id]||0);
+  if(lv>=l.hints.length)return;
+  const go=()=>{
+    hintLv[l.id]=lv+1;
+    if(lv+1===3 && l.halfway){ prog=clone(l.halfway); plc=newPLC(); marks=new Map(); sel=null;
+      if(mach)mstate=mach.init(); stop(); drawLadder(); drawDev(); }
+    drawHints();
+  };
+  // ヒント3は「半分できた回路」を入れる＝いま組んでいるものが消える。黙って消さない
+  if(lv+1===3 && l.halfway && JSON.stringify(prog)!==JSON.stringify(clone(l.start))){
+    ask("ヒント3では「半分できた回路」を入れます。\nいま組んでいる回路は消えます。よろしいですか。", go, "入れる");
+  } else go();
+};
+/* お手本を別枠に描く。自分の回路（prog）は触らない */
+function drawRefLadder(program){
+  const sp=prog, sm=marks, ss=sel;
+  prog=program; marks=new Map(); sel=null;
+  $("refladder").innerHTML=ladderHTML();
+  prog=sp; marks=sm; sel=ss;
+}
+function closeRef(){ $("refbox").style.display="none"; $("ansBtn").textContent="お手本を見る"; }
+$("refClose").onclick=closeRef;
+$("ansBtn").onclick=()=>{
+  const l=L(); if(l.free)return;
+  if($("refbox").style.display!=="none"){ closeRef(); return; }
+  const show=()=>{
+    sawAns[l.id]=true;
+    drawRefLadder(l.ref);
+    $("refnote").innerHTML=l.after||"";
+    $("refnote").style.display=l.after?"":"none";
+    $("refbox").style.display="";
+    $("ansBtn").textContent="お手本を閉じる";
+    $("refbox").scrollIntoView({behavior:"smooth",block:"nearest"});
+  };
+  if(sawAns[l.id]){ show(); return; }
+  ask("お手本の回路を表示します。\n記録に「お手本を見た」と残ります。よろしいですか。", show, "見る");
+};
+$("refUse").onclick=()=>{
+  const l=L();
+  const go=()=>{ prog=clone(l.ref); plc=newPLC(); marks=new Map(); sel=null; scanIdx=-1;
+    if(mach)mstate=mach.init();
+    stop(); drawLadder(); drawDev();
+    flash("ok","<b>お手本を入れました</b>RUN を押して、電気の流れを目で追ってください。<br>「最初からやり直す」で、はじめの回路に戻せます。"); };
+  if(JSON.stringify(prog)===JSON.stringify(clone(l.ref))){ go(); return; }
+  ask("いま組んでいる回路を、お手本で置きかえます。よろしいですか。", go, "入れる");
+};
+/* ================= RUN / STOP ================= */
+/* 編集モード（STOP）と運転モード（RUN）を切り替える。実機の書込み／モニタに合わせてある */
+function setMode(){
+  document.body.dataset.mode = (running||stepping) ? "run" : "edit";
+  if($("stepBtn")) $("stepBtn").disabled = running||stepping;
+  if($("runBtn"))  $("runBtn").disabled  = stepping;
+  $("progState").textContent = stepping
+    ? "1スキャンを上から下へたどっています"
+    : running ? "運転中は回路を変えられません（実機と同じ）"
+              : "接点をタップして組みかえられます";
+  $("monState").textContent = running
+    ? "入力を押すと動きます"
+    : "STOP中。入力を押すと1スキャンだけ動きます";
+  ["addRung","resetProg"].forEach(id=>{ if($(id)) $(id).disabled=running||stepping; });
+}
+function start(){
+  running=true; $("runBtn").textContent="■ STOP"; $("runBtn").className="stop";
+  if($("ledRun")) $("ledRun").classList.add("on");
+  setMode();
+  timer=setInterval(()=>{
+    if(mach) mach.sense(mstate,plc);          // スキャン前：センサを読む
+    marks=new Map(); scanOnce(plc,prog,marks);
+    if(mach) mach.act(mstate,plc,mach.spd);   // スキャン後：出力で機械が動く
+    scanIdx=-1; drawLadder(); drawDev();
+  },50);
+}
+function stop(){
+  running=false; if(timer)clearInterval(timer); timer=null;
+  if(stepTimer){clearTimeout(stepTimer); stepTimer=null;} stepping=false; scanIdx=-1;
+  const b=$("runBtn"); if(b){b.textContent="▶ RUN"; b.className="run";}
+  if($("ledRun")) $("ledRun").classList.remove("on");
+  if($("progState")) setMode();
+}
+$("runBtn").onclick=()=>{ running?stop():start(); drawDev(); };
+
+/* 1スキャンだけ動かし、行を上から下へ順に光らせる。
+   「上の行の結果が同じスキャンで下の行に伝わる」（§1-1）を目で見せるためのもの */
+let stepping=false, stepTimer=null;
+function stepScan(){
+  if(running||stepping) return;
+  if(mach) mach.sense(mstate,plc);
+  const m=new Map(), snaps=[];
+  scanOnce(plc,prog,m,ri=>snaps.push({ri,m:new Map(m)}));   // 行ごとの途中経過を控える
+  if(mach) mach.act(mstate,plc,mach.spd);
+  const fin=m;
+  stepping=true; setMode();
+  let i=0;
+  const play=()=>{
+    if(i>=snaps.length){
+      stepping=false; scanIdx=-1; marks=fin;
+      drawLadder(); drawDev(); setMode(); return;
+    }
+    const sn=snaps[i++];
+    scanIdx=sn.ri; marks=sn.m; drawLadder();
+    stepTimer=setTimeout(play, prog.length>1?430:260);
+  };
+  play();
+}
+$("stepBtn").onclick=stepScan;   // 帯の MODE をその場で更新する
+$("resetBtn").onclick=()=>{ stop(); plc=newPLC(); marks=new Map(); scanIdx=-1;
+  if(mach)mstate=mach.init(); drawLadder(); drawDev(); };
+
+/* ================= 自動判定 ================= */
+/* 機械つきの閉ループ判定 */
+function runMachine(program,l){
+  const M=MACHINES[l.machine], st=M.init(), p=newPLC(); const out=[];
+  for(let i=0;i<l.len;i++){
+    // 押しボタン（押している間だけON）
+    M.io.filter(x=>x.role==="btn").forEach(x=>{
+      p.X[x.dev.slice(1)] = l.press.some(e=>e.d===x.dev && i>=e.a && i<e.a+4);
+    });
+    M.sense(st,p);
+    scanOnce(p,program,null);
+    M.act(st,p,M.spd);
+    const row={pos:Math.round(st.pos*50)};
+    l.watch.forEach(wv=>row[wv]=!!p.Y[wv.slice(1)]);
+    row.__short=st.short;
+    out.push(row);
+  }
+  return out;
+}
+function runProgram(program,l){
+  const p=newPLC(); const out=[];
+  for(let i=0;i<l.len;i++){
+    l.tl.filter(e=>e[0]===i).forEach(e=>{ p.X[e[1].slice(1)] = !!e[2]; });
+    scanOnce(p,program,null);
+    const row={}; l.watch.forEach(w=>row[w]=!!p.Y[w.slice(1)]);
+    if(l.noBoth) row.__both = (!!p.Y["0"]&&!!p.Y["1"]);
+    out.push(row);
+  }
+  return out;
+}
+$("checkBtn").onclick=()=>{
+  const l=L(); if(l.free)return;
+  stop();
+  checks[l.id]=(checks[l.id]||0)+1;
+  const useM=!!l.closed;
+  const mine=useM?runMachine(prog,l):runProgram(prog,l);
+  const ref =useM?runMachine(clone(l.ref),l):runProgram(clone(l.ref),l);
+  if(useM){
+    const sh=mine.findIndex(r=>r.__short);
+    if(sh>=0){
+      flash("bad",`<b>短絡しました</b>${(sh*SCAN).toFixed(1)}秒の時点で、上昇モータと下降モータが同時にONになりました。<br>
+        それぞれの行に<b>相手の出力の b接点</b>を直列に入れて、同時に動かないようにしてください。`);
+      return;
+    }
+    let bd=null;
+    for(let i=0;i<mine.length&&!bd;i++){
+      for(const wv of l.watch) if(mine[i][wv]!==ref[i][wv]){bd={at:i,dev:wv,mine:mine[i][wv],want:ref[i][wv]};break;}
+      if(!bd&&mine[i].pos!==ref[i].pos)bd={at:i,posM:mine[i].pos,posR:ref[i].pos};
+    }
+    if(!bd){
+      if(!done[l.id]){done[l.id]=true;tabs();}
+      flash("ok",`<b>正解です</b>かごが正しく動きました。<br>${l.after}`);
+      nav();
+    }else if(bd.dev){
+      flash("bad",`<b>仕様とちがう動きがあります</b>
+        <b>${bd.dev}</b>（${MACHINES[l.machine].io.find(x=>x.dev===bd.dev).lab}）が
+        ${(bd.at*SCAN).toFixed(1)}秒の時点で「${bd.mine?"ON":"OFF"}」ですが、正しくは「${bd.want?"ON":"OFF"}」です。<br>
+        RUNを押して、かごの動きとセンサを目で追ってみてください。`);
+    }else{
+      flash("bad",`<b>かごの位置がちがいます</b>${(bd.at*SCAN).toFixed(1)}秒の時点で、
+        かごが止まるべき所で止まっていないようです。<br>リミットスイッチの b接点 で
+        モータを止める条件になっているか確かめてください。`);
+    }
+    return;
+  }
+  if(l.noBoth && mine.some(r=>r.__both)){
+    const at=mine.findIndex(r=>r.__both);
+    flash("bad",`<b>危険：Y0とY1が同時にONになりました</b>
+      ${(at*SCAN).toFixed(1)}秒の時点で両方が入りました。相手の出力の b接点 を直列に入れて、同時にONにならないようにしてください。`);
+    return;
+  }
+  let bad=null;
+  for(let i=0;i<mine.length&&!bad;i++)
+    for(const wv of l.watch)
+      if(mine[i][wv]!==ref[i][wv]){ bad={at:i,dev:wv,mine:mine[i][wv],want:ref[i][wv]}; break; }
+  if(!bad){
+    if(!done[l.id]){done[l.id]=true;tabs();}
+    flash("ok",`<b>正解です</b>仕様どおりに動きました。<br>${l.after}`);
+    nav();
+  }else{
+    flash("bad",`<b>仕様とちがう動きがあります</b>
+      <b>${bad.dev}</b> が ${(bad.at*SCAN).toFixed(1)}秒の時点で「${bad.mine?"ON":"OFF"}」ですが、正しくは「${bad.want?"ON":"OFF"}」です。<br>
+      RUNを押して、X をタップしながら電気の流れを目で追ってみてください。`);
+  }
+};
+function flash(c,h){const v=$("verdict");v.className="verdict "+c;v.innerHTML=h;
+  if($("ledErr")) $("ledErr").classList.toggle("on",c==="bad");}
+
+/* ================= 提出 ================= */
+function openSubmit(){
+  stop();
+  $("submitPanel").style.display="block";
+  const q=LESSONS.filter(l=>l.kind==="q"), t=LESSONS.filter(l=>l.kind==="t");
+  $("repTable").innerHTML=`
+    <tr><th>基本操作</th><td>${t.filter(l=>done[l.id]).length} / ${t.length} 習得</td></tr>
+    <tr><th>課題</th><td>${q.filter(l=>done[l.id]).length} / ${q.length} 正解</td></tr>
+    <tr><th>正解した課題</th><td>${q.filter(l=>done[l.id]).map(l=>l.name).join("、")||"（なし）"}</td></tr>
+    <tr><th>確かめた回数</th><td>${Object.values(checks).reduce((a,b)=>a+b,0)} 回</td></tr>
+    <tr><th>ヒントを使った課題</th><td>${hintSummary()||"なし（自力で解きました）"}</td></tr>
+    <tr><th>お手本を見た課題</th><td>${LESSONS.filter(l=>sawAns[l.id]).map(l=>l.name).join("、")||"なし"}</td></tr>`;
+  $("submitPanel").scrollIntoView({behavior:"smooth"});
+}
+function hintSummary(){
+  return LESSONS.filter(l=>hintLv[l.id]).map(l=>`${l.name}（${hintLv[l.id]}段目まで）`).join("、");
+}
+function vals(){
+  const no=$("inNo").value.trim(),nm=$("inName").value.trim();
+  if(!/^\d{4}$/.test(no)||!nm){$("submitErr").style.display="block";return null;}
+  $("submitErr").style.display="none"; return {no,nm,memo:$("inMemo").value.trim()};
+}
+function recText(v){
+  const q=LESSONS.filter(l=>l.kind==="q"), t=LESSONS.filter(l=>l.kind==="t");
+  return `ラダー工房 記録
+出席番号：${v.no}
+氏名：${v.nm}
+基本操作：${t.filter(l=>done[l.id]).length} / ${t.length}
+課題：${q.filter(l=>done[l.id]).length} / ${q.length}
+正解した課題：${q.filter(l=>done[l.id]).map(l=>l.name).join("、")||"（なし）"}
+確かめた回数：${Object.values(checks).reduce((a,b)=>a+b,0)}回
+ヒントを使った課題：${hintSummary()||"なし（自力）"}
+お手本を見た課題：${LESSONS.filter(l=>sawAns[l.id]).map(l=>l.name).join("、")||"なし"}
+ふり返り：${v.memo||"（未記入）"}`;
+}
+/* 記録は「必ず画面に出す」。コピーもダウンロードも環境によっては効かないため、
+   目の前のテキスト枠から手で選んでコピーできる道を常に残す */
+function showRec(s){
+  $("recOut").value=s;
+  $("recWrap").style.display="";
+  $("recWrap").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+$("btnCopy").onclick=()=>{
+  const v=vals(); if(!v)return;
+  const s=recText(v);
+  showRec(s);
+  const fallback=()=>{ try{ $("recOut").focus(); $("recOut").select(); }catch(e){}
+    $("msg").textContent="下の枠の中身を選んでコピーし、Classroom に貼りつけてください。"; };
+  try{
+    navigator.clipboard.writeText(s)
+      .then(()=>{$("msg").textContent="コピーしました。Classroom に貼りつけてください。";})
+      .catch(fallback);
+  }catch(e){ fallback(); }
+};
+/* ファイルで保存。
+   ウェブ版（Artifact）はページから直接ダウンロードできないので、claude.use("downloads") を通す。
+   Classroom に置いた .html を直接開いたときは、ふつうの a[download] が働く。
+   どちらでも駄目なら、必ず理由を画面に出す（黙って何も起きない、を作らない）。 */
+$("btnDl").onclick=async ()=>{
+  const v=vals(); if(!v)return;
+  const s=recText(v), name=`ラダー工房_${v.no}_${v.nm}.txt`;
+  showRec(s);
+  try{
+    if(window.claude && typeof window.claude.use==="function"){
+      const dl=await window.claude.use("downloads");
+      if(dl){
+        try{
+          await dl.save({filename:name, data:s});
+          $("msg").textContent="保存しました。Classroom に添付してください。";
+        }catch(e){
+          $("msg").textContent = (e && e.code==="declined")
+            ? "保存をやめました。下の枠の中身をコピーしても提出できます。"
+            : "この画面では保存できませんでした。下の枠の中身をコピーして提出してください。";
+        }
+        return;
+      }
+    }
+  }catch(e){}
+  try{
+    const b=new Blob([s],{type:"text/plain;charset=utf-8"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(b);
+    a.download=name; a.click(); URL.revokeObjectURL(a.href);
+    $("msg").textContent="保存しました。Classroom に添付してください。";
+  }catch(e){
+    $("msg").textContent="この画面では保存できません。下の枠の中身をコピーして提出してください。";
+  }
+};
+$("btnBack").onclick=()=>{$("submitPanel").style.display="none";
+  $("recWrap").style.display="none"; $("msg").textContent="";
+  window.scrollTo({top:0,behavior:"smooth"});};
+
+load();
+</script>
+</body>
+</html>

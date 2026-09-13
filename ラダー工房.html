@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ラダー工房 PLCシミュレータ｜電子計測制御31</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:12px;font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;background:#0f1720;color:#e8eef5;font-size:14px}
+.wrap{max-width:1060px;margin:0 auto}
+h1{font-size:19px;margin:0 0 2px}
+.sub{font-size:11.5px;color:#8fa3b8;line-height:1.6}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.tab{cursor:pointer;padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:700;background:#1c2733;color:#5f7183;border:1px solid #2b3a4a}
+.tab.now{background:#1e3a5f;color:#93c5fd;border-color:#2f5f96}
+.tab.done{background:#16452e;color:#6ee7a8;border-color:#1f6b46}
+.tab:hover{border-color:#4f9dea}
+.panel{background:#16202b;border:1px solid #24313f;border-radius:10px;padding:13px;margin-bottom:10px}
+.goal{border-left:4px solid #f5b544}
+.goal h2{font-size:15.5px;margin:0 0 5px;color:#f5b544}
+.goal p{margin:4px 0;line-height:1.75;font-size:13.5px}
+.goal .hint{font-size:12.5px;color:#8fa3b8}
+/* ===== デバイス盤 ===== */
+.dev{display:flex;gap:14px;flex-wrap:wrap}
+.devcol{flex:1 1 210px;min-width:190px}
+.devt{font-size:11px;color:#7f93a8;font-weight:700;margin-bottom:6px}
+.devrow{display:flex;gap:6px;flex-wrap:wrap}
+.xbtn{width:52px;padding:9px 0;border-radius:7px;background:#24313f;border:2px solid #3a4b5e;text-align:center;
+  font-weight:800;font-size:12.5px;cursor:pointer;user-select:none}
+.xbtn:hover{border-color:#4f9dea}
+.xbtn.on{background:#f5b544;color:#241a04;border-color:#f7cd80}
+.ylamp{width:52px;padding:7px 0;border-radius:7px;background:#1c2733;border:2px solid #2b3a4a;text-align:center;font-size:12px;font-weight:700;color:#5f7183}
+.ylamp.on{background:#14402c;border-color:#6ee7a8;color:#6ee7a8;box-shadow:0 0 12px #6ee7a844}
+.xbtn.wide,.ylamp.wide{width:auto;min-width:120px;padding:9px 12px}
+.xbtn .tag,.ylamp .tag,.sens .tag{font-size:9.5px;color:#8fa3b8;font-weight:400;margin-top:2px}
+.xbtn.on .tag{color:#5a4508}
+.sens{min-width:130px;padding:9px 12px;border-radius:7px;background:#1c2733;border:2px dashed #2b3a4a;
+  text-align:center;font-size:12px;font-weight:700;color:#5f7183}
+.sens.on{background:#3a2f10;border-color:#f5b544;color:#f5b544;border-style:solid}
+.tbox{font-size:11.5px;color:#8fa3b8;background:#0f1a24;border-radius:6px;padding:6px 9px;margin-top:5px;line-height:1.7}
+.tbox b{color:#e8eef5}
+/* ===== ラダー ===== */
+.ladderwrap{background:#0b1119;border-radius:8px;padding:10px;overflow-x:auto}
+.rung{display:flex;align-items:stretch;gap:0;padding:10px 0;border-bottom:1px dashed #1b2735;position:relative;min-height:64px}
+.rung.scanning{background:#13212e}
+.rungno{width:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#5f7183;font-weight:700}
+.rail{width:3px;flex:0 0 3px;background:#3a4b5e;margin-right:2px}
+.rail.hot{background:#6ee7a8;box-shadow:0 0 7px #6ee7a8}
+.series{display:flex;align-items:center;flex:1 1 auto;gap:0;flex-wrap:nowrap}
+.wire{height:3px;min-width:14px;flex:0 0 14px;background:#3a4b5e;align-self:center}
+.wire.hot{background:#6ee7a8;box-shadow:0 0 6px #6ee7a8}
+.wire.grow{flex:1 1 auto}
+.el{display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative}
+.el .dv{font-size:10.5px;color:#8fa3b8;margin-bottom:2px;font-weight:700;white-space:nowrap}
+.cont{display:flex;align-items:center;justify-content:center;width:48px;height:26px;position:relative}
+.cont .bar{width:3px;height:24px;background:#8fa3b8}
+.cont .gap{width:13px}
+.cont.hot .bar{background:#6ee7a8;box-shadow:0 0 6px #6ee7a8}
+.cont .slash{position:absolute;width:26px;height:3px;background:#8fa3b8;transform:rotate(-34deg)}
+.cont.hot .slash{background:#6ee7a8}
+.el.sel .cont{outline:2px solid #f5b544;outline-offset:3px;border-radius:4px}
+.par{display:flex;flex-direction:column;gap:7px;position:relative;padding:0 8px}
+.par:before,.par:after{content:"";position:absolute;top:12px;bottom:12px;width:3px;background:#3a4b5e}
+.par:before{left:0}.par:after{right:0}
+.par.hot:before,.par.hot:after{background:#6ee7a8}
+.par .brrow{display:flex;align-items:center}
+.coil{display:flex;flex-direction:column;align-items:center;cursor:pointer;margin-left:2px}
+.coil .dv{font-size:10.5px;color:#8fa3b8;margin-bottom:2px;font-weight:700;white-space:nowrap}
+.coilsym{width:46px;height:26px;border-radius:50%/50%;border:3px solid #8fa3b8;border-left-color:transparent;border-right-color:transparent}
+.coilsym.on{border-color:#6ee7a8;border-left-color:transparent;border-right-color:transparent;box-shadow:0 0 10px #6ee7a855}
+.coil.sel .coilsym{outline:2px solid #f5b544;outline-offset:3px}
+.addbtn{align-self:center;margin-left:6px;background:#24313f;border:1px dashed #4f6076;border-radius:6px;
+  color:#8fa3b8;font-size:11px;padding:5px 8px;cursor:pointer;white-space:nowrap}
+.addbtn:hover{border-color:#4f9dea;color:#e8eef5}
+/* ===== 操作 ===== */
+button{font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;border:none;border-radius:8px;padding:10px 14px;color:#fff;background:#2f6fb5}
+button:hover{background:#3a83d3}
+button.ghost{background:#24313f}button.ghost:hover{background:#2e3f51}
+button.run{background:#1f6b46}button.run:hover{background:#268055}
+button.stop{background:#7a3b2c}button.stop:hover{background:#944936}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btnrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.pop{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.pop.show{display:flex}
+.popbox{background:#16202b;border:1px solid #2b3a4a;border-radius:12px;padding:16px;max-width:440px;width:100%;max-height:86vh;overflow:auto}
+.popbox h3{margin:0 0 10px;font-size:15px}
+.devgrid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.dpick{padding:8px 11px;border-radius:7px;background:#24313f;border:2px solid #3a4b5e;cursor:pointer;font-weight:700;font-size:12.5px}
+.dpick.sel{border-color:#f5b544;background:#33404f}
+.fieldrow{display:flex;gap:8px;align-items:center;margin-bottom:10px;font-size:12.5px;color:#8fa3b8}
+input[type=number],input[type=text]{padding:8px;background:#0f1a24;color:#e8eef5;border:1px solid #2b3a4a;border-radius:7px;font-family:inherit;font-size:14px;width:100%}
+.verdict{margin-top:10px;padding:11px 13px;border-radius:8px;font-size:13.5px;line-height:1.8;display:none}
+.verdict.ok{display:block;background:#14402c;border:1px solid #1f6b46}
+.verdict.bad{display:block;background:#45231c;border:1px solid #7a3b2c}
+.verdict b{display:block;margin-bottom:3px;font-size:14.5px}
+.hintbox{display:none;margin-top:10px;background:#1b2432;border-left:4px solid #4f9dea;border-radius:8px;padding:11px 13px;font-size:13px;line-height:1.85}
+.hintbox .hl{font-weight:700;color:#93c5fd;margin-bottom:3px}
+.hintbox .hitem{margin-bottom:9px;white-space:pre-line}
+.hintbox .hitem:last-child{margin-bottom:0}
+.note{font-size:11.5px;color:#7f93a8;line-height:1.7}
+.scanbar{font-size:11.5px;color:#8fa3b8;margin-top:7px}
+.submit{display:none}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border:1px solid #2b3a4a;padding:7px 9px;text-align:left}
+th{background:#1c2733;width:42%}
+.err{color:#f5645a;font-size:12.5px;margin-top:6px;display:none}
+textarea{width:100%;min-height:80px;padding:10px;font-family:inherit;font-size:13.5px;background:#0f1a24;color:#e8eef5;border:1px solid #2b3a4a;border-radius:8px;resize:vertical}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12.5px;font-weight:700;margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div>
+    <h1>ラダー工房 — PLCシミュレータ</h1>
+    <div class="sub">電子計測制御31 ／ 三菱系（X:入力 Y:出力 M:内部リレー T:タイマ）　<span style="color:#4a5b6d">版 2026-09-13d</span></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button id="runBtn" class="run">▶ RUN</button>
+    <button id="resetBtn" class="ghost">リセット</button>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="panel goal">
+  <h2 id="gTitle"></h2>
+  <p id="gBody"></p>
+  <p class="hint" id="gHint"></p>
+</div>
+
+<div class="panel">
+  <div class="dev">
+    <div class="devcol">
+      <div class="devt">入力 X（タップでON/OFF）</div>
+      <div class="devrow" id="xrow"></div>
+    </div>
+    <div class="devcol">
+      <div class="devt">出力 Y</div>
+      <div class="devrow" id="yrow"></div>
+      <div class="tbox" id="mtbox"></div>
+    </div>
+  </div>
+  <div id="machbox" style="display:none;margin-top:10px">
+    <svg id="mach" viewBox="0 0 560 190" style="width:100%;height:190px;background:#0b1119;border-radius:8px"></svg>
+  </div>
+  <div class="scanbar" id="scanbar">STOP中　スキャン回数 0</div>
+</div>
+
+<div class="panel">
+  <div class="ladderwrap"><div id="ladder"></div></div>
+  <div class="btnrow" id="edrow">
+    <button id="addRung" class="ghost">＋ 行を追加</button>
+    <button id="delRung" class="ghost">選んだ行を削除</button>
+    <button id="checkBtn">動作を確かめる</button>
+    <button id="hintBtn" class="ghost">ヒントを見る</button>
+    <button id="ansBtn" class="ghost">お手本を見る</button>
+  </div>
+  <div class="verdict" id="verdict"></div>
+  <div id="hintbox" class="hintbox"></div>
+  <div class="btnrow" id="navrow"></div>
+</div>
+
+<div class="panel submit" id="submitPanel">
+  <h2 style="margin-top:0">提出</h2>
+  <div class="field"><label>出席番号（4ケタ）</label><input type="text" id="inNo" maxlength="4" inputmode="numeric" placeholder="3101"></div>
+  <div class="field"><label>氏名</label><input type="text" id="inName" placeholder="山田 太郎"></div>
+  <div class="field"><label>ふり返り：どの課題がむずかしかったですか。どう気づきましたか。</label><textarea id="inMemo"></textarea></div>
+  <div class="err" id="submitErr">出席番号（4ケタの数字）と氏名を入力してください。</div>
+  <table id="repTable"></table>
+  <div class="btnrow">
+    <button id="btnCopy">記録をコピー</button>
+    <button id="btnDl" class="ghost">ファイルで保存</button>
+    <button id="btnBack" class="ghost">工房に戻る</button>
+  </div>
+  <p class="note" id="msg"></p>
+</div>
+
+</div>
+
+<!-- 要素の編集 -->
+<div class="pop" id="pop"><div class="popbox" id="popbox"></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const SCAN=0.05;
+
+/* ================= PLC 心臓部 ================= */
+function newPLC(){return {X:{},Y:{},M:{},T:{},Tacc:{},scans:0,t:0};}
+function bit(p,dev){const k=dev[0],n=dev.slice(1);
+  return k==="X"?!!p.X[n]:k==="Y"?!!p.Y[n]:k==="M"?!!p.M[n]:k==="T"?!!p.T[n]:false;}
+function evalSer(els,p,inc,marks){
+  let flow=inc;
+  for(const el of els){
+    const before=flow; let cond;
+    if(el.t==="c"){const b=bit(p,el.dev);cond=el.neg?!b:b;}
+    else{let any=false;for(const br of el.br){if(evalSer(br,p,before,marks))any=true;}cond=any;}
+    if(marks)marks.set(el,{in:before,cond,out:before&&cond});
+    flow=flow&&cond;
+  }
+  return flow;
+}
+function scanOnce(p,prog,marks){
+  for(const r of prog){
+    const on=evalSer(r.elems,p,true,marks);
+    if(marks)marks.set(r,{on});
+    const c=r.coil,n=c.dev.slice(1);
+    if(c.t==="OUT"){ if(c.dev[0]==="Y")p.Y[n]=on; else if(c.dev[0]==="M")p.M[n]=on; }
+    else if(c.t==="TON"){
+      if(on){p.Tacc[n]=(p.Tacc[n]||0)+SCAN; p.T[n]=p.Tacc[n]>=c.k*0.1;}
+      else {p.Tacc[n]=0;p.T[n]=false;}
+    }
+  }
+  p.scans++; p.t+=SCAN;
+}
+/* 要素づくり */
+const C=(dev,neg)=>({t:"c",dev,neg:!!neg});
+const PAR=(...br)=>({t:"p",br});
+const R=(elems,coil)=>({elems,coil});
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+/* ================= 課題 ================= */
+const DEVS={X:["X0","X1","X2","X3"],Y:["Y0","Y1","Y2"],M:["M0","M1"],T:["T0","T1"]};
+
+/* ================= 仮想機械：エレベーター ================= */
+const MACHINES={
+ door:{
+  name:"自動ドア",
+  io:[{dev:"X0",role:"btn",lab:"人感センサ（人が来る）"},
+      {dev:"Y0",role:"out",lab:"ドア開"}],
+  init(){return {op:0};},
+  sense(){},
+  act(st,p){ st.op += (p.Y["0"]?1:-1)*0.10; st.op=Math.max(0,Math.min(1,st.op)); },
+  draw(st,p){
+    const w=Math.round(52*(1-st.op));
+    return `<rect x="0" y="0" width="560" height="190" fill="#0b1119"/>
+    <rect x="150" y="30" width="260" height="130" fill="none" stroke="#2b3a4a" stroke-width="3"/>
+    <rect x="228" y="34" width="${w}" height="122" fill="#4f9dea" opacity=".9"/>
+    <rect x="${332-w}" y="34" width="${w}" height="122" fill="#4f9dea" opacity=".9"/>
+    <circle cx="280" cy="22" r="9" fill="${p.X["0"]?"#f5b544":"#26313d"}" stroke="#38485a" stroke-width="2"/>
+    <text x="296" y="27" fill="#8fa3b8" font-size="11">人感センサ</text>
+    ${p.X["0"]?`<circle cx="95" cy="100" r="15" fill="#f5b544"/><rect x="88" y="116" width="15" height="30" fill="#f5b544"/>`:""}
+    <text x="20" y="178" fill="${st.op>0.5?"#6ee7a8":"#5f7183"}" font-size="13" font-weight="700">ドア：${st.op>0.9?"全開":st.op<0.1?"閉":"動作中"}</text>`;
+  }
+ },
+ cross:{
+  name:"踏切",
+  io:[{dev:"X0",role:"btn",lab:"進入センサ（列車が来る）"},
+      {dev:"X1",role:"btn",lab:"通過センサ（列車が去る）"},
+      {dev:"Y0",role:"out",lab:"警報機"},
+      {dev:"Y1",role:"out",lab:"遮断機"}],
+  init(){return {x:-90,run:false,bar:0};},
+  sense(){},
+  act(st,p){
+    if(p.X["0"])st.run=true;
+    if(p.X["1"]){st.run=false;st.x=-90;}
+    if(st.run)st.x+=2.2;
+    if(st.x>600)st.x=-90;
+    st.bar += (p.Y["1"]?1:-1)*0.12; st.bar=Math.max(0,Math.min(1,st.bar));
+  },
+  draw(st,p){
+    const ang=-70+70*st.bar;
+    return `<rect x="0" y="0" width="560" height="190" fill="#0b1119"/>
+    <rect x="0" y="118" width="560" height="5" fill="#38485a"/>
+    <rect x="0" y="136" width="560" height="5" fill="#38485a"/>
+    <rect x="${st.x}" y="96" width="86" height="42" rx="6" fill="#4f9dea"/>
+    <circle cx="430" cy="52" r="11" fill="${p.Y["0"]?"#f5645a":"#26313d"}" stroke="#38485a" stroke-width="2"/>
+    <circle cx="462" cy="52" r="11" fill="#26313d" stroke="#38485a" stroke-width="2"/>
+    <text x="388" y="34" fill="#8fa3b8" font-size="11">警報機</text>
+    <rect x="330" y="62" width="6" height="78" fill="#7f93a8"/>
+    <g transform="rotate(${ang} 333 68)"><rect x="333" y="64" width="115" height="9" rx="3" fill="#f5b544"/></g>
+    <text x="20" y="178" fill="#8fa3b8" font-size="12">警報：${p.Y["0"]?"鳴動":"停止"}　遮断機：${st.bar>0.9?"下降":st.bar<0.1?"上昇":"動作中"}</text>`;
+  }
+ },
+ vend:{
+  name:"自動販売機",
+  io:[{dev:"X0",role:"btn",lab:"硬貨投入"},
+      {dev:"X1",role:"btn",lab:"商品ボタン"},
+      {dev:"Y0",role:"out",lab:"商品排出"}],
+  init(){return {drop:-1};},
+  sense(){},
+  act(st,p){
+    if(p.Y["0"]&&st.drop<0)st.drop=0;
+    if(st.drop>=0){st.drop+=4; if(st.drop>60)st.drop=-1;}
+  },
+  draw(st,p){
+    const ready=!!p.M["0"];
+    return `<rect x="0" y="0" width="560" height="190" fill="#0b1119"/>
+    <rect x="170" y="12" width="220" height="166" rx="8" fill="#16202b" stroke="#2b3a4a" stroke-width="3"/>
+    <rect x="186" y="28" width="86" height="52" rx="4" fill="#24313f"/>
+    <text x="200" y="60" fill="#8fa3b8" font-size="13">商品</text>
+    <circle cx="332" cy="44" r="13" fill="${ready?"#6ee7a8":"#26313d"}" stroke="#38485a" stroke-width="2"/>
+    <text x="298" y="74" fill="#8fa3b8" font-size="10.5">投入済 M0</text>
+    <circle cx="332" cy="110" r="17" fill="${p.X["1"]?"#f5b544":"#3a4b5e"}" stroke="#5f7183" stroke-width="2"/>
+    <text x="304" y="142" fill="#8fa3b8" font-size="10.5">ボタン</text>
+    <rect x="186" y="108" width="62" height="10" rx="3" fill="${p.X["0"]?"#f5b544":"#24313f"}"/>
+    <text x="186" y="102" fill="#8fa3b8" font-size="10.5">投入口</text>
+    <rect x="186" y="140" width="86" height="28" rx="4" fill="#0b1119" stroke="#38485a" stroke-width="2"/>
+    ${st.drop>=0?`<rect x="206" y="${84+st.drop}" width="44" height="22" rx="3" fill="#f5645a"/>`:""}
+    <text x="404" y="100" fill="#6ee7a8" font-size="12">${st.drop>=0?"商品が出た":""}</text>`;
+  }
+ },
+ elev:{
+  name:"エレベーター（2階建て）",
+  spd:0.012,
+  io:[
+   {dev:"X0",role:"btn",  lab:"1階 呼びボタン"},
+   {dev:"X1",role:"btn",  lab:"2階 呼びボタン"},
+   {dev:"X2",role:"sens", lab:"1階 リミットスイッチ"},
+   {dev:"X3",role:"sens", lab:"2階 リミットスイッチ"},
+   {dev:"Y0",role:"out",  lab:"上昇モータ"},
+   {dev:"Y1",role:"out",  lab:"下降モータ"}
+  ],
+  init(){return {pos:0,short:false};},
+  // スキャン前：センサをかごの位置で決める
+  sense(st,p){ p.X["2"]= st.pos<=0.02; p.X["3"]= st.pos>=0.98; },
+  // スキャン後：出力でかごを動かす
+  act(st,p,spd){
+    const up=!!p.Y["0"], dn=!!p.Y["1"];
+    if(up&&dn){st.short=true;return;}
+    if(up)st.pos=Math.min(1,st.pos+spd);
+    if(dn)st.pos=Math.max(0,st.pos-spd);
+  },
+  draw(st,p){
+    const H=150, top=14;
+    const y = top + (1-st.pos)*H;        // かごの上端
+    const s1=st.pos<=0.02, s2=st.pos>=0.98;
+    return `
+    <rect x="0" y="0" width="560" height="190" fill="#0b1119"/>
+    <rect x="150" y="${top}" width="120" height="${H+30}" fill="#0f1a24" stroke="#2b3a4a" stroke-width="2"/>
+    <line x1="150" y1="${top+14}" x2="270" y2="${top+14}" stroke="#2b3a4a" stroke-dasharray="4 4"/>
+    <line x1="150" y1="${top+H+14}" x2="270" y2="${top+H+14}" stroke="#2b3a4a" stroke-dasharray="4 4"/>
+    <text x="278" y="${top+19}" fill="#8fa3b8" font-size="12">2階</text>
+    <text x="278" y="${top+H+19}" fill="#8fa3b8" font-size="12">1階</text>
+    <rect x="162" y="${y}" width="96" height="30" rx="4" fill="#4f9dea"/>
+    <text x="196" y="${y+20}" fill="#0b1119" font-size="13" font-weight="700">かご</text>
+    <circle cx="300" cy="${top+H+14}" r="8" fill="${s1?"#f5b544":"#26313d"}" stroke="#38485a" stroke-width="2"/>
+    <text x="314" y="${top+H+19}" fill="${s1?"#f5b544":"#5f7183"}" font-size="11">1階センサ ${s1?"ON":"OFF"}</text>
+    <circle cx="300" cy="${top+14}" r="8" fill="${s2?"#f5b544":"#26313d"}" stroke="#38485a" stroke-width="2"/>
+    <text x="314" y="${top+19}" fill="${s2?"#f5b544":"#5f7183"}" font-size="11">2階センサ ${s2?"ON":"OFF"}</text>
+    <text x="20" y="40" fill="${p.Y["0"]?"#6ee7a8":"#3a4b5e"}" font-size="13" font-weight="700">▲ 上昇モータ ${p.Y["0"]?"ON":"OFF"}</text>
+    <text x="20" y="62" fill="${p.Y["1"]?"#6ee7a8":"#3a4b5e"}" font-size="13" font-weight="700">▼ 下降モータ ${p.Y["1"]?"ON":"OFF"}</text>
+    ${st.short?`<text x="20" y="96" fill="#f5645a" font-size="14" font-weight="700">短絡！ 上昇と下降が同時にONです</text>`:""}
+    `;
+  }
+ }
+};
+
+const LESSONS=[
+{id:1,kind:"t",name:"① 接点とコイル",
+ title:"基本1　スイッチでランプを点ける",
+ body:"一番かんたんな回路です。<b>X0を押している間だけ Y0 が点く</b>ようにします。",
+ hint:"左の母線から、接点 X0 を通ってコイル Y0 へ。すでに置いてあるので、RUNを押してX0をタップしてみてください。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[12,"X0",0],[18,"X0",1],[24,"X0",0]], len:30,
+ watch:["Y0"],
+ after:"接点が閉じると電気が流れ、コイルが働きます。ラダー図は「左から右へ電気が流れる」と読みます。"},
+{id:2,kind:"t",name:"② 直列（AND）",
+ title:"基本2　両方押したときだけ点ける",
+ body:"<b>X0 と X1 の両方</b>を押したときだけ Y0 が点くようにします。安全のため両手で押すボタンなどに使います。",
+ hint:"接点を横に並べる（直列）と AND になります。X0 の右にある「＋接点」を押して X1 を追加してください。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0"),C("X1")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[8,"X1",1],[14,"X0",0],[20,"X0",1],[26,"X1",0]], len:32,
+ watch:["Y0"],
+ after:"横に並べる＝直列＝AND。両方の接点が閉じないと電気は通りません。"},
+{id:3,kind:"t",name:"③ 並列（OR）",
+ title:"基本3　どちらかを押せば点ける",
+ body:"<b>X0 か X1 のどちらか</b>を押せば Y0 が点くようにします。2か所から操作したいときに使います。",
+ hint:"接点をタップして「並列に追加」を選ぶと、下に枝分かれします。そこに X1 を置いてください。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("X1")])],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[9,"X0",0],[14,"X1",1],[19,"X1",0],[24,"X0",1],[26,"X1",1],[29,"X0",0]], len:34,
+ watch:["Y0"],
+ after:"縦に分ける＝並列＝OR。どちらかの道が通れば電気は流れます。"},
+{id:4,kind:"t",name:"④ b接点（NOT）",
+ title:"基本4　押していないときに点ける",
+ body:"<b>X0 を押していないとき</b>に Y0 が点くようにします。非常停止や「〜でないとき」の条件に使います。",
+ hint:"接点をタップして「a接点 ⇄ b接点」で切りかえます。b接点は斜線が入り、押していないときに通ります。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0",true)],{t:"OUT",dev:"Y0"})],
+ tl:[[5,"X0",1],[12,"X0",0],[18,"X0",1],[25,"X0",0]], len:30,
+ watch:["Y0"],
+ after:"斜線の入った接点が b接点。「押していないとき通る」ので、NOT の働きをします。"},
+{id:5,kind:"t",name:"⑤ 自己保持",
+ title:"基本5　押してはなしても点いたまま",
+ body:"押しボタンは押している間しか信号が出ません。<b>X0 を一度押したら点いたまま、X1 で消える</b>ようにします。",
+ hint:"X0 に並列で Y0 の a接点を入れ、その後ろに X1 の b接点を直列に入れます。自分の出力を条件に戻すのがコツです。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("X1",true)],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[6,"X0",0],[18,"X1",1],[20,"X1",0]], len:30,
+ watch:["Y0"],
+ after:"これが<b>自己保持回路</b>。シーケンス制御でもっともよく使う形です。"},
+{id:6,kind:"t",name:"⑥ タイマ",
+ title:"基本6　3秒後に動かす",
+ body:"タイマ T0 を使います。<b>X0 を押し続けて3秒たったら Y0 が点く</b>ようにします。",
+ hint:"1行目：X0 でコイル T0（K30 ＝ 3.0秒）。2行目：接点 T0 でコイル Y0。行はすでに2つ用意してあります。",
+ start:[R([C("X0")],{t:"TON",dev:"T0",k:30}), R([C("X1")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([C("X0")],{t:"TON",dev:"T0",k:30}), R([C("T0")],{t:"OUT",dev:"Y0"})],
+ tl:[[5,"X0",1],[95,"X0",0],[115,"X0",1],[145,"X0",0]], len:200,
+ watch:["Y0"],
+ after:"K値は0.1秒単位。K30＝3.0秒です。条件が切れると積算はリセットされます。"},
+{id:7,kind:"t",name:"⑦ 内部リレー M",
+ title:"基本7　内部リレーを使う",
+ body:"M は外に出ない「メモ用」のリレーです。<b>X0 で M0 を自己保持し、M0 で Y0 を点ける</b>形にします。",
+ hint:"1行目のコイルを M0 にして自己保持（X1のb接点で解除）。2行目は接点 M0 でコイル Y0。",
+ start:[R([C("X0")],{t:"OUT",dev:"M0"}), R([C("X2")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("M0")]),C("X1",true)],{t:"OUT",dev:"M0"}), R([C("M0")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[6,"X0",0],[20,"X1",1],[22,"X1",0]], len:30,
+ watch:["Y0"],
+ after:"内部リレーを使うと、条件のまとまりに名前をつけて整理できます。大きなプログラムほど効きます。"},
+
+/* ===== 課題 ===== */
+{id:8,kind:"q",name:"課題1 自動ドア",machine:"door",
+ hints:["人がいる間だけでなく「開いた状態を保つ」必要があります。基本5の自己保持を思い出してください。解除のきっかけはタイマです。",
+  "1行目：Y0 のコイル。条件は（X0 と Y0 の並列）＋ T0 の b接点。\n2行目：T0 のコイル（K30）。条件は Y0 と X0 の b接点の直列。",
+  "1行目はできています。2行目の「いつタイマを動かすか」を考えてください。ドアが開いていて、かつ人がいないときです。"],
+ halfway:[R([PAR([C("X0")],[C("Y0")]),C("T0",true)],{t:"OUT",dev:"Y0"}), R([C("X1")],{t:"TON",dev:"T0",k:30})],
+ title:"課題1　自動ドアをつくる",
+ body:"人感センサ <b>X0</b> が反応したらドア <b>Y0</b> を開けます。<b>人がいなくなっても3秒は開けたまま</b>にして、はさまれ事故を防ぎます。",
+ hint:"開いた状態を自己保持し、「ドアが開いている かつ 人がいない」でタイマを動かして、そのタイマで解除します。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"}), R([C("X1")],{t:"TON",dev:"T0",k:30})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("T0",true)],{t:"OUT",dev:"Y0"}),
+        R([C("Y0"),C("X0",true)],{t:"TON",dev:"T0",k:30})],
+ tl:[[5,"X0",1],[25,"X0",0],[150,"X0",1],[158,"X0",0]], len:260,
+ watch:["Y0"],
+ after:"「開いている かつ 人がいない」状態が3秒続いたら閉じる。タイマの動かし方が肝でした。"},
+{id:9,kind:"q",name:"課題2 踏切",machine:"cross",
+ hints:["3つに分けて考えます。①警報を自己保持して鳴らし続ける ②警報でタイマを動かす ③警報とタイマの両方がそろったら遮断機。",
+  "1行目：Y0＝（X0 と Y0 の並列）＋ X1 の b接点。\n2行目：T0 のコイル（K30）、条件は Y0。\n3行目：Y1＝Y0 と T0 の直列。",
+  "1行目と2行目はできています。3行目だけ考えてください。遮断機が下りる条件は「警報が鳴っている」かつ「3秒たった」です。"],
+ halfway:[R([PAR([C("X0")],[C("Y0")]),C("X1",true)],{t:"OUT",dev:"Y0"}), R([C("Y0")],{t:"TON",dev:"T0",k:30}), R([C("X3")],{t:"OUT",dev:"Y1"})],
+ title:"課題2　踏切をつくる",
+ body:"進入センサ <b>X0</b> で警報機 <b>Y0</b> を鳴らし続けます。<b>警報が3秒続いたら遮断機 Y1 を下ろします</b>。通過センサ <b>X1</b> で両方とも解除します。",
+ hint:"警報は自己保持（X1のb接点で解除）。タイマは警報で動かし、遮断機は「警報 かつ タイマ」の直列です。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"}), R([C("X2")],{t:"TON",dev:"T0",k:30}), R([C("X3")],{t:"OUT",dev:"Y1"})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("X1",true)],{t:"OUT",dev:"Y0"}),
+        R([C("Y0")],{t:"TON",dev:"T0",k:30}),
+        R([C("Y0"),C("T0")],{t:"OUT",dev:"Y1"})],
+ tl:[[5,"X0",1],[10,"X0",0],[100,"X1",1],[105,"X1",0]], len:130,
+ watch:["Y0","Y1"],
+ after:"警報が先、遮断機は3秒後。この時間差が人の安全を守ります。"},
+{id:10,kind:"q",name:"課題3 自動販売機",machine:"vend",
+ hints:["「投入済み」を覚えておく係が要ります。内部リレー M0 を自己保持で使いましょう。解除するきっかけは、商品が出たことです。",
+  "1行目：M0＝（X0 と M0 の並列）＋ Y0 の b接点。\n2行目：Y0＝M0 と X1 の直列。",
+  "1行目はできています。2行目を考えてください。商品が出る条件は「投入済み」かつ「ボタンが押された」です。"],
+ halfway:[R([PAR([C("X0")],[C("M0")]),C("Y0",true)],{t:"OUT",dev:"M0"}), R([C("X2")],{t:"OUT",dev:"Y0"})],
+ title:"課題3　自動販売機をつくる",
+ body:"硬貨投入 <b>X0</b> で「投入済み」を保持し、商品ボタン <b>X1</b> を押したら商品 <b>Y0</b> を出します。<b>1回の投入で出せるのは1本だけ</b>です。",
+ hint:"投入済みは M0 で自己保持。ただし商品 Y0 のb接点を直列に入れると、商品が出た瞬間に解除されます。",
+ start:[R([C("X0")],{t:"OUT",dev:"M0"}), R([C("X2")],{t:"OUT",dev:"Y0"})],
+ ref:  [R([PAR([C("X0")],[C("M0")]),C("Y0",true)],{t:"OUT",dev:"M0"}),
+        R([C("M0"),C("X1")],{t:"OUT",dev:"Y0"})],
+ tl:[[4,"X0",1],[7,"X0",0],[14,"X1",1],[24,"X1",0],[34,"X0",1],[37,"X0",0],[44,"X1",1],[48,"X1",0]], len:60,
+ watch:["Y0"],
+ after:"ボタンを押し続けても1本しか出ません。自分の出力で自分を解除する形です。"},
+{id:11,kind:"q",name:"課題4 正逆転",
+ hints:["正転も逆転も、まず基本5の自己保持です。そのうえで、止める条件を2つ足します。停止ボタンと、相手が動いていないこと。",
+  "1行目：Y0＝（X0 と Y0 の並列）＋ X2 の b接点 ＋ Y1 の b接点。\n2行目：Y1＝（X1 と Y1 の並列）＋ X2 の b接点 ＋ Y0 の b接点。",
+  "1行目はできています。2行目を同じ形で作ってください。ただし相手は Y0 です。"],
+ halfway:[R([PAR([C("X0")],[C("Y0")]),C("X2",true),C("Y1",true)],{t:"OUT",dev:"Y0"}), R([PAR([C("X1")],[C("Y1")]),C("X2",true)],{t:"OUT",dev:"Y1"})],
+ title:"課題4　モータの正逆転とインターロック",
+ body:"<b>X0</b> で正転 <b>Y0</b>、<b>X1</b> で逆転 <b>Y1</b>、<b>X2</b> で停止。どちらも自己保持します。<br><b>Y0とY1が同時にONになると短絡します。絶対に防いでください。</b>",
+ hint:"それぞれの行に、相手の出力の b接点 を直列に入れます。停止 X2 の b接点も両方に必要です。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"}), R([C("X1")],{t:"OUT",dev:"Y1"})],
+ ref:  [R([PAR([C("X0")],[C("Y0")]),C("X2",true),C("Y1",true)],{t:"OUT",dev:"Y0"}),
+        R([PAR([C("X1")],[C("Y1")]),C("X2",true),C("Y0",true)],{t:"OUT",dev:"Y1"})],
+ tl:[[4,"X0",1],[6,"X0",0],[12,"X1",1],[16,"X1",0],[26,"X2",1],[28,"X2",0],[34,"X1",1],[36,"X1",0]], len:48,
+ watch:["Y0","Y1"], noBoth:true,
+ after:"インターロックの完成です。「起きてはいけない状態」を回路の段階で作れなくする——安全設計の基本です。"},
+{id:13,kind:"q",name:"課題5 エレベーター",machine:"elev",closed:true,
+ hints:["上昇と下降、それぞれを課題4の正逆転と同じ形で作ります。違うのは「止めるきっかけ」がリミットスイッチであることです。",
+  "1行目：Y0＝（X1 と Y0 の並列）＋ X3 の b接点 ＋ Y1 の b接点。\n2行目：Y1＝（X0 と Y1 の並列）＋ X2 の b接点 ＋ Y0 の b接点。",
+  "1行目はできています。2行目を同じ形で。下降を止めるのは1階のリミットスイッチ X2 です。"],
+ halfway:[R([PAR([C("X1")],[C("Y0")]),C("X3",true),C("Y1",true)],{t:"OUT",dev:"Y0"}), R([C("X0")],{t:"OUT",dev:"Y1"})],
+ title:"課題5　エレベーターを動かす",
+ body:"下の絵が本物の機械です。<b>呼びボタンは自分でタップ</b>しますが、<b>リミットスイッチはかごが着くと勝手に入ります</b>。<br>2階呼びで上昇し2階で停止、1階呼びで下降し1階で停止するようにしてください。",
+ hint:"上昇は「2階呼び」で自己保持し、2階リミットのb接点で止めます。下降も同じ形。さらに<b>上昇と下降が同時にONになると短絡</b>するので、相手のb接点も直列に入れます。",
+ start:[R([C("X1")],{t:"OUT",dev:"Y0"}), R([C("X0")],{t:"OUT",dev:"Y1"})],
+ ref:  [R([PAR([C("X1")],[C("Y0")]),C("X3",true),C("Y1",true)],{t:"OUT",dev:"Y0"}),
+        R([PAR([C("X0")],[C("Y1")]),C("X2",true),C("Y0",true)],{t:"OUT",dev:"Y1"})],
+ press:[{d:"X1",a:5},{d:"X0",a:30},{d:"X0",a:150}], len:280,
+ watch:["Y0","Y1"],
+ after:"リミットスイッチで止める、相手が動いていたら動かない——この2つが機械を守ります。実機のエレベーターも考え方は同じです。"},
+{id:12,kind:"free",name:"自由に組む",
+ title:"自由制作　好きな回路を組んでみよう",
+ body:"制限はありません。行を足し、接点・コイル・タイマを自由に組んで動かしてください。思いついた装置を再現してみましょう。",
+ hint:"使えるデバイス：入力 X0〜X3／出力 Y0〜Y2／内部リレー M0・M1／タイマ T0・T1。",
+ start:[R([C("X0")],{t:"OUT",dev:"Y0"})], free:true}
+];
+
+/* ================= 状態 ================= */
+let idx=0, prog=[], plc=newPLC(), marks=new Map(), running=false, timer=null;
+let sel=null, done={}, checks={}, scanIdx=-1, mach=null, mstate=null, btnTimers={};
+let hintLv={}, sawAns={};
+function L(){return LESSONS[idx];}
+
+function tabs(){
+  $("tabs").innerHTML=LESSONS.map((l,i)=>
+    `<div class="tab ${done[l.id]?"done":(i===idx?"now":"")}" data-i="${i}">${done[l.id]?"✓ ":""}${l.name}</div>`).join("")
+   +`<div class="tab" data-sub="1">記録して提出</div>`;
+  document.querySelectorAll("#tabs .tab").forEach(el=>{
+    el.onclick=()=>{ if(el.dataset.sub){openSubmit();return;}
+      idx=+el.dataset.i; load(); window.scrollTo({top:0,behavior:"smooth"}); };
+  });
+}
+
+function load(){
+  stop();
+  const l=L();
+  prog=clone(l.start); plc=newPLC(); marks=new Map(); sel=null; scanIdx=-1;
+  mach = l.machine ? MACHINES[l.machine] : null;
+  mstate = mach ? mach.init() : null;
+  $("machbox").style.display = mach ? "" : "none";
+  tabs();
+  $("gTitle").textContent=l.title;
+  $("gBody").innerHTML=l.body;
+  $("gHint").innerHTML="ヒント："+l.hint;
+  $("verdict").className="verdict";
+  $("submitPanel").style.display="none";
+  $("checkBtn").style.display=l.free?"none":"";
+  const hasH=!!(l.hints&&l.hints.length);
+  $("hintBtn").style.display=hasH?"":"none";
+  $("ansBtn").style.display=l.free?"none":"";
+  drawHints();
+  drawDev(); drawLadder(); nav();
+}
+function nav(){
+  const l=L();
+  let h="";
+  h+=`<button id="nx" class="${done[l.id]?"":"ghost"}">${idx===LESSONS.length-1?"記録して提出":"次へ"}</button>`;
+  if(idx>0)h+=`<button id="pv" class="ghost">前へ</button>`;
+  h+=`<button id="rs" class="ghost">お手本に戻す</button>`;
+  $("navrow").innerHTML=h;
+  $("nx").onclick=()=>{ if(idx<LESSONS.length-1){idx++;load();window.scrollTo({top:0,behavior:"smooth"});} else openSubmit(); };
+  if($("pv"))$("pv").onclick=()=>{idx--;load();window.scrollTo({top:0,behavior:"smooth"});};
+  $("rs").onclick=()=>{prog=clone(L().start);plc=newPLC();marks=new Map();sel=null;drawLadder();drawDev();};
+}
+
+/* ================= デバイス盤 ================= */
+/* 回路で実際に使われているデバイスだけを拾う */
+function collectDevs(){
+  const use={X:new Set(),Y:new Set(),M:new Set(),T:new Set()};
+  const walk=els=>els.forEach(el=>{
+    if(el.t==="c"){ const k=el.dev[0]; if(use[k])use[k].add(el.dev); }
+    else el.br.forEach(walk);
+  });
+  prog.forEach(r=>{
+    walk(r.elems);
+    const k=r.coil.dev[0]; if(use[k])use[k].add(r.coil.dev);
+  });
+  const srt=set=>[...set].sort();
+  return {X:srt(use.X),Y:srt(use.Y),M:srt(use.M),T:srt(use.T)};
+}
+function drawDev(){
+  if(mach){ drawDevMachine(); return; }
+  const u=collectDevs();
+  $("xrow").innerHTML = u.X.length
+    ? u.X.map(d=>`<div class="xbtn ${plc.X[d.slice(1)]?"on":""}" data-x="${d.slice(1)}">${d}</div>`).join("")
+    : `<div class="note">この回路では入力Xを使っていません</div>`;
+  document.querySelectorAll("#xrow .xbtn").forEach(el=>{
+    el.onclick=()=>{const n=el.dataset.x; plc.X[n]=!plc.X[n];
+      if(!running){marks=new Map();scanOnce(plc,prog,marks);drawLadder();}
+      drawDev(); };
+  });
+  $("yrow").innerHTML = u.Y.length
+    ? u.Y.map(d=>`<div class="ylamp ${plc.Y[d.slice(1)]?"on":""}">${d}</div>`).join("")
+    : `<div class="note">この回路では出力Yを使っていません</div>`;
+  drawExtra(u);
+}
+/* 機械つきのときは、名前つきのボタン／センサ表示にする */
+function drawDevMachine(){
+  const io=mach.io;
+  const btn=io.filter(x=>x.role==="btn"), sen=io.filter(x=>x.role==="sens"), out=io.filter(x=>x.role==="out");
+  $("xrow").innerHTML =
+    btn.map(x=>`<div class="xbtn wide ${plc.X[x.dev.slice(1)]?"on":""}" data-x="${x.dev.slice(1)}">
+        ${x.lab}<div class="tag">${x.dev}</div></div>`).join("")
+   +sen.map(x=>`<div class="sens ${plc.X[x.dev.slice(1)]?"on":""}">
+        ${x.lab}<div class="tag">${x.dev}（機械が入れる）</div></div>`).join("");
+  document.querySelectorAll("#xrow .xbtn").forEach(el=>{
+    const n=el.dataset.x;
+    const press=e=>{e.preventDefault();plc.X[n]=true;drawDev();
+      if(!running){marks=new Map();scanOnce(plc,prog,marks);drawLadder();}};
+    const release=e=>{e.preventDefault();plc.X[n]=false;drawDev();};
+    el.onmousedown=press; el.onmouseup=release; el.onmouseleave=release;
+    el.ontouchstart=press; el.ontouchend=release;
+    el.onclick=()=>{ // タップでも一瞬押される
+      plc.X[n]=true; drawDev();
+      clearTimeout(btnTimers[n]);
+      btnTimers[n]=setTimeout(()=>{plc.X[n]=false;drawDev();},300);
+    };
+  });
+  $("yrow").innerHTML = out.map(x=>
+    `<div class="ylamp wide ${plc.Y[x.dev.slice(1)]?"on":""}">${x.lab}<div class="tag">${x.dev}</div></div>`).join("");
+  drawExtra(collectDevs());
+  if($("mach")) $("mach").innerHTML = mach.draw(mstate,plc);
+}
+function drawExtra(u){
+  let extra="";
+  if(u.M.length) extra+="内部リレー　"+u.M.map(d=>`${d}:<b>${plc.M[d.slice(1)]?"ON":"OFF"}</b>`).join("　");
+  if(u.T.length){
+    if(extra)extra+="<br>";
+    extra+="タイマ　"+u.T.map(d=>{const n=d.slice(1);
+      const r=prog.find(x=>x.coil.t==="TON"&&x.coil.dev===d);
+      const k=r?`/${(r.coil.k*0.1).toFixed(1)}s`:"";
+      return `${d}:<b>${plc.T[n]?"ON":"OFF"}</b>(${(plc.Tacc[n]||0).toFixed(1)}${k})`;}).join("　");
+  }
+  $("mtbox").innerHTML=extra;
+  $("mtbox").style.display=extra?"":"none";
+  $("scanbar").textContent=(running?"RUN中":"STOP中")+"　スキャン回数 "+plc.scans+"　経過 "+plc.t.toFixed(2)+"秒";
+}
+
+/* ================= ラダー描画 ================= */
+function contHTML(el,path){
+  const m=marks.get(el)||{};
+  const hot=m.out?"hot":"";
+  const slash=el.neg?`<div class="slash"></div>`:"";
+  return `<div class="el ${sel&&sel.path===path?"sel":""}" data-path="${path}">
+    <div class="dv">${el.dev}</div>
+    <div class="cont ${hot}"><div class="bar"></div><div class="gap"></div><div class="bar"></div>${slash}</div>
+  </div>`;
+}
+function elHTML(el,path){
+  if(el.t==="c")return contHTML(el,path);
+  const m=marks.get(el)||{};
+  const rows=el.br.map((br,bi)=>
+    `<div class="brrow">${serHTML(br,path+".b"+bi)}</div>`).join("");
+  return `<div class="par ${m.out?"hot":""}">${rows}</div>`;
+}
+function serHTML(els,path){
+  if(!els.length)return `<div class="wire grow"></div>`;
+  let h="";
+  els.forEach((el,i)=>{
+    const m=marks.get(el)||{};
+    h+=`<div class="wire ${m.in?"hot":""}"></div>`;
+    h+=elHTML(el,path+"."+i);
+  });
+  const last=marks.get(els[els.length-1])||{};
+  h+=`<div class="wire ${last.out?"hot":""}"></div>`;
+  return h;
+}
+function drawLadder(){
+  $("ladder").innerHTML=prog.map((r,ri)=>{
+    const rm=marks.get(r)||{};
+    const coilOn=rm.on;
+    const kt=r.coil.t==="TON"?` K${r.coil.k}`:"";
+    return `<div class="rung ${scanIdx===ri?"scanning":""}" data-r="${ri}">
+      <div class="rungno">${ri+1}</div>
+      <div class="rail hot"></div>
+      <div class="series">${serHTML(r.elems,"r"+ri)}
+        <div class="wire grow ${coilOn?"hot":""}"></div>
+        <div class="coil ${sel&&sel.path==="coil"+ri?"sel":""}" data-coil="${ri}">
+          <div class="dv">${r.coil.dev}${kt}</div>
+          <div class="coilsym ${coilOn?"on":""}"></div>
+        </div>
+      </div>
+      <div class="addbtn" data-add="${ri}">＋接点</div>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("#ladder .el").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();openEl(el.dataset.path);};
+  });
+  document.querySelectorAll("#ladder .coil").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();openCoil(+el.dataset.coil);};
+  });
+  document.querySelectorAll("#ladder .addbtn").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();
+      const ri=+el.dataset.add; prog[ri].elems.push(C("X0")); redrawLive();};
+  });
+}
+function redrawLive(){ marks=new Map(); scanOnce(plc,prog,marks); drawLadder(); drawDev(); }
+
+/* パス "r0.1.b0.2" から要素と親配列を得る */
+function locate(path){
+  const p=path.split(".");
+  const ri=+p[0].slice(1);
+  let arr=prog[ri].elems, el=null, parent=null, i=0;
+  for(let k=1;k<p.length;k++){
+    const seg=p[k];
+    if(seg[0]==="b"){ el=arr[i]; arr=el.br[+seg.slice(1)]; }
+    else { i=+seg; parent=arr; el=arr[i]; }
+  }
+  return {el,arr:parent,i,ri};
+}
+
+/* ================= 編集ポップ ================= */
+function pop(html){ $("popbox").innerHTML=html; $("pop").classList.add("show"); }
+function closePop(){ $("pop").classList.remove("show"); }
+$("pop").onclick=e=>{ if(e.target===$("pop"))closePop(); };
+
+function devPicker(cur,allow){
+  const list=[].concat(...allow.map(k=>DEVS[k]));
+  return `<div class="devgrid">${list.map(d=>
+    `<div class="dpick ${d===cur?"sel":""}" data-d="${d}">${d}</div>`).join("")}</div>`;
+}
+function openEl(path){
+  const {el}=locate(path);
+  if(el.t!=="c"){ return; }
+  sel={path};
+  pop(`<h3>接点の編集</h3>
+    <div class="note" style="margin-bottom:8px">デバイスを選ぶ</div>
+    ${devPicker(el.dev,["X","Y","M","T"])}
+    <div class="btnrow">
+      <button id="pNeg">${el.neg?"b接点 → a接点":"a接点 → b接点"}</button>
+      <button id="pSer" class="ghost">右に直列で追加</button>
+      <button id="pPar" class="ghost">並列に追加</button>
+      <button id="pDel" class="ghost">この接点を削除</button>
+      <button id="pClose" class="ghost">閉じる</button>
+    </div>`);
+  document.querySelectorAll("#popbox .dpick").forEach(d=>{
+    d.onclick=()=>{ el.dev=d.dataset.d; closePop(); sel=null; redrawLive(); };
+  });
+  $("pNeg").onclick=()=>{el.neg=!el.neg;closePop();sel=null;redrawLive();};
+  $("pSer").onclick=()=>{const L2=locate(path); L2.arr.splice(L2.i+1,0,C("X1")); closePop();sel=null;redrawLive();};
+  $("pPar").onclick=()=>{
+    const L2=locate(path);
+    const cur=L2.arr[L2.i];
+    if(cur.t==="c") L2.arr[L2.i]=PAR([cur],[C("Y0")]);
+    else cur.br.push([C("X1")]);
+    closePop();sel=null;redrawLive();
+  };
+  $("pDel").onclick=()=>{
+    const L2=locate(path);
+    if(L2.arr.length<=1&&L2.arr===prog[L2.ri].elems){ alert("行に接点が1つは必要です。"); return; }
+    L2.arr.splice(L2.i,1); closePop();sel=null;redrawLive();
+  };
+  $("pClose").onclick=()=>{closePop();sel=null;drawLadder();};
+}
+function openCoil(ri){
+  const c=prog[ri].coil; sel={path:"coil"+ri};
+  pop(`<h3>コイルの編集（${ri+1}行目）</h3>
+    <div class="note" style="margin-bottom:8px">種類</div>
+    <div class="devgrid">
+      <div class="dpick ${c.t==="OUT"?"sel":""}" data-t="OUT">OUT（出力）</div>
+      <div class="dpick ${c.t==="TON"?"sel":""}" data-t="TON">TON（タイマ）</div>
+    </div>
+    <div class="note" style="margin-bottom:8px">デバイス</div>
+    ${devPicker(c.dev, c.t==="TON"?["T"]:["Y","M"])}
+    ${c.t==="TON"?`<div class="fieldrow"><span style="white-space:nowrap">K値（0.1秒単位）</span>
+      <input type="number" id="pK" value="${c.k}" min="1" max="600"></div>`:""}
+    <div class="btnrow"><button id="pOk">決定</button><button id="pClose" class="ghost">閉じる</button></div>`);
+  document.querySelectorAll("#popbox .dpick[data-t]").forEach(d=>{
+    d.onclick=()=>{ c.t=d.dataset.t;
+      c.dev = c.t==="TON" ? "T0" : "Y0";
+      if(c.t==="TON"&&!c.k)c.k=30;
+      closePop(); openCoil(ri); };
+  });
+  document.querySelectorAll("#popbox .dpick[data-d]").forEach(d=>{
+    d.onclick=()=>{ c.dev=d.dataset.d; closePop(); openCoil(ri); };
+  });
+  $("pOk").onclick=()=>{ if($("pK"))c.k=Math.max(1,+$("pK").value||30); closePop();sel=null;redrawLive(); };
+  $("pClose").onclick=()=>{closePop();sel=null;drawLadder();};
+}
+$("addRung").onclick=()=>{ prog.push(R([C("X0")],{t:"OUT",dev:"Y0"})); redrawLive(); };
+$("delRung").onclick=()=>{
+  if(prog.length<=1){alert("行は1つ以上必要です。");return;}
+  prog.pop(); redrawLive();
+};
+
+function drawHints(){
+  const l=L(), lv=hintLv[l.id]||0, box=$("hintbox");
+  if(!l.hints||lv===0){box.style.display="none";box.innerHTML="";return;}
+  box.style.display="";
+  box.innerHTML=l.hints.slice(0,lv).map((h,i)=>
+    `<div class="hitem"><div class="hl">ヒント${i+1}${i===2?"（半分できた回路を入れました）":""}</div>${h}</div>`).join("");
+  if(lv>=l.hints.length)$("hintBtn").textContent="ヒントは全部出ました";
+  else $("hintBtn").textContent=`ヒントを見る（${lv+1}／${l.hints.length}）`;
+}
+$("hintBtn").onclick=()=>{
+  const l=L(); if(!l.hints)return;
+  const lv=(hintLv[l.id]||0);
+  if(lv>=l.hints.length)return;
+  hintLv[l.id]=lv+1;
+  if(lv+1===3 && l.halfway){ prog=clone(l.halfway); plc=newPLC(); marks=new Map();
+    if(mach)mstate=mach.init(); drawLadder(); drawDev(); }
+  drawHints();
+};
+$("ansBtn").onclick=()=>{
+  const l=L(); if(l.free)return;
+  if(!confirm("お手本の回路を表示します。記録に「お手本を見た」と残ります。よろしいですか。"))return;
+  sawAns[l.id]=true;
+  prog=clone(l.ref); plc=newPLC(); marks=new Map();
+  if(mach)mstate=mach.init();
+  drawLadder(); drawDev();
+  flash("ok","<b>お手本を表示しました</b>どこがどうつながっているか確かめてください。<br>そのあと「お手本に戻す」で自分の回路に戻し、もう一度組んでみましょう。");
+};
+/* ================= RUN / STOP ================= */
+function start(){
+  running=true; $("runBtn").textContent="■ STOP"; $("runBtn").className="stop";
+  timer=setInterval(()=>{
+    if(mach) mach.sense(mstate,plc);          // スキャン前：センサを読む
+    marks=new Map(); scanOnce(plc,prog,marks);
+    if(mach) mach.act(mstate,plc,mach.spd);   // スキャン後：出力で機械が動く
+    scanIdx=-1; drawLadder(); drawDev();
+  },50);
+}
+function stop(){
+  running=false; if(timer)clearInterval(timer); timer=null;
+  const b=$("runBtn"); if(b){b.textContent="▶ RUN"; b.className="run";}
+}
+$("runBtn").onclick=()=>{ running?stop():start(); };
+$("resetBtn").onclick=()=>{ stop(); plc=newPLC(); marks=new Map(); scanIdx=-1;
+  if(mach)mstate=mach.init(); drawLadder(); drawDev(); };
+
+/* ================= 自動判定 ================= */
+/* 機械つきの閉ループ判定 */
+function runMachine(program,l){
+  const M=MACHINES[l.machine], st=M.init(), p=newPLC(); const out=[];
+  for(let i=0;i<l.len;i++){
+    // 押しボタン（押している間だけON）
+    M.io.filter(x=>x.role==="btn").forEach(x=>{
+      p.X[x.dev.slice(1)] = l.press.some(e=>e.d===x.dev && i>=e.a && i<e.a+4);
+    });
+    M.sense(st,p);
+    scanOnce(p,program,null);
+    M.act(st,p,M.spd);
+    const row={pos:Math.round(st.pos*50)};
+    l.watch.forEach(wv=>row[wv]=!!p.Y[wv.slice(1)]);
+    row.__short=st.short;
+    out.push(row);
+  }
+  return out;
+}
+function runProgram(program,l){
+  const p=newPLC(); const out=[];
+  for(let i=0;i<l.len;i++){
+    l.tl.filter(e=>e[0]===i).forEach(e=>{ p.X[e[1].slice(1)] = !!e[2]; });
+    scanOnce(p,program,null);
+    const row={}; l.watch.forEach(w=>row[w]=!!p.Y[w.slice(1)]);
+    if(l.noBoth) row.__both = (!!p.Y["0"]&&!!p.Y["1"]);
+    out.push(row);
+  }
+  return out;
+}
+$("checkBtn").onclick=()=>{
+  const l=L(); if(l.free)return;
+  stop();
+  checks[l.id]=(checks[l.id]||0)+1;
+  const useM=!!l.closed;
+  const mine=useM?runMachine(prog,l):runProgram(prog,l);
+  const ref =useM?runMachine(clone(l.ref),l):runProgram(clone(l.ref),l);
+  if(useM){
+    const sh=mine.findIndex(r=>r.__short);
+    if(sh>=0){
+      flash("bad",`<b>短絡しました</b>${(sh*SCAN).toFixed(1)}秒の時点で、上昇モータと下降モータが同時にONになりました。<br>
+        それぞれの行に<b>相手の出力の b接点</b>を直列に入れて、同時に動かないようにしてください。`);
+      return;
+    }
+    let bd=null;
+    for(let i=0;i<mine.length&&!bd;i++){
+      for(const wv of l.watch) if(mine[i][wv]!==ref[i][wv]){bd={at:i,dev:wv,mine:mine[i][wv],want:ref[i][wv]};break;}
+      if(!bd&&mine[i].pos!==ref[i].pos)bd={at:i,posM:mine[i].pos,posR:ref[i].pos};
+    }
+    if(!bd){
+      if(!done[l.id]){done[l.id]=true;tabs();}
+      flash("ok",`<b>正解です</b>かごが正しく動きました。<br>${l.after}`);
+      nav();
+    }else if(bd.dev){
+      flash("bad",`<b>仕様とちがう動きがあります</b>
+        <b>${bd.dev}</b>（${MACHINES[l.machine].io.find(x=>x.dev===bd.dev).lab}）が
+        ${(bd.at*SCAN).toFixed(1)}秒の時点で「${bd.mine?"ON":"OFF"}」ですが、正しくは「${bd.want?"ON":"OFF"}」です。<br>
+        RUNを押して、かごの動きとセンサを目で追ってみてください。`);
+    }else{
+      flash("bad",`<b>かごの位置がちがいます</b>${(bd.at*SCAN).toFixed(1)}秒の時点で、
+        かごが止まるべき所で止まっていないようです。<br>リミットスイッチの b接点 で
+        モータを止める条件になっているか確かめてください。`);
+    }
+    return;
+  }
+  if(l.noBoth && mine.some(r=>r.__both)){
+    const at=mine.findIndex(r=>r.__both);
+    flash("bad",`<b>危険：Y0とY1が同時にONになりました</b>
+      ${(at*SCAN).toFixed(1)}秒の時点で両方が入りました。相手の出力の b接点 を直列に入れて、同時にONにならないようにしてください。`);
+    return;
+  }
+  let bad=null;
+  for(let i=0;i<mine.length&&!bad;i++)
+    for(const wv of l.watch)
+      if(mine[i][wv]!==ref[i][wv]){ bad={at:i,dev:wv,mine:mine[i][wv],want:ref[i][wv]}; break; }
+  if(!bad){
+    if(!done[l.id]){done[l.id]=true;tabs();}
+    flash("ok",`<b>正解です</b>仕様どおりに動きました。<br>${l.after}`);
+    nav();
+  }else{
+    flash("bad",`<b>仕様とちがう動きがあります</b>
+      <b>${bad.dev}</b> が ${(bad.at*SCAN).toFixed(1)}秒の時点で「${bad.mine?"ON":"OFF"}」ですが、正しくは「${bad.want?"ON":"OFF"}」です。<br>
+      RUNを押して、X をタップしながら電気の流れを目で追ってみてください。`);
+  }
+};
+function flash(c,h){const v=$("verdict");v.className="verdict "+c;v.innerHTML=h;}
+
+/* ================= 提出 ================= */
+function openSubmit(){
+  stop();
+  $("submitPanel").style.display="block";
+  const q=LESSONS.filter(l=>l.kind==="q"), t=LESSONS.filter(l=>l.kind==="t");
+  $("repTable").innerHTML=`
+    <tr><th>基本操作</th><td>${t.filter(l=>done[l.id]).length} / ${t.length} 習得</td></tr>
+    <tr><th>課題</th><td>${q.filter(l=>done[l.id]).length} / ${q.length} 正解</td></tr>
+    <tr><th>正解した課題</th><td>${q.filter(l=>done[l.id]).map(l=>l.name).join("、")||"（なし）"}</td></tr>
+    <tr><th>確かめた回数</th><td>${Object.values(checks).reduce((a,b)=>a+b,0)} 回</td></tr>
+    <tr><th>ヒントを使った課題</th><td>${hintSummary()||"なし（自力で解きました）"}</td></tr>
+    <tr><th>お手本を見た課題</th><td>${LESSONS.filter(l=>sawAns[l.id]).map(l=>l.name).join("、")||"なし"}</td></tr>`;
+  $("submitPanel").scrollIntoView({behavior:"smooth"});
+}
+function hintSummary(){
+  return LESSONS.filter(l=>hintLv[l.id]).map(l=>`${l.name}（${hintLv[l.id]}段目まで）`).join("、");
+}
+function vals(){
+  const no=$("inNo").value.trim(),nm=$("inName").value.trim();
+  if(!/^\d{4}$/.test(no)||!nm){$("submitErr").style.display="block";return null;}
+  $("submitErr").style.display="none"; return {no,nm,memo:$("inMemo").value.trim()};
+}
+function recText(v){
+  const q=LESSONS.filter(l=>l.kind==="q"), t=LESSONS.filter(l=>l.kind==="t");
+  return `ラダー工房 記録
+出席番号：${v.no}
+氏名：${v.nm}
+基本操作：${t.filter(l=>done[l.id]).length} / ${t.length}
+課題：${q.filter(l=>done[l.id]).length} / ${q.length}
+正解した課題：${q.filter(l=>done[l.id]).map(l=>l.name).join("、")||"（なし）"}
+確かめた回数：${Object.values(checks).reduce((a,b)=>a+b,0)}回
+ヒントを使った課題：${hintSummary()||"なし（自力）"}
+お手本を見た課題：${LESSONS.filter(l=>sawAns[l.id]).map(l=>l.name).join("、")||"なし"}
+ふり返り：${v.memo||"（未記入）"}`;
+}
+$("btnCopy").onclick=()=>{const v=vals();if(!v)return;const s=recText(v);
+  navigator.clipboard.writeText(s).then(()=>$("msg").textContent="コピーしました。Classroomに貼り付けてください。")
+  .catch(()=>{const ta=document.createElement("textarea");ta.value=s;document.body.appendChild(ta);ta.select();
+    document.execCommand("copy");ta.remove();$("msg").textContent="コピーしました。";});};
+$("btnDl").onclick=()=>{const v=vals();if(!v)return;
+  const b=new Blob([recText(v)],{type:"text/plain;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);
+  a.download=`ラダー工房_${v.no}_${v.nm}.txt`;a.click();URL.revokeObjectURL(a.href);
+  $("msg").textContent="保存しました。Classroomに添付してください。";};
+$("btnBack").onclick=()=>{$("submitPanel").style.display="none";window.scrollTo({top:0,behavior:"smooth"});};
+
+load();
+</script>
+</body>
+</html>
