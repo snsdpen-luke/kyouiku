@@ -315,9 +315,12 @@ node -e 'const fs=require("fs");const h=fs.readFileSync("ラダー工房.html","
 
 | ファイル | 内容 |
 |---|---|
-| `ラダー工房.html` | 本体（単一HTML・945行）。**授業で使う現行版** |
-| `ラダー工房v2.html` | UI刷新版。§12 を見ること |
-| `regression.js` | リグレッションテスト（jsdom・40項目） |
+| `ラダー工房v2.html` | **本体。直すのはここだけ**（§12） |
+| `index.html` | GitHub Pages が配るもの。`build.py` の**生成物**。手で編集しない |
+| `ラダー工房.html` | 引き継ぎ前の現行版。無傷で温存 |
+| `regression.js` | リグレッションテスト（jsdom・85項目） |
+| `build.py` | 本体から配布物を作る |
+| `README.md` | 配布URL・別PCでの始め方・更新手順 |
 | `HANDOFF.md` | この引き継ぎ書 |
 
 授業は2コマ構成を想定。1コマ目にチャレンジ、2コマ目にラダー工房、という流れ。
@@ -750,3 +753,51 @@ Classroom のプレビューや埋め込み表示など、**モーダルを禁�
 
 - **ファイル名が仮**（`v2`）。配付名は決まっていない
 - どちらを授業で使うかは未決。`ラダー工房.html` は無傷で残してある
+
+---
+
+## 13. 配布（2026-09-14）
+
+git 管理を始めた。**<https://github.com/snsdpen-luke/kyouiku>**（public）。
+
+### 生徒に配るURL（これが本番）
+
+**<https://snsdpen-luke.github.io/kyouiku/>**
+
+Classroom にはこのリンクを貼る。**ファイルは配らない。**
+§10 の「Chromebookで古いファイルを開きがち」問題が、構造的に消える。
+
+未ログインのブラウザで実測済み: 開く／RUN でスキャンが進む／入力スイッチと出力ランプが動く／
+通電が流れる／運転モードに切り替わる／提出の記録が出る。**アカウントは要らない。**
+
+### 直したときの手順
+
+```bash
+node regression.js ラダー工房v2.html    # 1. 検証（必ず通す）
+python3 build.py                        # 2. index.html を作り直す ← 忘れると反映されない
+git add -A && git commit -m "…" && git push     # 3. これで生徒の画面が変わる
+```
+
+本体の `const VER="…"` も更新すること。画面右上に出る。
+
+### claude.ai の Artifact 版
+
+<https://claude.ai/code/artifact/d2439011-5e59-4e41-afd6-bc7372803205>
+
+`python3 build.py <出力先>` で断片を作って publish する。`capabilities: {downloads: true}` 付き。
+
+> **⚠ Artifact には制約がある。**
+> 「Anyone with the link（誰でも開ける）」と「Shared version: Latest（最新版を自動で配る）」は
+> **同時に選べない**。生徒に配る設定にすると版が固定され、**更新のたびに共有メニューで
+> 手動で新しい版に切り替える**ことになる。
+> → **配布は GitHub Pages を主にする。** Artifact は予備。
+
+### サンドボックスで死ぬもの（Artifact 版で踏んだ実害）
+
+| 使えないもの | 代わり |
+|---|---|
+| `confirm` / `alert` | 自前の `ask()` / `tell()`（§ 上の「⚠⚠」を読むこと） |
+| `<a download>` / script からの保存 | `claude.use("downloads")`。両対応のコードが `btnDl` に入っている |
+| `navigator.clipboard`（環境による） | 記録を `#recOut` のテキスト枠に必ず出し、選んでコピーできるようにしてある |
+
+**新しい機能がブラウザのAPIに頼るときは、まずサンドボックスで動くか確かめること。**
