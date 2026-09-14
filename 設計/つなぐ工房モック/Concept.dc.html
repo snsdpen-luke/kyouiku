@@ -18,14 +18,14 @@
       --m:ui-monospace,SFMono-Regular,Menlo,monospace;
       --press:4px 4px 0 var(--ink);
     }
-    body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:var(--j);font-size:13px}
+    body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--j);font-size:13px}
     a{color:var(--vi)}a:hover{color:#5b21b6}
     /* 平ら = 見るだけ */
     .card{background:var(--pap);border:3px solid var(--ink);border-radius:16px}
-    .pad{padding:16px 18px}
+    .pad{padding:14px 17px}
     /* 影つき = 押せる */
     .press{box-shadow:var(--press)}
-    .top{display:flex;align-items:center;gap:14px;padding:11px 18px;margin-bottom:13px}
+    .top{display:flex;align-items:center;gap:14px;padding:9px 18px;margin-bottom:11px}
     .top h1{margin:0;font-size:21px;font-weight:900;letter-spacing:.04em;white-space:nowrap}
     .top .cap{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.08em;white-space:nowrap}
     .chips{display:flex;gap:7px;margin-left:auto}
@@ -41,7 +41,7 @@
     .btn.pk{background:var(--pk)}
     .btn.te{background:var(--te)}
     .btn.x{background:var(--pap);border-color:var(--gy);color:var(--dim2);box-shadow:none}
-    .tabs{display:flex;gap:7px;align-items:center;margin-bottom:13px}
+    .tabs{display:flex;gap:7px;align-items:center;margin-bottom:11px}
     .tg{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.18em;color:var(--dim2);margin-right:2px}
     .t{padding:8px 13px;border-radius:11px;border:2.5px solid var(--gy);background:var(--pap);
       font-size:12px;font-weight:700;color:var(--dim2);white-space:nowrap}
@@ -59,23 +59,23 @@
     .hdr .st.te{color:var(--te)}.hdr .st.vi{color:var(--vi)}
     .scr{border:3px solid var(--ink);border-radius:12px;background:#fbfaff;overflow:hidden;
       background-image:radial-gradient(var(--gy) 1.6px,transparent 1.6px);background-size:22px 22px}
-    .sws{display:flex;gap:10px;margin-bottom:11px}
-    .sb{flex:1;border:3px solid var(--ink);border-radius:13px;background:var(--pap);padding:10px 0;
+    .sws{display:flex;gap:10px;margin-bottom:9px}
+    .sb{flex:1;border:3px solid var(--ink);border-radius:13px;background:var(--pap);padding:8px 0;
       text-align:center;box-shadow:var(--press)}
     .sb .k{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dim)}
     .sb .v{font-size:30px;font-weight:900;line-height:1.15;color:var(--dim2)}
     .sb.on{background:var(--te)}
     .sb.on .k{color:#c6f6ec}.sb.on .v{color:#fff}
     .lamp{display:flex;align-items:center;gap:12px;border:3px solid var(--ink);border-radius:13px;
-      padding:11px 14px;background:var(--pap);font-weight:900;font-size:13.5px}
+      padding:9px 14px;background:var(--pap);font-weight:900;font-size:13.5px}
     .lamp i{width:22px;height:22px;border-radius:50%;background:var(--gy);border:3px solid var(--ink);display:block}
     .lamp .v{margin-left:auto;font-size:22px;font-weight:900;color:var(--dim2)}
     .lamp.on{background:var(--ye-lo)}
     .lamp.on i{background:var(--ye)}
     .lamp.on .v{color:var(--ink)}
-    .rows{display:flex;flex-direction:column;gap:7px}
+    .rows{display:flex;flex-direction:column;gap:6px}
     .r{display:flex;align-items:center;gap:7px;border:3px solid var(--ink);border-radius:12px;
-      background:var(--pap);padding:7px 11px}
+      background:var(--pap);padding:6px 11px}
     .r .p{width:32px;height:32px;border-radius:9px;border:2.5px solid var(--ink);display:flex;
       align-items:center;justify-content:center;font-size:15px;font-weight:900;background:var(--bg)}
     .r .ar{color:var(--dim2);font-weight:900}
@@ -87,17 +87,17 @@
     .r.now{background:var(--vi-lo);border-color:var(--vi)}
     .r.bad{background:var(--pk-lo);border-color:var(--pk)}
     .r.bad .o{border-color:var(--pk);color:var(--pk);background:var(--pap)}
-    .rem{margin-top:11px;border:3px dashed var(--pk);border-radius:12px;padding:9px;text-align:center;
+    .rem{margin-top:9px;border:3px dashed var(--pk);border-radius:12px;padding:9px;text-align:center;
       font-weight:900;font-size:13px;color:var(--pk)}
-    .note{margin:9px 0 0;font-size:11.5px;color:var(--dim);font-weight:500;line-height:1.8}
-    .bts{display:flex;gap:10px;margin-top:13px}
-    .bts .btn{flex:1;text-align:center;padding:12px 0;font-size:14px}
+    .note{margin:8px 0 0;font-size:11.5px;color:var(--dim);font-weight:500;line-height:1.8}
+    .bts{display:flex;gap:10px;margin-top:11px}
+    .bts .btn{flex:1;text-align:center;padding:11px 0;font-size:14px}
     .r .o.dec{width:auto;min-width:78px;padding:0 10px;font-size:13px;background:var(--vi-lo);
       border-color:var(--vi);color:var(--vi)}
     .r.wait .o.dec{background:var(--pap);border-color:var(--gy);color:var(--dim2)}
     .col3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;align-items:start}
     .cap3{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.2em;color:var(--dim2);margin-bottom:8px}
-    .hc{border:3px solid var(--ink);border-radius:13px;padding:12px 14px;margin-bottom:10px;background:var(--pap)}
+    .hc{border:3px solid var(--ink);border-radius:13px;padding:11px 13px;margin-bottom:9px;background:var(--pap)}
     .hc .hn{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dim2);margin-bottom:6px}
     .hc p{margin:0;font-size:12.5px;line-height:1.85;font-weight:500}
     .hc.lock{border-style:dashed;border-color:var(--gy);background:#fbfaff}
@@ -126,7 +126,7 @@
       background:var(--te);border:2.5px solid var(--ink)}
   </style>
 </helmet>
-<div style="width:1000px;height:1240px;overflow:hidden">
+<div style="width:1000px;height:1780px;overflow:hidden;padding:16px">
 
 <div class="card top" style="margin-bottom:14px">
   <h1>つなぐ工房</h1>

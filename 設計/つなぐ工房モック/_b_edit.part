@@ -1,4 +1,4 @@
-<div style="width:1366px;height:768px;overflow:hidden">
+<div style="width:1366px;height:768px;overflow:hidden;padding:16px">
 
 <div class="card top">
   <h1>つなぐ工房</h1>
@@ -33,7 +33,7 @@
     <div class="card pad">
       <div class="hdr"><span class="bg">BOARD</span><span class="st vi">編集中　／　端子をタップ → つなぎ先をタップ</span></div>
       <div class="scr">
-        <svg viewBox="0 0 700 262" width="100%" height="256" role="img" aria-label="配線盤">
+        <svg viewBox="0 0 700 262" width="100%" height="232" role="img" aria-label="配線盤">
           <rect x="30" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
           <rect x="662" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
           <text x="34" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#6a5f92">＋</text>

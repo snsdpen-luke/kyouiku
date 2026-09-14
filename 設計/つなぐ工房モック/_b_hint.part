@@ -1,8 +1,8 @@
-<div style="width:1366px;height:768px;overflow:hidden">
+<div style="width:1366px;height:768px;overflow:hidden;padding:16px">
 
 <div class="card top" style="margin-bottom:14px">
   <h1>ヒントと判定</h1>
-  <span class="cap">画面の部品　／　課題06「XOR をつくれ」での例</span>
+  <span class="cap">画面の部品　／　課題06「XOR をつくれ」での例　　※ブラウザの確認ダイアログは使わない</span>
   <div class="chips"><div class="chip"><span class="k">バン</span><span class="v" style="font-size:10.5px;padding:3px 0">26-09-14a</span></div></div>
 </div>
 
@@ -35,7 +35,6 @@
       <h2 style="font-size:16px;color:#db2777">回路を入れかえます</h2>
       <p class="txt" style="font-size:13px">いま盤に組んである回路は消えます。よろしいですか。</p>
       <div class="bts"><span class="btn pk">入れかえる</span><span class="btn o">やめる</span></div>
-      <p class="note">ブラウザの確認ダイアログは使いません。画面の中で聞きます。</p>
     </div>
   </section>
 
@@ -58,7 +57,6 @@
     <div class="card pad">
       <div class="hdr"><span class="bg">RECORD</span><span class="st">キロク</span></div>
       <div class="rows">
-        <div class="r" style="font-weight:700;font-size:12.5px">01 スイッチ<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント0</span></span></div>
         <div class="r" style="font-weight:700;font-size:12.5px">02 直列<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント1</span></span></div>
         <div class="r" style="font-weight:700;font-size:12.5px">03 並列<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント0</span></span></div>
         <div class="r" style="font-weight:700;font-size:12.5px">04 NOT<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント0</span></span></div>
@@ -86,11 +84,10 @@
           <span class="os"><span class="o">0</span><span class="o" style="background:#fff">0</span></span></div>
       </div>
       <p class="note"><b>左＝きみの回路　右＝お手本。</b>桃色の行だけを見なさい。
-        どちらも「片方だけが 1」のときです。そこが点いていません。</p>
+        どちらも「片方だけが 1」のときです。そこが点いていません。<br>できなくても次へ進めます。あとから戻れます。</p>
 
-      <div class="bts"><span class="btn o">編集にもどる</span><span class="btn o">ヒント</span></div>
-      <div class="bts" style="margin-top:9px"><span class="btn o">できなくても次へすすむ</span></div>
-      <p class="note">あとから戻ってこられます。</p>
+      <div class="bts"><span class="btn o">編集にもどる</span><span class="btn o">ヒント</span>
+        <span class="btn o">次へすすむ</span></div>
     </div>
   </section>
 

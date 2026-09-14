@@ -1,13 +1,4 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-  <style>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap');
     *{box-sizing:border-box}
     :root{
@@ -124,90 +115,90 @@
     .rules li{font-size:12.5px;line-height:1.7;font-weight:500;padding:7px 0 7px 21px;position:relative}
     .rules li:before{content:"";position:absolute;left:0;top:13px;width:9px;height:9px;border-radius:3px;
       background:var(--te);border:2.5px solid var(--ink)}
-  </style>
-</helmet>
+
+</style></head><body>
 <div style="width:1366px;height:768px;overflow:hidden;padding:16px">
 
 <div class="card top">
   <h1>つなぐ工房</h1>
   <span class="cap">ロンリ回路をくみたてる</span>
   <div class="chips">
-    <div class="chip"><span class="k">モード</span><span class="v" style="font-size:13px;padding:2px 0">編集</span></div>
-    <div class="chip"><span class="k">ブヒン</span><span class="v">3</span></div>
-    <div class="chip"><span class="k">ハイセン</span><span class="v">3</span></div>
-    <div class="chip"><span class="k">のこり</span><span class="v" style="color:#db2777">1</span></div>
-    <div class="chip"><span class="k">バン</span><span class="v" style="font-size:10.5px;padding:3px 0">26-09-14a</span></div>
+    <div class="chip te"><span class="k">A</span><span class="v">1</span></div>
+    <div class="chip te"><span class="k">B</span><span class="v">1</span></div>
+    <div class="chip"><span class="k">C くりあがり</span><span class="v">1</span></div>
+    <div class="chip"><span class="k">S わ</span><span class="v">0</span></div>
+    <div class="chip"><span class="k">ためした</span><span class="v">4/4</span></div>
   </div>
-  <span class="btn te">▶ 運転にする</span>
+  <span class="btn pk">■ 編集にもどる</span>
 </div>
 
 <div class="tabs">
   <span class="tg">キホン</span>
-  <span class="t dn">01 スイッチ</span><span class="t cu">02 直列</span><span class="t">03 並列</span>
-  <span class="t">04 NOT</span><span class="t">05 真理値表</span>
+  <span class="t dn">01 スイッチ</span><span class="t dn">02 直列</span><span class="t dn">03 並列</span>
+  <span class="t dn">04 NOT</span><span class="t dn">05 真理値表</span>
   <span class="tg" style="margin-left:9px">カダイ</span>
-  <span class="t">06 XOR</span><span class="t">07 半加算器</span><span class="t">08 全加算器</span><span class="t">09 4ビット</span>
+  <span class="t dn">06 XOR</span><span class="t cu">07 半加算器</span><span class="t">08 全加算器</span><span class="t">09 4ビット</span>
 </div>
 
 <div class="cols">
   <main>
     <div class="card pad" style="margin-bottom:13px">
-      <h2>課題02　二つのスイッチを一本道にする</h2>
-      <p class="txt">スイッチ A と B を、電池からランプまで <em>一本道</em> に並べなさい。
-        どちらか片方だけ入れても、ランプは点きません。</p>
-      <p class="sm">ランプの左がわの端子が、まだどこにもつながっていません。</p>
+      <h2>課題07　出口が二つある回路</h2>
+      <p class="txt">課題06 でつくった <em>XOR</em> を、そのまま置きなさい。となりに <em>AND</em> を置き、
+        同じ A と B をつなぎなさい。出口は二つ、<b>S</b> と <b>C</b> です。</p>
+      <p class="sm">4 とおり全部ためしてから、右の表のいちばん右を見なさい。</p>
     </div>
 
     <div class="card pad">
-      <div class="hdr"><span class="bg">BOARD</span><span class="st vi">編集中　／　端子をタップ → つなぎ先をタップ</span></div>
+      <div class="hdr"><span class="bg">BOARD</span><span class="st te">運転中　／　回路は編集できません</span></div>
       <div class="scr">
-        <svg viewBox="0 0 700 262" width="100%" height="232" role="img" aria-label="配線盤">
-          <rect x="30" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
-          <rect x="662" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
-          <text x="34" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#6a5f92">＋</text>
-          <text x="666" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#6a5f92">−</text>
-
-          <g stroke="#a79ccb" stroke-width="9" stroke-linecap="round">
-            <line x1="38" y1="132" x2="156" y2="132"/><line x1="224" y1="132" x2="336" y2="132"/>
-            <line x1="574" y1="132" x2="662" y2="132"/></g>
-          <line x1="404" y1="132" x2="516" y2="132" stroke="#6d28d9" stroke-width="7"
-                stroke-dasharray="13 10" stroke-linecap="round"/>
-
-          <g>
-            <circle cx="156" cy="132" r="7" fill="#1b1340"/><circle cx="224" cy="132" r="7" fill="#1b1340"/>
-            <line x1="156" y1="132" x2="218" y2="102" stroke="#1b1340" stroke-width="8" stroke-linecap="round"/>
-            <rect x="150" y="60" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
-            <text x="191" y="78" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">スイッチ A</text>
+        <svg viewBox="0 0 700 262" width="100%" height="172" role="img" aria-label="半加算器">
+          <g stroke="#0d9488" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M62,72 H140 V182"/><path d="M140,96 H288"/>
+            <path d="M62,220 H176 V128"/><path d="M176,128 H288"/><path d="M176,220 H288"/>
+            <path d="M348,200 H548"/>
+            <path d="M140,182 H162 M190,182 H288"/>
+            <path d="M162,182 A14,14 0 0 1 190,182"/>
           </g>
-          <g>
-            <circle cx="336" cy="132" r="7" fill="#1b1340"/>
-            <circle cx="404" cy="132" r="14" fill="none" stroke="#6d28d9" stroke-width="4"/>
-            <circle cx="404" cy="132" r="7" fill="#6d28d9"/>
-            <line x1="336" y1="132" x2="398" y2="102" stroke="#1b1340" stroke-width="8" stroke-linecap="round"/>
-            <rect x="330" y="60" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
-            <text x="371" y="78" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">スイッチ B</text>
+          <g stroke="#d8d2ee" stroke-width="8" stroke-linecap="round" fill="none">
+            <path d="M352,112 H548"/>
           </g>
+          <g fill="#0d9488"><circle cx="140" cy="96" r="6"/><circle cx="176" cy="128" r="6"/>
+            <circle cx="140" cy="182" r="6"/><circle cx="176" cy="220" r="6"/></g>
+
           <g>
-            <circle cx="545" cy="132" r="27" fill="#ffffff" stroke="#1b1340" stroke-width="5"/>
-            <line x1="528" y1="115" x2="562" y2="149" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
-            <line x1="528" y1="149" x2="562" y2="115" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="516" cy="132" r="12" fill="#ffffff" stroke="#6d28d9" stroke-width="4"/>
-            <circle cx="574" cy="132" r="7" fill="#1b1340"/>
-            <rect x="504" y="84" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
-            <text x="545" y="102" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">ランプ Y</text>
+            <circle cx="56" cy="72" r="13" fill="#0d9488" stroke="#1b1340" stroke-width="3"/>
+            <rect x="14" y="34" width="84" height="26" rx="9" fill="#0d9488"/>
+            <text x="56" y="52" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#fff">A ＝ 1</text>
+            <circle cx="56" cy="220" r="13" fill="#0d9488" stroke="#1b1340" stroke-width="3"/>
+            <rect x="14" y="238" width="84" height="26" rx="9" fill="#0d9488"/>
+            <text x="56" y="256" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#fff">B ＝ 1</text>
           </g>
 
           <g>
-            <rect x="396" y="176" width="196" height="32" rx="11" fill="#6d28d9"/>
-            <text x="494" y="197" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="700" fill="#ffffff">つなぎ先をタップ</text>
+            <path d="M288,82 Q308,112 288,142 Q336,142 352,112 Q336,82 288,82" fill="#ffffff" stroke="#1b1340" stroke-width="5" stroke-linejoin="round"/>
+            <path d="M274,82 Q294,112 274,142" fill="none" stroke="#1b1340" stroke-width="5" stroke-linecap="round"/>
+            <text x="315" y="118" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#1b1340">XOR</text>
           </g>
-          <line x1="404" y1="146" x2="420" y2="174" stroke="#6d28d9" stroke-width="3"/>
+          <g>
+            <path d="M288,170 L320,170 A30,30 0 0 1 320,230 L288,230 Z" fill="#e9fbf7" stroke="#0d9488" stroke-width="5" stroke-linejoin="round"/>
+            <text x="312" y="206" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#0d9488">AND</text>
+          </g>
 
-          <g fill="#ffffff" stroke="#a79ccb" stroke-width="2.5">
-            <circle cx="97" cy="132" r="13"/><circle cx="280" cy="132" r="13"/><circle cx="618" cy="132" r="13"/>
+          <g>
+            <circle cx="576" cy="112" r="27" fill="#ffffff" stroke="#1b1340" stroke-width="5"/>
+            <line x1="559" y1="95" x2="593" y2="129" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <line x1="559" y1="129" x2="593" y2="95" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <rect x="614" y="98" width="78" height="28" rx="10" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
+            <text x="653" y="117" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#1b1340">S 和 ＝ 0</text>
           </g>
-          <g fill="#a79ccb" font-family="ui-monospace,monospace" font-size="16" font-weight="700" text-anchor="middle">
-            <text x="97" y="138">＋</text><text x="280" y="138">＋</text><text x="618" y="138">＋</text>
+          <g>
+            <circle cx="576" cy="200" r="34" fill="#facc15" opacity="0.3"/>
+            <circle cx="576" cy="200" r="27" fill="#facc15" stroke="#1b1340" stroke-width="5"/>
+            <line x1="559" y1="183" x2="593" y2="217" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <line x1="559" y1="217" x2="593" y2="183" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <rect x="608" y="186" width="90" height="28" rx="10" fill="#facc15" stroke="#1b1340" stroke-width="2.5"/>
+            <text x="653" y="205" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#1b1340">C 繰上 ＝ 1</text>
           </g>
         </svg>
       </div>
@@ -216,36 +207,41 @@
 
   <aside>
     <div class="card pad" style="margin-bottom:13px">
-      <div class="hdr"><span class="bg">PARTS</span><span class="st">ブヒンバコ</span></div>
-      <div class="sws" style="margin-bottom:0">
-        <div class="sb"><div class="v" style="font-size:22px;color:#1b1340">SW</div><div class="k">スイッチ</div></div>
-        <div class="sb"><div class="v" style="font-size:22px;color:#1b1340">Y</div><div class="k">ランプ</div></div>
-        <div class="sb"><div class="v" style="font-size:22px;color:#1b1340">／</div><div class="k">導線</div></div>
-        <div class="sb"><div class="v" style="font-size:22px;color:#db2777">×</div><div class="k">けす</div></div>
+      <div class="hdr"><span class="bg">INPUT</span><span class="st">タップで切りかえ</span></div>
+      <div class="sws">
+        <div class="sb on"><div class="k">SW A</div><div class="v">1</div></div>
+        <div class="sb on"><div class="k">SW B</div><div class="v">1</div></div>
       </div>
-      <p class="note">この課題で使う部品だけを出しています。
-        AND・OR・NOT の記号は、課題05 から出てきます。</p>
+      <div style="display:flex;gap:9px">
+        <div class="lamp" style="flex:1"><i></i>S 和<span class="v">0</span></div>
+        <div class="lamp on" style="flex:1"><i></i>C 繰上<span class="v">1</span></div>
+      </div>
     </div>
 
     <div class="card pad">
-      <div class="hdr"><span class="bg">TRUTH</span><span class="st">まだ何もためしていない</span></div>
+      <div class="hdr"><span class="bg">TRUTH</span><span class="st vi">いちばん右の列が生えた</span></div>
       <div class="rows">
-        <div class="r wait"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
-        <div class="r wait"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
-        <div class="r wait"><span class="p">1</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
-        <div class="r wait"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
+        <div class="r"><span class="p">0</span><span class="p">0</span><span class="ar">→</span>
+          <span class="os"><span class="o">0</span><span class="o">0</span><span class="o dec">0＋0＝0</span></span></div>
+        <div class="r"><span class="p">0</span><span class="p">1</span><span class="ar">→</span>
+          <span class="os"><span class="o">0</span><span class="o">1</span><span class="o dec">0＋1＝1</span></span></div>
+        <div class="r"><span class="p">1</span><span class="p">0</span><span class="ar">→</span>
+          <span class="os"><span class="o">0</span><span class="o">1</span><span class="o dec">1＋0＝1</span></span></div>
+        <div class="r now"><span class="p">1</span><span class="p">1</span><span class="ar">→</span>
+          <span class="os"><span class="o">1</span><span class="o">0</span><span class="o dec">1＋1＝2</span></span></div>
       </div>
-      <p class="note">運転モードでスイッチを切りかえると、その組み合わせの行が埋まります。</p>
+      <p class="note">C と S を左から読むと、2けたの2進数。</p>
     </div>
 
     <div class="bts">
-      <span class="btn te">▶ 運転にする</span>
+      <span class="btn">たしかめる</span>
       <span class="btn o">ヒント</span>
     </div>
   </aside>
 </div>
 
 </div>
-</x-dc>
-</body>
-</html>
+
+
+
+</body></html>

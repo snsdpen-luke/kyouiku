@@ -1,4 +1,4 @@
-<div style="width:1366px;height:768px;overflow:hidden">
+<div style="width:1366px;height:768px;overflow:hidden;padding:16px">
 
 <div class="card top">
   <h1>つなぐ工房</h1>
@@ -33,7 +33,7 @@
     <div class="card pad">
       <div class="hdr"><span class="bg">BOARD</span><span class="st te">運転中　／　回路は編集できません</span></div>
       <div class="scr">
-        <svg viewBox="0 0 700 262" width="100%" height="256" role="img" aria-label="半加算器">
+        <svg viewBox="0 0 700 262" width="100%" height="172" role="img" aria-label="半加算器">
           <g stroke="#0d9488" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none">
             <path d="M62,72 H140 V182"/><path d="M140,96 H288"/>
             <path d="M62,220 H176 V128"/><path d="M176,128 H288"/><path d="M176,220 H288"/>
@@ -93,8 +93,10 @@
         <div class="sb on"><div class="k">SW A</div><div class="v">1</div></div>
         <div class="sb on"><div class="k">SW B</div><div class="v">1</div></div>
       </div>
-      <div class="lamp" style="margin-bottom:8px"><i></i>S　和<span class="v">0</span></div>
-      <div class="lamp on"><i></i>C　繰上<span class="v">1</span></div>
+      <div style="display:flex;gap:9px">
+        <div class="lamp" style="flex:1"><i></i>S 和<span class="v">0</span></div>
+        <div class="lamp on" style="flex:1"><i></i>C 繰上<span class="v">1</span></div>
+      </div>
     </div>
 
     <div class="card pad">
@@ -109,7 +111,7 @@
         <div class="r now"><span class="p">1</span><span class="p">1</span><span class="ar">→</span>
           <span class="os"><span class="o">1</span><span class="o">0</span><span class="o dec">1＋1＝2</span></span></div>
       </div>
-      <p class="note">C と S を左から並べて読むと、2けたの2進数になっています。</p>
+      <p class="note">C と S を左から読むと、2けたの2進数。</p>
     </div>
 
     <div class="bts">

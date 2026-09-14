@@ -1,0 +1,124 @@
+<div style="width:1366px;height:768px;overflow:hidden;padding:16px">
+
+<div class="card top">
+  <h1>つなぐ工房</h1>
+  <span class="cap">ロンリ回路をくみたてる</span>
+  <div class="chips">
+    <div class="chip te"><span class="k">A</span><span class="v">1</span></div>
+    <div class="chip te"><span class="k">B</span><span class="v">1</span></div>
+    <div class="chip"><span class="k">OUT Y</span><span class="v">1</span></div>
+    <div class="chip"><span class="k">ためした</span><span class="v">4/4</span></div>
+    <div class="chip"><span class="k">バン</span><span class="v" style="font-size:10.5px;padding:3px 0">26-09-14a</span></div>
+  </div>
+  <span class="btn pk">■ 編集にもどる</span>
+</div>
+
+<div class="tabs">
+  <span class="tg">キホン</span>
+  <span class="t dn">01 スイッチ</span><span class="t dn">02 直列</span><span class="t dn">03 並列</span>
+  <span class="t dn">04 NOT</span><span class="t cu">05 真理値表</span>
+  <span class="tg" style="margin-left:9px">カダイ</span>
+  <span class="t">06 XOR</span><span class="t">07 半加算器</span><span class="t">08 全加算器</span><span class="t">09 4ビット</span>
+</div>
+
+<div class="cols">
+  <main>
+    <div class="card pad" style="margin-bottom:13px">
+      <h2>課題05　同じ回路を、記号で書く</h2>
+      <p class="txt">課題02 でつくった回路を、上に出してあります。
+        これと <em>まったく同じはたらき</em> をする部品が、下の一個です。</p>
+      <p class="sm">スイッチを 4 とおり切りかえて、上と下が同じ答えになることを確かめなさい。</p>
+    </div>
+
+    <div class="card pad">
+      <div class="hdr"><span class="bg">BOARD</span><span class="st te">運転中　／　上下はおなじもの</span></div>
+      <div class="scr">
+        <svg viewBox="0 0 700 268" width="100%" height="262" role="img" aria-label="直列回路と AND 記号">
+          <rect x="38" y="30" width="7" height="76" rx="3" fill="#0d9488"/>
+          <rect x="648" y="30" width="7" height="76" rx="3" fill="#1b1340"/>
+          <g stroke="#0d9488" stroke-width="8" stroke-linecap="round">
+            <line x1="45" y1="68" x2="136" y2="68"/>
+            <line x1="204" y1="68" x2="286" y2="68"/>
+            <line x1="354" y1="68" x2="449" y2="68"/><line x1="491" y1="68" x2="648" y2="68"/></g>
+          <g stroke="#1b1340" stroke-width="9" stroke-linecap="round">
+            <line x1="136" y1="68" x2="204" y2="68"/><line x1="286" y1="68" x2="354" y2="68"/></g>
+          <g fill="#ffffff" stroke="#1b1340" stroke-width="3">
+            <circle cx="136" cy="68" r="6"/><circle cx="204" cy="68" r="6"/>
+            <circle cx="286" cy="68" r="6"/><circle cx="354" cy="68" r="6"/></g>
+          <text x="170" y="40" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#0d9488">A ＝ 1</text>
+          <text x="320" y="40" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#0d9488">B ＝ 1</text>
+          <g>
+            <circle cx="470" cy="68" r="21" fill="#facc15" stroke="#1b1340" stroke-width="4"/>
+            <line x1="457" y1="55" x2="483" y2="81" stroke="#1b1340" stroke-width="3" stroke-linecap="round"/>
+            <line x1="457" y1="81" x2="483" y2="55" stroke="#1b1340" stroke-width="3" stroke-linecap="round"/>
+            <text x="470" y="38" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#1b1340">Y ＝ 1</text>
+          </g>
+          <rect x="556" y="88" width="96" height="24" rx="8" fill="#f1edff" stroke="#a79ccb" stroke-width="2"/>
+          <text x="604" y="105" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="11.5" font-weight="700" fill="#6a5f92">課題02 の回路</text>
+
+          <line x1="0" y1="134" x2="700" y2="134" stroke="#d8d2ee" stroke-width="2" stroke-dasharray="8 8"/>
+          <rect x="286" y="120" width="128" height="28" rx="10" fill="#6d28d9"/>
+          <text x="350" y="139" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#ffffff">おなじもの</text>
+
+          <g stroke="#0d9488" stroke-width="8" stroke-linecap="round">
+            <line x1="68" y1="180" x2="250" y2="180"/><line x1="68" y1="228" x2="250" y2="228"/>
+            <line x1="312" y1="204" x2="449" y2="204"/></g>
+          <g><circle cx="60" cy="180" r="12" fill="#0d9488" stroke="#1b1340" stroke-width="3"/>
+            <circle cx="60" cy="228" r="12" fill="#0d9488" stroke="#1b1340" stroke-width="3"/>
+            <text x="60" y="163" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="12" font-weight="900" fill="#0d9488">A</text>
+            <text x="60" y="256" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="12" font-weight="900" fill="#0d9488">B</text></g>
+          <g>
+            <path d="M250,174 L282,174 A30,30 0 0 1 282,234 L250,234 Z" fill="#ffffff" stroke="#1b1340" stroke-width="5" stroke-linejoin="round"/>
+            <text x="274" y="210" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">AND</text>
+          </g>
+          <g>
+            <circle cx="470" cy="204" r="21" fill="#facc15" stroke="#1b1340" stroke-width="4"/>
+            <line x1="457" y1="191" x2="483" y2="217" stroke="#1b1340" stroke-width="3" stroke-linecap="round"/>
+            <line x1="457" y1="217" x2="483" y2="191" stroke="#1b1340" stroke-width="3" stroke-linecap="round"/>
+            <text x="470" y="176" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="900" fill="#1b1340">Y ＝ 1</text>
+          </g>
+          <rect x="536" y="192" width="116" height="24" rx="8" fill="#f1edff" stroke="#a79ccb" stroke-width="2"/>
+          <text x="594" y="209" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="11.5" font-weight="700" fill="#6a5f92">記号で書いたもの</text>
+        </svg>
+      </div>
+    </div>
+  </main>
+
+  <aside>
+    <div class="card pad" style="margin-bottom:13px">
+      <div class="hdr"><span class="bg">SYMBOL</span><span class="st" style="color:#db2777">MIL か JIS か、決める</span></div>
+      <div class="rows" style="gap:5px">
+        <div class="r" style="padding:5px 11px"><span style="font-weight:900;font-size:13px;width:54px">直列</span>
+          <svg width="56" height="30" viewBox="0 0 56 30"><path d="M8,4 L26,4 A11,11 0 0 1 26,26 L8,26 Z" fill="#fff" stroke="#1b1340" stroke-width="3" stroke-linejoin="round"/><line x1="0" y1="10" x2="8" y2="10" stroke="#1b1340" stroke-width="3"/><line x1="0" y1="20" x2="8" y2="20" stroke="#1b1340" stroke-width="3"/><line x1="37" y1="15" x2="50" y2="15" stroke="#1b1340" stroke-width="3"/></svg>
+          <span class="os"><span class="o" style="width:auto;padding:0 10px">AND</span></span></div>
+        <div class="r" style="padding:5px 11px"><span style="font-weight:900;font-size:13px;width:54px">並列</span>
+          <svg width="56" height="30" viewBox="0 0 56 30"><path d="M8,4 Q17,15 8,26 Q30,26 38,15 Q30,4 8,4" fill="#fff" stroke="#1b1340" stroke-width="3" stroke-linejoin="round"/><line x1="0" y1="10" x2="10" y2="10" stroke="#1b1340" stroke-width="3"/><line x1="0" y1="20" x2="10" y2="20" stroke="#1b1340" stroke-width="3"/><line x1="38" y1="15" x2="50" y2="15" stroke="#1b1340" stroke-width="3"/></svg>
+          <span class="os"><span class="o" style="width:auto;padding:0 10px">OR</span></span></div>
+        <div class="r" style="padding:5px 11px"><span style="font-weight:900;font-size:13px;width:54px">反対</span>
+          <svg width="56" height="30" viewBox="0 0 56 30"><path d="M10,4 L32,15 L10,26 Z" fill="#fff" stroke="#1b1340" stroke-width="3" stroke-linejoin="round"/><circle cx="37" cy="15" r="4.5" fill="#fff" stroke="#1b1340" stroke-width="3"/><line x1="0" y1="15" x2="10" y2="15" stroke="#1b1340" stroke-width="3"/><line x1="42" y1="15" x2="50" y2="15" stroke="#1b1340" stroke-width="3"/></svg>
+          <span class="os"><span class="o" style="width:auto;padding:0 10px">NOT</span></span></div>
+      </div>
+      <p class="note"><b>MIL記号。</b>JIS なら四角に <b>&amp;</b>／<b>≧1</b>／<b>1</b> と書く。</p>
+    </div>
+
+    <div class="card pad">
+      <div class="hdr"><span class="bg">TRUTH</span><span class="st">両方1のときだけ1＝AND</span></div>
+      <div class="rows" style="gap:5px">
+        <div class="r" style="padding:5px 11px"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
+        <div class="r" style="padding:5px 11px"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
+        <div class="r" style="padding:5px 11px"><span class="p">1</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
+        <div class="r now" style="padding:5px 11px"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">1</span></span></div>
+      </div>
+    </div>
+
+    <div class="bts" style="margin-top:10px">
+      <span class="btn">たしかめる</span>
+      <span class="btn o">ヒント</span>
+    </div>
+  </aside>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

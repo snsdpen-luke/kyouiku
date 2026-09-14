@@ -1,4 +1,4 @@
-<div style="width:1366px;height:768px;overflow:hidden">
+<div style="width:1366px;height:768px;overflow:hidden;padding:16px">
 
 <div class="card top">
   <h1>つなぐ工房</h1>
@@ -33,7 +33,7 @@
     <div class="card pad">
       <div class="hdr"><span class="bg">BOARD</span><span class="st te">運転中　／　回路は編集できません</span></div>
       <div class="scr">
-        <svg viewBox="0 0 700 262" width="100%" height="256" role="img" aria-label="配線盤">
+        <svg viewBox="0 0 700 262" width="100%" height="206" role="img" aria-label="配線盤">
           <rect x="30" y="28" width="8" height="206" rx="4" fill="#0d9488"/>
           <rect x="662" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
           <text x="34" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#0d9488">＋</text>
@@ -82,7 +82,7 @@
     </div>
 
     <div class="card pad">
-      <div class="hdr"><span class="bg">TRUTH</span><span class="st">ためした記録</span></div>
+      <div class="hdr"><span class="bg">TRUTH</span><span class="st">全部ためすと たしかめる が押せる</span></div>
       <div class="rows">
         <div class="r"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
         <div class="r"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
@@ -90,7 +90,6 @@
         <div class="r wait"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
       </div>
       <div class="rem">のこり 1 とおり</div>
-      <p class="note">4 とおり全部をためすと「たしかめる」が押せるようになります。</p>
     </div>
 
     <div class="bts">
