@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>つなぐ工房 論理回路シミュレータ｜コンピュータシステム技術</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#f1edff;--ink:#1b1340;--dim:#6a5f92;--dim2:#a79ccb;--pap:#ffffff;--gy:#d8d2ee;
+  --te:#0d9488;--te-lo:#e9fbf7;--vi:#6d28d9;--vi-lo:#f3edff;--pk:#db2777;--pk-lo:#fdeef6;
+  --ye:#facc15;--ye-lo:#fffbeb;
+  --m:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --press:4px 4px 0 var(--ink);
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:12px;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;font-size:13px;min-height:100vh}
+.app{max-width:1420px;margin:0 auto}
+.card{background:var(--pap);border:3px solid var(--ink);border-radius:16px}
+.pad{padding:14px 17px}
+.top{display:flex;align-items:center;gap:14px;padding:9px 16px;margin-bottom:11px;flex-wrap:wrap}
+.top h1{margin:0;font-size:20px;font-weight:900;letter-spacing:.04em;white-space:nowrap}
+.top .cap{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.06em}
+.chips{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+.chip{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 11px;border-radius:9px;
+  border:2.5px solid var(--gy);background:var(--pap);min-width:52px}
+.chip .k{font-family:var(--m);font-size:8px;letter-spacing:.14em;color:var(--dim2);white-space:nowrap}
+.chip .v{font-size:16px;font-weight:900;line-height:1.15}
+.chip.te{border-color:var(--ink);background:var(--te)}
+.chip.te .k{color:#c6f6ec}.chip.te .v{color:#fff}
+button{font-family:inherit;padding:10px 16px;border-radius:12px;border:3px solid var(--ink);
+  background:var(--vi);color:#fff;font-weight:900;font-size:13px;letter-spacing:.04em;
+  box-shadow:var(--press);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:transform .06s,box-shadow .06s}
+button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+button.o{background:var(--pap);color:var(--ink)}
+button.te{background:var(--te)}
+button.pk{background:var(--pk)}
+button:disabled{background:var(--pap);border-color:var(--gy);color:var(--dim2);
+  box-shadow:none;cursor:not-allowed;transform:none}
+.tabs{display:flex;gap:7px;align-items:center;margin-bottom:11px;flex-wrap:wrap}
+.tg{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.18em;color:var(--dim2)}
+.t{padding:8px 13px;border-radius:11px;border:2.5px solid var(--gy);background:var(--pap);
+  font-size:12px;font-weight:700;color:var(--dim2);cursor:pointer;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent}
+.t.dn{border-color:var(--ink);color:var(--ink);background:var(--te-lo)}
+.t.cu{border-color:var(--ink);background:var(--vi);color:#fff;box-shadow:var(--press)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:13px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+h2{margin:0 0 8px;font-size:18px;font-weight:900}
+.txt{margin:0;font-size:13.5px;line-height:1.95;font-weight:500}
+.txt em{font-style:normal;background:linear-gradient(transparent 62%,#fde68a 62%);font-weight:700}
+.sm{margin:8px 0 0;font-size:12px;color:var(--dim);font-weight:500;line-height:1.8}
+.hdr{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.hdr .bg{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.16em;color:#fff;
+  background:var(--ink);padding:5px 9px;border-radius:7px;white-space:nowrap}
+.hdr .st{margin-left:auto;font-size:11px;font-weight:700;color:var(--dim);text-align:right}
+.hdr .st.te{color:var(--te)}.hdr .st.vi{color:var(--vi)}
+.scr{border:3px solid var(--ink);border-radius:12px;background:#fbfaff;overflow:hidden;
+  background-image:radial-gradient(var(--gy) 1.6px,transparent 1.6px);background-size:22px 22px;
+  touch-action:manipulation}
+.scr svg{display:block;width:100%;height:auto}
+.sws{display:flex;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+.sb{flex:1 1 90px;border:3px solid var(--ink);border-radius:13px;background:var(--pap);padding:8px 0;
+  text-align:center;box-shadow:var(--press);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:transform .06s,box-shadow .06s}
+.sb:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.sb .k{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dim)}
+.sb .v{font-size:30px;font-weight:900;line-height:1.15;color:var(--dim2)}
+.sb.on{background:var(--te)}
+.sb.on .k{color:#c6f6ec}.sb.on .v{color:#fff}
+.lamp{display:flex;align-items:center;gap:12px;border:3px solid var(--ink);border-radius:13px;
+  padding:9px 14px;background:var(--pap);font-weight:900;font-size:13.5px;flex:1}
+.lamp i{width:22px;height:22px;border-radius:50%;background:var(--gy);border:3px solid var(--ink);display:block}
+.lamp .v{margin-left:auto;font-size:22px;font-weight:900;color:var(--dim2)}
+.lamp.on{background:var(--ye-lo)}
+.lamp.on i{background:var(--ye)}
+.lamp.on .v{color:var(--ink)}
+.rows{display:flex;flex-direction:column;gap:6px}
+.r{display:flex;align-items:center;gap:7px;border:3px solid var(--ink);border-radius:12px;
+  background:var(--pap);padding:6px 11px}
+.r .p{width:32px;height:32px;border-radius:9px;border:2.5px solid var(--ink);display:flex;
+  align-items:center;justify-content:center;font-size:15px;font-weight:900;background:var(--bg)}
+.r .ar{color:var(--dim2);font-weight:900}
+.r .os{margin-left:auto;display:flex;gap:6px}
+.r .o{min-width:34px;height:32px;padding:0 7px;border-radius:9px;border:2.5px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;background:var(--te-lo)}
+.r .o.dec{min-width:78px;font-size:13px;background:var(--vi-lo);border-color:var(--vi);color:var(--vi)}
+.r.wait{border-color:var(--gy);border-style:dashed;background:#fbfaff}
+.r.wait .p,.r.wait .o{border-color:var(--gy);color:var(--dim2);background:var(--pap)}
+.r.now{background:var(--vi-lo);border-color:var(--vi)}
+.r.bad{background:var(--pk-lo);border-color:var(--pk)}
+.r.bad .o{border-color:var(--pk);color:var(--pk);background:var(--pap)}
+.rem{margin-top:9px;border:3px dashed var(--pk);border-radius:12px;padding:9px;text-align:center;
+  font-weight:900;font-size:13px;color:var(--pk)}
+.rem.ok{border-color:var(--te);border-style:solid;color:var(--te);background:var(--te-lo)}
+.note{margin:8px 0 0;font-size:11.5px;color:var(--dim);font-weight:500;line-height:1.8}
+.bts{display:flex;gap:10px;margin-top:11px}
+.bts button{flex:1;padding:11px 0;font-size:14px}
+.hc{border:3px solid var(--ink);border-radius:13px;padding:11px 13px;margin-bottom:9px;background:var(--pap)}
+.hc .hn{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dim2);margin-bottom:6px}
+.hc p{margin:0;font-size:12.5px;line-height:1.85;font-weight:500}
+.card.pass{border-color:var(--te);background:var(--te-lo)}
+.card.fail{border-color:var(--pk);background:var(--pk-lo)}
+.pop{position:fixed;inset:0;background:#1b134099;display:none;align-items:center;justify-content:center;
+  padding:16px;z-index:60}
+.pop.show{display:flex}
+.popbox{background:var(--pap);border:3px solid var(--ink);border-radius:18px;padding:18px;
+  max-width:460px;width:100%;max-height:86vh;overflow:auto;box-shadow:8px 8px 0 #1b134055}
+.popbox h3{margin:0 0 10px;font-size:17px;font-weight:900}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="card top">
+  <h1>つなぐ工房</h1>
+  <span class="cap">ロンリ回路をくみたてる</span>
+  <div class="chips" id="chips"></div>
+  <button id="modeBtn" class="te">▶ 運転にする</button>
+  <button id="resetBtn" class="o">最初から</button>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="cols">
+  <main>
+    <div class="card pad" style="margin-bottom:13px">
+      <h2 id="gTitle"></h2>
+      <p class="txt" id="gBody"></p>
+      <p class="sm" id="gHint"></p>
+    </div>
+
+    <div class="card pad" id="boardCard">
+      <div class="hdr"><span class="bg">BOARD</span><span class="st" id="boardSt"></span></div>
+      <div class="scr" id="scr"></div>
+      <p class="note" id="boardNote"></p>
+    </div>
+  </main>
+
+  <aside>
+    <div class="card pad" id="inputCard" style="margin-bottom:13px">
+      <div class="hdr"><span class="bg">INPUT</span><span class="st" id="inputSt">運転モードで切りかえる</span></div>
+      <div class="sws" id="sws"></div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap" id="lamps"></div>
+    </div>
+
+    <div class="card pad">
+      <div class="hdr"><span class="bg">TRUTH</span><span class="st" id="truthSt">ためした記録</span></div>
+      <div class="rows" id="truth"></div>
+      <div id="remWrap"></div>
+      <p class="note" id="truthNote"></p>
+    </div>
+
+    <div class="bts">
+      <button id="checkBtn">たしかめる</button>
+      <button id="hintBtn" class="o">ヒント</button>
+    </div>
+    <div id="result"></div>
+  </aside>
+</div>
+
+<p class="note" style="text-align:center;margin-top:14px">
+  つなぐ工房　<span id="ver"></span>　／　コンピュータシステム技術
+</p>
+</div>
+
+<div class="pop" id="pop"><div class="popbox" id="popbox"></div></div>
+
+<script>
+"use strict";
+const VER = "版 2026-09-14a";
+
+/* ============================================================
+   部品の形。端子の位置はここだけで決める（描画と当たり判定が必ず一致する）
+   ============================================================ */
+const SHAPE = {
+  // 電気の世界（端子2つ。スイッチは電気を通す／通さない）
+  vcc  : { pins:{ y:[0,0] },            kind:"rail" },
+  gnd  : { pins:{ y:[0,0] },            kind:"rail" },
+  swE  : { pins:{ a:[-34,0], b:[34,0] }, kind:"pass" },
+  lampE: { pins:{ a:[-24,0], b:[24,0] }, kind:"lampE" },
+  // 記号の世界（値が流れる）
+  swL  : { pins:{ y:[0,0] },             kind:"src" },
+  lampL: { pins:{ a:[-24,0] },           kind:"lampL" },
+  not  : { pins:{ a:[0,0], y:[62,0] },   kind:"gate" },
+  and  : { pins:{ a:[0,-16], b:[0,16], y:[62,0] }, kind:"gate" },
+  or   : { pins:{ a:[0,-16], b:[0,16], y:[62,0] }, kind:"gate" },
+  xor  : { pins:{ a:[0,-16], b:[0,16], y:[62,0] }, kind:"gate" },
+};
+function pinPos(part, pin){
+  const d = SHAPE[part.t].pins[pin];
+  return { x: part.x + d[0], y: part.y + d[1] };
+}
+
+/* ============================================================
+   レッスン
+   start = 最初から張ってある配線（必ず未完成）
+   sol   = 正解の配線
+   ============================================================ */
+function P(id,t,x,y,label,opt){ return Object.assign({id,t,x,y,label:label||""}, opt||{}); }
+
+const LESSONS = [
+{ id:1, group:"キホン", name:"01 スイッチ",
+  title:"課題01　スイッチとランプをつなぐ",
+  body:"電池の <em>＋</em> から出た線が、スイッチ A を通って、ランプ Y を通って、<em>−</em> にもどる。<br>この一本道ができると、ランプは点きます。",
+  hint:"切れているところが一か所あります。端子をタップして、つなぎ先の端子をタップしなさい。",
+  parts:[ P("V","vcc",40,150), P("A","swE",200,150,"A"), P("Y","lampE",470,150,"Y"), P("G","gnd",660,150) ],
+  start:[ ["V.y","A.a"], ["Y.b","G.y"] ],
+  sol:  [ ["V.y","A.a"], ["A.b","Y.a"], ["Y.b","G.y"] ],
+  ins:["A"], outs:["Y"],
+  ref:(a)=>[a],
+  hints:["電池の＋から、ランプまで、線は一本につながっているか。",
+         "スイッチ A の右がわの端子が、どこにもつながっていない。",
+         "A の右がわの端子と、ランプ Y の左がわの端子をつなぐ。"],
+  after:"スイッチを入れると電気が通り、切ると通らない。これだけが、この先すべての土台です。" },
+
+{ id:2, group:"キホン", name:"02 直列",
+  title:"課題02　二つのスイッチを一本道にする",
+  body:"スイッチ A と B を、電池からランプまで <em>一本道</em> に並べなさい。<br>どちらか片方だけ入れても、ランプは点きません。",
+  hint:"4 とおり全部をためすと「たしかめる」が押せます。",
+  parts:[ P("V","vcc",40,150), P("A","swE",160,150,"A"), P("B","swE",310,150,"B"),
+          P("Y","lampE",480,150,"Y"), P("G","gnd",660,150) ],
+  start:[ ["V.y","A.a"], ["A.b","B.a"], ["Y.b","G.y"] ],
+  sol:  [ ["V.y","A.a"], ["A.b","B.a"], ["B.b","Y.a"], ["Y.b","G.y"] ],
+  ins:["A","B"], outs:["Y"],
+  ref:(a,b)=>[a&&b?1:0],
+  hints:["B の右がわが、まだどこにもつながっていない。",
+         "一本道にするには、B を通った電気がランプに入ればよい。",
+         "B の右がわの端子と、ランプ Y の左がわの端子をつなぐ。"],
+  after:"両方入れたときだけ点く。この「両方そろって はじめて」という形を、AND といいます。" },
+
+{ id:3, group:"キホン", name:"03 並列",
+  title:"課題03　二つのスイッチを横に並べる",
+  body:"こんどは A と B を <em>べつべつの道</em> にします。<br>どちらか一方を入れれば、ランプは点きます。",
+  hint:"B の道が、まだ一本もつながっていません。",
+  parts:[ P("V","vcc",40,150), P("A","swE",250,95,"A"), P("B","swE",250,205,"B"),
+          P("Y","lampE",480,150,"Y"), P("G","gnd",660,150) ],
+  start:[ ["V.y","A.a"], ["A.b","Y.a"], ["Y.b","G.y"] ],
+  sol:  [ ["V.y","A.a"], ["A.b","Y.a"], ["V.y","B.a"], ["B.b","Y.a"], ["Y.b","G.y"] ],
+  ins:["A","B"], outs:["Y"],
+  ref:(a,b)=>[a||b?1:0],
+  hints:["A の道と同じものを、B にも作る。",
+         "電池の＋から B へ。B からランプへ。線は 2 本いる。",
+         "電池の＋の端子と B の左、B の右とランプ Y の左をつなぐ。"],
+  after:"どちらかが入れば点く。この形を OR といいます。" },
+
+{ id:4, group:"キホン", name:"04 NOT",
+  title:"課題04　押すと消えるスイッチ",
+  body:"このスイッチ A は、いままでと <em>逆</em> です。<br>ふだんは電気を通し、入れると通さなくなります。",
+  hint:"つなぎ方はこれまでと同じ。動きだけが逆になります。",
+  parts:[ P("V","vcc",40,150), P("A","swE",200,150,"A",{nc:true}), P("Y","lampE",470,150,"Y"), P("G","gnd",660,150) ],
+  start:[ ["V.y","A.a"], ["Y.b","G.y"] ],
+  sol:  [ ["V.y","A.a"], ["A.b","Y.a"], ["Y.b","G.y"] ],
+  ins:["A"], outs:["Y"],
+  ref:(a)=>[a?0:1],
+  hints:["つなぎ方は課題01 とまったく同じ。","A の右がわの端子が空いている。",
+         "A の右がわとランプ Y の左がわをつなぐ。"],
+  after:"入れると消える。この形を NOT といいます。「〜でない」を作る部品です。" },
+
+{ id:5, group:"キホン", name:"05 真理値表",
+  title:"課題05　同じはたらきを、記号で書く",
+  body:"課題02 でつくった「両方そろって はじめて」を、部品 <em>一個</em> で書けます。<br>それが <em>AND</em> です。A と B をつなぎ、出口をランプにつなぎなさい。",
+  hint:"線は 3 本。まだ 1 本しか張っていません。",
+  parts:[ P("A","swL",70,110,"A"), P("B","swL",70,200,"B"),
+          P("D","and",260,155,"AND"), P("Y","lampL",520,155,"Y") ],
+  start:[ ["A.y","D.a"] ],
+  sol:  [ ["A.y","D.a"], ["B.y","D.b"], ["D.y","Y.a"] ],
+  ins:["A","B"], outs:["Y"],
+  ref:(a,b)=>[a&&b?1:0],
+  hints:["AND の左がわには、入口が上下に 2 つある。",
+         "B をまだつないでいない。AND の出口もランプにつないでいない。",
+         "B → AND の下の入口、AND の出口 → ランプ Y。"],
+  after:"課題02 の回路と、この AND 一個は、まったく同じはたらきをします。真理値表が同じなら、同じ回路です。" },
+
+{ id:6, group:"カダイ", name:"06 XOR",
+  title:"課題06　ちがうときだけ点く回路をつくれ",
+  body:"A と B が <em>ちがうとき</em> だけ点く回路を作りなさい。<br>部品は置いてあります。線をつなぐのはきみです。",
+  hint:"ちがう、とは「A が 1 で B が 0」または「A が 0 で B が 1」のこと。",
+  parts:[ P("A","swL",60,55,"A"), P("B","swL",60,265,"B"),
+          P("N1","not",150,120,"NOT"), P("N2","not",150,205,"NOT"),
+          P("D1","and",290,70,"AND"), P("D2","and",290,250,"AND"),
+          P("O1","or",450,160,"OR"), P("Y","lampL",610,160,"Y") ],
+  start:[ ["A.y","N1.a"], ["B.y","N2.a"] ],
+  sol:  [ ["A.y","N1.a"], ["B.y","N2.a"],
+          ["A.y","D1.a"], ["N2.y","D1.b"],
+          ["N1.y","D2.a"], ["B.y","D2.b"],
+          ["D1.y","O1.a"], ["D2.y","O1.b"], ["O1.y","Y.a"] ],
+  ins:["A","B"], outs:["Y"],
+  ref:(a,b)=>[a!==b?1:0],
+  hints:["「A であって、B でない」を作る。それには AND と NOT を組み合わせる。",
+         "上の AND は「A と NOT B」。下の AND は「NOT A と B」。どちらかが成り立てばよいので、最後は OR。",
+         "上AND ← A と NOT2 の出口／下AND ← NOT1 の出口と B／二つの AND を OR に入れて、OR の出口をランプへ。"],
+  halfway:[ ["A.y","N1.a"], ["B.y","N2.a"], ["A.y","D1.a"], ["N2.y","D1.b"], ["D1.y","O1.a"], ["O1.y","Y.a"] ],
+  after:"これを 排他的論理和（XOR）といいます。A と B がちがうときだけ 1。この形は、このあと何度も出てきます。" },
+
+{ id:7, group:"カダイ", name:"07 半加算器",
+  title:"課題07　出口が二つある回路",
+  body:"課題06 の <em>XOR</em> を、部品一個にしたものを置いてあります。<br>となりの <em>AND</em> にも、同じ A と B をつなぎなさい。出口は二つ、S と C です。",
+  hint:"4 とおり全部ためしてから、表のいちばん右の列を見なさい。",
+  parts:[ P("A","swL",60,90,"A"), P("B","swL",60,230,"B"),
+          P("X1","xor",250,110,"XOR"), P("D1","and",250,215,"AND"),
+          P("S","lampL",560,110,"S"), P("C","lampL",560,215,"C") ],
+  start:[ ["A.y","X1.a"], ["B.y","X1.b"], ["X1.y","S.a"] ],
+  sol:  [ ["A.y","X1.a"], ["B.y","X1.b"], ["X1.y","S.a"],
+          ["A.y","D1.a"], ["B.y","D1.b"], ["D1.y","C.a"] ],
+  ins:["A","B"], outs:["C","S"],
+  ref:(a,b)=>[a&&b?1:0, a!==b?1:0],
+  dec:true,
+  hints:["A と B は、XOR にも AND にも、同じようにつなぐ。枝分かれしてよい。",
+         "A の端子から線を 2 本出せる。B も同じ。",
+         "A → AND の上の入口／B → AND の下の入口／AND の出口 → ランプ C。"],
+  after:"C と S を左から並べて読むと、2 けたの 2 進数です。1＋1＝10。これは足し算の回路です。半加算器といいます。" },
+
+{ id:8, group:"カダイ", name:"08 全加算器",
+  title:"課題08　下の桁からの繰り上がりを受けとる",
+  body:"入力が三つになります。A、B、そして下の桁からきた繰り上がり <em>Cin</em>。<br>出口は 和 S と 繰り上がり Cout。",
+  hint:"8 とおり全部をためす必要があります。",
+  parts:[ P("A","swL",50,50,"A"), P("B","swL",50,120,"B"), P("I","swL",50,255,"Cin"),
+          P("X1","xor",150,85,"XOR"), P("D1","and",150,190,"AND"),
+          P("X2","xor",330,130,"XOR"), P("D2","and",330,250,"AND"),
+          P("O1","or",470,215,"OR"),
+          P("S","lampL",620,130,"S"), P("C","lampL",620,215,"Cout") ],
+  start:[ ["A.y","X1.a"], ["B.y","X1.b"], ["A.y","D1.a"], ["B.y","D1.b"], ["X1.y","X2.a"] ],
+  sol:  [ ["A.y","X1.a"], ["B.y","X1.b"], ["A.y","D1.a"], ["B.y","D1.b"],
+          ["X1.y","X2.a"], ["I.y","X2.b"], ["X2.y","S.a"],
+          ["X1.y","D2.a"], ["I.y","D2.b"],
+          ["D2.y","O1.a"], ["D1.y","O1.b"], ["O1.y","C.a"] ],
+  ins:["A","B","Cin"], outs:["Cout","S"],
+  ref:(a,b,c)=>[ ((a&&b)||((a!==b)&&c))?1:0, ((a!==b)!==(!!c))?1:0 ],
+  dec:true,
+  hints:["和 S は「A と B と Cin のうち、1 が奇数個なら 1」。XOR を二段に重ねる。",
+         "繰り上がりは二通りで起きる。A と B の両方が 1 のとき。もう一つは、A と B がちがっていて Cin が 1 のとき。",
+         "X1の出口 → X2の上／Cin → X2の下／X2 → S。X1の出口 → 下ANDの上／Cin → 下ANDの下。下AND と 上AND を OR に入れ、OR → Cout。"],
+  after:"これを 8 個ならべれば 8 ビットの足し算になります。CPU の中の演算装置は、これでできています。" },
+];
+
+/* ============================================================
+   評価。端子を Union-Find でまとめてから、
+   電気の世界（通っている／いない）と 記号の世界（1／0）を別々に解く
+   ============================================================ */
+function evalBoard(lesson, wires, sw){
+  const parts = lesson.parts, byId = {};
+  parts.forEach(p=>byId[p.id]=p);
+  const par = {};
+  const find = a => { while(par[a]!==a){ par[a]=par[par[a]]; a=par[a]; } return a; };
+  const uni  = (a,b) => { a=find(a); b=find(b); if(a!==b) par[a]=b; };
+  parts.forEach(p=>{ for(const k in SHAPE[p.t].pins) par[p.id+"."+k] = p.id+"."+k; });
+  wires.forEach(w=>{ if(par[w[0]]!==undefined && par[w[1]]!==undefined) uni(w[0],w[1]); });
+
+  // --- 電気の世界。閉じたスイッチは両端をつなぐ
+  parts.forEach(p=>{
+    if(p.t!=="swE") return;
+    const on = !!sw[p.label], closed = p.nc ? !on : on;
+    if(closed) uni(p.id+".a", p.id+".b");
+  });
+  const vcc = parts.find(p=>p.t==="vcc"), gnd = parts.find(p=>p.t==="gnd");
+  const cV = vcc ? find(vcc.id+".y") : null;
+  const cG = gnd ? find(gnd.id+".y") : null;
+
+  // --- 記号の世界。入力を置いてから、値が落ち着くまで繰り返す
+  const val = {};
+  const get = t => val[find(t)] ? 1 : 0;
+  const set = (t,v) => { val[find(t)] = v?1:0; };
+  parts.forEach(p=>{ if(p.t==="swL") set(p.id+".y", sw[p.label]?1:0); });
+  const GATE = { not:v=>v[0]?0:1, and:v=>(v[0]&&v[1])?1:0,
+                 or:v=>(v[0]||v[1])?1:0, xor:v=>(v[0]!==v[1])?1:0 };
+  for(let pass=0; pass<8; pass++){
+    parts.forEach(p=>{
+      if(!GATE[p.t]) return;
+      const ins = p.t==="not" ? [get(p.id+".a")] : [get(p.id+".a"), get(p.id+".b")];
+      set(p.id+".y", GATE[p.t](ins));
+    });
+    parts.forEach(p=>{ if(p.t==="swL") set(p.id+".y", sw[p.label]?1:0); });
+  }
+
+  // --- 出力
+  const out = {};
+  parts.forEach(p=>{
+    if(p.t==="lampE") out[p.label] = (cV!==null && find(p.id+".a")===cV && find(p.id+".b")===cG) ? 1 : 0;
+    if(p.t==="lampL") out[p.label] = get(p.id+".a");
+  });
+  // --- 線の色づけ用。電気が来ている端子の組
+  const hot = {};
+  // ランプが点いていれば電気は輪を一周している。もどる道（−側）も光らせる
+  const anyLit = parts.some(p=>p.t==="lampE" && out[p.label]);
+  parts.forEach(p=>{ for(const k in SHAPE[p.t].pins){
+    const t = p.id+"."+k, c = find(t);
+    hot[t] = (cV!==null && c===cV) ? 1 : ((anyLit && cG!==null && c===cG) ? 1 : get(t));
+  }});
+  return { out, hot, find };
+}
+
+/* ============================================================
+   画面の状態
+   ============================================================ */
+let idx = 0, mode = "edit", wires = [], sw = {}, sel = null;
+let tried = {}, hintLv = 0, rec = {}, judged = null;
+
+const L = () => LESSONS[idx];
+const $ = s => document.querySelector(s);
+const combos = n => { const r=[]; for(let i=0;i<(1<<n);i++){ const c=[];
+  for(let b=n-1;b>=0;b--) c.push((i>>b)&1); r.push(c); } return r; };
+const key = c => c.join("");
+
+function load(i){
+  idx = i; mode = "edit"; sel = null; hintLv = 0; judged = null; tried = {};
+  wires = L().start.map(w=>w.slice());
+  sw = {}; L().ins.forEach(n=>sw[n]=0);
+  draw();
+}
+function resetLesson(){ load(idx); }
+
+/* ---------- 描画 ---------- */
+function gateBody(p){
+  const x=p.x, y=p.y, ink="#1b1340";
+  if(p.t==="not") return `<path d="M${x},${y-26} L${x+44},${y} L${x},${y+26} Z" fill="#fff" stroke="${ink}" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="${x+49}" cy="${y}" r="5.5" fill="#fff" stroke="${ink}" stroke-width="4"/>`;
+  if(p.t==="and") return `<path d="M${x},${y-30} L${x+32},${y-30} A30,30 0 0 1 ${x+32},${y+30} L${x},${y+30} Z" fill="#fff" stroke="${ink}" stroke-width="5" stroke-linejoin="round"/>
+    <text x="${x+28}" y="${y+5}" text-anchor="middle" font-size="12" font-weight="900" fill="${ink}">AND</text>`;
+  if(p.t==="or"||p.t==="xor"){
+    const off = p.t==="xor" ? `<path d="M${x-12},${y-30} Q${x+6},${y} ${x-12},${y+30}" fill="none" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>` : "";
+    return off + `<path d="M${x},${y-30} Q${x+18},${y} ${x},${y+30} Q${x+46},${y+30} ${x+62},${y} Q${x+46},${y-30} ${x},${y-30}" fill="#fff" stroke="${ink}" stroke-width="5" stroke-linejoin="round"/>
+    <text x="${x+26}" y="${y+5}" text-anchor="middle" font-size="11.5" font-weight="900" fill="${ink}">${p.t==="xor"?"XOR":"OR"}</text>`;
+  }
+  return "";
+}
+function partSvg(p, ev){
+  const ink="#1b1340", x=p.x, y=p.y;
+  if(p.t==="vcc"||p.t==="gnd"){
+    const on = p.t==="vcc";
+    return `<rect x="${x-4}" y="${y-110}" width="8" height="220" rx="4" fill="${on?"#0d9488":ink}"/>
+      <text x="${x}" y="${y-120}" text-anchor="middle" font-size="13" font-weight="900" fill="${on?"#0d9488":ink}">${on?"＋":"−"}</text>`;
+  }
+  if(p.t==="swE"){
+    const on = !!sw[p.label], closed = p.nc ? !on : on;
+    const lever = closed ? `<line x1="${x-34}" y1="${y}" x2="${x+34}" y2="${y}" stroke="${ink}" stroke-width="9" stroke-linecap="round"/>`
+      : `<line x1="${x-34}" y1="${y}" x2="${x+28}" y2="${y-28}" stroke="${ink}" stroke-width="9" stroke-linecap="round"/>`;
+    return `${lever}<rect x="${x-42}" y="${y-62}" width="84" height="26" rx="9" fill="${on?"#0d9488":"#fff"}" stroke="${ink}" stroke-width="2.5"/>
+      <text x="${x}" y="${y-44}" text-anchor="middle" font-size="13" font-weight="900" fill="${on?"#fff":ink}">${p.label} ＝ ${on?1:0}</text>
+      ${p.nc?`<text x="${x}" y="${y+46}" text-anchor="middle" font-size="11" font-weight="700" fill="#db2777">逆に動く</text>`:""}`;
+  }
+  if(p.t==="swL"){
+    const on = !!sw[p.label];
+    return `<circle cx="${x}" cy="${y}" r="13" fill="${on?"#0d9488":"#fff"}" stroke="${ink}" stroke-width="4"/>
+      <text x="${x}" y="${y-24}" text-anchor="middle" font-size="13" font-weight="900" fill="${on?"#0d9488":ink}">${p.label}＝${on?1:0}</text>`;
+  }
+  if(p.t==="lampE"||p.t==="lampL"){
+    const lit = !!(ev && ev.out[p.label]);
+    return `${lit?`<circle cx="${x}" cy="${y}" r="33" fill="#facc15" opacity="0.3"/>`:""}
+      <circle cx="${x}" cy="${y}" r="24" fill="${lit?"#facc15":"#fff"}" stroke="${ink}" stroke-width="5"/>
+      <line x1="${x-15}" y1="${y-15}" x2="${x+15}" y2="${y+15}" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>
+      <line x1="${x-15}" y1="${y+15}" x2="${x+15}" y2="${y-15}" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>
+      <rect x="${x-46}" y="${y-62}" width="92" height="26" rx="9" fill="${lit?"#facc15":"#fff"}" stroke="${ink}" stroke-width="2.5"/>
+      <text x="${x}" y="${y-44}" text-anchor="middle" font-size="13" font-weight="900" fill="${ink}">${p.label} ＝ ${ev?ev.out[p.label]:0}</text>`;
+  }
+  return gateBody(p);
+}
+function termPos(t){ const [pid,pin]=t.split("."); const p=L().parts.find(q=>q.id===pid); return pinPos(p,pin); }
+function wirePath(a,b){
+  const p=termPos(a), q=termPos(b);
+  if(Math.abs(p.y-q.y)<2) return `M${p.x},${p.y} H${q.x}`;
+  const mx = (p.x+q.x)/2;
+  return `M${p.x},${p.y} H${mx} V${q.y} H${q.x}`;
+}
+function draw(){
+  const l = L();
+  const ev = evalBoard(l, wires, sw);
+
+  // タブ
+  $("#tabs").innerHTML = ["キホン","カダイ"].map(g=>{
+    const list = LESSONS.filter(x=>x.group===g).map(x=>{
+      const i = LESSONS.indexOf(x);
+      const cls = i===idx ? "t cu" : (rec[x.id]==="合格" ? "t dn" : "t");
+      return `<span class="${cls}" data-go="${i}">${x.name}</span>`;
+    }).join("");
+    return `<span class="tg">${g}</span>${list}`;
+  }).join("") + `<span class="t" style="cursor:default;opacity:.5">09 4ビット（準備中）</span>`;
+
+  // チップ
+  $("#chips").innerHTML =
+    l.ins.map(n=>`<div class="chip ${sw[n]?"te":""}"><span class="k">${n}</span><span class="v">${sw[n]?1:0}</span></div>`).join("")
+  + l.outs.map(n=>`<div class="chip"><span class="k">${n}</span><span class="v">${ev.out[n]}</span></div>`).join("")
+  + `<div class="chip"><span class="k">ためした</span><span class="v">${Object.keys(tried).length}/${1<<l.ins.length}</span></div>`;
+
+  // 課題文
+  $("#gTitle").textContent = l.title;
+  $("#gBody").innerHTML = l.body;
+  $("#gHint").textContent = l.hint;
+
+  // 盤
+  const wsvg = wires.map((w,i)=>{
+    const on = ev.hot[w[0]] || ev.hot[w[1]];
+    return `<path d="${wirePath(w[0],w[1])}" fill="none" stroke="${on?"#0d9488":"#d8d2ee"}" stroke-width="8"
+      stroke-linecap="round" stroke-linejoin="round"/>
+      <path class="wtap" data-wire="${i}" d="${wirePath(w[0],w[1])}" fill="none" stroke="transparent" stroke-width="26"
+      style="cursor:${mode==="edit"?"pointer":"default"}"/>`;
+  }).join("");
+  const psvg = l.parts.map(p=>partSvg(p,ev)).join("");
+  let tsvg = "";
+  l.parts.forEach(p=>{ for(const k in SHAPE[p.t].pins){
+    const t = p.id+"."+k, q = pinPos(p,k), isSel = sel===t;
+    const col = isSel ? "#6d28d9" : (ev.hot[t] ? "#0d9488" : "#1b1340");
+    tsvg += `${isSel?`<circle cx="${q.x}" cy="${q.y}" r="16" fill="none" stroke="#6d28d9" stroke-width="4"/>`:""}
+      <circle cx="${q.x}" cy="${q.y}" r="7" fill="${col}" stroke="#fff" stroke-width="2"/>
+      <circle class="ttap" data-term="${t}" cx="${q.x}" cy="${q.y}" r="22" fill="transparent"
+        style="cursor:${mode==="edit"?"pointer":"default"}"/>`;
+  }});
+  let ghost = "";
+  if(sel && mode==="edit"){
+    const q = termPos(sel);
+    ghost = `<circle cx="${q.x}" cy="${q.y}" r="26" fill="#6d28d9" opacity="0.12"/>`;
+  }
+  $("#scr").innerHTML = `<svg viewBox="0 0 700 300" preserveAspectRatio="xMidYMid meet"
+     font-family="'Noto Sans JP',sans-serif">${ghost}${wsvg}${psvg}${tsvg}</svg>`;
+
+  $("#boardSt").className = "st " + (mode==="edit" ? "vi" : "te");
+  $("#boardSt").innerHTML = mode==="edit"
+    ? "編集モード<br>端子をタップ → つなぎ先をタップ"
+    : "運転モード<br>回路は編集できません";
+  $("#boardNote").textContent = mode==="edit"
+    ? (sel ? "つなぎ先の端子をタップ。同じ端子をもう一度タップするとやめられます。"
+           : "線を消すときは、その線をタップします。")
+    : "右のスイッチを切りかえると、電気の通り道が緑になります。";
+
+  // 入力・出力
+  $("#sws").innerHTML = l.ins.map(n=>
+    `<div class="sb ${sw[n]?"on":""}" data-sw="${n}"><div class="k">SW ${n}</div><div class="v">${sw[n]?1:0}</div></div>`).join("");
+  $("#lamps").innerHTML = l.outs.map(n=>
+    `<div class="lamp ${ev.out[n]?"on":""}"><i></i>${n}<span class="v">${ev.out[n]}</span></div>`).join("");
+  $("#inputSt").textContent = mode==="run" ? "タップで切りかえ" : "運転モードにすると使えます";
+  $("#sws").style.opacity = mode==="run" ? "1" : ".45";
+  $("#sws").style.pointerEvents = mode==="run" ? "auto" : "none";
+
+  // 真理値表
+  const cs = combos(l.ins.length);
+  const cur = key(l.ins.map(n=>sw[n]?1:0));
+  $("#truth").innerHTML = cs.map(c=>{
+    const k = key(c), got = tried[k];
+    const bad = judged && judged.bad.indexOf(k)>=0;
+    const cls = bad ? "r bad" : (!got ? "r wait" : (mode==="run" && k===cur ? "r now" : "r"));
+    const ins = c.map(v=>`<span class="p">${v}</span>`).join("");
+    const outs = l.outs.map((n,i)=>`<span class="o">${got?got[i]:"?"}</span>`).join("");
+    const dec = l.dec && got ? `<span class="o dec">${c.reduce((s,v)=>s+v,0)>=0
+      ? c.join("＋")+"＝"+(got[0]*2+got[1]) : ""}</span>` : "";
+    return `<div class="${cls}">${ins}<span class="ar">→</span><span class="os">${outs}${dec}</span></div>`;
+  }).join("");
+
+  const left = cs.length - Object.keys(tried).length;
+  $("#remWrap").innerHTML = left>0
+    ? `<div class="rem">のこり ${left} とおり</div>`
+    : `<div class="rem ok">4 とおりそろった</div>`.replace("4",cs.length);
+  $("#truthSt").textContent = left>0 ? "ためした記録" : "全部そろった";
+  $("#truthNote").textContent = left>0
+    ? "運転モードでスイッチを切りかえると、その行が埋まります。全部そろうと「たしかめる」が押せます。"
+    : "「たしかめる」が押せます。";
+  $("#checkBtn").disabled = left>0;
+
+  $("#modeBtn").textContent = mode==="edit" ? "▶ 運転にする" : "■ 編集にもどる";
+  $("#modeBtn").className = mode==="edit" ? "te" : "pk";
+  $("#ver").textContent = VER;
+  if(!judged) $("#result").innerHTML = "";
+}
+
+/* ---------- 操作 ---------- */
+function tapTerm(t){
+  if(mode!=="edit") return;
+  if(sel===null){ sel = t; draw(); return; }
+  if(sel===t){ sel = null; draw(); return; }
+  const a=sel, b=t;
+  const dup = wires.some(w=>(w[0]===a&&w[1]===b)||(w[0]===b&&w[1]===a));
+  if(!dup) wires.push([a,b]);
+  sel = null; judged = null; tried = {};
+  draw();
+}
+function tapWire(i){
+  if(mode!=="edit") return;
+  wires.splice(i,1); sel=null; judged=null; tried={}; draw();
+}
+function record(){
+  const l=L(), ev=evalBoard(l,wires,sw);
+  tried[key(l.ins.map(n=>sw[n]?1:0))] = l.outs.map(n=>ev.out[n]);
+}
+function setMode(m){
+  mode = m; sel = null;
+  if(m==="run"){ tried = {}; judged = null; record(); }
+  draw();
+}
+function check(){
+  const l=L(), bad=[];
+  combos(l.ins.length).forEach(c=>{
+    const want = l.ref.apply(null, c.map(v=>!!v)).map(v=>v?1:0);
+    const got = tried[key(c)];
+    if(!got || got.join()!==want.join()) bad.push(key(c));
+  });
+  judged = { bad };
+  if(bad.length===0){
+    rec[l.id] = "合格";
+    popup(`<div class="card pass pad" style="border:none;background:none;padding:0">
+      <h2 style="color:#0d9488">合格</h2>
+      <p class="txt" style="font-size:13px">${l.after}</p>
+      <div class="bts">${idx<LESSONS.length-1?'<button class="te" id="nextBtn">次の課題へ</button>':''}
+        <button class="o" id="againBtn">もう一度</button>
+        <button class="o" id="closeBtn">とじる</button></div></div>`);
+  } else {
+    popup(`<div class="card fail pad" style="border:none;background:none;padding:0">
+      <h2 style="color:#db2777">まだちがいます</h2>
+      <p class="txt" style="font-size:13px">${bad.length} とおりが、正しい答えとちがいました。
+        上の表で <b>桃色の行</b> を見なさい。</p>
+      <div class="bts"><button class="o" id="backBtn">編集にもどる</button>
+        <button class="o" id="hint2Btn">ヒント</button>
+        ${idx<LESSONS.length-1?'<button class="o" id="skipBtn">次へすすむ</button>':''}
+        <button class="o" id="closeBtn">とじる</button></div>
+      <p class="note">できなくても次へ進めます。あとから戻ってこられます。</p></div>`);
+  }
+  draw();
+}
+function showHint(){
+  const l=L();
+  if(hintLv<3) hintLv++;
+  let h = l.hints.slice(0,hintLv).map((t,i)=>
+    `<div class="hc"><div class="hn">ヒント ${i+1}</div><p>${t}</p></div>`).join("");
+  let more = "";
+  if(hintLv>=3 && l.halfway) more =
+    `<div class="hc" style="border-color:#db2777"><div class="hn">おてほん</div>
+     <p>お手本の回路を <b>半分だけ</b> 盤に入れます。<br>いま組んである線は消えます。</p>
+     <div class="bts"><button class="pk" id="hwBtn">入れかえる</button></div></div>`;
+  else if(hintLv>=3) more = `<p class="note">ヒントはここまでです。</p>`;
+  popup(`<h3>ヒント（${hintLv}／3）</h3>${h}${more}
+    <div class="bts"><button class="o" id="closeBtn">とじる</button></div>`);
+}
+function popup(html){ $("#popbox").innerHTML = html; $("#pop").classList.add("show"); }
+function closePop(){ $("#pop").classList.remove("show"); }
+
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-term]"); if(t) return tapTerm(t.dataset.term);
+  const w = e.target.closest("[data-wire]"); if(w) return tapWire(+w.dataset.wire);
+  const g = e.target.closest("[data-go]");   if(g) return load(+g.dataset.go);
+  const s = e.target.closest("[data-sw]");
+  if(s && mode==="run"){ const n=s.dataset.sw; sw[n]=sw[n]?0:1; record(); judged=null; return draw(); }
+  switch(e.target.id){
+    case "modeBtn":  return setMode(mode==="edit"?"run":"edit");
+    case "resetBtn": return resetLesson();
+    case "checkBtn": return check();
+    case "hintBtn": case "hint2Btn": return showHint();
+    case "closeBtn": return closePop();
+    case "nextBtn": closePop(); return load(idx+1);
+    case "skipBtn": closePop(); return load(idx+1);
+    case "againBtn": case "backBtn": closePop(); judged=null; return setMode("edit");
+    case "hwBtn":
+      wires = L().halfway.map(x=>x.slice()); sel=null; tried={}; judged=null;
+      closePop(); return setMode("edit");
+  }
+  if(e.target.id==="pop") closePop();
+});
+
+if(typeof window!=="undefined"){ window.TK = { LESSONS, SHAPE, evalBoard, combos, key }; }
+load(0);
+</script>
+</body>
+</html>
