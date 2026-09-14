@@ -1,0 +1,149 @@
+<div style="width:1366px;height:768px;overflow:hidden">
+
+<header class="face">
+  <div class="brand">
+    <div class="mark">LOG</div>
+    <div>
+      <h1>つなぐ工房</h1>
+      <div class="sub">LOGIC WORKSHOP ／ スイッチ・AND・OR・NOT から 加算器 まで</div>
+    </div>
+  </div>
+  <div class="leds">
+    <div class="led on"><i></i><span>POWER</span></div>
+    <div class="led on"><i></i><span>RUN</span></div>
+  </div>
+  <div class="ctl">
+    <span class="btn stop">■ 編集にもどる</span>
+    <span class="btn ghost">はじめから</span>
+  </div>
+</header>
+
+<div class="statusbar">
+  <div class="st live"><span class="k">MODE</span><span class="v">運転</span></div>
+  <div class="st"><span class="k">LESSON</span><span class="v">2 / 9</span></div>
+  <div class="st"><span class="k">INPUT</span><span class="v">A=1　B=0</span></div>
+  <div class="st"><span class="k">OUTPUT</span><span class="v">Y=0</span></div>
+  <div class="st"><span class="k">TRIED</span><span class="v">3 / 4 とおり</span></div>
+  <div class="st ver"><span class="k">VER</span><span class="v">2026-09-14a</span></div>
+</div>
+
+<nav class="tabs">
+  <div class="tabrow">
+    <div class="grplab">キホン</div>
+    <div class="tab done">1 スイッチ</div>
+    <div class="tab now">2 直列</div>
+    <div class="tab">3 並列</div>
+    <div class="tab">4 NOT</div>
+    <div class="tab">5 真理値表</div>
+  </div>
+  <div class="tabrow">
+    <div class="grplab">カダイ</div>
+    <div class="tab">6 XOR</div>
+    <div class="tab">7 半加算器</div>
+    <div class="tab">8 全加算器</div>
+    <div class="tab">9 4ビット</div>
+  </div>
+</nav>
+
+<div class="cols">
+  <main>
+    <div class="panel goal">
+      <h2>課題2　二つのスイッチを一本の道でつなぐ</h2>
+      <p>スイッチ A と スイッチ B を、電池からランプまで <b>一本道</b> に並べなさい。<br>
+         どちらか片方だけ入れても、ランプは点きません。</p>
+      <p class="hint">右のスイッチを切りかえて、４とおり全部をためしなさい。</p>
+    </div>
+
+    <div class="panel board live2">
+      <div class="secthead">
+        <span class="sectk">STEP 2</span>
+        <span class="sectt">動かして確かめる</span>
+        <span class="sectstate">運転モード<br>回路は編集できません</span>
+      </div>
+      <div class="wirewrap">
+        <svg viewBox="0 0 700 300" width="100%" height="300" role="img" aria-label="運転中の配線盤">
+          <rect x="30" y="30" width="6" height="240" rx="2" fill="#3fc472"/>
+          <rect x="664" y="30" width="6" height="240" rx="2" fill="#5d564a"/>
+          <text x="33" y="22" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#948b77">＋</text>
+          <text x="667" y="22" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#948b77">−</text>
+
+          <g stroke="#15a34a" stroke-width="14" stroke-linecap="round" opacity="0.22">
+            <line x1="36" y1="150" x2="156" y2="150"/>
+            <line x1="156" y1="150" x2="224" y2="150"/>
+            <line x1="224" y1="150" x2="336" y2="150"/>
+          </g>
+          <g stroke="#15a34a" stroke-width="6" stroke-linecap="round">
+            <line x1="36" y1="150" x2="156" y2="150"/>
+            <line x1="156" y1="150" x2="224" y2="150"/>
+            <line x1="224" y1="150" x2="336" y2="150"/>
+          </g>
+          <g stroke="#9a917d" stroke-width="4" stroke-linecap="round">
+            <line x1="404" y1="150" x2="521" y2="150"/>
+            <line x1="569" y1="150" x2="664" y2="150"/>
+          </g>
+
+          <g>
+            <circle cx="156" cy="150" r="5" fill="#15a34a"/>
+            <circle cx="224" cy="150" r="5" fill="#15a34a"/>
+            <text x="190" y="108" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="13" font-weight="700" fill="#0f7a37">A ＝ 1</text>
+          </g>
+          <g>
+            <circle cx="336" cy="150" r="5" fill="#15a34a"/>
+            <circle cx="404" cy="150" r="5" fill="#3d3830"/>
+            <line x1="336" y1="150" x2="392" y2="126" stroke="#3d3830" stroke-width="5" stroke-linecap="round"/>
+            <text x="370" y="108" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="13" font-weight="700" fill="#6d6555">B ＝ 0</text>
+          </g>
+          <g>
+            <circle cx="545" cy="150" r="24" fill="#ffffff" stroke="#3d3830" stroke-width="4"/>
+            <line x1="528" y1="133" x2="562" y2="167" stroke="#3d3830" stroke-width="3"/>
+            <line x1="528" y1="167" x2="562" y2="133" stroke="#3d3830" stroke-width="3"/>
+            <circle cx="521" cy="150" r="5" fill="#3d3830"/>
+            <circle cx="569" cy="150" r="5" fill="#3d3830"/>
+            <text x="545" y="108" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="13" font-weight="700" fill="#6d6555">Y ＝ 0</text>
+          </g>
+
+          <g>
+            <rect x="248" y="196" width="212" height="26" rx="7" fill="#ffffff" stroke="#c3bba8"/>
+            <text x="354" y="214" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="12" fill="#6d6555">B が開いているので、ここで止まる</text>
+          </g>
+          <line x1="404" y1="164" x2="380" y2="194" stroke="#c3bba8" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+  </main>
+
+  <aside>
+    <div class="panel board live2">
+      <div class="blab">ソウサバン</div>
+      <div class="devrow" style="margin-bottom:9px">
+        <div class="xbtn sw on"><span class="swknob"></span>A<span class="tag">スイッチ</span></div>
+        <div class="xbtn sw"><span class="swknob"></span>B<span class="tag">スイッチ</span></div>
+      </div>
+      <div class="ylamp">Y　ランプ<span class="tag">きえている</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="blab">シンリチヒョウ　＝　ためした記録</div>
+      <table class="tt">
+        <tr><th>A</th><th>B</th><th class="sep">Y</th></tr>
+        <tr><td>0</td><td>0</td><td class="sep">0</td></tr>
+        <tr><td>0</td><td>1</td><td class="sep">0</td></tr>
+        <tr class="nowrow"><td>1</td><td>0</td><td class="sep">0</td></tr>
+        <tr class="todo"><td>1</td><td>1</td><td class="sep">−</td></tr>
+      </table>
+      <div class="cnt">のこり 1 とおり</div>
+      <div class="note">4 とおり全部をためすと「たしかめる」が押せるようになります。</div>
+    </div>
+
+    <div class="btnrow">
+      <span class="btn stop">■ 編集にもどる</span>
+      <span class="btn ghost">ヒント</span>
+      <span class="btn off">たしかめる</span>
+    </div>
+  </aside>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

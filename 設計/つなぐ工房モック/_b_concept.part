@@ -1,0 +1,82 @@
+<div style="width:1000px;height:1180px;overflow:hidden">
+
+<div class="sheethead">
+  <h1>つなぐ工房　コンセプト</h1>
+  <span class="tag9">コンピュータシステム技術／教材案 v0.1　／　論理回路</span>
+</div>
+
+<div class="panel goal" style="margin-bottom:12px">
+  <p class="hero">線でつないだだけの箱が、<br><em>勝手に足し算を始める。</em></p>
+  <p style="margin:9px 0 0;font-size:13px;line-height:1.8;color:#6d6555">
+    生徒には最後まで「足し算のつくり方」を教えない。AND と OR と NOT をつないでいたら、
+    気づいたときには 4 ビットの電卓になっている。<b>驚きを、説明より先に置く。</b></p>
+</div>
+
+<div class="two" style="margin-bottom:12px">
+  <div class="panel">
+    <div class="blab">シカケ　ノ　チュウシン</div>
+    <p style="margin:0 0 9px;font-size:13.5px;line-height:1.85">
+      真理値表を <b>答え合わせ</b> に使わない。<br>
+      生徒がスイッチを切りかえるたび、その組み合わせの行が埋まっていく
+      <b>操作の記録</b> にする。</p>
+    <table class="tt">
+      <tr><th>A</th><th>B</th><th class="sep">Y</th><th></th></tr>
+      <tr><td>0</td><td>0</td><td class="sep">0</td><td class="tag9">ためした</td></tr>
+      <tr><td>0</td><td>1</td><td class="sep">0</td><td class="tag9">ためした</td></tr>
+      <tr class="nowrow"><td>1</td><td>0</td><td class="sep">0</td><td class="tag9">いま</td></tr>
+      <tr class="todo"><td>1</td><td>1</td><td class="sep">−</td><td class="tag9">まだ</td></tr>
+    </table>
+    <div class="cnt">全部の行が埋まるまで「たしかめる」は押せない</div>
+    <div class="note">結果：「全部ためしなさい」と教える必要がなくなる。
+      <b>装置がそう仕向ける。</b>網羅という考え方が、指の動きとして身につく。</div>
+  </div>
+
+  <div class="panel">
+    <div class="blab">マモル　ヤクソク（ラダー工房から引き継ぐ）</div>
+    <ul class="rules">
+      <li>単一 HTML。ビルドなし・通信なし・ログインなし。URL を開くだけ</li>
+      <li>Chromebook 1人1台。<b>タップだけで配線できる</b>（ドラッグに頼らない）</li>
+      <li>編集モードと運転モードを分ける（運転中は回路を触れない）</li>
+      <li>部品箱には、その課題で使う部品だけを出す</li>
+      <li>ブラウザの確認ダイアログを使わない。画面の中で聞く</li>
+      <li>クリアできなくても次へ進める。あとから戻れる</li>
+      <li>画面に版を表示する（古いファイルを開く事故を防ぐ）</li>
+      <li>説明文はふつうの文。キャラクター口調にしない</li>
+    </ul>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:12px">
+  <div class="blab">キュウダン　ノ　カイダン</div>
+  <div class="step"><span class="n">1</span><span class="t">スイッチと豆電球</span><span class="d">まだ電気の話</span></div>
+  <div class="step" style="margin-left:22px"><span class="n">2</span><span class="t">直列につなぐ</span><span class="d">両方入れないと点かない</span></div>
+  <div class="step" style="margin-left:44px"><span class="n">3</span><span class="t">並列につなぐ</span><span class="d">どちらかで点く</span></div>
+  <div class="step" style="margin-left:66px"><span class="n">4</span><span class="t">NOT</span><span class="d">押すと消える</span></div>
+  <div class="step" style="margin-left:88px"><span class="n">5</span><span class="t">真理値表を読む・書く</span><span class="d">ここで記号が出てくる</span></div>
+  <div class="step peak" style="margin-left:110px"><span class="n">6</span><span class="t">XOR をつくれ</span><span class="d">★ 山場　自力で組ませる</span></div>
+  <div class="step peak" style="margin-left:132px"><span class="n">7</span><span class="t">半加算器</span><span class="d">★ 1＋1＝10 が見える</span></div>
+  <div class="step" style="margin-left:154px"><span class="n">8</span><span class="t">全加算器</span><span class="d">繰り上がりを受けとる</span></div>
+  <div class="step" style="margin-left:176px"><span class="n">9</span><span class="t">4ビット加算器</span><span class="d">電卓になる</span></div>
+  <div class="note"><b>6 のすぐ次に 7 を置くことが、設計のすべて。</b>
+    「XOR という変な回路」を苦労して自作した直後に、それが足し算の一の位だったと分かる。
+    先に言ってしまうと、この驚きは死ぬ。<b>教材の文章では絶対に先に言わない。</b></div>
+</div>
+
+<div class="panel">
+  <div class="blab">アトデ　ツナガル　テン</div>
+  <div class="card3">
+    <div class="c"><b>XOR → ネットワーク</b>
+      <p>通信の誤り検出（パリティ）は XOR そのもの。ここで自作した回路に、別の教材で再会する。</p></div>
+    <div class="c"><b>加算器 → CPU</b>
+      <p>4ビット加算器は、そのまま演算装置（ALU）の中身。「CPU の中」を開けたときに見覚えがある。</p></div>
+    <div class="c"><b>AND/OR/XOR → セキュリティ</b>
+      <p>ハッシュもパスワードの保存も、中で動いているのはこの三つ。ビットコインまで地続きになる。</p></div>
+  </div>
+  <div class="note">共通のエンジンや共通の画面は <b>つくらない</b>。教材はそれぞれ独立でよい。
+    「あ、これ前にやったやつだ」が起きれば、点と点はつながる。</div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
