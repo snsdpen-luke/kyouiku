@@ -1,0 +1,197 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=swap');
+    *{box-sizing:border-box}
+    :root{
+      --bg:#f1edff;--ink:#1b1340;--dim:#6a5f92;--dim2:#a79ccb;--pap:#ffffff;
+      --vi:#6d28d9;--te:#0d9488;--pk:#db2777;--ye:#facc15;--gy:#d8d2ee;
+      --j:'Noto Sans JP','Hiragino Sans',sans-serif;
+      --m:ui-monospace,SFMono-Regular,Menlo,monospace;
+      --sh:5px 5px 0 var(--ink);
+    }
+    body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:var(--j);font-size:13px}
+    a{color:var(--vi)}a:hover{color:#5b21b6}
+    .card{background:var(--pap);border:3px solid var(--ink);border-radius:16px;box-shadow:var(--sh)}
+    .top{display:flex;align-items:center;gap:16px;padding:12px 18px;margin-bottom:14px}
+    .top h1{margin:0;font-size:22px;font-weight:900;letter-spacing:.04em}
+    .top .cap{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.1em}
+    .chips{display:flex;gap:9px;margin-left:auto}
+    .chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 13px;border-radius:10px;
+      border:2.5px solid var(--ink);background:var(--bg);min-width:58px}
+    .chip .k{font-family:var(--m);font-size:8px;letter-spacing:.16em;color:var(--dim)}
+    .chip .v{font-size:17px;font-weight:900;line-height:1.1}
+    .chip.hot{background:var(--te);border-color:var(--ink)}
+    .chip.hot .k{color:#d7fbf4}.chip.hot .v{color:#ffffff}
+    .go{padding:11px 20px;border-radius:12px;border:3px solid var(--ink);background:var(--pk);color:#fff;
+      font-weight:900;font-size:13px;box-shadow:3px 3px 0 var(--ink);letter-spacing:.06em}
+    .tabs{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+    .tg{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.18em;color:var(--dim2);margin-right:2px}
+    .t{padding:9px 14px;border-radius:11px;border:2.5px solid var(--gy);background:var(--pap);
+      font-size:12px;font-weight:700;color:var(--dim2)}
+    .t.dn{border-color:var(--ink);color:var(--ink);background:#e9fbf7}
+    .t.cu{border-color:var(--ink);background:var(--vi);color:#fff;box-shadow:3px 3px 0 var(--ink)}
+    .cols{display:grid;grid-template-columns:minmax(0,1fr) 356px;gap:14px;align-items:start}
+    .pad{padding:16px 18px}
+    h2{margin:0 0 8px;font-size:19px;font-weight:900;letter-spacing:.02em}
+    .txt{margin:0;font-size:14px;line-height:1.95;font-weight:500}
+    .txt em{font-style:normal;background:linear-gradient(transparent 62%,#fde68a 62%);font-weight:700}
+    .sm{margin:8px 0 0;font-size:12px;color:var(--dim);font-weight:500;line-height:1.8}
+    .hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .hdr .bg{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.16em;color:#fff;
+      background:var(--ink);padding:5px 9px;border-radius:7px}
+    .hdr .st{margin-left:auto;font-size:11px;font-weight:700;color:var(--te)}
+    .scr{border:3px solid var(--ink);border-radius:12px;background:#fbfaff;overflow:hidden;
+      background-image:radial-gradient(#d8d2ee 1.6px,transparent 1.6px);background-size:22px 22px}
+    .sws{display:flex;gap:10px;margin-bottom:12px}
+    .sb{flex:1;border:3px solid var(--ink);border-radius:13px;background:var(--bg);padding:11px 0;text-align:center;
+      box-shadow:3px 3px 0 var(--ink)}
+    .sb .k{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dim)}
+    .sb .v{font-size:32px;font-weight:900;line-height:1.15;color:var(--dim2)}
+    .sb.on{background:var(--te)}
+    .sb.on .k{color:#c6f6ec}.sb.on .v{color:#fff}
+    .lamp{display:flex;align-items:center;gap:13px;border:3px solid var(--ink);border-radius:13px;
+      padding:12px 15px;background:var(--bg);font-weight:900;font-size:14px}
+    .lamp i{width:24px;height:24px;border-radius:50%;background:var(--gy);border:3px solid var(--ink);display:block}
+    .lamp .v{margin-left:auto;font-size:24px;font-weight:900;color:var(--dim2)}
+    .rows{display:flex;flex-direction:column;gap:8px}
+    .r{display:flex;align-items:center;gap:8px;border:3px solid var(--ink);border-radius:12px;
+      background:var(--pap);padding:8px 12px}
+    .r .p{width:34px;height:34px;border-radius:9px;border:2.5px solid var(--ink);display:flex;
+      align-items:center;justify-content:center;font-size:16px;font-weight:900;background:var(--bg)}
+    .r .ar{color:var(--dim2);font-weight:900}
+    .r .o{margin-left:auto;width:38px;height:34px;border-radius:9px;border:2.5px solid var(--ink);
+      display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;background:#e9fbf7}
+    .r.wait{border-color:var(--gy);border-style:dashed;background:#fbfaff}
+    .r.wait .p{border-color:var(--gy);color:var(--dim2);background:var(--pap)}
+    .r.wait .o{border-color:var(--gy);color:var(--dim2);background:var(--pap)}
+    .r.now{background:#f5efff;box-shadow:3px 3px 0 var(--vi);border-color:var(--vi)}
+    .rem{margin-top:12px;border:3px dashed var(--pk);border-radius:12px;padding:10px;text-align:center;
+      font-weight:900;font-size:13px;color:var(--pk)}
+    .note{margin:10px 0 0;font-size:11.5px;color:var(--dim);font-weight:500;line-height:1.8}
+    .bts{display:flex;gap:10px;margin-top:14px}
+    .bt{flex:1;text-align:center;padding:13px 0;border-radius:13px;border:3px solid var(--ink);
+      background:var(--vi);color:#fff;font-weight:900;font-size:14px;box-shadow:4px 4px 0 var(--ink)}
+    .bt.o{background:var(--pap);color:var(--ink)}
+    .bt.x{background:var(--pap);border-color:var(--gy);color:var(--dim2);box-shadow:none}
+  </style>
+</helmet>
+
+<div style="width:1366px;height:768px;overflow:hidden">
+
+<div class="card top">
+  <h1>つなぐ工房</h1>
+  <span class="cap">ロンリ回路をくみたてる</span>
+  <div class="chips">
+    <div class="chip hot"><span class="k">A</span><span class="v">1</span></div>
+    <div class="chip"><span class="k">B</span><span class="v">0</span></div>
+    <div class="chip"><span class="k">OUT Y</span><span class="v">0</span></div>
+    <div class="chip"><span class="k">ためした</span><span class="v">3/4</span></div>
+    <div class="chip"><span class="k">バン</span><span class="v" style="font-size:11px;padding:4px 0">26-09-14a</span></div>
+  </div>
+  <span class="go">■ 編集にもどる</span>
+</div>
+
+<div class="tabs">
+  <span class="tg">キホン</span>
+  <span class="t dn">01 スイッチ</span><span class="t cu">02 直列</span><span class="t">03 並列</span>
+  <span class="t">04 NOT</span><span class="t">05 真理値表</span>
+  <span class="tg" style="margin-left:10px">カダイ</span>
+  <span class="t">06 XOR</span><span class="t">07 半加算器</span><span class="t">08 全加算器</span><span class="t">09 4ビット</span>
+</div>
+
+<div class="cols">
+  <main>
+    <div class="card pad" style="margin-bottom:14px">
+      <h2>課題02　二つのスイッチを一本道にする</h2>
+      <p class="txt">スイッチ A と B を、電池からランプまで <em>一本道</em> に並べよう。<br>
+        どちらか片方だけ入れても、ランプは点かない。</p>
+      <p class="sm">右のスイッチを切りかえて、4 とおり全部をためそう。</p>
+    </div>
+
+    <div class="card pad">
+      <div class="hdr"><span class="bg">BOARD</span><span class="st">うんてん中　／　回路はさわれません</span></div>
+      <div class="scr">
+        <svg viewBox="0 0 700 268" width="100%" height="262" role="img" aria-label="配線盤">
+          <rect x="30" y="30" width="8" height="208" rx="4" fill="#0d9488"/>
+          <rect x="662" y="30" width="8" height="208" rx="4" fill="#1b1340"/>
+          <text x="34" y="22" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#0d9488">＋</text>
+          <text x="666" y="22" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#1b1340">−</text>
+
+          <g stroke="#0d9488" stroke-width="9" stroke-linecap="round">
+            <line x1="38" y1="134" x2="156" y2="134"/>
+            <line x1="156" y1="134" x2="224" y2="134"/>
+            <line x1="224" y1="134" x2="336" y2="134"/></g>
+          <g stroke="#d8d2ee" stroke-width="9" stroke-linecap="round">
+            <line x1="404" y1="134" x2="518" y2="134"/>
+            <line x1="572" y1="134" x2="662" y2="134"/></g>
+
+          <g>
+            <circle cx="156" cy="134" r="7" fill="#1b1340"/><circle cx="224" cy="134" r="7" fill="#1b1340"/>
+            <rect x="150" y="90" width="82" height="26" rx="9" fill="#0d9488"/>
+            <text x="191" y="108" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#ffffff">A ＝ 1</text>
+          </g>
+          <g>
+            <circle cx="336" cy="134" r="7" fill="#1b1340"/><circle cx="404" cy="134" r="7" fill="#1b1340"/>
+            <line x1="336" y1="134" x2="398" y2="104" stroke="#1b1340" stroke-width="8" stroke-linecap="round"/>
+            <rect x="330" y="62" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
+            <text x="371" y="80" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">B ＝ 0</text>
+          </g>
+          <g>
+            <circle cx="545" cy="134" r="27" fill="#ffffff" stroke="#1b1340" stroke-width="5"/>
+            <line x1="528" y1="117" x2="562" y2="151" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <line x1="528" y1="151" x2="562" y2="117" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <rect x="504" y="86" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
+            <text x="545" y="104" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">Y ＝ 0</text>
+          </g>
+
+          <g>
+            <rect x="288" y="182" width="228" height="32" rx="11" fill="#db2777"/>
+            <text x="402" y="203" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="700" fill="#ffffff">B が開いている　ここで止まる</text>
+          </g>
+          <line x1="404" y1="144" x2="396" y2="180" stroke="#db2777" stroke-width="3"/>
+        </svg>
+      </div>
+    </div>
+  </main>
+
+  <aside>
+    <div class="card pad" style="margin-bottom:14px">
+      <div class="hdr"><span class="bg">INPUT</span><span class="st">タップで切りかえ</span></div>
+      <div class="sws">
+        <div class="sb on"><div class="k">SW A</div><div class="v">1</div></div>
+        <div class="sb"><div class="k">SW B</div><div class="v">0</div></div>
+      </div>
+      <div class="lamp"><i></i>ランプ Y<span class="v">0</span></div>
+    </div>
+
+    <div class="card pad">
+      <div class="hdr"><span class="bg">TRUTH</span><span class="st">ためした記録</span></div>
+      <div class="rows">
+        <div class="r"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="o">0</span></div>
+        <div class="r"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="o">0</span></div>
+        <div class="r now"><span class="p">1</span><span class="p">0</span><span class="ar">→</span><span class="o">0</span></div>
+        <div class="r wait"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="o">?</span></div>
+      </div>
+      <div class="rem">のこり 1 とおり</div>
+      <p class="note">4 とおり全部をためすと「たしかめる」が押せるようになる。</p>
+    </div>
+
+    <div class="bts">
+      <span class="bt x">たしかめる</span>
+      <span class="bt o">ヒント</span>
+    </div>
+  </aside>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
