@@ -1,0 +1,123 @@
+<div style="width:1366px;height:768px;overflow:hidden">
+
+<div class="card top">
+  <h1>つなぐ工房</h1>
+  <span class="cap">ロンリ回路をくみたてる</span>
+  <div class="chips">
+    <div class="chip"><span class="k">モード</span><span class="v" style="font-size:13px;padding:2px 0">編集</span></div>
+    <div class="chip"><span class="k">ブヒン</span><span class="v">3</span></div>
+    <div class="chip"><span class="k">ハイセン</span><span class="v">3</span></div>
+    <div class="chip"><span class="k">のこり</span><span class="v" style="color:#db2777">1</span></div>
+    <div class="chip"><span class="k">バン</span><span class="v" style="font-size:10.5px;padding:3px 0">26-09-14a</span></div>
+  </div>
+  <span class="btn te">▶ 運転にする</span>
+</div>
+
+<div class="tabs">
+  <span class="tg">キホン</span>
+  <span class="t dn">01 スイッチ</span><span class="t cu">02 直列</span><span class="t">03 並列</span>
+  <span class="t">04 NOT</span><span class="t">05 真理値表</span>
+  <span class="tg" style="margin-left:9px">カダイ</span>
+  <span class="t">06 XOR</span><span class="t">07 半加算器</span><span class="t">08 全加算器</span><span class="t">09 4ビット</span>
+</div>
+
+<div class="cols">
+  <main>
+    <div class="card pad" style="margin-bottom:13px">
+      <h2>課題02　二つのスイッチを一本道にする</h2>
+      <p class="txt">スイッチ A と B を、電池からランプまで <em>一本道</em> に並べなさい。
+        どちらか片方だけ入れても、ランプは点きません。</p>
+      <p class="sm">ランプの左がわの端子が、まだどこにもつながっていません。</p>
+    </div>
+
+    <div class="card pad">
+      <div class="hdr"><span class="bg">BOARD</span><span class="st vi">編集中　／　端子をタップ → つなぎ先をタップ</span></div>
+      <div class="scr">
+        <svg viewBox="0 0 700 262" width="100%" height="256" role="img" aria-label="配線盤">
+          <rect x="30" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
+          <rect x="662" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
+          <text x="34" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#6a5f92">＋</text>
+          <text x="666" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#6a5f92">−</text>
+
+          <g stroke="#a79ccb" stroke-width="9" stroke-linecap="round">
+            <line x1="38" y1="132" x2="156" y2="132"/><line x1="224" y1="132" x2="336" y2="132"/>
+            <line x1="574" y1="132" x2="662" y2="132"/></g>
+          <line x1="404" y1="132" x2="516" y2="132" stroke="#6d28d9" stroke-width="7"
+                stroke-dasharray="13 10" stroke-linecap="round"/>
+
+          <g>
+            <circle cx="156" cy="132" r="7" fill="#1b1340"/><circle cx="224" cy="132" r="7" fill="#1b1340"/>
+            <line x1="156" y1="132" x2="218" y2="102" stroke="#1b1340" stroke-width="8" stroke-linecap="round"/>
+            <rect x="150" y="60" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
+            <text x="191" y="78" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">スイッチ A</text>
+          </g>
+          <g>
+            <circle cx="336" cy="132" r="7" fill="#1b1340"/>
+            <circle cx="404" cy="132" r="14" fill="none" stroke="#6d28d9" stroke-width="4"/>
+            <circle cx="404" cy="132" r="7" fill="#6d28d9"/>
+            <line x1="336" y1="132" x2="398" y2="102" stroke="#1b1340" stroke-width="8" stroke-linecap="round"/>
+            <rect x="330" y="60" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
+            <text x="371" y="78" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">スイッチ B</text>
+          </g>
+          <g>
+            <circle cx="545" cy="132" r="27" fill="#ffffff" stroke="#1b1340" stroke-width="5"/>
+            <line x1="528" y1="115" x2="562" y2="149" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <line x1="528" y1="149" x2="562" y2="115" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="516" cy="132" r="12" fill="#ffffff" stroke="#6d28d9" stroke-width="4"/>
+            <circle cx="574" cy="132" r="7" fill="#1b1340"/>
+            <rect x="504" y="84" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
+            <text x="545" y="102" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">ランプ Y</text>
+          </g>
+
+          <g>
+            <rect x="396" y="176" width="196" height="32" rx="11" fill="#6d28d9"/>
+            <text x="494" y="197" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="700" fill="#ffffff">つなぎ先をタップ</text>
+          </g>
+          <line x1="404" y1="146" x2="420" y2="174" stroke="#6d28d9" stroke-width="3"/>
+
+          <g fill="#ffffff" stroke="#a79ccb" stroke-width="2.5">
+            <circle cx="97" cy="132" r="13"/><circle cx="280" cy="132" r="13"/><circle cx="618" cy="132" r="13"/>
+          </g>
+          <g fill="#a79ccb" font-family="ui-monospace,monospace" font-size="16" font-weight="700" text-anchor="middle">
+            <text x="97" y="138">＋</text><text x="280" y="138">＋</text><text x="618" y="138">＋</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </main>
+
+  <aside>
+    <div class="card pad" style="margin-bottom:13px">
+      <div class="hdr"><span class="bg">PARTS</span><span class="st">ブヒンバコ</span></div>
+      <div class="sws" style="margin-bottom:0">
+        <div class="sb"><div class="v" style="font-size:22px;color:#1b1340">SW</div><div class="k">スイッチ</div></div>
+        <div class="sb"><div class="v" style="font-size:22px;color:#1b1340">Y</div><div class="k">ランプ</div></div>
+        <div class="sb"><div class="v" style="font-size:22px;color:#1b1340">／</div><div class="k">導線</div></div>
+        <div class="sb"><div class="v" style="font-size:22px;color:#db2777">×</div><div class="k">けす</div></div>
+      </div>
+      <p class="note">この課題で使う部品だけを出しています。
+        AND・OR・NOT の記号は、課題05 から出てきます。</p>
+    </div>
+
+    <div class="card pad">
+      <div class="hdr"><span class="bg">TRUTH</span><span class="st">まだ何もためしていない</span></div>
+      <div class="rows">
+        <div class="r wait"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
+        <div class="r wait"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
+        <div class="r wait"><span class="p">1</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
+        <div class="r wait"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
+      </div>
+      <p class="note">運転モードでスイッチを切りかえると、その組み合わせの行が埋まります。</p>
+    </div>
+
+    <div class="bts">
+      <span class="btn te">▶ 運転にする</span>
+      <span class="btn o">ヒント</span>
+    </div>
+  </aside>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

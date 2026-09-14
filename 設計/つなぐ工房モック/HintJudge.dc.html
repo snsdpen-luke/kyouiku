@@ -128,106 +128,101 @@
 </helmet>
 <div style="width:1366px;height:768px;overflow:hidden">
 
-<div class="card top">
-  <h1>つなぐ工房</h1>
-  <span class="cap">ロンリ回路をくみたてる</span>
-  <div class="chips">
-    <div class="chip te"><span class="k">A</span><span class="v">1</span></div>
-    <div class="chip"><span class="k">B</span><span class="v">0</span></div>
-    <div class="chip"><span class="k">OUT Y</span><span class="v">0</span></div>
-    <div class="chip"><span class="k">ためした</span><span class="v">3/4</span></div>
-    <div class="chip"><span class="k">バン</span><span class="v" style="font-size:10.5px;padding:3px 0">26-09-14a</span></div>
-  </div>
-  <span class="btn pk">■ 編集にもどる</span>
+<div class="card top" style="margin-bottom:14px">
+  <h1>ヒントと判定</h1>
+  <span class="cap">画面の部品　／　課題06「XOR をつくれ」での例</span>
+  <div class="chips"><div class="chip"><span class="k">バン</span><span class="v" style="font-size:10.5px;padding:3px 0">26-09-14a</span></div></div>
 </div>
 
-<div class="tabs">
-  <span class="tg">キホン</span>
-  <span class="t dn">01 スイッチ</span><span class="t cu">02 直列</span><span class="t">03 並列</span>
-  <span class="t">04 NOT</span><span class="t">05 真理値表</span>
-  <span class="tg" style="margin-left:9px">カダイ</span>
-  <span class="t">06 XOR</span><span class="t">07 半加算器</span><span class="t">08 全加算器</span><span class="t">09 4ビット</span>
-</div>
+<div class="col3">
 
-<div class="cols">
-  <main>
+  <section>
+    <div class="cap3">ヒント　3ダンカイ</div>
     <div class="card pad" style="margin-bottom:13px">
-      <h2>課題02　二つのスイッチを一本道にする</h2>
-      <p class="txt">スイッチ A と B を、電池からランプまで <em>一本道</em> に並べなさい。
-        どちらか片方だけ入れても、ランプは点きません。</p>
-      <p class="sm">右のスイッチを切りかえて、4 とおり全部をためしなさい。</p>
+      <div class="hc">
+        <div class="hn">ヒント 1　ひらいた</div>
+        <p>「A と B がちがうときだけ点く」。まず <b>ちがう</b> とはどういう状態か、
+          表の 4 行を指でなぞりなさい。</p>
+      </div>
+      <div class="hc">
+        <div class="hn">ヒント 2　ひらいた</div>
+        <p>「A が 1 で B が 0」<b>または</b>「A が 0 で B が 1」。<br>
+          <b>または</b> は OR、<b>〜でない</b> は NOT です。使える部品はもうそろっています。</p>
+      </div>
+      <div class="hc lock">
+        <div class="hn">ヒント 3　まだ出していない</div>
+        <p style="color:#6a5f92">お手本の回路を <b>半分だけ</b> 盤に入れます。
+          いま組んである回路は消えます。</p>
+        <div class="bts" style="margin-top:11px"><span class="btn o">ヒント3を出す</span></div>
+      </div>
+      <p class="note">ヒントを何段まで開いたかは記録され、提出のとき先生に渡ります。
+        開いても減点にはなりません。</p>
+    </div>
+
+    <div class="card pad" style="border-color:#db2777;background:#fdeef6">
+      <h2 style="font-size:16px;color:#db2777">回路を入れかえます</h2>
+      <p class="txt" style="font-size:13px">いま盤に組んである回路は消えます。よろしいですか。</p>
+      <div class="bts"><span class="btn pk">入れかえる</span><span class="btn o">やめる</span></div>
+      <p class="note">ブラウザの確認ダイアログは使いません。画面の中で聞きます。</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="cap3">セイカイ　ハンテイ</div>
+    <div class="card pass pad" style="margin-bottom:13px">
+      <div class="hdr"><span class="bg" style="background:#0d9488">PASS</span>
+        <span class="st te">課題06　XOR</span></div>
+      <h2>合格</h2>
+      <p class="txt" style="font-size:13px">4 とおり全部で、お手本と同じ答えが出ました。</p>
+      <div class="hc" style="margin-top:12px;margin-bottom:0;border-color:#0d9488">
+        <div class="hn">ここで分かったこと</div>
+        <p>いま組んだのは <b>排他的論理和（XOR）</b> という回路です。
+          「A と B がちがうときだけ 1」。<br>
+          この形は、このあと何度も出てきます。おぼえておきなさい。</p>
+      </div>
+      <div class="bts"><span class="btn te">次の課題へ</span><span class="btn o">もう一度</span></div>
     </div>
 
     <div class="card pad">
-      <div class="hdr"><span class="bg">BOARD</span><span class="st te">運転中　／　回路は編集できません</span></div>
-      <div class="scr">
-        <svg viewBox="0 0 700 262" width="100%" height="256" role="img" aria-label="配線盤">
-          <rect x="30" y="28" width="8" height="206" rx="4" fill="#0d9488"/>
-          <rect x="662" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
-          <text x="34" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#0d9488">＋</text>
-          <text x="666" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#1b1340">−</text>
-          <g stroke="#0d9488" stroke-width="9" stroke-linecap="round">
-            <line x1="38" y1="132" x2="156" y2="132"/><line x1="156" y1="132" x2="224" y2="132"/>
-            <line x1="224" y1="132" x2="336" y2="132"/></g>
-          <g stroke="#d8d2ee" stroke-width="9" stroke-linecap="round">
-            <line x1="404" y1="132" x2="516" y2="132"/><line x1="574" y1="132" x2="662" y2="132"/></g>
-          <g>
-            <circle cx="156" cy="132" r="7" fill="#1b1340"/><circle cx="224" cy="132" r="7" fill="#1b1340"/>
-            <rect x="150" y="88" width="82" height="26" rx="9" fill="#0d9488"/>
-            <text x="191" y="106" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#ffffff">A ＝ 1</text>
-          </g>
-          <g>
-            <circle cx="336" cy="132" r="7" fill="#1b1340"/><circle cx="404" cy="132" r="7" fill="#1b1340"/>
-            <line x1="336" y1="132" x2="398" y2="102" stroke="#1b1340" stroke-width="8" stroke-linecap="round"/>
-            <rect x="330" y="60" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
-            <text x="371" y="78" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">B ＝ 0</text>
-          </g>
-          <g>
-            <circle cx="545" cy="132" r="27" fill="#ffffff" stroke="#1b1340" stroke-width="5"/>
-            <line x1="528" y1="115" x2="562" y2="149" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
-            <line x1="528" y1="149" x2="562" y2="115" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
-            <rect x="504" y="84" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
-            <text x="545" y="102" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">Y ＝ 0</text>
-          </g>
-          <g>
-            <rect x="288" y="178" width="228" height="32" rx="11" fill="#db2777"/>
-            <text x="402" y="199" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="700" fill="#ffffff">B が開いている　ここで止まる</text>
-          </g>
-          <line x1="404" y1="142" x2="396" y2="176" stroke="#db2777" stroke-width="3"/>
-        </svg>
-      </div>
-    </div>
-  </main>
-
-  <aside>
-    <div class="card pad" style="margin-bottom:13px">
-      <div class="hdr"><span class="bg">INPUT</span><span class="st">タップで切りかえ</span></div>
-      <div class="sws">
-        <div class="sb on"><div class="k">SW A</div><div class="v">1</div></div>
-        <div class="sb"><div class="k">SW B</div><div class="v">0</div></div>
-      </div>
-      <div class="lamp"><i></i>ランプ Y<span class="v">0</span></div>
-    </div>
-
-    <div class="card pad">
-      <div class="hdr"><span class="bg">TRUTH</span><span class="st">ためした記録</span></div>
+      <div class="hdr"><span class="bg">RECORD</span><span class="st">キロク</span></div>
       <div class="rows">
-        <div class="r"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
-        <div class="r"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
-        <div class="r now"><span class="p">1</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
-        <div class="r wait"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
+        <div class="r" style="font-weight:700;font-size:12.5px">01 スイッチ<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント0</span></span></div>
+        <div class="r" style="font-weight:700;font-size:12.5px">02 直列<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント1</span></span></div>
+        <div class="r" style="font-weight:700;font-size:12.5px">03 並列<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント0</span></span></div>
+        <div class="r" style="font-weight:700;font-size:12.5px">04 NOT<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント0</span></span></div>
+        <div class="r now" style="font-weight:700;font-size:12.5px">06 XOR<span class="os"><span class="o" style="width:auto;padding:0 9px">合格</span><span class="o" style="width:auto;padding:0 9px;background:#fff">ヒント2</span></span></div>
       </div>
-      <div class="rem">のこり 1 とおり</div>
-      <p class="note">4 とおり全部をためすと「たしかめる」が押せるようになります。</p>
     </div>
+  </section>
 
-    <div class="bts">
-      <span class="btn x">たしかめる</span>
-      <span class="btn o">ヒント</span>
+  <section>
+    <div class="cap3">フセイカイ　ハンテイ</div>
+    <div class="card fail pad">
+      <div class="hdr"><span class="bg" style="background:#db2777">CHECK</span>
+        <span class="st" style="color:#db2777">課題06　XOR</span></div>
+      <h2 style="color:#db2777">まだちがいます</h2>
+      <p class="txt" style="font-size:13px">4 とおりのうち <b>2 とおり</b> が、お手本とちがう答えでした。</p>
+
+      <div class="rows" style="margin-top:12px">
+        <div class="r"><span class="p">0</span><span class="p">0</span><span class="ar">→</span>
+          <span class="os"><span class="o">0</span><span class="o" style="background:#fff">0</span></span></div>
+        <div class="r bad"><span class="p">0</span><span class="p">1</span><span class="ar">→</span>
+          <span class="os"><span class="o">0</span><span class="o" style="background:#fff">1</span></span></div>
+        <div class="r bad"><span class="p">1</span><span class="p">0</span><span class="ar">→</span>
+          <span class="os"><span class="o">0</span><span class="o" style="background:#fff">1</span></span></div>
+        <div class="r"><span class="p">1</span><span class="p">1</span><span class="ar">→</span>
+          <span class="os"><span class="o">0</span><span class="o" style="background:#fff">0</span></span></div>
+      </div>
+      <p class="note"><b>左＝きみの回路　右＝お手本。</b>桃色の行だけを見なさい。
+        どちらも「片方だけが 1」のときです。そこが点いていません。</p>
+
+      <div class="bts"><span class="btn o">編集にもどる</span><span class="btn o">ヒント</span></div>
+      <div class="bts" style="margin-top:9px"><span class="btn o">できなくても次へすすむ</span></div>
+      <p class="note">あとから戻ってこられます。</p>
     </div>
-  </aside>
+  </section>
+
 </div>
-
 </div>
 </x-dc>
 </body>

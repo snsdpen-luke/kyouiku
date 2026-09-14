@@ -126,106 +126,93 @@
       background:var(--te);border:2.5px solid var(--ink)}
   </style>
 </helmet>
-<div style="width:1366px;height:768px;overflow:hidden">
+<div style="width:1000px;height:1240px;overflow:hidden">
 
-<div class="card top">
+<div class="card top" style="margin-bottom:14px">
   <h1>つなぐ工房</h1>
-  <span class="cap">ロンリ回路をくみたてる</span>
-  <div class="chips">
-    <div class="chip te"><span class="k">A</span><span class="v">1</span></div>
-    <div class="chip"><span class="k">B</span><span class="v">0</span></div>
-    <div class="chip"><span class="k">OUT Y</span><span class="v">0</span></div>
-    <div class="chip"><span class="k">ためした</span><span class="v">3/4</span></div>
-    <div class="chip"><span class="k">バン</span><span class="v" style="font-size:10.5px;padding:3px 0">26-09-14a</span></div>
+  <span class="cap">コンセプト　／　コンピュータシステム技術　教材案 v0.1</span>
+</div>
+
+<div class="card pad" style="margin-bottom:13px">
+  <p class="hero">線でつないだだけの箱が、<br><em>勝手に足し算を始める。</em></p>
+  <p class="sm" style="font-size:12.5px">生徒には最後まで「足し算のつくり方」を教えない。
+    AND と OR と NOT をつないでいたら、気づいたときには 4 ビットの電卓になっている。
+    <b>驚きを、説明より先に置く。</b></p>
+</div>
+
+<div class="two" style="margin-bottom:13px">
+  <div class="card pad">
+    <div class="hdr"><span class="bg">CORE</span><span class="st vi">シカケの中心</span></div>
+    <p class="txt" style="font-size:13px">真理値表を <b>答え合わせ</b> に使わない。
+      生徒がスイッチを切りかえるたび、その行が埋まっていく <em>操作の記録</em> にする。</p>
+    <div class="rows" style="margin-top:12px">
+      <div class="r"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
+      <div class="r"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
+      <div class="r now"><span class="p">1</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
+      <div class="r wait"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
+    </div>
+    <div class="rem">全部の行が埋まるまで「たしかめる」は押せない</div>
+    <p class="note">結果：「全部ためしなさい」と教える必要がなくなる。<b>装置がそう仕向ける。</b>
+      網羅という考え方が、指の動きとして身につく。</p>
   </div>
-  <span class="btn pk">■ 編集にもどる</span>
-</div>
 
-<div class="tabs">
-  <span class="tg">キホン</span>
-  <span class="t dn">01 スイッチ</span><span class="t cu">02 直列</span><span class="t">03 並列</span>
-  <span class="t">04 NOT</span><span class="t">05 真理値表</span>
-  <span class="tg" style="margin-left:9px">カダイ</span>
-  <span class="t">06 XOR</span><span class="t">07 半加算器</span><span class="t">08 全加算器</span><span class="t">09 4ビット</span>
-</div>
-
-<div class="cols">
-  <main>
+  <div>
     <div class="card pad" style="margin-bottom:13px">
-      <h2>課題02　二つのスイッチを一本道にする</h2>
-      <p class="txt">スイッチ A と B を、電池からランプまで <em>一本道</em> に並べなさい。
-        どちらか片方だけ入れても、ランプは点きません。</p>
-      <p class="sm">右のスイッチを切りかえて、4 とおり全部をためしなさい。</p>
+      <div class="hdr"><span class="bg">COLOR</span><span class="st">色＝意味。4色しか使わない</span></div>
+      <div class="leg">
+        <div><i style="background:#0d9488"></i>電気が来ている<span>通電・入力ON</span></div>
+        <div><i style="background:#6d28d9"></i>いまここ・押せる<span>選択・現在の課題</span></div>
+        <div><i style="background:#db2777"></i>まだ終わっていない<span>のこり・まちがい</span></div>
+        <div><i style="background:#facc15"></i>ランプが点いた<span>出力ONだけ</span></div>
+      </div>
+      <p class="note"><b>影があるもの＝押せるもの。</b>平らなもの＝見るだけ。
+        説明しなくても、生徒は影を探して指を置く。</p>
     </div>
 
     <div class="card pad">
-      <div class="hdr"><span class="bg">BOARD</span><span class="st te">運転中　／　回路は編集できません</span></div>
-      <div class="scr">
-        <svg viewBox="0 0 700 262" width="100%" height="256" role="img" aria-label="配線盤">
-          <rect x="30" y="28" width="8" height="206" rx="4" fill="#0d9488"/>
-          <rect x="662" y="28" width="8" height="206" rx="4" fill="#1b1340"/>
-          <text x="34" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#0d9488">＋</text>
-          <text x="666" y="20" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="700" fill="#1b1340">−</text>
-          <g stroke="#0d9488" stroke-width="9" stroke-linecap="round">
-            <line x1="38" y1="132" x2="156" y2="132"/><line x1="156" y1="132" x2="224" y2="132"/>
-            <line x1="224" y1="132" x2="336" y2="132"/></g>
-          <g stroke="#d8d2ee" stroke-width="9" stroke-linecap="round">
-            <line x1="404" y1="132" x2="516" y2="132"/><line x1="574" y1="132" x2="662" y2="132"/></g>
-          <g>
-            <circle cx="156" cy="132" r="7" fill="#1b1340"/><circle cx="224" cy="132" r="7" fill="#1b1340"/>
-            <rect x="150" y="88" width="82" height="26" rx="9" fill="#0d9488"/>
-            <text x="191" y="106" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#ffffff">A ＝ 1</text>
-          </g>
-          <g>
-            <circle cx="336" cy="132" r="7" fill="#1b1340"/><circle cx="404" cy="132" r="7" fill="#1b1340"/>
-            <line x1="336" y1="132" x2="398" y2="102" stroke="#1b1340" stroke-width="8" stroke-linecap="round"/>
-            <rect x="330" y="60" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
-            <text x="371" y="78" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">B ＝ 0</text>
-          </g>
-          <g>
-            <circle cx="545" cy="132" r="27" fill="#ffffff" stroke="#1b1340" stroke-width="5"/>
-            <line x1="528" y1="115" x2="562" y2="149" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
-            <line x1="528" y1="149" x2="562" y2="115" stroke="#1b1340" stroke-width="4" stroke-linecap="round"/>
-            <rect x="504" y="84" width="82" height="26" rx="9" fill="#ffffff" stroke="#1b1340" stroke-width="2.5"/>
-            <text x="545" y="102" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="14" font-weight="900" fill="#1b1340">Y ＝ 0</text>
-          </g>
-          <g>
-            <rect x="288" y="178" width="228" height="32" rx="11" fill="#db2777"/>
-            <text x="402" y="199" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-size="13" font-weight="700" fill="#ffffff">B が開いている　ここで止まる</text>
-          </g>
-          <line x1="404" y1="142" x2="396" y2="176" stroke="#db2777" stroke-width="3"/>
-        </svg>
-      </div>
+      <div class="hdr"><span class="bg">RULE</span><span class="st">マモルこと</span></div>
+      <ul class="rules">
+        <li>単一 HTML。ビルドなし・通信なし・ログインなし。URL を開くだけ</li>
+        <li>Chromebook 1人1台。<b>タップだけで配線できる</b>（ドラッグに頼らない）</li>
+        <li>編集モードと運転モードを分ける（運転中は回路を触れない）</li>
+        <li>部品箱には、その課題で使う部品だけを出す</li>
+        <li>ブラウザの確認ダイアログを使わない。画面の中で聞く</li>
+        <li>できなくても次へ進める。あとから戻れる</li>
+        <li>画面に版を表示する</li>
+        <li><b>形は優しく、文章は硬く。</b>説明文を子供っぽくしない</li>
+      </ul>
     </div>
-  </main>
+  </div>
+</div>
 
-  <aside>
-    <div class="card pad" style="margin-bottom:13px">
-      <div class="hdr"><span class="bg">INPUT</span><span class="st">タップで切りかえ</span></div>
-      <div class="sws">
-        <div class="sb on"><div class="k">SW A</div><div class="v">1</div></div>
-        <div class="sb"><div class="k">SW B</div><div class="v">0</div></div>
-      </div>
-      <div class="lamp"><i></i>ランプ Y<span class="v">0</span></div>
-    </div>
+<div class="card pad" style="margin-bottom:13px">
+  <div class="hdr"><span class="bg">STEPS</span><span class="st">キュウダンの階段</span></div>
+  <div class="step"><span class="n">01</span><span>スイッチと豆電球</span><span class="d">まだ電気の話</span></div>
+  <div class="step" style="margin-left:20px"><span class="n">02</span><span>直列につなぐ</span><span class="d">両方入れないと点かない</span></div>
+  <div class="step" style="margin-left:40px"><span class="n">03</span><span>並列につなぐ</span><span class="d">どちらかで点く</span></div>
+  <div class="step" style="margin-left:60px"><span class="n">04</span><span>NOT</span><span class="d">押すと消える</span></div>
+  <div class="step" style="margin-left:80px"><span class="n">05</span><span>真理値表を読む・書く</span><span class="d">ここで記号が出てくる</span></div>
+  <div class="step peak" style="margin-left:100px"><span class="n">06</span><span>XOR をつくれ</span><span class="d">★ 山場　自力で組ませる</span></div>
+  <div class="step peak" style="margin-left:120px"><span class="n">07</span><span>半加算器</span><span class="d">★ 1＋1＝10 が見える</span></div>
+  <div class="step" style="margin-left:140px"><span class="n">08</span><span>全加算器</span><span class="d">繰り上がりを受けとる</span></div>
+  <div class="step" style="margin-left:160px"><span class="n">09</span><span>4ビット加算器</span><span class="d">電卓になる</span></div>
+  <p class="note"><b>06 のすぐ次に 07 を置くことが、設計のすべて。</b>
+    「XOR という変な回路」を苦労して自作した直後に、それが足し算の一の位だったと分かる。
+    先に言ってしまうとこの驚きは死ぬ。<b>教材の文章では絶対に先に言わない。</b></p>
+</div>
 
-    <div class="card pad">
-      <div class="hdr"><span class="bg">TRUTH</span><span class="st">ためした記録</span></div>
-      <div class="rows">
-        <div class="r"><span class="p">0</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
-        <div class="r"><span class="p">0</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
-        <div class="r now"><span class="p">1</span><span class="p">0</span><span class="ar">→</span><span class="os"><span class="o">0</span></span></div>
-        <div class="r wait"><span class="p">1</span><span class="p">1</span><span class="ar">→</span><span class="os"><span class="o">?</span></span></div>
-      </div>
-      <div class="rem">のこり 1 とおり</div>
-      <p class="note">4 とおり全部をためすと「たしかめる」が押せるようになります。</p>
-    </div>
-
-    <div class="bts">
-      <span class="btn x">たしかめる</span>
-      <span class="btn o">ヒント</span>
-    </div>
-  </aside>
+<div class="card pad">
+  <div class="hdr"><span class="bg">LINK</span><span class="st">アトでつながる点</span></div>
+  <div class="c3">
+    <div class="cc"><b>XOR → ネットワーク</b>
+      <p>通信の誤り検出（パリティ）は XOR そのもの。ここで自作した回路に、別の教材で再会する。</p></div>
+    <div class="cc"><b>加算器 → CPU</b>
+      <p>4ビット加算器は、そのまま演算装置（ALU）の中身。「CPU の中」を開けたとき見覚えがある。</p></div>
+    <div class="cc"><b>AND/OR/XOR → セキュリティ</b>
+      <p>ハッシュもパスワードの保存も、中で動くのはこの三つ。ビットコインまで地続きになる。</p></div>
+  </div>
+  <p class="note">共通のエンジンや共通の画面は <b>つくらない</b>。教材はそれぞれ独立でよい。
+    「あ、これ前にやったやつだ」が起きれば、点と点はつながる。</p>
 </div>
 
 </div>
