@@ -159,54 +159,97 @@ h1{font-size:17px;margin:0;letter-spacing:.02em}
 .legend b{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:4px}
 
 /* ============================================================
-   求人票（ハローワークの様式そのもの）
-   白地・黒の細罫・左端に縦書きの区分帯。用紙は折り返さず、
-   狭い画面では用紙ごと横に流す（実物も折り返らないため）
+   求人票（ハローワークの「求人票（見本）」の形）
+   3カラム・番号つきブロック・角丸の枠・欄名は縦書きの細いセル。
+   用紙は折り返さない。狭い画面では用紙ごと横に流す（実物の紙も折り返らない）
    ============================================================ */
 .hwcap{font-size:11.5px;color:var(--dim);margin:14px 0 4px;display:flex;justify-content:space-between;
   flex-wrap:wrap;gap:8px}
 .hwcap .warn{color:var(--ng)}
-.hwwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:2px}
-.hw{min-width:700px;background:#fff;border:1.5px solid #111;color:#111;
-  font-size:11.5px;line-height:1.45;font-feature-settings:"palt"}
-.hwtop{display:flex;align-items:center;gap:14px;padding:7px 10px;border-bottom:1.5px solid #111}
-.hwtop .ttl{font-size:17px;font-weight:700;letter-spacing:.34em;border:1.5px solid #111;
-  padding:3px 16px 3px 20px;white-space:nowrap}
-.hwtop .kub{font-size:10.5px;line-height:1.5}
-.hwtop .kub b{font-size:12px}
-.hwtop .pg{margin-left:auto;font-size:10px;color:#444;white-space:nowrap}
-.hwmeta{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1.5px solid #111}
-.hwmeta>div{border-right:1px solid #111;padding:4px 7px;font-size:9.5px;color:#444}
-.hwmeta>div:last-child{border-right:0}
-.hwmeta b{display:block;font-size:12px;color:#111;margin-top:1px;font-family:var(--mono);font-weight:700}
-.sec{display:grid;grid-template-columns:30px 1fr;border-bottom:1.5px solid #111}
-.sec:last-child{border-bottom:0}
-.band{background:#2f3337;color:#fff;border-right:1px solid #111;
-  display:grid;place-items:center;padding:10px 0}
-.band span{font-size:10.5px;line-height:1.32;text-align:center;letter-spacing:0;
-  font-feature-settings:normal}
-.fr{display:grid;grid-template-columns:142px 1fr;border-top:1px solid #111}
-.sec .fr:first-child{border-top:0}
-.fl{border-right:1px solid #111;padding:5px 7px;font-size:10px;color:#333;background:#f2f4f5;
-  display:flex;align-items:flex-start;gap:5px;line-height:1.4}
-.fv{padding:5px 9px;min-height:28px}
+.hwwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px}
+.hwsheet{min-width:1060px;background:#fff;color:#111;border:1px solid #111;padding:9px 11px 11px;
+  font-size:10.5px;line-height:1.45;font-feature-settings:"palt"}
+.hwpg{font-size:10px;text-align:right;color:#444;margin-bottom:2px}
+
+.hwhead{display:grid;grid-template-columns:225px minmax(0,1fr) 235px;gap:12px;align-items:start;margin-bottom:9px}
+.bcbox{text-align:center}
+.bc{height:26px;background:repeating-linear-gradient(90deg,
+  #111 0 2px,#fff 2px 4px,#111 4px 5px,#fff 5px 8px,#111 8px 10px,#fff 10px 11px,#111 11px 12px,#fff 12px 15px)}
+.bcl{font-size:9px;color:#333}
+.bcv{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;margin-bottom:5px}
+.hhc{text-align:center}
+.hhc .dt{font-size:10.5px;margin-bottom:4px}
+.hhc .ttl{font-size:18px;font-weight:700;letter-spacing:.2em}
+.kokai{display:grid;grid-template-columns:46px 1fr;border:1px solid #111;margin-top:6px;text-align:left}
+.kokai>div:first-child{border-right:1px solid #111;padding:3px 2px;font-size:9px;text-align:center;line-height:1.3}
+.kokai>div:last-child{padding:3px 7px;font-size:10px}
+.shiki{display:grid;grid-template-columns:46px repeat(6,1fr);border:1px solid #111;border-top:0}
+.shiki>div{border-right:1px solid #111;height:19px;font-size:9px;text-align:center;line-height:19px}
+.shiki>div:last-child{border-right:0}
+.hhr .lb{font-size:9px;text-align:center;color:#333}
+.hhr .bx{border:1px solid #111;padding:3px 6px;font-size:10.5px;min-height:20px;margin-bottom:5px}
+.hhr .two{display:grid;grid-template-columns:1fr 92px;gap:6px}
+.trial{font-size:9.5px;color:#333;margin-top:4px}
+
+.hwcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.06fr);
+  gap:9px;align-items:start}
+.hwcol{min-width:0}
+.sech{display:flex;align-items:baseline;gap:9px;margin:7px 0 3px}
+.sech:first-child{margin-top:0}
+.sech .no{font-size:12.5px;font-weight:700}
+.sech .tt{font-size:12.5px;font-weight:700;letter-spacing:.04em}
+.sech .pg{margin-left:auto;font-size:10px;color:#333}
+.gbox{border:1px solid #111;border-radius:9px;overflow:hidden;margin-bottom:6px}
+.fr{display:grid;grid-template-columns:30px 1fr;border-top:1px solid #111}
+.gbox>.fr:first-child{border-top:0}
+.fr.full{grid-template-columns:1fr}
+.vl{border-right:1px solid #111;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:5px 1px;background:#fff}
+.fr.full>.vl{display:none}
+.vl span{font-size:9px;line-height:1.28;text-align:center;color:#111;font-feature-settings:normal}
+.vl span.w2{display:flex;flex-direction:row-reverse;gap:2px;align-items:flex-start;justify-content:center}
+.vl span.w2 i{font-style:normal;display:block;font-size:8.5px;line-height:1.24}
+.fv{padding:5px 8px;min-height:27px}
+.fv .lbl{font-size:9.5px;color:#333}
 .fv .num{font-family:var(--mono);font-weight:700}
-.fv .big2{font-size:15px}
-.fv .sm{font-size:10.5px;color:#555}
-.fr.two{grid-template-columns:142px 1fr 124px 1fr}
-.fr.two>.fl+.fv+.fl{border-left:1px solid #111}
-.hwbox{border:1px solid #666;padding:5px 8px;margin:3px 0;background:#fafbfc;font-size:11px}
+.fv .big2{font-size:14px}
+.fv .sm{font-size:9.5px;color:#444}
+.ib{border:1px solid #999;border-radius:4px;padding:4px 7px;margin-top:4px;min-height:22px;font-size:10px}
+.dashln{border-top:1px dashed #999;margin:5px 0}
+.ktbl{width:100%;border-collapse:collapse;font-size:10px}
+.ktbl td{padding:1px 0}
+.ktbl td.r{text-align:right;font-family:var(--mono);font-weight:700;white-space:nowrap}
+.ktbl td.u{text-align:left;width:18px;padding-left:3px}
+.fv .hq{display:inline-block;vertical-align:1px;margin-right:6px}
 .fr.tap{cursor:pointer}
-.fr.tap:hover>.fl{background:#e4ecfd}
+.fr.full.tap:hover>.fv{background:#fafbff}
+.fr.full.open>.fv{background:#f2f6ff}
+.fr.tap:hover>.vl{background:#e4ecfd}
 .fr.tap:hover>.fv{background:#fafbff}
-.hq{flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:1px solid var(--blue);color:var(--blue);
-  background:#fff;font-size:10.5px;line-height:16px;text-align:center;font-family:var(--mono);
-  display:inline-block;margin-top:1px}
-.fr.open>.fl{background:#dbe6fc}
-.fr.open>.fl .hq{background:var(--blue);color:#fff}
-.expl{border-top:1px solid #111;background:var(--blue-lo);padding:10px 13px;font-size:12.5px;
-  line-height:1.75;color:var(--txt);font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif}
-.expl b.t{display:block;color:var(--blue);font-size:11.5px;letter-spacing:.08em;margin-bottom:3px}
+.fr.open>.vl{background:#dbe6fc}
+.hq{flex:0 0 auto;width:15px;height:15px;border-radius:50%;border:1px solid var(--blue);color:var(--blue);
+  background:#fff;font-size:9px;line-height:13px;text-align:center;font-family:var(--mono)}
+.fr.open .hq{background:var(--blue);color:#fff}
+.expl{border-top:1px solid #111;background:var(--blue-lo);padding:9px 11px;font-size:11.5px;
+  line-height:1.7;color:var(--txt);font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif}
+.expl b.t{display:block;color:var(--blue);font-size:11px;letter-spacing:.06em;margin-bottom:3px}
+.hwfoot{border-top:1px solid #111;margin-top:9px;padding-top:5px;font-size:9.5px;color:#333}
+
+/* ===== 手取りの出し方（手順） ===== */
+.flow{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--ink);margin:10px 0}
+.fstep{display:grid;grid-template-columns:30px 1fr;gap:11px;padding:11px 14px;
+  border-bottom:1px solid var(--line-lo);align-items:start}
+.fstep:last-child{border-bottom:0}
+.fstep.mid{background:var(--panel2)}
+.fstep.res{background:var(--ok-lo)}
+.fn{width:26px;height:26px;border-radius:50%;background:var(--ok);color:#fff;
+  font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;line-height:26px}
+.fstep.res .fn{background:var(--ok-dk)}
+.fb b{font-size:13.5px}
+.fwhere{display:inline-block;font-size:10.5px;border:1px solid var(--line);border-radius:5px;
+  padding:1px 7px;background:var(--panel2);color:var(--dim);margin-left:7px;white-space:nowrap}
+.fcalc{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--ok-dk);margin:4px 0 2px}
+.fmini{font-size:11.5px;color:var(--dim);line-height:1.6}
 
 /* ===== クイズ ===== */
 .q{border:1px solid var(--line);border-radius:9px;background:var(--ink);padding:13px 15px;margin:11px 0}
@@ -296,7 +339,7 @@ table.plain td.n{font-family:var(--mono);text-align:right;white-space:nowrap}
 
 <script>
 "use strict";
-const VER="2026-09-18c";
+const VER="2026-09-18d";
 
 /* ============================================================
    1. 税と社会保険の概算モデル
@@ -1167,128 +1210,379 @@ const EXPLAIN={
    "食い違っていたら、どちらが本当かを面接で聞いてよい。",
  yuukyuJisseki:(j)=>"制度としては10日もらえる。<b>実際に取れているのは "+esc(j.yuukyuJisseki)+"</b>。<br>"+
    "<b>この差が職場の空気を表す。</b>「取れる」と「取っている」は別のこと。",
+ shiyo:(j)=>"「試用期間中の労働条件」が<b>『同条件』か『異なる』か</b>を必ず見る。<br>"+
+   "この求人は「"+esc(j.shiyoJoken)+"」。"+
+   (j.shiyoJoken.indexOf("異なる")>=0
+     ? "<b>最初の3か月は、求人票の月給ではない。</b>その間の手取りで暮らせるかも計算しておくこと。"
+     : "試用期間中も条件は同じ。")+
+   "<br>試用期間は「お試し」ではなく<b>すでに雇われている状態</b>。給料は必ず支払われる。",
  kenshu:(j)=>"研修："+esc(j.kenshu)+"<br>自己啓発支援："+esc(j.jikohatsu)+"<br>メンター制度："+esc(j.mentor)+"<br>"+
    "<b>高卒で入るなら、教えてもらえる仕組みがあるかは給料と同じくらい大事。</b>"+
    "資格の受験料を会社が出すかどうかで、3年後の自分の値段が変わる。"
 };
 
 /* ============================================================
-   11. 求人票を描く
+   11. 求人票を描く（ハローワークの「求人票（見本）」の形）
+   ------------------------------------------------------------
+   表面・裏面・青少年雇用情報の3枚。3カラム、番号つきブロック、
+   角丸の枠、欄名は縦書きの細いセル。実物の紙と同じ並びにしてある。
    ============================================================ */
+/* 用紙に載せるための欄（計算には使わない。見本に合わせるための情報） */
+const JOBX={
+A:{kana:"カブシキガイシャ　ミナミセイサクショ",yubin:"〒000-0000",
+   eki:"○○線 △△駅 から 車で 10分",shokugyo:"301-01　金属工作機械作業員",sangyo:"245　金属加工",
+   shugyochi:"○○県 △△市",kokai:"事業所名等を含む求人情報を公開する",trial:"トライアル雇用併用　なし",
+   seishainIgai:"正社員以外の名称：—",touyou:"—（正社員のため）",
+   nenrei:"学校卒業見込者（高校）",keiken:"不問",pcskill:"不要",
+   shiyo:"あり　3か月",shiyoJoken:"試用期間中の労働条件：同条件",nissu:"20.5",
+   koshin:"—（雇用期間の定めなし）",kigyoNenkin:"なし",kinmuEnchou:"なし",takuji:"なし",
+   jugyoinNaiwake:"120人（就業場所 120人／うち女性 18人／うちパート 12人）",kumiai:"あり",
+   daihyo:"代表取締役　南　太郎",hojin:"1000012345678",kisoku:"フルタイム あり",
+   ikujiJisseki:"育児休業 あり　／　介護休業 あり　／　看護休暇 あり",
+   gaikoku:"外国人雇用実績 なし　／　UIJターン歓迎",
+   boshuRiyu:"欠員補充",kekkaTsuchi:"面接選考後　7日以内",tsuchiHoho:"郵送",souhu:"郵送",henrei:"あり",
+   tokki:"・作業服は貸与します。駐車場の利用費用は無料です。<br>・現場は10代から60代まで幅広い年齢層が働いています。<br>・技能検定の受検費用は会社が負担します。",
+   tanto:"総務課　南野　一郎　　電話 00-0000-0000"},
+B:{kana:"キタガワデンキコウギョウ　カブシキガイシャ",yubin:"〒000-0000",
+   eki:"○○線 ××駅 から 徒歩 15分",shokugyo:"302-02　電気機械器具組立・修理作業員",sangyo:"291　電気機械器具製造業",
+   shugyochi:"○○県 ××市",kokai:"事業所名等を含む求人情報を公開する",trial:"トライアル雇用併用　なし",
+   seishainIgai:"正社員以外の名称：—",touyou:"—（正社員のため）",
+   nenrei:"学校卒業見込者（高校）",keiken:"不問",pcskill:"簡単なPC入力（点検記録の入力があります）",
+   shiyo:"あり　3か月",shiyoJoken:"試用期間中の労働条件：同条件",nissu:"20.0",
+   koshin:"—（雇用期間の定めなし）",kigyoNenkin:"確定拠出年金",kinmuEnchou:"なし",takuji:"なし",
+   jugyoinNaiwake:"210人（就業場所 95人／うち女性 22人／うちパート 15人）",kumiai:"あり",
+   daihyo:"代表取締役　北川　健一",hojin:"2000023456789",kisoku:"フルタイム あり　／　パートタイム あり",
+   ikujiJisseki:"育児休業 あり　／　介護休業 あり　／　看護休暇 あり",
+   gaikoku:"外国人雇用実績 あり　／　UIJターン歓迎",
+   boshuRiyu:"増員",kekkaTsuchi:"面接選考後　10日以内",tsuchiHoho:"郵送",souhu:"郵送",henrei:"あり",
+   tokki:"・第二種電気工事士の受験料・講習費は会社が全額負担します。<br>・単身寮があります（月額 15,000円・食事別）。<br>・完全週休二日制です。",
+   tanto:"人事課　北川　みどり　　電話 00-0000-0000"},
+C:{kana:"ユウゲンガイシャ　ヒガシウンユサービス",yubin:"〒000-0000",
+   eki:"○○線 △△駅 から 車で 15分",shokugyo:"391-01　倉庫作業員",sangyo:"441　一般貨物自動車運送業",
+   shugyochi:"○○県 △△市",kokai:"事業所名等を含む求人情報を公開する",trial:"トライアル雇用併用　なし",
+   seishainIgai:"正社員以外の名称：—",touyou:"—（正社員のため）",
+   nenrei:"学校卒業見込者（高校）",keiken:"不問",pcskill:"不要",
+   shiyo:"あり　3か月",shiyoJoken:"試用期間中の労働条件：異なる（時給 1,100円・賞与対象外）",nissu:"21.0",
+   koshin:"—（雇用期間の定めなし）",kigyoNenkin:"なし",kinmuEnchou:"なし",takuji:"なし",
+   jugyoinNaiwake:"38人（就業場所 38人／うち女性 6人／うちパート 9人）",kumiai:"なし",
+   daihyo:"代表取締役　東　健二",hojin:"3000034567890",kisoku:"フルタイム あり",
+   ikujiJisseki:"育児休業 実績なし　／　介護休業 実績なし　／　看護休暇 実績なし",
+   gaikoku:"外国人雇用実績 あり　／　UIJターン歓迎",
+   boshuRiyu:"欠員補充",kekkaTsuchi:"面接選考後　14日以内",tsuchiHoho:"郵送",souhu:"郵送",henrei:"あり",
+   tokki:"・2tトラックの免許取得費用は会社が負担します。<br>・繁忙期（12月）は時間外労働が増えます。<br>・シフトは前月20日までに決まります。",
+   tanto:"事務所　東　三郎　　電話 00-0000-0000"}
+};
+JOBS.forEach(j=>{ const x=JOBX[j.id]; if(x) for(const k in x) if(!(k in j)) j[k]=x[k]; });
+
 function kxOpen(j,key){ return !!S.kx[j.id+":"+key]; }
-/* 1行（欄名｜内容）。key を渡した欄だけタップで説明が開く */
-function fRow(j,label,value,key){
+/* 縦書きの欄名（writing-mode は使わない。環境によって字送りが崩れるため）。
+   長い欄名は本物と同じく2列に割って積む（「必要な／経験等」のように） */
+function vlab(t){
+  const ch=t.split("");
+  if(ch.length<=8) return '<span>'+ch.map(esc).join("<br>")+'</span>';
+  const half=Math.ceil(ch.length/2);
+  return '<span class="w2"><i>'+ch.slice(0,half).map(esc).join("<br>")+'</i>'+
+         '<i>'+ch.slice(half).map(esc).join("<br>")+'</i></span>';
+}
+/* 欄名｜内容 の1行。key を渡した欄だけタップで説明が開く */
+function kRow(j,label,value,key){
   const has=key&&EXPLAIN[key];
   let h='<div class="fr'+(has?" tap"+(kxOpen(j,key)?" open":""):"")+'"'+
         (has?' data-x="'+j.id+':'+key+'"':'')+'>'+
-    '<div class="fl">'+(has?'<i class="hq">？</i>':'')+'<span>'+label+'</span></div>'+
+    '<div class="vl">'+(has?'<i class="hq">？</i>':'')+vlab(label)+'</div>'+
     '<div class="fv">'+value+'</div></div>';
   if(has&&kxOpen(j,key))
     h+='<div class="expl"><b class="t">■ ここを見ると何が分かるか</b>'+EXPLAIN[key](j,calcJob(j))+'</div>';
   return h;
 }
-/* 1行に2組の欄を並べる（実物も横に2つ並ぶ欄がある） */
-function fRow2(l1,v1,l2,v2){
-  return '<div class="fr two"><div class="fl"><span>'+l1+'</span></div><div class="fv">'+v1+'</div>'+
-         '<div class="fl"><span>'+l2+'</span></div><div class="fv">'+v2+'</div></div>';
+function kFull(value){ return '<div class="fr full"><div class="fv">'+value+'</div></div>'; }
+/* 欄名のない全幅の行（月額 a＋b＋c のように、枠の頭に来るもの） */
+function kFullTap(j,value,key){
+  const has=key&&EXPLAIN[key];
+  let h='<div class="fr full'+(has?" tap"+(kxOpen(j,key)?" open":""):"")+'"'+
+        (has?' data-x="'+j.id+':'+key+'"':'')+'>'+
+    '<div class="fv">'+(has?'<i class="hq">？</i>':'')+value+'</div></div>';
+  if(has&&kxOpen(j,key))
+    h+='<div class="expl"><b class="t">■ ここを見ると何が分かるか</b>'+EXPLAIN[key](j,calcJob(j))+'</div>';
+  return h;
 }
-/* 区分。左端の縦書きの黒帯がこれ */
-function fSec(band,rows){
-  /* 縦書きは writing-mode に頼らず、1文字ずつ改行して積む。
-     ブラウザや端末によって縦書きの字送りが崩れることがあるため */
-  const v=band.split("").map(ch=>esc(ch)).join("<br>");
-  return '<div class="sec"><div class="band"><span>'+v+'</span></div><div>'+rows+'</div></div>';
+function gbox(rows){ return '<div class="gbox">'+rows+'</div>'; }
+function sech(no,tt,pg){
+  return '<div class="sech"><span class="no">'+no+'</span><span class="tt">'+tt+'</span>'+
+    (pg?'<span class="pg">'+pg+'</span>':'')+'</div>';
 }
 function kyujinHTML(j){
   const c=calcJob(j);
-  return '<div class="hwcap">'+
-    '<span>ハローワークが高校に出す<b>「求人票（高卒）」の様式</b>に合わせた授業用の見本</span>'+
-    '<span class="warn">※実在の事業所ではありません</span></div>'+
-  '<div class="hwwrap"><div class="hw">'+
+  const bList=j.teate.filter(t=>t.n.indexOf("固定残業")<0);          // 定額的に支払われる手当（b）
+  const bSum=bList.reduce((s,t)=>s+t.v,0);
+  const cYen=j.fixedOT?j.fixedOT.v:0;                                // 固定残業代（c）
+  const teateRows=bList.map(t=>'<tr><td>'+esc(t.n)+'</td><td class="r">'+yen(t.v)+'</td></tr>').join("")+
+    (bList.length<2?'<tr><td class="sm">手当</td><td class="r sm">円</td></tr>':"");
 
-  '<div class="hwtop"><div class="ttl">求人票（高卒）</div>'+
-    '<div class="kub">求人区分<b>'+esc(j.kubun)+'</b></div>'+
-    '<div class="pg">事業所からハローワークへ申し込まれた内容です　1/1</div></div>'+
-  '<div class="hwmeta">'+
-    '<div>受付年月日<b>'+esc(j.uke)+'</b></div>'+
-    '<div>紹介期限日<b>'+esc(j.kigen)+'</b></div>'+
-    '<div>受理安定所<b>'+esc(j.anteijo)+'</b></div>'+
-    '<div>求人番号<b>'+j.num+'</b></div>'+
+  const head=(pg)=>'<div class="hwhead">'+
+    '<div class="bcbox"><div class="bcl">求人番号</div><div class="bc"></div>'+
+      '<div class="bcv">'+j.num+'</div>'+
+      '<div class="bcl">事業所番号</div><div class="bc"></div>'+
+      '<div class="bcv">'+j.jnum+'</div></div>'+
+    '<div class="hhc"><div class="dt">受付年月日　'+esc(j.uke)+'　　　紹介期限日　'+esc(j.kigen)+'</div>'+
+      '<div class="ttl">求人票（高卒）</div>'+
+      '<div class="kokai"><div>公開<br>範囲</div><div>'+esc(j.kokai)+'</div></div>'+
+      '<div class="shiki"><div>識別欄</div><div></div><div></div><div></div><div></div><div></div><div></div></div>'+
+      '<div class="trial">'+esc(j.trial)+'</div></div>'+
+    '<div class="hhr"><div class="two"><div><div class="lb">就業地住所</div>'+
+      '<div class="bx">'+esc(j.shugyochi)+'</div></div>'+
+      '<div><div class="lb">職業分類</div><div class="bx sm">'+esc(j.shokugyo.split("　")[0])+'</div></div></div>'+
+      '<div class="lb">産業分類</div><div class="bx">'+esc(j.sangyo)+'</div>'+
+      '<div class="lb">受理安定所</div><div class="bx">'+esc(j.anteijo)+'</div></div>'+
+    '</div>';
+
+  /* ---------- 表面 ---------- */
+  const omote='<div class="hwwrap"><div class="hwsheet">'+
+    '<div class="hwpg">表面（1／2）</div>'+head()+
+    '<div class="hwcols">'+
+    /* 左 */
+    '<div class="hwcol">'+
+      sech("1","求人事業所")+
+      gbox(
+        kRow(j,"事業所名",'<div class="sm">'+esc(j.kana)+'</div><b style="font-size:12px">'+esc(j.co)+'</b>')+
+        kRow(j,"所在地",'<div class="sm">'+esc(j.yubin)+'</div>'+esc(j.addr)+
+          '<div class="dashln"></div><span class="lbl">ホームページ</span> <span class="sm">'+esc(j.hp)+'</span>'))+
+      sech("2","仕事内容")+
+      gbox(
+        kRow(j,"職種",'<b style="font-size:12px">'+esc(j.job)+'</b>',"job")+
+        kRow(j,"仕事内容",esc(j.naiyou),"naiyou")+
+        kRow(j,"雇用形態",'<b>'+esc(j.keitai)+'</b><div class="ib sm">'+esc(j.seishainIgai)+'</div>'+
+          '<div class="dashln"></div><span class="lbl">正社員登用</span> '+esc(j.touyou),"keitai")+
+        kRow(j,"派遣請負等",'<span class="lbl">就業形態</span>　'+esc(j.shugyo)+
+          '<div class="ib sm">'+esc(j.keitaiHosoku)+'</div>')+
+        kRow(j,"雇用期間",esc(j.kikan)+'<div class="ib sm">契約更新の条件：'+esc(j.koshin)+'</div>'))+
+    '</div>'+
+    /* 中 */
+    '<div class="hwcol">'+
+      '<div class="sech"><span class="tt">&nbsp;</span></div>'+
+      gbox(
+        kRow(j,"就業場所",esc(j.place)+
+          '<div class="ib">'+esc(j.eki)+'</div>'+
+          '<div class="dashln"></div><span class="lbl">屋内の受動喫煙対策</span>　'+esc(j.kitsuen),"place"))+
+      gbox(
+        kRow(j,"マイカー通勤",esc(j.mycar)+
+          '<div class="dashln"></div><span class="lbl">転勤の可能性</span>　'+esc(j.tenkin),"mycar"))+
+      gbox(
+        kRow(j,"年齢",esc(j.nenrei))+
+        kRow(j,"学歴",esc(j.gakureki))+
+        kRow(j,"必要な経験等",esc(j.keiken))+
+        kRow(j,"必要なPCスキル",esc(j.pcskill))+
+        kRow(j,"必要な免許・資格",esc(j.menkyo),"menkyo"))+
+      gbox(
+        kRow(j,"試用期間",'<b>'+esc(j.shiyo)+'</b><div class="ib">'+esc(j.shiyoJoken)+'</div>',"shiyo"))+
+    '</div>'+
+    /* 右 */
+    '<div class="hwcol">'+
+      sech("3","賃金・手当","（1／2）")+
+      gbox(
+        kFullTap(j,'<b>月額（a＋b＋c）</b>　<span class="num big2">'+yen(c.month)+'</span>'+
+          '<div class="sm">※ 固定残業代がある場合は a＋b＋c</div>',"ab")+
+        kRow(j,"基本給（a）",'<span class="lbl">基本給（月額平均）又は時間額</span>'+
+          '<span class="sm">　月平均労働日数（'+esc(j.nissu)+'日）</span><br>'+
+          '<span class="num big2">'+yen(j.kihon)+'</span>',"kihon")+
+        kRow(j,"定額的に支払われる手当（b）",'<table class="ktbl">'+teateRows+'</table>',"teate")+
+        kRow(j,"固定残業代（c）",
+          (j.fixedOT?'<b>あり</b>（<span class="num">'+yen(cYen)+'</span>）':'<b>なし</b>')+
+          '<div class="ib">固定残業代に関する特記事項<br>'+
+          (j.fixedOT?'時間外手当は、時間外労働の有無にかかわらず固定残業代として支給し、'+
+            j.fixedOT.h+'時間を超える時間外労働は追加で支給。':'—')+'</div>',"fixedOT")+
+        kRow(j,"その他の手当等付記事項（d）",esc(j.teateHosoku))+
+        kRow(j,"賃金形態等",esc(j.chinginKatachi)+'<div class="ib sm">その他内容：—</div>')+
+        kRow(j,"通勤手当",esc(j.tsukinTxt),"tsukin")+
+        kRow(j,"賃金締切日",'固定（月末以外）　毎月 '+esc(j.shimebi))+
+        kRow(j,"賃金支払日",'固定（月末以外）　'+esc(j.shiharai))+
+        kRow(j,"昇給",esc(j.shoukyuu),"shoukyuu")+
+        kRow(j,"賞与",esc(j.bonusTxt),"bonus"))+
+    '</div>'+
+    '</div></div></div>';
+
+  /* ---------- 裏面 ---------- */
+  const ura='<div class="hwwrap"><div class="hwsheet">'+
+    '<div class="hwpg">裏面（2／2）　求人番号 '+j.num+'</div>'+
+    '<div class="hwcols">'+
+    '<div class="hwcol">'+
+      sech("4","労働時間")+
+      gbox(
+        kRow(j,"就業時間",'（1）'+esc(j.jikan)+
+          '<div class="ib sm">就業時間に関する特記事項：'+(j.jikan.indexOf("交替")>=0?"交替制あり。シフト表で決定":"—")+'</div>',"jikan")+
+        kRow(j,"時間外労働時間",esc(j.otTxt)+
+          '<div class="dashln"></div><span class="lbl">36協定における特別条項</span>　なし',"ot")+
+        kRow(j,"休憩時間",j.kyukei+'分　　<span class="lbl">所定労働時間</span> '+j.jitsudo+'時間')+
+        kRow(j,"休日等",esc(j.kyujitsuTxt))+
+        kRow(j,"週休二日制",esc(j.shukyu),"shukyu")+
+        kRow(j,"年間休日数",'<span class="num big2">'+j.nenkyu+'</span> 日',"nenkyu")+
+        kRow(j,"6か月経過後の年次有給休暇日数",esc(j.yuukyu),"yuukyu"))+
+      sech("5","その他の労働条件等")+
+      gbox(
+        kRow(j,"加入保険等",'雇用　労災　<s>公災</s>　健康　厚生　<s>財形</s>　<s>その他</s>',"hoken")+
+        kRow(j,"企業年金",esc(j.kigyoNenkin))+
+        kRow(j,"退職金共済",esc(j.taishokuKyosai))+
+        kRow(j,"退職金制度",esc(j.taishoku),"taishoku")+
+        kRow(j,"定年制",esc(j.teinen),"teinen")+
+        kRow(j,"再雇用制度",esc(j.saikoyo))+
+        kRow(j,"勤務延長",esc(j.kinmuEnchou))+
+        kRow(j,"入居可能住宅",esc(j.ryou))+
+        kRow(j,"利用可能託児施設",esc(j.takuji)))+
+    '</div>'+
+    '<div class="hwcol">'+
+      sech("6","会社の情報")+
+      gbox(
+        kRow(j,"企業情報",esc(j.jugyoinNaiwake)+
+          '<div class="dashln"></div><span class="lbl">設立年</span> '+esc(j.setsuritsu)+
+          '　<span class="lbl">資本金</span> '+esc(j.shihon)+
+          '　<span class="lbl">労働組合</span> '+esc(j.kumiai),"jugyoin")+
+        kRow(j,"事業内容",esc(j.jigyo))+
+        kRow(j,"会社の特長",esc(j.tokucho))+
+        kRow(j,"役職・代表者名",esc(j.daihyo)+
+          '<div class="dashln"></div><span class="lbl">法人番号</span> <span class="num">'+esc(j.hojin)+'</span>')+
+        kRow(j,"就業規則",esc(j.kisoku))+
+        kRow(j,"両立支援の実績",esc(j.ikujiJisseki))+
+        kRow(j,"その他",esc(j.gaikoku)))+
+      '<div class="sech"><span class="tt">求人に関する特記事項</span></div>'+
+      gbox(kFull(j.tokki))+
+    '</div>'+
+    '<div class="hwcol">'+
+      sech("7","選考等")+
+      gbox(
+        kRow(j,"採用人数",'<span class="num big2">'+j.jinin+'</span> 人'+
+          '<div class="dashln"></div><span class="lbl">募集理由</span>　'+esc(j.boshuRiyu),"jinin")+
+        kRow(j,"選考方法",esc(j.senkou))+
+        kRow(j,"結果通知",esc(j.kekkaTsuchi))+
+        kRow(j,"通知方法",esc(j.tsuchiHoho))+
+        kRow(j,"選考日時",esc(j.tsuchi))+
+        kRow(j,"選考場所",esc(j.senkoba))+
+        kRow(j,"応募書類等",esc(j.shorui)+
+          '<div class="dashln"></div><span class="lbl">送付方法</span> '+esc(j.souhu)+
+          '　<span class="lbl">応募書類の返戻</span> '+esc(j.henrei))+
+        kRow(j,"担当者",esc(j.tanto)))+
+    '</div>'+
+    '</div>'+
+    '<div class="hwfoot">ハローワークより：求人票は雇用契約書ではありません。'+
+    '採用時には必ず、書面により労働条件の明示を受けてください。</div>'+
+    '</div></div>';
+
+  /* ---------- 青少年雇用情報 ---------- */
+  const seishonen='<div class="hwwrap"><div class="hwsheet">'+
+    '<div class="hwpg">青少年雇用情報（求人票に添付）　求人番号 '+j.num+'</div>'+
+    '<div class="hwcols">'+
+    '<div class="hwcol">'+sech("①","募集・採用に関する状況")+
+      gbox(
+        kRow(j,"新卒者等の採用者数・離職者数",
+          '<span class="lbl">採用者数</span>　'+esc(j.saiyo3)+
+          '<div class="dashln"></div><span class="lbl">離職者数</span>　'+esc(j.rishoku3),"saiyo3")+
+        kRow(j,"平均継続勤務年数",esc(j.kinzoku),"kinzoku"))+
+    '</div>'+
+    '<div class="hwcol">'+sech("②","職業能力の開発・向上に関する取組")+
+      gbox(
+        kRow(j,"研修・自己啓発支援・メンター制度",
+          '<span class="lbl">研修</span>　'+esc(j.kenshu)+
+          '<div class="dashln"></div><span class="lbl">自己啓発支援</span>　'+esc(j.jikohatsu)+
+          '<div class="dashln"></div><span class="lbl">メンター制度</span>　'+esc(j.mentor),"kenshu")+
+        kRow(j,"社内検定等の制度","—"))+
+    '</div>'+
+    '<div class="hwcol">'+sech("③","職場定着の促進に関する取組")+
+      gbox(
+        kRow(j,"月平均所定外労働時間",esc(j.otJisseki),"otJisseki")+
+        kRow(j,"有給休暇の平均取得日数",esc(j.yuukyuJisseki),"yuukyuJisseki")+
+        kRow(j,"育児休業取得者数",esc(j.ikuji))+
+        kRow(j,"役員・管理的地位にある者の女性割合",esc(j.joseiKanri)))+
+    '</div>'+
+    '</div></div></div>';
+
+  return '<div class="hwcap">'+
+    '<span>ハローワークが高校に出す<b>「求人票（高卒）」の見本</b>と同じ形にしてある</span>'+
+    '<span class="warn">※実在の事業所ではありません</span></div>'+
+    omote+ura+seishonen;
+}
+/* ============================================================
+   11b. この求人票から手取りを出す（手順を1つずつ見せる）
+   ------------------------------------------------------------
+   数字がどの欄から来たかを必ず添える。「求人票のここを見て、こう計算する」
+   が分からなければ、手取りは一生ひとの計算のままになる。
+   ============================================================ */
+function flowStep(n,title,where,calc,note,cls){
+  return '<div class="fstep'+(cls?" "+cls:"")+'"><div class="fn">'+n+'</div><div class="fb">'+
+    '<b>'+title+'</b>'+(where?'<span class="fwhere">求人票の「'+where+'」欄</span>':'')+
+    (calc?'<div class="fcalc">'+calc+'</div>':'')+
+    (note?'<div class="fmini">'+note+'</div>':'')+'</div></div>';
+}
+function tedoriFlowHTML(j){
+  const c=calcJob(j), need=outMonth();
+  const rate=c.t2.net/c.t2.gross;                 // 2年目の手取りの割合
+  const rate1=c.t1.net/c.t1.gross;                // 1年目
+  const mNet=c.month*rate, bNet=c.bonusYen*rate;  // 月給ぶん／賞与ぶんの手取り
+  const bList=j.teate.filter(t=>t.n.indexOf("固定残業")<0);   // (b)（固定残業代は (c) として別に出す）
+  const tsuki=(c.t2.net/12)+c.tsukin, diff=tsuki-need;
+  return '<h2 style="font-size:14px;margin-top:20px">この求人票で、手取りはいくらになるか</h2>'+
+  '<p class="lead">求人票に手取りは<b>どこにも書いていない</b>。書いてあるのは額面だけ。'+
+  '自分で出すしかない。順番にやれば必ず出る。</p>'+
+  '<div class="flow">'+
+  flowStep(1,"毎月かならず支払われる額を見つける","月額（a＋b＋c）",
+    [yen(j.kihon)].concat(bList.map(t=>yen(t.v)),j.fixedOT?[yen(j.fixedOT.v)]:[]).join(' ＋ ')+
+      ' ＝ <b>'+yen(c.month)+'</b> ／月',
+    '基本給（a）'+yen(j.kihon)+'　＋　'+
+    bList.map(t=>esc(t.n)+' '+yen(t.v)).join('　＋　')+
+    (j.fixedOT?'　＋　固定残業代（c）'+yen(j.fixedOT.v):'')+
+    '。<b>これは税込み。</b>ここから引かれる')+
+  flowStep(2,"1年分にする","",
+    yen(c.month)+' × 12か月 ＝ <b>'+yen(c.month*12)+'</b>',
+    '毎月同じ額が12回出る。残業をすれば、さらにその分が加わる')+
+  flowStep(3,"賞与を足す","賞与",
+    yen(j.kihon)+' × '+j.bonus.toFixed(1)+'か月 ＝ <b>'+yen(c.bonusYen)+'</b>',
+    '賞与は<b>基本給</b>にか月数をかけて出す。月額（a＋b＋c）ではない。'+
+    'しかも「前年度実績」なので、今年の約束ではない')+
+  flowStep(4,"年収（額面）が出る","",
+    yen(c.month*12)+' ＋ '+yen(c.bonusYen)+' ＝ <b>'+yen(c.year)+'</b> ／年',
+    'ここまでが求人票から分かること。<b>ここから先は求人票に書いていない</b>',"mid")+
+  flowStep(5,"社会保険料を引く","",
+    '− <b>'+yen(c.t2.shaho)+'</b>（年収の約'+(SHAHO*100).toFixed(1)+'%）',
+    '健康保険 '+yen(c.t2.kenko)+'　厚生年金 '+yen(c.t2.nenkin)+'　雇用保険 '+yen(c.t2.koyo)+'。'+
+    '<b>選べない。全員引かれる</b>。会社も同じくらい払っている')+
+  flowStep(6,"所得税を引く","",
+    '− <b>'+yen(c.t2.zei)+'</b>',
+    'その年の給料にかかる。<b>毎月の給料から少しずつ</b>引かれ、12月の年末調整で精算される')+
+  flowStep(7,"住民税を引く（2年目から）","",
+    '− <b>'+yen(c.t2.jumin)+'</b>',
+    '<b>前の年の所得</b>にかかり、翌年6月から引かれ始める。'+
+    '働き始めた年は前年の所得がないので<b>1年目は0円</b>')+
+  flowStep(8,"手取り（年）が出る","",
+    yen(c.year)+' − '+yen(c.t2.hiku)+' ＝ <b>'+yen(c.t2.net)+'</b> ／年',
+    '額面の <b>'+Math.round(rate*100)+'%</b> が残った（2年目）。1年目は住民税がないので '+
+    Math.round(rate1*100)+'%、年 '+yen(c.t1.net)+'',"res")+
   '</div>'+
 
-  fSec("事業所",
-    fRow(j,"事業所番号",'<span class="num">'+j.jnum+'</span>')+
-    fRow(j,"事業所名",'<b style="font-size:13px">'+esc(j.co)+'</b>')+
-    fRow(j,"所在地",esc(j.addr))+
-    fRow(j,"ホームページ",'<span class="sm">'+esc(j.hp)+'</span>')+
-    fRow(j,"従業員数／設立／資本金",
-      esc(j.jugyoin)+'　／　設立 '+esc(j.setsuritsu)+'　／　資本金 '+esc(j.shihon),"jugyoin")+
-    fRow(j,"事業内容",esc(j.jigyo))+
-    fRow(j,"会社の特長",esc(j.tokucho)))+
+  '<div class="note ask"><b>いつ、いくら口座に入るのか</b><br>'+
+  '年の手取りを「毎月ぶん」と「賞与ぶん」に分けると、実際の入り方が見える。<br>'+
+  '<table class="plain" style="margin:7px 0 4px"><tr>'+
+  '<th>いつ</th><th style="text-align:right">額面</th><th style="text-align:right">手取り（概算）</th></tr>'+
+  '<tr><td>毎月の給料日（12回）</td><td class="n">'+yen(c.month)+'</td><td class="n"><b>約 '+yen(mNet)+'</b></td></tr>'+
+  '<tr><td>賞与（年'+(j.bonus>=2?2:1)+'回・合計）</td><td class="n">'+yen(c.bonusYen)+'</td><td class="n">約 '+yen(bNet)+'</td></tr>'+
+  '<tr><td><b>1年の合計を12で割ると</b></td><td class="n">'+yen(c.year/12)+'</td>'+
+  '<td class="n"><b>'+yen(c.t2.net/12)+'</b></td></tr></table>'+
+  '<b>生活費と比べるのは、いちばん下の '+yen(c.t2.net/12)+'</b>。'+
+  'ただし<b>毎月の給料日に入るのは 約'+yen(mNet)+'</b>で、家賃も食費もそこから払う。'+
+  '<b>賞与を当てにした家計は、賞与が減った年に崩れる。</b></div>'+
 
-  fSec("仕事内容",
-    fRow(j,"職種",'<b style="font-size:13px">'+esc(j.job)+'</b>',"job")+
-    fRow(j,"仕事の内容",esc(j.naiyou),"naiyou")+
-    fRow2("雇用形態",esc(j.keitai),"就業形態",esc(j.shugyo))+
-    fRow(j,"雇用期間",esc(j.kikan)+'　<span class="sm">（'+esc(j.keitaiHosoku)+'）</span>',"keitai")+
-    fRow(j,"就業場所",esc(j.place),"place")+
-    fRow(j,"就業場所における<br>受動喫煙対策",esc(j.kitsuen))+
-    fRow(j,"マイカー通勤",esc(j.mycar),"mycar")+
-    fRow2("転勤の可能性",esc(j.tenkin),"学歴",esc(j.gakureki))+
-    fRow(j,"必要な免許・資格",esc(j.menkyo),"menkyo"))+
+  '<div class="note hi"><b>暗算のしかた（現場で使える）</b><br>'+
+  '<span class="mono" style="font-size:15px">額面 × 0.8 ≒ 手取り</span><br>'+
+  yen(c.month)+' × 0.8 ＝ '+yen(c.month*0.8)+'。実際の計算では '+yen(mNet)+'。<b>ほぼ合う。</b><br>'+
+  '求人票を見た瞬間に「この会社なら手取り○万円くらい」と言えるようになる。'+
+  '細かい計算はあとでよい。<b>まず0.8を掛けろ。</b></div>'+
 
-  fSec("労働時間",
-    fRow(j,"就業時間",'（1）'+esc(j.jikan),"jikan")+
-    fRow2("休憩時間",j.kyukei+'分',"所定労働時間",j.jitsudo+'時間')+
-    fRow(j,"時間外労働時間",esc(j.otTxt),"ot")+
-    fRow(j,"休日等",esc(j.kyujitsuTxt))+
-    fRow(j,"週休二日制",esc(j.shukyu),"shukyu")+
-    fRow(j,"年間休日数",'<span class="num big2">'+j.nenkyu+'</span> 日',"nenkyu")+
-    fRow(j,"年次有給休暇",esc(j.yuukyu),"yuukyu"))+
-
-  fSec("賃　金",
-    fRow(j,"賃金形態等",esc(j.chinginKatachi))+
-    fRow(j,"基本給（a）",'<span class="num big2">'+yen(j.kihon)+'</span>',"kihon")+
-    fRow(j,"定額的に支払われる<br>手当（b）",
-      j.teate.map(t=>esc(t.n)+'　<span class="num">'+yen(t.v)+'</span>').join("<br>"),"teate")+
-    fRow(j,"a ＋ b",'<span class="num big2">'+yen(c.month)+'</span>',"ab")+
-    fRow(j,"固定残業代に関する<br>特記事項",
-      (j.fixedOT
-        ? '<div class="hwbox">上記には時間外労働 '+j.fixedOT.h+'時間分（'+yen(j.fixedOT.v)+'）を含む。<br>'+
-          j.fixedOT.h+'時間を超える時間外労働分は追加で支給する。</div>'
-        : 'なし'),"fixedOT")+
-    fRow(j,"その他の手当等<br>付記事項",esc(j.teateHosoku))+
-    fRow(j,"通勤手当",esc(j.tsukinTxt),"tsukin")+
-    fRow2("賃金締切日",esc(j.shimebi),"賃金支払日",esc(j.shiharai))+
-    fRow(j,"昇給",esc(j.shoukyuu),"shoukyuu")+
-    fRow(j,"賞与",esc(j.bonusTxt),"bonus"))+
-
-  fSec("その他の労働条件等",
-    fRow(j,"加入保険等",esc(j.hoken),"hoken")+
-    fRow(j,"退職金共済",esc(j.taishokuKyosai))+
-    fRow(j,"退職金制度",esc(j.taishoku),"taishoku")+
-    fRow(j,"定年制",esc(j.teinen),"teinen")+
-    fRow(j,"再雇用制度",esc(j.saikoyo))+
-    fRow(j,"入居可能住宅",esc(j.ryou)))+
-
-  fSec("選考等",
-    fRow(j,"採用人数",j.jinin+'名',"jinin")+
-    fRow(j,"選考方法",esc(j.senkou))+
-    fRow(j,"選考結果の通知",esc(j.tsuchi))+
-    fRow(j,"応募書類等",esc(j.shorui))+
-    fRow(j,"選考場所",esc(j.senkoba)))+
-
-  fSec("青少年雇用情報",
-    fRow(j,"新卒者等の<br>採用者数・離職者数",
-      '採用者数：'+esc(j.saiyo3)+'<br>離職者数：'+esc(j.rishoku3),"saiyo3")+
-    fRow(j,"平均勤続年数",esc(j.kinzoku),"kinzoku")+
-    fRow(j,"研修・自己啓発支援<br>メンター制度",
-      '研修：'+esc(j.kenshu)+'<br>自己啓発支援：'+esc(j.jikohatsu)+'<br>メンター制度：'+esc(j.mentor),"kenshu")+
-    fRow(j,"月平均所定外労働時間",esc(j.otJisseki),"otJisseki")+
-    fRow(j,"有給休暇の<br>平均取得日数",esc(j.yuukyuJisseki),"yuukyuJisseki")+
-    fRow2("育児休業取得実績",esc(j.ikuji),"役員・管理職に<br>占める女性割合",esc(j.joseiKanri)))+
-  '</div></div>';
+  '<div class="note'+(diff>=0?" good":" bad")+'"><b>君の必要手取りと比べる</b><br>'+
+  'この求人で使える額（2年目）… 手取り '+yen(c.t2.net/12)+' ＋ 通勤手当 '+yen(c.tsukin)+
+  ' ＝ <b>'+yen(tsuki)+'</b> ／月<br>'+
+  '君がSTEP1で出した必要な手取り … <b>'+yen(need)+'</b> ／月<br>'+
+  '<b style="font-size:14px">'+(diff>=0?'足りる（＋'+yen(diff)+'）':'足りない（−'+yen(Math.abs(diff))+'）')+'</b>'+
+  (diff>=0?'。残りは貯金か、暮らしを少し良くする分に回せる。'
+          :'。求人を変えるか、暮らし方を変えるか。STEP1に戻って動かしてみること。')+'</div>';
 }
+
 function bindKyujin(){
   Array.prototype.forEach.call(document.querySelectorAll(".fr.tap"),e=>{
     e.onclick=()=>{ const k=e.dataset.x; S.kx[k]=!S.kx[k]; save(); render(); };
@@ -1360,6 +1654,7 @@ function drawKyujin(){
     (openCnt>keys.length/2?"説明をすべて閉じる":"説明をすべて開く")+'</button>'+
     '<span class="tagline">開いている説明 '+openCnt+' / '+keys.length+'</span></div>'+
   kyujinHTML(j)+
+  tedoriFlowHTML(j)+
   '<div class="note ask"><b>読む順番を決めておく</b><br>'+
   '① 仕事の内容 → ② a＋b（毎月の額）→ ③ 固定残業代が入っていないか → ④ 年間休日数と週休二日制 → '+
   '⑤ 賞与と昇給 → ⑥ 通勤手当の上限 → ⑦ 加入保険と退職金 → ⑧ 青少年雇用情報（採用と離職）。<br>'+

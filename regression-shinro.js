@@ -230,23 +230,37 @@ console.log("\n【D】アドバイス");
 console.log("\n【E】求人票（ハローワークの様式）と、タップ説明");
 {
   const h=E("kyujinHTML(JOBS[0])");
-  const need=["求人票","求人区分","受付年月日","紹介期限日","受理安定所","求人番号",
-              "事業所番号","職種","仕事の内容","雇用形態","就業形態","雇用期間","就業場所",
-              "受動喫煙対策","マイカー通勤","必要な免許・資格","就業時間","休憩時間","時間外労働時間",
-              "休日等","週休二日制","年間休日数","年次有給休暇","賃金形態等","基本給（a）",
-              "定額的に支払われる","手当（b）","a ＋ b","固定残業代に関する","その他の手当等",
-              "通勤手当","賃金締切日","賃金支払日","昇給","賞与","加入保険等","退職金共済","退職金制度",
-              "定年制","再雇用制度","入居可能住宅","採用人数","選考方法","選考結果の通知","応募書類等",
-              "選考場所","平均勤続年数","有給休暇の","月平均所定外労働時間","育児休業取得実績",
-              "役員・管理職に"];
-  const miss=need.filter(k=>h.indexOf(k)<0);
-  ok(miss.length===0,"本物の求人票の欄名がそろっている（"+need.length+"欄）"+(miss.length?" → 欠け:"+miss.join(","):""));
-  const bands=["事業所","仕事内容","労働時間","賃　金","その他の労働条件等","選考等","青少年雇用情報"];
-  /* 帯は1文字ずつ改行して積んである（縦書きの字送り崩れを避けるため） */
-  const mb=bands.filter(b=>h.indexOf('<span>'+b.split("").join("<br>")+'</span>')<0);
-  ok(mb.length===0,"左端の縦書きの区分帯が本物どおり7つある"+(mb.length?" → 欠け:"+mb.join(","):""));
-  ok((h.match(/class="band"/g)||[]).length===bands.length,"区分帯は7つだけ（増えても減ってもいない）");
-  ok(h.indexOf('class="hwwrap"')>=0&&h.indexOf('class="hw"')>=0,"用紙は折り返さず、狭い画面では横に流す入れ物に入っている");
+  /* 欄名は1文字ずつ改行して縦に積んである。テストも同じ形で探す */
+  const V=s=>{ const c=s.split("");
+    if(c.length<=8) return '<span>'+c.join("<br>")+'</span>';
+    const h2=Math.ceil(c.length/2);
+    return '<span class="w2"><i>'+c.slice(0,h2).join("<br>")+'</i><i>'+c.slice(h2).join("<br>")+'</i></span>'; };
+  const need=["事業所名","所在地","職種","仕事内容","雇用形態","派遣請負等","雇用期間","就業場所",
+    "マイカー通勤","年齢","学歴","必要な経験等","必要なPCスキル","必要な免許・資格","試用期間",
+    "基本給（a）","定額的に支払われる手当（b）","固定残業代（c）","その他の手当等付記事項（d）",
+    "賃金形態等","通勤手当","賃金締切日","賃金支払日","昇給","賞与",
+    "就業時間","時間外労働時間","休憩時間","休日等","週休二日制","年間休日数",
+    "6か月経過後の年次有給休暇日数","加入保険等","企業年金","退職金共済","退職金制度","定年制",
+    "再雇用制度","勤務延長","入居可能住宅","利用可能託児施設","企業情報","事業内容","会社の特長",
+    "役職・代表者名","就業規則","採用人数","選考方法","結果通知","通知方法","選考日時","選考場所",
+    "応募書類等","担当者","平均継続勤務年数","月平均所定外労働時間","有給休暇の平均取得日数"];
+  const miss=need.filter(k=>h.indexOf(V(k))<0);
+  ok(miss.length===0,"見本と同じ欄名が縦書きでそろっている（"+need.length+"欄）"+(miss.length?" → 欠け:"+miss.join(","):""));
+  const secs=[["1","求人事業所"],["2","仕事内容"],["3","賃金・手当"],["4","労働時間"],
+              ["5","その他の労働条件等"],["6","会社の情報"],["7","選考等"],
+              ["①","募集・採用に関する状況"],["②","職業能力の開発・向上に関する取組"],
+              ["③","職場定着の促進に関する取組"]];
+  const ms=secs.filter(x=>h.indexOf('<span class="no">'+x[0]+'</span><span class="tt">'+x[1]+'</span>')<0);
+  ok(ms.length===0,"番号つきのブロック見出しが見本どおり並ぶ（1〜7と①〜③）"+(ms.length?" → 欠け:"+ms.map(x=>x[1]).join(","):""));
+  ok((h.match(/class="hwsheet"/g)||[]).length===3,"用紙は3枚（表面・裏面・青少年雇用情報）");
+  ok((h.match(/class="hwcols"/g)||[]).length===3&&(h.match(/class="hwcol"/g)||[]).length===9,
+     "どの用紙も3カラムに分かれている");
+  ok(h.indexOf("求人票（高卒）")>=0&&h.indexOf("公開<br>範囲")>=0&&h.indexOf("識別欄")>=0,
+     "見本どおりの頭（求人票（高卒）・公開範囲・識別欄）がある");
+  ok(h.indexOf("就業地住所")>=0&&h.indexOf("産業分類")>=0&&h.indexOf('class="bc"')>=0,
+     "右肩の就業地住所・産業分類と、バーコードの帯がある");
+  ok(h.indexOf("<s>公災</s>")>=0,"加入保険は非該当を取り消し線で消す（実物と同じ書き方）");
+  ok(h.indexOf("求人票は雇用契約書ではありません")>=0,"用紙の下にハローワークの注意書きがある");
   ok(h.indexOf("実在の事業所ではありません")>=0,"授業用の見本であることが用紙の外に書いてある");
 }
 {
@@ -271,7 +285,7 @@ console.log("\n【E】求人票（ハローワークの様式）と、タップ�
 {
   w.go(2);
   const tap=all(".fr.tap");
-  ok(tap.length>=25,"求人票の欄がタップできる状態で描かれている（"+tap.length+"欄）");
+  ok(tap.length>=28,"求人票の欄がタップできる状態で描かれている（"+tap.length+"欄）");
   ok(all(".hq").length===tap.length,"タップできる欄には「？」の印がついている");
   ok(all(".expl").length===0,"最初は説明が閉じている");
   const t0=all(".fr.tap").filter(e=>e.dataset.x==="A:nenkyu")[0];
@@ -286,6 +300,29 @@ console.log("\n【E】求人票（ハローワークの様式）と、タップ�
   $("kxAll").click();
   ok(all(".expl").length===0,"もう一度押すと全部閉じる");
   reset();
+}
+
+{
+  /* 手取りの出し方（手順）— 数字が計算結果と一致していること */
+  const h=E("tedoriFlowHTML(JOBS[0])"), c=J("calcJob(JOBS[0])");
+  const Y=n=>E("yen("+n+")");
+  ok(h.indexOf("月額（a＋b＋c）")>=0,"手順1で求人票のどの欄を見るかを示している");
+  ok((h.match(/class="fstep"|class="fstep /g)||[]).length>=8,"手取りを出す手順が8段ある");
+  ok(h.indexOf(Y(c.year))>=0,"手順の中に年収（額面）の計算値が出る");
+  ok(h.indexOf(Y(c.t2.shaho))>=0&&h.indexOf(Y(c.t2.zei))>=0&&h.indexOf(Y(c.t2.jumin))>=0,
+     "引かれるもの（社会保険・所得税・住民税）が金額で出る");
+  ok(h.indexOf(Y(c.t2.net))>=0&&h.indexOf(Y(c.t2.net/12))>=0,"手取り（年）と月あたりの両方が出る");
+  ok(h.indexOf(Y(c.bonusYen))>=0&&h.indexOf("基本給")>=0,"賞与は基本給から計算すると示している");
+  ok(h.indexOf("× 0.8")>=0,"暗算のしかた（額面×0.8）を示している");
+  ok(h.indexOf("毎月の給料日")>=0,"毎月の給料日に入る額と、賞与を均した額を分けて示している");
+  const need=E("outMonth()");
+  ok(h.indexOf(Y(need))>=0,"最後に自分の必要手取りと突き合わせている");
+  let dirty=[]; DIRT.forEach(x=>{ if(h.indexOf(x)>=0) dirty.push(x); });
+  ok(dirty.length===0,"手順に NaN・undefined が出ない"+(dirty.length?" → "+dirty.join(","):""));
+  const bad=[];
+  [0,1,2].forEach(i=>{ let s2; try{ s2=E("tedoriFlowHTML(JOBS["+i+"])"); }catch(e){ bad.push(i+":例外"); return; }
+    DIRT.forEach(x=>{ if(s2.indexOf(x)>=0) bad.push(i+":"+x); }); });
+  ok(bad.length===0,"3件どの求人でも手順が壊れない"+(bad.length?" → "+bad.join(","):""));
 }
 
 console.log("\n【F】求人の計算と判定");
