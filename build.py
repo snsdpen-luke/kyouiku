@@ -1,19 +1,28 @@
 # -*- coding: utf-8 -*-
-"""配布物を作る。本体は ラダー工房v2.html ただ1つ。ここから機械的に生成する。
+"""配布物を作る。本体は次の2つ。ここから機械的に生成する。
 
-  python3 build.py                  index.html を作る（GitHub Pages で配るもの）
-  python3 build.py <出力先.html>    Artifact 用の断片も作る
+  ラダー工房v2.html   → index.html         （GitHub Pages で配るもの）
+  進路設計工房.html   → shinro/index.html  （同上。URL を /shinro/ で配るため）
+
+  python3 build.py                  上の2つを作る
+  python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
 
 本体を直したら必ず走らせること。生成物を手で編集してはいけない。
 """
-import io, sys, shutil
+import io, os, sys, shutil
 
 SRC = "ラダー工房v2.html"
+SRC2 = "進路設計工房.html"
 s = io.open(SRC, encoding="utf-8").read()
 
 # 1) GitHub Pages 用。中身は本体そのまま。URL を短くするためだけの複製
 shutil.copyfile(SRC, "index.html")
 print("生成: index.html")
+
+# 1b) 進路設計工房。フォルダに index.html として置き、URL を短くする
+os.makedirs("shinro", exist_ok=True)
+shutil.copyfile(SRC2, "shinro/index.html")
+print("生成: shinro/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:

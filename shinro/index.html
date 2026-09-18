@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>進路設計工房 くらしの費用から求人票へ｜進路学習</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#e2ded3;--face:#f2efe7;--face2:#e2ded3;--panel:#fdfcf8;--panel2:#f3f0e8;--ink:#ffffff;
+  --line:#c7c0ae;--line-lo:#e3ddcf;--edge:#b0a894;--shade:#00000014;
+  --txt:#242219;--dim:#6b6455;--dim2:#948d7b;
+  --ok:#0f7d5e;--ok-dk:#0a5f47;--ok-lo:#d9f2e9;
+  --warn:#b4700a;--warn-lo:#fdf0d8;
+  --ng:#c23b2b;--ng-lo:#fbe4e0;
+  --blue:#25599b;--blue-lo:#e4edfa;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:10px;font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
+  font-size:14px;color:var(--txt);min-height:100vh;line-height:1.6;
+  background:var(--bg) radial-gradient(1200px 600px at 50% -10%,#f0ece1 0%,rgba(226,222,211,0) 72%) no-repeat}
+.app{max-width:1400px;margin:0 auto}
+
+/* ===== ヘッダ ===== */
+.face{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  background:linear-gradient(#f6f3ea,#e4e0d2);border:1px solid var(--line);
+  border-radius:12px 12px 6px 6px;padding:8px 14px;margin-bottom:7px;
+  box-shadow:inset 0 1px 0 #fffdf8,0 2px 6px #00000018}
+.brand{display:flex;align-items:center;gap:11px;flex:1 1 auto;min-width:210px}
+.mark{width:38px;height:38px;flex:0 0 38px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.04em;color:#f2efe6;
+  background:linear-gradient(#4b5a53,#2f3a35);border:1px solid #26302c;
+  box-shadow:inset 0 1px 0 #ffffff30,0 1px 2px #00000030}
+h1{font-size:17px;margin:0;letter-spacing:.02em}
+.sub{font-size:10.5px;color:var(--dim);margin-top:3px;font-family:var(--mono);letter-spacing:.05em}
+
+/* ===== ステータス帯 ===== */
+.statusbar{display:flex;flex-wrap:wrap;align-items:stretch;overflow:hidden;
+  background:var(--ink);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;
+  font-family:var(--mono);font-size:11.5px;color:var(--dim);box-shadow:0 1px 2px #0000000f}
+.st{padding:7px 14px;border-right:1px solid var(--line-lo);display:flex;gap:8px;align-items:center}
+.st .k{font-size:8.5px;letter-spacing:.14em;color:var(--dim2)}
+.st .v{color:var(--txt);font-weight:600}
+.st.live{background:#e9f7f1}
+.st.live .v{color:var(--ok-dk)}
+
+/* ===== ステップタブ ===== */
+.tabs{margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px}
+.tab{min-height:44px;padding:6px 13px;border:1px solid var(--line);border-radius:7px;
+  background:linear-gradient(#fdfcf8,#eeeade);color:var(--dim);cursor:pointer;
+  font:inherit;font-size:12.5px;display:flex;align-items:center;gap:7px;
+  box-shadow:0 1px 2px #0000000f}
+.tab .no{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--dim2);
+  border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:var(--ink)}
+.tab:hover{background:linear-gradient(#ffffff,#f4f1e7)}
+.tab.on{background:linear-gradient(#0f7d5e,#0a6249);color:#fff;border-color:#084b38;font-weight:600}
+.tab.on .no{color:#d9f2e9;border-color:#ffffff55;background:#ffffff1f}
+.tab.done .no::after{content:" ✓";color:var(--ok)}
+.tab.on.done .no::after{color:#b8f0dc}
+
+/* ===== 版組み ===== */
+.cols{display:grid;grid-template-columns:1fr 330px;gap:12px;align-items:start}
+.cols>*{min-width:0}   /* これが無いと、中の広い表が列を押し広げて画面から溢れる */
+@media(max-width:1040px){.cols{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+  padding:14px 16px;margin-bottom:11px;box-shadow:0 1px 3px #00000010}
+.card>h2{font-size:15px;margin:0 0 4px;letter-spacing:.02em}
+.card>h2 .n{font-family:var(--mono);font-size:10.5px;color:var(--dim2);letter-spacing:.1em;
+  border:1px solid var(--line);border-radius:4px;padding:1px 6px;margin-right:8px;background:var(--ink)}
+.lead{color:var(--dim);font-size:13px;margin:0 0 12px}
+.note{background:var(--panel2);border-left:4px solid var(--line);border-radius:0 6px 6px 0;
+  padding:9px 12px;font-size:12.5px;color:var(--dim);margin:11px 0}
+.note b{color:var(--txt)}
+.note.hi{background:var(--warn-lo);border-left-color:var(--warn)}
+.note.good{background:var(--ok-lo);border-left-color:var(--ok)}
+.note.bad{background:var(--ng-lo);border-left-color:var(--ng)}
+.note.ask{background:var(--blue-lo);border-left-color:var(--blue)}
+
+/* ===== 選択ボタン ===== */
+.picks{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0}
+.pick{flex:1 1 180px;min-height:60px;padding:10px 13px;border:2px solid var(--line);border-radius:8px;
+  background:var(--ink);cursor:pointer;font:inherit;text-align:left;color:var(--txt);
+  display:flex;flex-direction:column;gap:2px;box-shadow:0 1px 2px #0000000d}
+.pick b{font-size:13.5px}
+.pick span{font-size:11.5px;color:var(--dim)}
+.pick:hover{border-color:var(--edge)}
+.pick.on{border-color:var(--ok);background:var(--ok-lo)}
+.pick.on b{color:var(--ok-dk)}
+
+/* ===== 費目の行 ===== */
+.rows{border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 210px 96px;gap:10px;align-items:center;
+  padding:9px 12px;border-bottom:1px solid var(--line-lo)}
+.row:last-child{border-bottom:0}
+.row:nth-child(even){background:var(--panel2)}
+.row .nm{font-size:13px}
+.row .nm small{display:block;color:var(--dim);font-size:11px;line-height:1.45}
+.row .amt{font-family:var(--mono);font-size:14px;font-weight:600;text-align:right;white-space:nowrap}
+.step{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.step button{width:44px;height:44px;flex:0 0 44px;border:1px solid var(--line);border-radius:7px;
+  background:linear-gradient(#fdfcf8,#eeeade);font:inherit;font-size:19px;line-height:1;
+  color:var(--txt);cursor:pointer;box-shadow:0 1px 2px #0000000f}
+.step button:hover{background:linear-gradient(#ffffff,#f4f1e7)}
+.step button:active{background:var(--face2);box-shadow:inset 0 1px 3px #00000020}
+.step input{width:96px;height:44px;border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  font-family:var(--mono);font-size:14px;text-align:right;padding:0 8px;color:var(--txt)}
+.row.sum{background:var(--face);font-weight:700;border-top:2px solid var(--edge)}
+.row.sum .amt{font-size:17px;color:var(--ok-dk)}
+@media(max-width:620px){
+  .row{grid-template-columns:1fr;gap:6px}
+  .row .amt{text-align:left}
+  .step{justify-content:flex-start}
+}
+
+/* ===== まとめ盤（右カラム） ===== */
+.side{position:sticky;top:10px}
+@media(max-width:1040px){.side{position:static}}
+.gauge{border:1px solid var(--line);border-radius:8px;background:var(--ink);overflow:hidden;margin-bottom:10px}
+.gauge .hd{background:var(--face);padding:6px 12px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.14em;color:var(--dim);border-bottom:1px solid var(--line)}
+.gauge .bd{padding:11px 13px}
+.big{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--ok-dk);line-height:1.2}
+.big small{font-size:12px;color:var(--dim);font-weight:400;margin-left:3px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dotted var(--line-lo);font-size:12.5px}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--dim)}
+.kv .v{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.bar{display:flex;height:26px;border:1px solid var(--line);border-radius:5px;overflow:hidden;margin:9px 0 5px;background:var(--panel2)}
+.bar i{display:block;height:100%;font-style:normal}
+.bar i.net{background:repeating-linear-gradient(45deg,#0f7d5e,#0f7d5e 7px,#138866 7px,#138866 14px)}
+.bar i.ins{background:#7fa8b8}
+.bar i.tax{background:#c9a13f}
+.bar i.res{background:#b46f5e}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--dim)}
+.legend b{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:4px}
+
+/* ===== 求人票 ===== */
+.kyujin{border:2px solid var(--txt);background:#fff;font-size:12.5px;margin:12px 0}
+.kyujin .khd{background:var(--txt);color:#fff;padding:5px 10px;font-size:12px;
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:var(--mono)}
+.kg{display:grid;grid-template-columns:132px 1fr;border-top:1px solid #8d887a}
+.kg:first-of-type{border-top:0}
+.kg>.kk{background:var(--panel2);padding:7px 9px;border-right:1px solid #8d887a;
+  font-size:11.5px;color:var(--dim);display:flex;align-items:center;line-height:1.4}
+.kg>.kv2{padding:7px 10px;line-height:1.55}
+.kg>.kv2 .mono{font-family:var(--mono);font-weight:600}
+.kg>.kv2 .sm{font-size:11.5px;color:var(--dim)}
+.kbox{border:1px dashed var(--edge);border-radius:5px;padding:6px 9px;margin:5px 0;background:var(--panel2)}
+@media(max-width:620px){.kg{grid-template-columns:1fr}.kg>.kk{border-right:0;border-bottom:1px solid #b9b3a3}}
+
+/* ===== クイズ ===== */
+.q{border:1px solid var(--line);border-radius:8px;background:var(--ink);padding:12px 14px;margin:11px 0}
+.q .qt{font-weight:600;font-size:13.5px;margin-bottom:9px}
+.q .qt i{font-style:normal;font-family:var(--mono);font-size:11px;color:#fff;background:var(--blue);
+  border-radius:4px;padding:2px 7px;margin-right:8px;letter-spacing:.06em}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{min-height:44px;text-align:left;padding:9px 13px;border:1px solid var(--line);border-radius:7px;
+  background:var(--panel);font:inherit;font-size:13px;color:var(--txt);cursor:pointer;line-height:1.5}
+.opt:hover{background:#fff;border-color:var(--edge)}
+.opt.ok{background:var(--ok-lo);border-color:var(--ok);font-weight:600}
+.opt.ng{background:var(--ng-lo);border-color:var(--ng);text-decoration:line-through;color:var(--dim)}
+.ans{margin-top:10px;padding:10px 12px;border-radius:6px;font-size:12.5px;display:none;line-height:1.65}
+.ans.show{display:block}
+.ans.good{background:var(--ok-lo);border-left:4px solid var(--ok)}
+.ans.bad{background:var(--warn-lo);border-left:4px solid var(--warn)}
+
+/* ===== 求人カード比較 ===== */
+.jobs{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:11px;margin:12px 0}
+.job{border:1px solid var(--line);border-radius:8px;background:var(--ink);overflow:hidden;
+  box-shadow:0 1px 3px #00000012;display:flex;flex-direction:column}
+.job .jh{padding:8px 11px;background:var(--face);border-bottom:1px solid var(--line)}
+.job .jh b{font-size:13.5px;display:block}
+.job .jh span{font-size:11.5px;color:var(--dim)}
+.job .jb{padding:9px 11px;flex:1 1 auto}
+.job .verdict{padding:9px 11px;font-size:12.5px;font-weight:600;text-align:center;border-top:1px solid var(--line)}
+.job .verdict.ok{background:var(--ok-lo);color:var(--ok-dk)}
+.job .verdict.warn{background:var(--warn-lo);color:var(--warn)}
+.job .verdict.ng{background:var(--ng-lo);color:var(--ng)}
+.job .verdict small{display:block;font-weight:400;color:var(--dim);margin-top:2px}
+
+/* ===== 一般部品 ===== */
+.btn{min-height:44px;padding:8px 18px;border:1px solid var(--line);border-radius:7px;
+  background:linear-gradient(#fdfcf8,#eeeade);font:inherit;font-size:13px;color:var(--txt);
+  cursor:pointer;box-shadow:0 1px 2px #0000000f}
+.btn:hover{background:linear-gradient(#ffffff,#f4f1e7)}
+.btn.go{background:linear-gradient(#12946f,#0a6249);color:#fff;border-color:#084b38;font-weight:600}
+.btn.go:hover{background:linear-gradient(#15a77d,#0c7355)}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:12px}
+table.plain{width:100%;border-collapse:collapse;font-size:12.5px;margin:9px 0}
+table.plain.wide{display:block;max-width:100%;overflow-x:auto;white-space:nowrap}
+table.plain th,table.plain td{border:1px solid var(--line-lo);padding:6px 9px;text-align:left}
+table.plain th{background:var(--panel2);color:var(--dim);font-weight:600;font-size:11.5px}
+table.plain td.n{font-family:var(--mono);text-align:right;white-space:nowrap}
+.hide{display:none!important}
+.mono{font-family:var(--mono)}
+.tagline{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+  border:1px solid var(--line);border-radius:4px;padding:1px 6px;background:var(--ink);color:var(--dim)}
+
+/* ===== ポップアップ（confirm/alert の代わり） ===== */
+.veil{position:fixed;inset:0;background:#241f1799;display:none;align-items:center;justify-content:center;
+  z-index:50;padding:16px}
+.veil.on{display:flex}
+.modal{background:var(--panel);border:1px solid var(--edge);border-radius:10px;max-width:460px;width:100%;
+  padding:18px 20px;box-shadow:0 10px 30px #00000040}
+.modal p{margin:0 0 14px;font-size:13.5px;line-height:1.7}
+.modal .mbtns{display:flex;gap:9px;justify-content:flex-end}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="face">
+    <div class="brand">
+      <div class="mark">￥→</div>
+      <div>
+        <h1>進路設計工房</h1>
+        <div class="sub">くらしの費用から必要な手取りを出し、求人票を読む</div>
+      </div>
+    </div>
+    <span class="tagline" id="ver">VER</span>
+  </div>
+
+  <div class="statusbar" id="status"></div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="cols">
+    <div id="stage"></div>
+    <aside class="side" id="side"></aside>
+  </div>
+
+</div>
+
+<div class="veil" id="veil"><div class="modal">
+  <p id="mMsg"></p>
+  <div class="mbtns"><button class="btn" id="mNo">とじる</button><button class="btn go" id="mYes">はい</button></div>
+</div></div>
+
+<script>
+"use strict";
+const VER="2026-09-18a";
+
+/* ============================================================
+   1. 税と社会保険の概算モデル
+   ------------------------------------------------------------
+   前提: 18〜19歳・独身・扶養なし・介護保険なし（40歳未満）・協会けんぽ。
+   目的は「額面と手取りは違う」「2年目に住民税が来る」を体感させること。
+   1円単位の正確さは目的ではない。率は毎年変わるので、年度が変わったら
+   RATE の数字だけを差し替えれば全体が追従する。
+   ============================================================ */
+const RATE={
+  kenko:0.0500,   // 健康保険 本人負担（協会けんぽ 約10%の労使折半）
+  nenkin:0.0915,  // 厚生年金 本人負担（18.3%の労使折半）
+  koyo:0.0055,    // 雇用保険 本人負担（一般の事業）
+  fukko:1.021,    // 復興特別所得税
+  shotoku:0.05,   // 所得税率（課税所得195万円以下）
+  jumin:0.10,     // 住民税 所得割
+  juminFlat:5000, // 住民税 均等割＋森林環境税
+  juminKiso:430000// 住民税の基礎控除
+};
+const SHAHO=RATE.kenko+RATE.nenkin+RATE.koyo;   // 約14.7%
+
+// 給与所得控除（年収→給与所得）。最低保障は65万円で、190万円までは一律
+function kyuyoKoujo(a){
+  if(a<=1900000) return 650000;
+  if(a<=3600000) return Math.floor(a*0.3+80000);
+  if(a<=6600000) return Math.floor(a*0.2+440000);
+  if(a<=8500000) return Math.floor(a*0.1+1100000);
+  return 1950000;
+}
+// 所得税の基礎控除（合計所得に応じて変わる）
+function kisoKoujo(shotoku){
+  if(shotoku<=1320000) return 950000;
+  if(shotoku<=3360000) return 880000;
+  if(shotoku<=4890000) return 680000;
+  if(shotoku<=6550000) return 630000;
+  return 580000;
+}
+/* 年収（額面）から手取りを出す。year2=true で住民税ありの2年目以降 */
+function tedori(gross,year2){
+  const g=Math.max(0,Math.round(gross));
+  const kenko=Math.round(g*RATE.kenko), nenkin=Math.round(g*RATE.nenkin), koyo=Math.round(g*RATE.koyo);
+  const shaho=kenko+nenkin+koyo;
+  const sho=Math.max(0,g-kyuyoKoujo(g));                       // 給与所得
+  const ka1=Math.max(0,sho-shaho-kisoKoujo(sho));              // 所得税の課税所得
+  const zei=Math.floor(ka1*RATE.shotoku*RATE.fukko);
+  const ka2=Math.max(0,sho-shaho-RATE.juminKiso);              // 住民税の課税所得
+  const jumin=year2 ? (ka2>0 ? Math.floor(ka2*RATE.jumin)+RATE.juminFlat : 0) : 0;
+  return {gross:g,kenko:kenko,nenkin:nenkin,koyo:koyo,shaho:shaho,zei:zei,jumin:jumin,
+          hiku:shaho+zei+jumin, net:g-shaho-zei-jumin};
+}
+/* 手取りから額面を逆算する。単調増加なので二分探索でよい */
+function gakumen(netWant,year2){
+  if(!(netWant>0)) return 0;
+  let lo=0, hi=Math.max(2000000,netWant*2+1000000);
+  for(let i=0;i<60;i++){
+    const mid=(lo+hi)/2;
+    if(tedori(mid,year2).net < netWant) lo=mid; else hi=mid;
+  }
+  return Math.ceil(hi/1000)*1000;
+}
+
+/* ============================================================
+   2. 費目
+   ============================================================ */
+const LIVES=[
+  {id:"alone",nm:"ひとり暮らし",sub:"アパートを借りて住む",shoki:450000,
+   shokiNote:"敷金・礼金・仲介手数料で約30万円、家具・家電・カーテンで約15万円。<b>働き始める前に要る</b>"},
+  {id:"home", nm:"実家から通う", sub:"家にお金を入れる",  shoki:50000,
+   shokiNote:"スーツ・靴・カバン・作業着などの準備で約5万円"},
+  {id:"dorm", nm:"会社の寮に入る",sub:"寮費を引かれて住む",shoki:100000,
+   shokiNote:"布団・家電・生活用品で約10万円。敷金・礼金は要らないことが多い"}
+];
+// g:"m"=毎月 / "y"=年に数回   per:何か月に一度（yのみ）   car:車が要るとき only:暮らし方
+const ITEMS=[
+ {id:"rent", g:"m",nm:"家賃・共益費",         tip:"地方のワンルームで4〜6万円。駐車場が別料金のことも多い", step:5000,only:["alone"],   def:{alone:55000}},
+ {id:"dormf",g:"m",nm:"寮費（給料から引かれる）",tip:"食事つきで1〜3万円。ただし退職すると住む所がなくなる",   step:1000,only:["dorm"],    def:{dorm:15000}},
+ {id:"ineie",g:"m",nm:"家に入れるお金",        tip:"食費・光熱費の分担。金額は家庭による",                 step:5000,only:["home"],    def:{home:30000}},
+ {id:"food", g:"m",nm:"食費",                 tip:"1日1000円で月3万円。自炊すると下がるが時間は要る",     step:1000,def:{alone:32000,home:12000,dorm:20000}},
+ {id:"util", g:"m",nm:"水道・電気・ガス",      tip:"夏と冬は倍近くになる月がある",                       step:1000,only:["alone","dorm"],def:{alone:11000,dorm:5000}},
+ {id:"phone",g:"m",nm:"スマホ・通信",          tip:"大手キャリアで8千円前後、格安なら3千円前後",           step:1000,def:{alone:8000,home:8000,dorm:8000}},
+ {id:"daily",g:"m",nm:"日用品・洗剤など",      tip:"トイレットペーパー、シャンプー、ゴミ袋。地味に効く",    step:1000,def:{alone:4000,home:2000,dorm:4000}},
+ {id:"cloth",g:"m",nm:"服・散髪",             tip:"散髪だけで月2千円前後",                             step:1000,def:{alone:7000,home:7000,dorm:7000}},
+ {id:"med",  g:"m",nm:"医療費・薬",           tip:"3割負担。歯医者に通うと月数千円",                    step:500, def:{alone:2000,home:2000,dorm:2000}},
+ {id:"fun",  g:"m",nm:"交際費・趣味・外食",    tip:"友達との食事、ゲーム、推し、部活の続き",              step:1000,def:{alone:15000,home:20000,dorm:15000}},
+ {id:"save", g:"m",nm:"貯金",                 tip:"<b>支出として先に取る</b>。余ったら貯める、では残らない",step:5000,def:{alone:10000,home:30000,dorm:30000}},
+ {id:"etc",  g:"m",nm:"その他・予備",          tip:"予定外は必ず起きる。ゼロにしてはいけない",            step:1000,def:{alone:5000,home:5000,dorm:5000}},
+ {id:"loan", g:"m",nm:"車のローン",           tip:"中古100万円を5年払い＋金利で月2万円ほど",            step:1000,car:true,def:{alone:20000,home:20000,dorm:20000}},
+ {id:"gas",  g:"m",nm:"ガソリン代",           tip:"通勤20kmで月8千円前後。通勤手当の上限に注意",         step:1000,car:true,def:{alone:8000,home:8000,dorm:8000}},
+ {id:"park", g:"m",nm:"駐車場代",             tip:"アパートは別料金のことが多い。実家なら0円",           step:1000,car:true,def:{alone:5000,home:0,dorm:3000}},
+ {id:"teiki",g:"m",nm:"通勤の定期代（自己負担分）",tip:"通勤手当の上限を超えた分は自分で払う",             step:1000,nocar:true,def:{alone:0,home:3000,dorm:0}},
+ {id:"jhoken",g:"y",nm:"車の任意保険",  per:12,tip:"<b>18〜21歳はとても高い</b>。年12万円ほど。入らない選択肢はない",step:10000,car:true,def:{alone:120000,home:120000,dorm:120000}},
+ {id:"jzei", g:"y",nm:"自動車税",       per:12,tip:"毎年5月。普通車で34,500円、軽自動車で10,800円",     step:1000,car:true,def:{alone:34500,home:34500,dorm:34500}},
+ {id:"shaken",g:"y",nm:"車検",          per:24,tip:"2年に一度10万円前後。1年あたりでは半分",            step:10000,car:true,def:{alone:100000,home:100000,dorm:100000}},
+ {id:"kaden",g:"y",nm:"家電・家具の買い替え",per:12,tip:"冷蔵庫も洗濯機も壊れる。壊れてから困る",         step:10000,only:["alone","dorm"],def:{alone:40000,dorm:20000}},
+ {id:"tabi", g:"y",nm:"帰省・旅行",     per:12,tip:"盆と正月に帰る、友達と出かける",                    step:10000,def:{alone:50000,home:30000,dorm:60000}},
+ {id:"kankon",g:"y",nm:"冠婚葬祭・急な出費",per:12,tip:"結婚式は1回3万円。スマホを落とせば10万円",        step:10000,def:{alone:30000,home:30000,dorm:30000}}
+];
+
+/* ============================================================
+   3. 状態と道具
+   ============================================================ */
+const S={life:"alone",car:true,step:0,v:{},edited:{},bonus:4.0,quiz:{},seen:{}};
+const $=id=>document.getElementById(id);
+const yen=n=>Math.round(n).toLocaleString("ja-JP")+"円";
+const man=n=>(Math.round(n/1000)/10).toFixed(1)+"万円";
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function shown(it){
+  if(it.only && it.only.indexOf(S.life)<0) return false;
+  if(it.car && !S.car) return false;
+  if(it.nocar && S.car) return false;
+  return true;
+}
+function defOf(it){ const d=it.def&&it.def[S.life]; return typeof d==="number"?d:0; }
+function applyDefaults(force){
+  ITEMS.forEach(it=>{ if(force||!S.edited[it.id]) S.v[it.id]=defOf(it); });
+}
+function monthOf(it){ return it.g==="m" ? (S.v[it.id]||0) : (S.v[it.id]||0)/(it.per||12); }
+function sumOf(g){ let t=0; ITEMS.forEach(it=>{ if(it.g===g&&shown(it)) t+=monthOf(it); }); return t; }
+function outMonth(){ return sumOf("m")+sumOf("y"); }
+function needNetYear(){ return outMonth()*12; }
+function needGross(year2){ return gakumen(needNetYear(),year2); }
+function needMonthly(year2){ return needGross(year2)/(12+S.bonus); }
+
+/* 保存（使えない環境もあるので必ず try で包む） */
+function save(){ try{ localStorage.setItem("shinro1",JSON.stringify(
+  {life:S.life,car:S.car,v:S.v,edited:S.edited,bonus:S.bonus,quiz:S.quiz,seen:S.seen,step:S.step})); }catch(e){} }
+function load(){ try{ const t=localStorage.getItem("shinro1"); if(!t) return false;
+  const o=JSON.parse(t); if(!o||typeof o!=="object") return false;
+  if(o.life) S.life=o.life; if(typeof o.car==="boolean") S.car=o.car;
+  if(o.v) S.v=o.v; if(o.edited) S.edited=o.edited; if(typeof o.bonus==="number") S.bonus=o.bonus;
+  if(o.quiz) S.quiz=o.quiz; if(o.seen) S.seen=o.seen;
+  if(typeof o.step==="number") S.step=o.step;
+  return true; }catch(e){ return false; } }
+
+/* ポップアップ。ブラウザの confirm / alert は使わない（環境によって無言で失敗する） */
+let onYes=null;
+function ask(msg,fn,label){ $("mMsg").innerHTML=msg; $("mYes").textContent=label||"はい";
+  $("mYes").classList.remove("hide"); $("mNo").textContent="やめる"; onYes=fn; $("veil").classList.add("on"); }
+function tell(msg){ $("mMsg").innerHTML=msg; $("mYes").classList.add("hide");
+  $("mNo").textContent="とじる"; onYes=null; $("veil").classList.add("on"); }
+function closeModal(){ $("veil").classList.remove("on"); }
+
+/* ============================================================
+   4. 画面の骨組み
+   ============================================================ */
+const STEPS=[
+  {nm:"くらし方を決める",  draw:drawLife},
+  {nm:"毎月かかるお金",    draw:drawMonth},
+  {nm:"年に数回かかるお金",draw:drawYear},
+  {nm:"手取りから額面へ",  draw:drawPay},
+  {nm:"求人票を読む",      draw:drawKyujin},
+  {nm:"3件を比べる",       draw:drawCompare},
+  {nm:"まとめ",            draw:drawSum}
+];
+function drawTabs(){
+  $("tabs").innerHTML=STEPS.map((s,i)=>
+    '<button class="tab'+(i===S.step?" on":"")+(S.seen[i]?" done":"")+'" data-i="'+i+'">'+
+    '<span class="no">'+(i+1)+'</span>'+esc(s.nm)+'</button>').join("");
+  Array.prototype.forEach.call($("tabs").children,b=>b.onclick=()=>go(+b.dataset.i));
+}
+function go(i){ S.step=Math.max(0,Math.min(STEPS.length-1,i)); S.seen[S.step]=1; save(); render(); window.scrollTo(0,0); }
+function navHTML(){
+  return '<div class="nav">'+
+    (S.step>0?'<button class="btn" id="prevBtn">← '+esc(STEPS[S.step-1].nm)+'</button>':'<span></span>')+
+    (S.step<STEPS.length-1?'<button class="btn go" id="nextBtn">'+esc(STEPS[S.step+1].nm)+' →</button>':'<span></span>')+
+    '</div>';
+}
+function bindNav(){
+  const p=$("prevBtn"), n=$("nextBtn");
+  if(p) p.onclick=()=>go(S.step-1);
+  if(n) n.onclick=()=>go(S.step+1);
+}
+function drawStatus(){
+  const life=LIVES.filter(l=>l.id===S.life)[0];
+  $("status").innerHTML=
+    '<div class="st"><span class="k">KURASHI</span><span class="v">'+esc(life.nm)+'</span></div>'+
+    '<div class="st"><span class="k">CAR</span><span class="v">'+(S.car?"あり":"なし")+'</span></div>'+
+    '<div class="st live"><span class="k">OUT/MONTH</span><span class="v">'+yen(outMonth())+'</span></div>'+
+    '<div class="st live"><span class="k">NEED GROSS</span><span class="v">'+yen(needMonthly(true))+' /月</span></div>'+
+    '<div class="st"><span class="k">STEP</span><span class="v">'+(S.step+1)+' / '+STEPS.length+'</span></div>';
+}
+function drawSide(){
+  const out=outMonth(), g1=needGross(false), g2=needGross(true), t=tedori(g2,true);
+  const w=x=>(t.gross?(x/t.gross*100):0).toFixed(1)+"%";
+  $("side").innerHTML=
+  '<div class="gauge"><div class="hd">1か月に出ていくお金</div><div class="bd">'+
+    '<div class="big">'+yen(out)+'<small>/月</small></div>'+
+    '<div class="kv"><span class="k">毎月のもの</span><span class="v">'+yen(sumOf("m"))+'</span></div>'+
+    '<div class="kv"><span class="k">年に数回のもの（月割り）</span><span class="v">'+yen(sumOf("y"))+'</span></div>'+
+    '<div class="kv"><span class="k">1年ぶん</span><span class="v">'+yen(out*12)+'</span></div>'+
+  '</div></div>'+
+  '<div class="gauge"><div class="hd">これを払うために必要な給料</div><div class="bd">'+
+    '<div class="kv"><span class="k">必要な手取り</span><span class="v">'+yen(out)+' /月</span></div>'+
+    '<div class="kv"><span class="k">必要な年収（1年目）</span><span class="v">'+yen(g1)+'</span></div>'+
+    '<div class="kv"><span class="k">必要な年収（2年目〜）</span><span class="v">'+yen(g2)+'</span></div>'+
+    '<div class="kv"><span class="k">賞与</span><span class="v">年 '+S.bonus.toFixed(1)+' か月</span></div>'+
+    '<div class="kv"><span class="k"><b>必要な月給（額面）</b></span><span class="v">'+yen(needMonthly(true))+'</span></div>'+
+    '<div class="bar" title="2年目の内訳">'+
+      '<i class="net" style="width:'+w(t.net)+'"></i>'+
+      '<i class="ins" style="width:'+w(t.shaho)+'"></i>'+
+      '<i class="tax" style="width:'+w(t.jumin)+'"></i>'+
+      '<i class="res" style="width:'+w(t.zei)+'"></i></div>'+
+    '<div class="legend"><span><b style="background:#0f7d5e"></b>手取り</span>'+
+      '<span><b style="background:#7fa8b8"></b>社会保険</span>'+
+      '<span><b style="background:#c9a13f"></b>住民税</span>'+
+      '<span><b style="background:#b46f5e"></b>所得税</span></div>'+
+  '</div></div>';
+}
+function render(){ drawTabs(); drawStatus(); STEPS[S.step].draw(); drawSide(); bindNav(); }
+
+/* ============================================================
+   5. 費目の行を描く（共通部品）
+   ============================================================ */
+function rowsHTML(g){
+  const list=ITEMS.filter(it=>it.g===g&&shown(it));
+  let h='<div class="rows">';
+  list.forEach(it=>{
+    const v=S.v[it.id]||0;
+    h+='<div class="row"><div class="nm">'+esc(it.nm)+
+       (it.g==="y"?' <span class="tagline">'+(it.per===24?"2年に一度":"年に一度")+'</span>':'')+
+       '<small>'+it.tip+'</small></div>'+
+       '<div class="step"><button data-d="-1" data-id="'+it.id+'">−</button>'+
+       '<input type="text" inputmode="numeric" data-id="'+it.id+'" value="'+v+'">'+
+       '<button data-d="1" data-id="'+it.id+'">＋</button></div>'+
+       '<div class="amt">'+(it.g==="y"?"月 "+yen(monthOf(it)):yen(v))+'</div></div>';
+  });
+  const t=sumOf(g);
+  h+='<div class="row sum"><div class="nm">'+(g==="m"?"毎月かかるお金の合計":"年に数回のもの（1か月あたり）")+
+     '</div><div></div><div class="amt">'+yen(t)+'</div></div></div>';
+  return h;
+}
+function bindRows(){
+  Array.prototype.forEach.call(document.querySelectorAll(".step button"),b=>{
+    b.onclick=()=>{
+      const it=ITEMS.filter(x=>x.id===b.dataset.id)[0]; if(!it) return;
+      S.v[it.id]=Math.max(0,(S.v[it.id]||0)+(+b.dataset.d)*it.step);
+      S.edited[it.id]=1; save(); render();
+    };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".step input"),inp=>{
+    inp.onchange=()=>{
+      const n=parseInt(String(inp.value).replace(/[^0-9]/g,""),10);
+      S.v[inp.dataset.id]=isNaN(n)?0:n; S.edited[inp.dataset.id]=1; save(); render();
+    };
+  });
+}
+
+/* ============================================================
+   6. 段階1〜3 くらしの費用
+   ============================================================ */
+function drawLife(){
+  const life=LIVES.filter(l=>l.id===S.life)[0];
+  $("stage").innerHTML=
+  '<div class="card"><h2><span class="n">STEP 1</span>どんなくらしをするか決める</h2>'+
+  '<p class="lead">働いて得たお金で、自分の生活を回すことになる。まず「どう暮らすか」を決める。'+
+  'ここを変えると、必要なお金は<b>月に4万円以上</b>変わる。</p>'+
+  '<div class="picks">'+LIVES.map(l=>
+    '<button class="pick'+(l.id===S.life?" on":"")+'" data-life="'+l.id+'">'+
+    '<b>'+esc(l.nm)+'</b><span>'+esc(l.sub)+'</span></button>').join("")+'</div>'+
+  '<h2 style="font-size:14px;margin-top:16px">通勤に車を使うか</h2>'+
+  '<p class="lead">電車やバスが少ない地域では、車がないと通えない会社が多い。'+
+  '車は「買う」だけでは終わらない。持ち続けるためのお金がかかる。</p>'+
+  '<div class="picks">'+
+    '<button class="pick'+(S.car?" on":"")+'" data-car="1"><b>車を持つ</b>'+
+    '<span>ローン・ガソリン・保険・税金・車検</span></button>'+
+    '<button class="pick'+(!S.car?" on":"")+'" data-car="0"><b>車は持たない</b>'+
+    '<span>電車・バス・自転車で通う</span></button></div>'+
+  '<div class="note hi"><b>働き始める前に要るお金（'+esc(life.nm)+'）… 約'+yen(life.shoki)+'</b><br>'+
+    life.shokiNote+'。<b>最初の給料が出るのは、働き始めて1か月以上あと</b>。それまでの生活費も要る。</div>'+
+  '<div class="note ask">このアプリの進み方<br>'+
+    '① くらし方を決める → ② 毎月の支出を積む → ③ 年に数回の支出を月割りにする → '+
+    '④ その額を手に入れるには<b>額面でいくら必要か</b>を逆算する → ⑤⑥ 本物と同じ形の求人票を読んで、'+
+    '自分が出した数字と<b>突き合わせる</b>。</div>'+
+  '<div style="margin-top:12px"><button class="btn" id="resetBtn">入力をすべて初期値に戻す</button></div>'+
+  navHTML()+'</div>';
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-life]"),b=>{
+    b.onclick=()=>{ S.life=b.dataset.life; applyDefaults(false); save(); render(); }; });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-car]"),b=>{
+    b.onclick=()=>{ S.car=b.dataset.car==="1"; save(); render(); }; });
+  $("resetBtn").onclick=()=>ask("入力した金額をすべて初期値に戻す。よいか？",
+    ()=>{ S.edited={}; applyDefaults(true); save(); render(); closeModal(); },"もどす");
+}
+
+function drawMonth(){
+  $("stage").innerHTML=
+  '<div class="card"><h2><span class="n">STEP 2</span>毎月かかるお金を積む</h2>'+
+  '<p class="lead">初期値は目安。<b>自分の家の請求書や、家の人に聞いた金額に書き換える</b>ほど、'+
+  'この先の数字は自分のものになる。＋と−は決まった幅で動く。直接打ち込んでもよい。</p>'+
+  rowsHTML("m")+
+  '<div class="note"><b>よく忘れられる費目</b><br>'+
+  '・日用品（洗剤・トイレットペーパー）… 目に見えないが毎月出ていく<br>'+
+  '・散髪代 … 月1回なら年に3〜4万円<br>'+
+  '・貯金 … 「余ったら貯める」では残らない。<b>先に取って、無いものとして暮らす</b></div>'+
+  '<div class="note ask">やってみる<br>'+
+  '交際費を0円にしてみる。合計はいくら減るか。'+
+  'その暮らしを<b>1年続けられるか</b>を考えてから、現実的な額に戻す。</div>'+
+  navHTML()+'</div>';
+  bindRows();
+}
+
+function drawYear(){
+  const y=sumOf("y");
+  $("stage").innerHTML=
+  '<div class="card"><h2><span class="n">STEP 3</span>年に数回かかるお金を、月割りにする</h2>'+
+  '<p class="lead">車検・自動車税・保険・帰省。<b>毎月は来ないが、必ず来る</b>。'+
+  '来てから慌てないために、12で割って毎月の支出に混ぜてしまう。これが家計の基本。</p>'+
+  rowsHTML("y")+
+  '<div class="note hi"><b>車は「買う」より「持ち続ける」ほうが高い</b><br>'+
+  'とくに<b>18〜21歳の任意保険</b>は、同じ車でも30歳の2〜3倍になる。事故を起こす率が高いと'+
+  '統計で出ているから。入らない、という選択肢はない。'+
+  '車関係だけで月にいくらになっているか、表で確かめること。</div>'+
+  '<div class="note"><b>いま、年に数回のものは月あたり '+yen(y)+'</b>。'+
+  '1年では '+yen(y*12)+'。これを知らずに毎月の給料を使い切ると、'+
+  '車検の年にお金が足りなくなる。</div>'+
+  navHTML()+'</div>';
+  bindRows();
+}
+
+/* ============================================================
+   7. 段階4 手取りから額面へ
+   ============================================================ */
+function payRowHTML(g,year2,label){
+  const t=tedori(g,year2);
+  return '<tr><td>'+label+'</td><td class="n">'+yen(t.gross)+'</td><td class="n">'+yen(t.shaho)+
+    '</td><td class="n">'+yen(t.zei)+'</td><td class="n">'+yen(t.jumin)+
+    '</td><td class="n"><b>'+yen(t.net)+'</b></td><td class="n">'+
+    (t.gross?Math.round(t.net/t.gross*100):0)+'%</td></tr>';
+}
+function drawPay(){
+  const out=outMonth(), ny=needNetYear(), g1=needGross(false), g2=needGross(true);
+  const m1=g1/(12+S.bonus), m2=g2/(12+S.bonus);
+  const t1=tedori(g2,false), t2=tedori(g2,true);
+  $("stage").innerHTML=
+  '<div class="card"><h2><span class="n">STEP 4</span>その手取りを得るには、額面でいくら要るか</h2>'+
+  '<p class="lead">求人票に書いてある金額は<b>額面</b>。そこから社会保険料と税金が引かれて、'+
+  '口座に入るのが<b>手取り</b>。引かれる額は自分では選べない。だから逆算する。</p>'+
+
+  '<table class="plain"><tr><th>いま出ている数字</th><th style="text-align:right">金額</th></tr>'+
+  '<tr><td>1か月に出ていくお金 ＝ <b>必要な手取り</b></td><td class="n">'+yen(out)+'</td></tr>'+
+  '<tr><td>1年ぶんの必要な手取り</td><td class="n">'+yen(ny)+'</td></tr>'+
+  '<tr><td>必要な年収（額面・1年目／住民税なし）</td><td class="n">'+yen(g1)+'</td></tr>'+
+  '<tr><td>必要な年収（額面・2年目〜／住民税あり）</td><td class="n">'+yen(g2)+'</td></tr></table>'+
+
+  '<div class="row" style="border:1px solid var(--line);border-radius:7px;background:var(--ink)">'+
+    '<div class="nm">賞与（ボーナス）を年に何か月ぶん見込むか'+
+    '<small>求人票には「賞与 年2回 計◯.◯か月」と書いてある。無い会社もある</small></div>'+
+    '<div class="step"><button id="bM">−</button>'+
+    '<input type="text" id="bIn" inputmode="decimal" value="'+S.bonus.toFixed(1)+'">'+
+    '<button id="bP">＋</button></div><div class="amt">'+S.bonus.toFixed(1)+' か月</div></div>'+
+
+  '<div class="note good" style="font-size:14px"><b>必要な月給（額面）</b><br>'+
+   '1年目の条件で … <b class="mono">'+yen(m1)+'</b> ／ 月<br>'+
+   '2年目の条件で … <b class="mono">'+yen(m2)+'</b> ／ 月<br>'+
+   '<span style="font-size:12px;color:var(--dim)">年収 ÷（12か月＋賞与'+S.bonus.toFixed(1)+'か月）で出した。'+
+   'この数字が、求人票の賃金欄を見るときの<b>合格ライン</b>になる。</span></div>'+
+
+  '<h2 style="font-size:14px;margin-top:18px">引かれるもの（年収 '+yen(g2)+' の場合）</h2>'+
+  '<table class="plain wide"><tr><th></th><th style="text-align:right">額面（年）</th>'+
+  '<th style="text-align:right">社会保険</th><th style="text-align:right">所得税</th>'+
+  '<th style="text-align:right">住民税</th><th style="text-align:right">手取り</th>'+
+  '<th style="text-align:right">残る割合</th></tr>'+
+  payRowHTML(g2,false,"1年目")+payRowHTML(g2,true,"2年目〜")+'</table>'+
+
+  '<div class="note hi"><b>2年目に手取りが '+yen(t1.net-t2.net)+' 減る</b>（月あたり約'+
+   yen((t1.net-t2.net)/12)+'）。<br>'+
+   '住民税は<b>前の年の所得</b>に対してかかり、<b>翌年の6月から</b>引かれ始める。'+
+   '働き始めた年は前年の所得がほぼ無いので0円。<b>昇給しても手取りが減った</b>ように見えるのは、これが理由。</div>'+
+
+  '<h2 style="font-size:14px;margin-top:18px">額面 → 手取り 早見表（賞与 '+S.bonus.toFixed(1)+' か月・2年目）</h2>'+
+  '<table class="plain wide"><tr><th>月給（額面）</th><th style="text-align:right">年収</th>'+
+  '<th style="text-align:right">手取り（年）</th><th style="text-align:right">手取り（月あたり）</th>'+
+  '<th style="text-align:right">残る割合</th></tr>'+
+  [160000,180000,200000,220000,250000].map(m=>{
+    const g=m*(12+S.bonus), t=tedori(g,true);
+    return '<tr><td class="n">'+yen(m)+'</td><td class="n">'+yen(g)+'</td><td class="n">'+yen(t.net)+
+      '</td><td class="n"><b>'+yen(t.net/12)+'</b></td><td class="n">'+
+      Math.round(t.net/t.gross*100)+'%</td></tr>';}).join("")+'</table>'+
+  '<div class="note"><b>だいたい額面の8割</b>が手取りになる、と覚えておくと現場で使える。'+
+  '厳密には、年収が上がるほど割合は少しずつ下がる。</div>'+
+
+  '<details style="margin-top:12px"><summary style="cursor:pointer;color:var(--dim);font-size:12.5px">'+
+  '計算に使っている率（毎年変わる。授業で使う年の数字を確かめること）</summary>'+
+  '<table class="plain"><tr><th>項目</th><th>率</th><th>誰が払うか</th></tr>'+
+  '<tr><td>健康保険</td><td class="n">'+(RATE.kenko*100).toFixed(2)+'%</td><td>会社と折半（全体で約10%）</td></tr>'+
+  '<tr><td>厚生年金</td><td class="n">'+(RATE.nenkin*100).toFixed(2)+'%</td><td>会社と折半（全体で18.3%）</td></tr>'+
+  '<tr><td>雇用保険</td><td class="n">'+(RATE.koyo*100).toFixed(2)+'%</td><td>会社の負担のほうが大きい</td></tr>'+
+  '<tr><td>所得税</td><td class="n">'+(RATE.shotoku*100).toFixed(0)+'%＋復興特別</td><td>本人（課税所得195万円以下の率）</td></tr>'+
+  '<tr><td>住民税</td><td class="n">'+(RATE.jumin*100).toFixed(0)+'%＋'+yen(RATE.juminFlat)+'</td><td>本人（2年目から）</td></tr>'+
+  '</table><p style="font-size:12px;color:var(--dim)">40歳になると介護保険料（約0.8%）が加わる。'+
+  'この概算では入れていない。控除は給与所得控除と基礎控除のみ考えている。</p></details>'+
+  navHTML()+'</div>';
+
+  const setB=v=>{ S.bonus=Math.max(0,Math.min(12,Math.round(v*10)/10)); save(); render(); };
+  $("bM").onclick=()=>setB(S.bonus-0.5);
+  $("bP").onclick=()=>setB(S.bonus+0.5);
+  $("bIn").onchange=()=>{ const n=parseFloat($("bIn").value); setB(isNaN(n)?0:n); };
+}
+
+/* ============================================================
+   8. 求人票（高校生向け求人票の様式に合わせた架空の3件）
+   ------------------------------------------------------------
+   実在の事業所ではない。欄の名前と並びは、ハローワークが高校に出す
+   求人票に合わせてある。生徒が本物を渡されたとき、同じ場所を探せるように。
+   ============================================================ */
+const JOBS=[
+{id:"A",co:"株式会社 ミナミ製作所",num:"40010- 1234561",uke:"2026年7月1日",
+ job:"製造オペレーター（金属加工）",keitai:"正社員",kikan:"雇用期間の定めなし",
+ place:"○○県 △△市 本社工場",mycar:"可（無料駐車場あり）",tenkin:"なし",
+ naiyou:"NC旋盤・マシニングセンタによる自動車部品の加工。図面の読み取り、機械への段取り、寸法検査。入社後3か月は先輩について作業を覚えます。",
+ kihon:150000,
+ teate:[{n:"固定残業手当（時間外20時間分）",v:30000},{n:"技能手当",v:5000}],
+ fixedOT:{h:20,v:30000},
+ tsukinMax:10000,tsukinTxt:"実費支給（上限 月額 10,000円）",
+ shoukyuu:"あり　前年度実績 月額 2,000円〜4,000円",
+ bonus:2.0,bonusTxt:"あり　年2回（6月・12月）　前年度実績 計 2.0か月分",
+ jikan:"8:00〜17:00",kyukei:60,jitsudo:8,ot:25,otTxt:"あり　月平均 25時間",
+ kyujitsuTxt:"日曜、祝日、その他会社カレンダーによる",nenkyu:95,
+ yuukyu:"6か月経過後 10日",hoken:"雇用・労災・健康・厚生",taishoku:"あり（勤続3年以上）",
+ teinen:"あり 60歳（再雇用制度あり 65歳まで）",ryou:"なし",ryouV:0,
+ senkou:"書類選考・面接・適性検査",jinin:2,
+ jisseki:"前年度 高卒採用3名 ／ うち1年以内の離職 1名"},
+
+{id:"B",co:"キタガワ電機工業 株式会社",num:"40010- 2345672",uke:"2026年7月3日",
+ job:"設備保全（電気・制御）",keitai:"正社員",kikan:"雇用期間の定めなし",
+ place:"○○県 ××市 第二工場",mycar:"可（駐車場 月額 3,000円 自己負担）",tenkin:"なし",
+ naiyou:"生産設備の点検・修理・改善。シーケンス制御（PLC）のプログラム変更も担当します。電気工事士・技能士の資格取得を会社が支援します。",
+ kihon:168000,
+ teate:[{n:"資格手当",v:3000}],
+ fixedOT:null,
+ tsukinMax:30000,tsukinTxt:"実費支給（上限 月額 30,000円）",
+ shoukyuu:"あり　前年度実績 月額 3,000円〜5,000円",
+ bonus:4.5,bonusTxt:"あり　年2回（7月・12月）　前年度実績 計 4.5か月分",
+ jikan:"8:30〜17:30",kyukei:60,jitsudo:8,ot:10,otTxt:"あり　月平均 10時間",
+ kyujitsuTxt:"土曜、日曜、祝日（完全週休二日制）、夏季・年末年始",nenkyu:125,
+ yuukyu:"6か月経過後 10日",hoken:"雇用・労災・健康・厚生",taishoku:"あり（勤続3年以上）",
+ teinen:"あり 60歳（再雇用制度あり 65歳まで）",ryou:"あり（単身寮・月額 15,000円／食事別）",ryouV:15000,
+ senkou:"書類選考・面接",jinin:3,
+ jisseki:"前年度 高卒採用4名 ／ うち1年以内の離職 0名"},
+
+{id:"C",co:"有限会社 ヒガシ運輸サービス",num:"40010- 3456783",uke:"2026年7月10日",
+ job:"倉庫内作業・配送補助",keitai:"正社員",kikan:"雇用期間の定めなし",
+ place:"○○県 △△市 物流センター（転勤の可能性あり）",mycar:"可（無料駐車場あり）",
+ tenkin:"あり（県内の他営業所）",
+ naiyou:"倉庫内でのピッキング・仕分け・フォークリフト作業。2年目以降は2tトラックでの配送も担当します（免許取得費用は会社負担）。",
+ kihon:175000,
+ teate:[{n:"固定残業手当（時間外30時間分）",v:41000},{n:"皆勤手当",v:5000}],
+ fixedOT:{h:30,v:41000},
+ tsukinMax:15000,tsukinTxt:"実費支給（上限 月額 15,000円）",
+ shoukyuu:"あり　前年度実績 月額 0円〜3,000円",
+ bonus:1.0,bonusTxt:"あり　年1回（12月）　前年度実績 計 1.0か月分",
+ jikan:"7:00〜16:00（交替制あり）",kyukei:60,jitsudo:8,ot:35,otTxt:"あり　月平均 35時間",
+ kyujitsuTxt:"シフト制（月8日）、年末年始",nenkyu:96,
+ yuukyu:"6か月経過後 10日",hoken:"雇用・労災・健康・厚生",taishoku:"なし",
+ teinen:"あり 65歳",ryou:"なし",ryouV:0,
+ senkou:"面接",jinin:4,
+ jisseki:"前年度 高卒採用5名 ／ うち1年以内の離職 3名"}
+];
+
+/* もし暮らし方を変えたら、月の支出はいくらになるか（今の入力を壊さずに試す） */
+function whatIf(life,car){
+  const bl=S.life, bc=S.car, bv=JSON.parse(JSON.stringify(S.v));
+  S.life=life; S.car=car; applyDefaults(false);
+  const r=outMonth();
+  S.life=bl; S.car=bc; S.v=bv;
+  return r;
+}
+
+/* 求人票1件から数字を出す */
+function calcJob(j){
+  const teateSum=j.teate.reduce((s,t)=>s+t.v,0);
+  const month=j.kihon+teateSum;                 // 毎月必ず支払われる額（a＋b）
+  const bonusYen=Math.round(j.kihon*j.bonus);   // 賞与は基本給にかけるのが普通
+  const year=month*12+bonusYen;
+  const t1=tedori(year,false), t2=tedori(year,true);
+  const shoteiY=(365-j.nenkyu)*j.jitsudo;       // 年間の所定労働時間
+  const otY=j.ot*12;                            // 年間の時間外労働
+  const hours=shoteiY+otY;
+  const gas=S.car?(S.v.gas||0):(S.v.teiki||0);  // 通勤にかかる自分の費用
+  const tsukin=Math.min(gas,j.tsukinMax);       // 戻ってくる分（非課税・月）
+  return {teateSum:teateSum,month:month,bonusYen:bonusYen,year:year,t1:t1,t2:t2,
+          hours:hours,shoteiY:shoteiY,otY:otY,
+          jikyu:hours?year/hours:0, tsukin:tsukin, jikoFutan:Math.max(0,gas-j.tsukinMax),
+          net1:t1.net/12+tsukin, net2:t2.net/12+tsukin};
+}
+function verdictOf(j){
+  const c=calcJob(j), need=outMonth(), d=c.net2-need;
+  let cls="ng",txt="足りない";
+  if(d>=20000){cls="ok";txt="余裕がある";}
+  else if(d>=0){cls="warn";txt="ぎりぎり";}
+  return {cls:cls,txt:txt,diff:d,c:c};
+}
+
+/* 求人票を描く */
+function kyujinHTML(j){
+  const c=calcJob(j);
+  const row=(k,v)=>'<div class="kg"><div class="kk">'+k+'</div><div class="kv2">'+v+'</div></div>';
+  return '<div class="kyujin"><div class="khd"><span>求人票（高卒）</span>'+
+   '<span>求人番号 '+j.num+'　受付 '+j.uke+'</span></div>'+
+   row("事業所名",'<b>'+esc(j.co)+'</b>')+
+   row("職種",'<b>'+esc(j.job)+'</b>')+
+   row("雇用形態／期間",esc(j.keitai)+'　／　'+esc(j.kikan))+
+   row("仕事の内容",esc(j.naiyou))+
+   row("就業場所",esc(j.place)+'<br><span class="sm">マイカー通勤：'+esc(j.mycar)+
+       '　／　転勤：'+esc(j.tenkin)+'</span>')+
+   row("賃金形態",'月給')+
+   row("基本給（a）",'<span class="mono">'+yen(j.kihon)+'</span>')+
+   row("定額的に支払われる手当（b）",
+       j.teate.map(t=>esc(t.n)+' <span class="mono">'+yen(t.v)+'</span>').join("<br>"))+
+   row("a ＋ b",'<span class="mono" style="font-size:15px">'+yen(c.month)+'</span>'+
+       (j.fixedOT?'<div class="kbox"><b>固定残業代について</b><br>'+
+         '上記には時間外労働 '+j.fixedOT.h+'時間分（'+yen(j.fixedOT.v)+'）を含む。<br>'+
+         j.fixedOT.h+'時間を超える時間外労働分は追加で支給する。</div>':''))+
+   row("その他の手当",'通勤手当：'+esc(j.tsukinTxt))+
+   row("昇給",esc(j.shoukyuu))+
+   row("賞与",esc(j.bonusTxt))+
+   row("就業時間",esc(j.jikan)+'　（休憩 '+j.kyukei+'分／所定労働 '+j.jitsudo+'時間）')+
+   row("時間外労働",esc(j.otTxt))+
+   row("休日",esc(j.kyujitsuTxt))+
+   row("年間休日数",'<span class="mono">'+j.nenkyu+'日</span>')+
+   row("年次有給休暇",esc(j.yuukyu))+
+   row("加入保険等",esc(j.hoken)+'　／　退職金制度：'+esc(j.taishoku))+
+   row("定年制",esc(j.teinen))+
+   row("寮・社宅",esc(j.ryou))+
+   row("選考方法",esc(j.senkou)+'　／　求人数 '+j.jinin+'名')+
+   row("採用・離職の実績",esc(j.jisseki))+
+   '</div>';
+}
+
+/* ============================================================
+   9. 段階5 求人票を1件読む
+   ============================================================ */
+function quizList(){
+  const j=JOBS[0], c=calcJob(j);
+  return [
+  {q:"この会社に入ったら、毎月必ず支払われる金額（税や保険を引く前）はいくらか。",
+   o:[yen(j.kihon)+"（基本給だけ）",yen(c.month)+"（基本給＋定額の手当）",yen(j.kihon+5000)+"（基本給＋技能手当）"],
+   a:1,
+   ex:"求人票の賃金欄は <b>a（基本給）</b> と <b>b（定額的に支払われる手当）</b> に分かれていて、"+
+      "毎月必ず支払われるのは <b>a＋b</b>。ここでは "+yen(j.kihon)+" ＋ "+yen(c.teateSum)+" ＝ <b>"+yen(c.month)+"</b>。<br>"+
+      "ただし a と b の中身は意味が違う。次の問いで確かめる。"},
+  {q:"この求人の手当には「固定残業手当（時間外20時間分）"+yen(j.fixedOT.v)+"」が入っている。残業を1時間もしなかった月、支払われる額はいくらか。",
+   o:[yen(c.month-j.fixedOT.v)+"に減る",yen(c.month)+"のまま",""+"会社がその月ごとに決める"],
+   a:1,
+   ex:"固定残業代は「あらかじめ20時間分を払っておく」という約束なので、<b>残業しなくても減らない</b>。<br>"+
+      "では何が問題か。<b>賞与や昇給の土台になるのは基本給 "+yen(j.kihon)+" のほう</b>だということ。"+
+      "月給 "+yen(c.month)+" に見えても、賞与2.0か月分は "+yen(j.kihon)+"×2.0＝"+yen(j.kihon*2)+" で計算される。"+
+      "<b>手当が厚い会社ほど、賞与と昇給は見た目より小さい。</b>"},
+  {q:"ある月、25時間残業した。20時間を超えた5時間分はどうなるか。",
+   o:["固定残業手当に含まれるので追加はない","超えた5時間分は追加で支払われる","次の月の残業時間から差し引かれる"],
+   a:1,
+   ex:"固定残業代は<b>その時間数までの前払い</b>。超えた分は別に支払う義務がある（求人票にもそう書いてある）。<br>"+
+      "逆に言えば、<b>「何時間分がいくらで入っているのか」が書かれていない求人票は要注意</b>。"+
+      "書く決まりになっている欄なので、空欄なら必ず質問すること。"},
+  {q:"「賞与　あり　年2回　前年度実績　計 2.0か月分」。今年いくら受け取れると考えておくべきか。",
+   o:[yen(c.month*2)+"（月給×2.0か月）が必ず出る",yen(j.kihon*2)+"程度。ただし前年度の実績であって保証ではない","景気がよければ増えるので考えても意味がない"],
+   a:1,
+   ex:"二つ読み取る。<br>① <b>基本給に対して</b>かけるのが一般的なので "+yen(j.kihon)+"×2.0＝<b>"+yen(j.kihon*2)+"</b>。<br>"+
+      "② <b>「前年度実績」は去年そうだったという記録</b>で、今年の約束ではない。業績が悪ければ下がる。<br>"+
+      "生活費の計算に組み込むなら、<b>賞与を当てにしない額</b>でも暮らせるかを確かめておくと安全。"},
+  {q:"「年間休日数 "+j.nenkyu+"日」。これはどのくらいの休み方か。",
+   o:["週2日休みで、祝日も休める","週に1日強しか休めない。祝日はほぼ出勤","月に10日ほど休める"],
+   a:1,
+   ex:"1年は約52週。"+j.nenkyu+"÷52 ＝ <b>週 "+(j.nenkyu/52).toFixed(1)+"日</b>。<br>"+
+      "完全週休二日（土日）だけで104日、そこに祝日と夏季・年末年始が加わると120〜125日になる。<br>"+
+      "<b>年間休日数は、給料と同じくらい生活を左右する</b>。同じ月給なら、休みが多いほうが1時間あたりの価値は高い。"},
+  {q:"通勤のガソリン代が月 15,000円かかるとする。この求人の通勤手当は「上限 月額 "+yen(j.tsukinMax)+"」。差額はどうなるか。",
+   o:["会社が全額出してくれる",yen(15000-j.tsukinMax)+"は自分の財布から出る","ガソリン代は経費なので税金が戻る"],
+   a:1,
+   ex:"<b>通勤手当には上限がある</b>。上限を超えた分は自己負担。遠い会社ほどこの差が効く。<br>"+
+      "通勤手当は給料とは別に、税金のかからないお金として支払われることが多い（一定額まで）。"+
+      "つまり<b>「月給は同じでも、通勤手当の上限が違えば手取りは変わる」</b>。"},
+  {q:"この求人で働いたとき、2年目の手取りは月あたりいくらぐらいか（通勤手当を除く）。",
+   o:[yen(c.month)+"（求人票の額そのまま）",yen(Math.round(c.t2.net/12/1000)*1000)+"ぐらい",yen(Math.round(c.t2.net/12/1000)*1000-30000)+"ぐらい"],
+   a:1,
+   ex:"年収は 月額 "+yen(c.month)+"×12 ＋ 賞与 "+yen(c.bonusYen)+" ＝ <b>"+yen(c.year)+"</b>。<br>"+
+      "ここから社会保険料 "+yen(c.t2.shaho)+"、所得税 "+yen(c.t2.zei)+"、住民税 "+yen(c.t2.jumin)+" が引かれて、"+
+      "手取りは年 "+yen(c.t2.net)+"、<b>月あたり "+yen(c.t2.net/12)+"</b>。<br>"+
+      "1年目は住民税がないので月あたり "+yen(c.t1.net/12)+"。<b>2年目に約 "+yen((c.t1.net-c.t2.net)/12)+" 減る。</b>"}
+  ];
+}
+function drawKyujin(){
+  const Q=quizList(), need=outMonth();
+  let h='<div class="card"><h2><span class="n">STEP 5</span>求人票を読む</h2>'+
+  '<p class="lead">ここから先は求人票の世界。下は<b>本物と同じ欄の並び</b>で作った架空の求人票。'+
+  '高校に届く求人票は、この形で渡される。<b>いま君に必要な手取りは月 '+yen(need)+'</b>。'+
+  'それを頭に置いて読むこと。</p>'+
+  kyujinHTML(JOBS[0])+
+  '<div class="note ask"><b>読む順番を決めておく</b><br>'+
+  '① 仕事の内容 → ② a＋b（毎月の額）→ ③ 固定残業代が入っていないか → ④ 年間休日数 → '+
+  '⑤ 賞与と昇給 → ⑥ 通勤手当の上限 → ⑦ 加入保険と退職金。<br>'+
+  '<b>金額から見ない。</b>金額だけを見ると、いちばん高い数字に目が吸い寄せられる。</div>'+
+  '<h2 style="font-size:14px;margin-top:18px">読み取りの練習（7問）</h2>'+
+  '<p class="lead">答えを選ぶと解説が出る。間違えてよい。<b>間違え方に意味がある</b>。</p>';
+  Q.forEach((q,i)=>{
+    const sel=S.quiz[i], done=(typeof sel==="number");
+    h+='<div class="q"><div class="qt"><i>Q'+(i+1)+'</i>'+q.q+'</div><div class="opts">'+
+      q.o.map((o,k)=>'<button class="opt'+(done?(k===q.a?" ok":(k===sel?" ng":"")):"")+
+        '" data-q="'+i+'" data-k="'+k+'">'+o+'</button>').join("")+'</div>'+
+      '<div class="ans'+(done?" show "+(sel===q.a?"good":"bad"):"")+'">'+
+      (done?(sel===q.a?"<b>そのとおり。</b> ":"<b>そこが落とし穴。</b> ")+q.ex:"")+'</div></div>';
+  });
+  h+='<div class="nav" style="margin-top:6px"><button class="btn" id="qReset">答えを消してやり直す</button><span></span></div>'+
+     navHTML()+'</div>';
+  $("stage").innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll(".opt"),b=>{
+    b.onclick=()=>{ S.quiz[+b.dataset.q]=+b.dataset.k; save(); render(); };
+  });
+  $("qReset").onclick=()=>{ S.quiz={}; save(); render(); };
+}
+
+/* ============================================================
+   10. 段階6 3件を比べる
+   ============================================================ */
+function drawCompare(){
+  const need=outMonth();
+  const V=JOBS.map(j=>verdictOf(j));
+  const best=JOBS.map((j,i)=>({i:i,h:V[i].c.jikyu})).sort((a,b)=>b.h-a.h)[0].i;
+  const rich=JOBS.map((j,i)=>({i:i,m:V[i].c.month})).sort((a,b)=>b.m-a.m)[0].i;
+
+  let h='<div class="card"><h2><span class="n">STEP 6</span>3件を比べて、暮らせるかを判定する</h2>'+
+  '<p class="lead">同じ高卒求人を3件並べた。<b>判定の基準は「必要な手取り 月 '+yen(need)+'」</b>。'+
+  '君がSTEP1〜3で積み上げた数字だ。くらし方を変えれば、この判定も変わる。</p>'+
+  '<div class="jobs">'+JOBS.map((j,i)=>{
+    const v=V[i], c=v.c;
+    return '<div class="job"><div class="jh"><b>'+j.id+'　'+esc(j.co)+'</b><span>'+esc(j.job)+'</span></div>'+
+    '<div class="jb">'+
+    '<div class="kv"><span class="k">毎月の額（a＋b）</span><span class="v">'+yen(c.month)+'</span></div>'+
+    '<div class="kv"><span class="k">うち固定残業代</span><span class="v">'+(j.fixedOT?yen(j.fixedOT.v)+' / '+j.fixedOT.h+'h':'なし')+'</span></div>'+
+    '<div class="kv"><span class="k">基本給</span><span class="v">'+yen(j.kihon)+'</span></div>'+
+    '<div class="kv"><span class="k">賞与（基本給×'+j.bonus.toFixed(1)+'）</span><span class="v">'+yen(c.bonusYen)+'</span></div>'+
+    '<div class="kv"><span class="k">年収（額面）</span><span class="v">'+yen(c.year)+'</span></div>'+
+    '<div class="kv"><span class="k">手取り 月（1年目）</span><span class="v">'+yen(c.t1.net/12)+'</span></div>'+
+    '<div class="kv"><span class="k">手取り 月（2年目〜）</span><span class="v">'+yen(c.t2.net/12)+'</span></div>'+
+    '<div class="kv"><span class="k">通勤手当で戻る分</span><span class="v">＋'+yen(c.tsukin)+'</span></div>'+
+    '<div class="kv"><span class="k">年間休日</span><span class="v">'+j.nenkyu+'日</span></div>'+
+    '<div class="kv"><span class="k">月平均の残業</span><span class="v">'+j.ot+'時間</span></div>'+
+    '<div class="kv"><span class="k">年間の労働時間</span><span class="v">'+Math.round(c.hours)+'時間</span></div>'+
+    '<div class="kv"><span class="k"><b>1時間あたり</b></span><span class="v">'+yen(c.jikyu)+'</span></div>'+
+    '<div class="kv"><span class="k">寮</span><span class="v">'+(j.ryouV?yen(j.ryouV)+'/月':'なし')+'</span></div>'+
+    '<div class="kv"><span class="k">1年以内の離職</span><span class="v">'+
+      esc(j.jisseki.replace(/^.*／\s*/,""))+'</span></div>'+
+    '</div><div class="verdict '+v.cls+'">2年目に使える額 '+yen(c.net2)+'<br>'+v.txt+
+    '<small>必要な '+yen(need)+' との差 '+(v.diff>=0?"＋":"−")+yen(Math.abs(v.diff))+'</small></div></div>';
+  }).join("")+'</div>'+
+
+  '<div class="note"><b>「使える額」の出し方</b><br>'+
+  '手取り（月）＋ 通勤手当で戻る分。通勤手当は給料とは別に支払われ、上限まで実費が戻るので、'+
+  'ガソリン代・定期代の分を打ち消す。上限を超えた分は自己負担のまま残る。<br>'+
+  'STEP2のガソリン代を 15,000円 に上げてみること。'+
+  '<b>Aだけ上限10,000円を超えて、月5,000円が自分の財布から出る</b>のが見える。'+
+  '同じ月給でも、通勤手当の上限が違えば手元に残る額は変わる。</div>'+
+
+  '<h2 style="font-size:14px;margin-top:18px">数字を並べ替えて見る</h2>'+
+  '<table class="plain wide"><tr><th>並べ方</th><th>1位</th><th>2位</th><th>3位</th></tr>'+
+  ['month','year','jikyu','nenkyu'].map(key=>{
+    const label={month:"毎月の額（a＋b）",year:"年収（額面）",jikyu:"1時間あたり",nenkyu:"年間休日"}[key];
+    const arr=JOBS.map((j,i)=>({id:j.id,v:key==="nenkyu"?j.nenkyu:V[i].c[key]}))
+                  .sort((a,b)=>b.v-a.v);
+    return '<tr><td>'+label+'</td>'+arr.map(a=>'<td class="n">'+a.id+'　'+
+      (key==="nenkyu"?a.v+"日":yen(a.v))+'</td>').join("")+'</tr>';}).join("")+'</table>'+
+
+  '<div class="note hi"><b>順位が入れ替わる</b><br>'+
+  '毎月の額がいちばん多いのは <b>'+JOBS[rich].id+'</b>。'+
+  'ところが1時間あたりでいちばん高いのは <b>'+JOBS[best].id+'</b>。<br>'+
+  '理由は二つ。<b>年間休日</b>と<b>残業時間</b>。働く時間が長ければ、同じ給料でも1時間の値段は下がる。'+
+  '求人票の「年間休日数」と「時間外労働 月平均」は、賃金欄と<b>セットで読む</b>。</div>'+
+
+  '<h2 style="font-size:14px;margin-top:18px">届かないとき、何をどれだけ動かせば届くか</h2>'+
+  '<table class="plain wide"><tr><th>暮らし方</th><th style="text-align:right">月の支出</th>'+
+  '<th style="text-align:right">いまとの差</th><th>成り立つ求人</th></tr>'+
+  [["いま（"+LIVES.filter(l=>l.id===S.life)[0].nm+"・車"+(S.car?"あり":"なし")+"）",S.life,S.car],
+   ["ひとり暮らし・車なし","alone",false],
+   ["実家から通う・車あり","home",true],
+   ["実家から通う・車なし","home",false],
+   ["会社の寮・車あり","dorm",true]].map(r=>{
+     const m=whatIf(r[1],r[2]), diff=m-need;
+     const pass=JOBS.map((j,i)=>V[i].c.net2>=m?j.id:null).filter(x=>x).join("・")||"なし";
+     const cur=(r[1]===S.life&&r[2]===S.car);
+     return '<tr'+(cur?' style="background:var(--ok-lo)"':'')+'><td>'+esc(r[0])+'</td>'+
+       '<td class="n">'+yen(m)+'</td><td class="n">'+(diff===0?"—":(diff>0?"＋":"−")+yen(Math.abs(diff)))+
+       '</td><td>'+pass+'</td></tr>';}).join("")+'</table>'+
+  '<div class="note'+(V.filter(v=>v.cls==="ng").length===3?" bad":"")+'">'+
+  (V.filter(v=>v.cls==="ng").length===3
+   ? '<b>3件とも足りない。これは失敗ではない。</b><br>'+
+     '高卒の初任給で<b>ひとり暮らしをして車も持つ</b>のは、実際にかなり厳しい。'+
+     'だから多くの人が、最初の数年は実家や寮から通って貯め、そのあとで動く。'+
+     '上の表で、どの一手がいくら効くかを見ること。<b>支出を削るか、収入の高い求人を狙うか、その両方か。</b>'
+   : '<b>成り立つ組み合わせが見つかった。</b>次は、その暮らしを<b>10年続けられるか</b>を考える。'+
+     '車は買い替えが来る。給料は昇給で上がるが、住民税も社会保険料も一緒に上がる。')+'</div>'+
+  '<div class="note ask"><b>確かめてみる</b><br>'+
+  '① STEP1 に戻って「実家から通う」に変えると、判定はどう変わるか。<br>'+
+  '② 「車を持たない」にすると月いくら浮くか。そのとき通える会社は減らないか。<br>'+
+  '③ 求人Bの寮（月 '+yen(JOBS[1].ryouV)+'）に入ると、家賃はいくら下がるか。'+
+  'STEP2の家賃欄を書き換えて、もう一度ここを見ること。</div>'+
+
+  '<div class="note bad"><b>金額以外にも、求人票は多くを語る</b><br>'+
+  '・<b>1年以内の離職者数</b>… 採用5名のうち3名が1年以内に辞めた職場では、何が起きているか<br>'+
+  '・<b>退職金制度なし</b>… 長く勤めても、辞めるときに出るものがない<br>'+
+  '・<b>転勤あり</b>… 住む場所を自分で選べない年がある<br>'+
+  '・<b>加入保険</b>… 雇用・労災・健康・厚生の4つが揃っているか。欠けている求人は理由を必ず聞く</div>'+
+  navHTML()+'</div>';
+  $("stage").innerHTML=h;
+}
+
+/* ============================================================
+   11. 段階7 まとめ
+   ============================================================ */
+function drawSum(){
+  const out=outMonth(), g2=needGross(true), m2=g2/(12+S.bonus);
+  const life=LIVES.filter(l=>l.id===S.life)[0];
+  const V=JOBS.map(j=>verdictOf(j));
+  const ok=V.filter(v=>v.cls!=="ng").length;
+  $("stage").innerHTML=
+  '<div class="card"><h2><span class="n">STEP 7</span>まとめ</h2>'+
+  '<p class="lead">ここまでで出した数字を並べる。<b>この紙面を書き写すか、画面を保存しておくこと。</b>'+
+  '進路の面談で、根拠のある話ができる。</p>'+
+  '<table class="plain">'+
+  '<tr><th>項目</th><th style="text-align:right">自分の数字</th></tr>'+
+  '<tr><td>くらし方</td><td class="n">'+esc(life.nm)+'　／　車 '+(S.car?"あり":"なし")+'</td></tr>'+
+  '<tr><td>毎月かかるお金</td><td class="n">'+yen(sumOf("m"))+'</td></tr>'+
+  '<tr><td>年に数回かかるお金（月割り）</td><td class="n">'+yen(sumOf("y"))+'</td></tr>'+
+  '<tr><td><b>必要な手取り</b></td><td class="n"><b>'+yen(out)+' ／月</b></td></tr>'+
+  '<tr><td>必要な年収（額面・2年目の条件）</td><td class="n">'+yen(g2)+'</td></tr>'+
+  '<tr><td><b>求人票で見るべき下限（a＋b）</b></td><td class="n"><b>'+yen(m2)+' ／月</b></td></tr>'+
+  '<tr><td>働き始める前に要るお金</td><td class="n">約 '+yen(life.shoki)+'</td></tr>'+
+  '</table>'+
+  '<div class="note '+(ok?"good":"bad")+'"><b>3件のうち、いまの暮らし方で成り立つのは '+ok+' 件</b><br>'+
+  JOBS.map((j,i)=>j.id+'（'+esc(j.co)+'）… <b>'+V[i].txt+'</b>　差 '+
+    (V[i].diff>=0?"＋":"−")+yen(Math.abs(V[i].diff))).join("<br>")+'</div>'+
+
+  '<h2 style="font-size:14px;margin-top:18px">求人票を渡されたら、必ず見る欄</h2>'+
+  '<table class="plain"><tr><th>欄</th><th>何を確かめるか</th></tr>'+
+  '<tr><td>基本給（a）</td><td>賞与と昇給の土台。ここが低いと、月給が高く見えても後で効いてくる</td></tr>'+
+  '<tr><td>定額の手当（b）</td><td><b>固定残業代が入っていないか</b>。何時間分でいくらか</td></tr>'+
+  '<tr><td>時間外労働</td><td>月平均の時間。固定残業の時間数を超えていないか</td></tr>'+
+  '<tr><td>年間休日数</td><td>105日と125日では、1年で20日ちがう。1時間あたりの給料が変わる</td></tr>'+
+  '<tr><td>賞与</td><td>「前年度実績」は約束ではない。基本給の何か月分か</td></tr>'+
+  '<tr><td>昇給</td><td>前年度実績が「0円〜」なら、上がらない年もあるということ</td></tr>'+
+  '<tr><td>通勤手当</td><td>上限額。自分の通勤費が上限を超えないか</td></tr>'+
+  '<tr><td>加入保険</td><td>雇用・労災・健康・厚生の4つ揃っているか</td></tr>'+
+  '<tr><td>退職金制度</td><td>あり／なし。勤続何年からか</td></tr>'+
+  '<tr><td>採用・離職の実績</td><td>採用人数に対して、何人が1年以内に辞めたか</td></tr>'+
+  '<tr><td>就業場所・転勤</td><td>通える場所か。マイカー通勤の可否と駐車場代</td></tr>'+
+  '</table>'+
+
+  '<div class="note ask"><b>次にやること</b><br>'+
+  '① 進路指導室にある<b>本物の求人票</b>を1枚見せてもらい、この画面と同じ欄を順に指でたどる。<br>'+
+  '② その求人の a＋b と、自分の「見るべき下限 '+yen(m2)+'」を比べる。<br>'+
+  '③ 分からない欄があったら、先生かハローワークに<b>質問する</b>。'+
+  '求人票は質問されることを前提に作られている。聞くのは失礼ではない。</div>'+
+
+  '<div class="note"><b>この計算は概算</b>。税率・保険料率は毎年変わり、住んでいる市町村でも少し違う。'+
+  '目的は1円まで当てることではなく、<b>「額面と手取りは違う」「2年目に住民税が来る」'+
+  '「休日と残業まで見ないと給料は比べられない」</b>を身体で分かっておくこと。</div>'+
+
+  '<div style="margin-top:12px"><button class="btn" id="allReset">最初からやり直す</button></div>'+
+  navHTML()+'</div>';
+  $("allReset").onclick=()=>ask("入力・答えをすべて消して最初からやり直す。よいか？",()=>{
+    S.edited={}; S.quiz={}; S.seen={}; applyDefaults(true); closeModal(); go(0); },"やり直す");
+}
+
+/* ============================================================
+   12. 起動
+   ============================================================ */
+$("mNo").onclick=closeModal;
+$("mYes").onclick=()=>{ const f=onYes; onYes=null; if(f) f(); else closeModal(); };
+$("veil").onclick=e=>{ if(e.target===$("veil")) closeModal(); };
+$("ver").textContent="版 "+VER;
+load();
+ITEMS.forEach(it=>{ if(typeof S.v[it.id]!=="number") S.v[it.id]=defOf(it); });
+S.seen[S.step]=1;
+render();
+</script>
+</body>
+</html>

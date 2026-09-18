@@ -1,14 +1,18 @@
-# kyouiku — 電子計測制御31 の教材
+# kyouiku — 工業高校の教材
 
-工業高校の科目「電子計測制御31」で使う教材。
-中心は **ラダー工房** — 三菱系PLCのラダー図エディタ＋シミュレータ。
+どれも**単一HTML・ビルド不要・依存なし・通信なし**。生徒はChromebookのブラウザで開く。
 
-生徒はChromebookのブラウザで開き、ラダー図を組んで仮想の機械（自動ドア・踏切・
-自動販売機・エレベーター）を動かす。単一HTML・ビルド不要・依存なし・通信なし。
+| 教材 | 何をするもの | 科目 |
+|---|---|---|
+| **ラダー工房** | 三菱系PLCのラダー図エディタ＋シミュレータ。仮想の機械（自動ドア・踏切・自動販売機・エレベーター）を動かす | 電子計測制御31 |
+| **進路設計工房** | 自分の生活費を積んで必要な手取りを逆算し、ハローワークの求人票（高卒）の読み方を学ぶ | 進路学習（高2） |
 
 ## 生徒に配るURL
 
-<https://snsdpen-luke.github.io/kyouiku/>
+| 教材 | URL |
+|---|---|
+| ラダー工房 | <https://snsdpen-luke.github.io/kyouiku/> |
+| 進路設計工房 | <https://snsdpen-luke.github.io/kyouiku/shinro/> |
 
 Google Classroom にはこのリンクを貼る。ファイルは配らない
 （古い版を開いてしまう事故が起きるため）。
@@ -17,12 +21,16 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 
 | ファイル | 中身 |
 |---|---|
-| `ラダー工房v2.html` | **本体。直すのはここだけ** |
-| `index.html` | GitHub Pages が配るもの。`build.py` が作る**生成物**。手で編集しない |
+| `ラダー工房v2.html` | **ラダー工房の本体。直すのはここだけ** |
+| `進路設計工房.html` | **進路設計工房の本体。直すのはここだけ** |
+| `index.html` | GitHub Pages が配るもの（ラダー工房）。`build.py` が作る**生成物**。手で編集しない |
+| `shinro/index.html` | GitHub Pages が配るもの（進路設計工房）。同じく**生成物** |
 | `ラダー工房.html` | 引き継ぎ前の現行版。授業で使ってきたもの。無傷で温存 |
-| `regression.js` | jsdom によるリグレッション（85項目） |
-| `build.py` | 本体から配布物を作る |
-| `HANDOFF.md` | **引き継ぎ書。仕様・設計判断・禁止事項の正典。作業前に必ず読む** |
+| `regression.js` | ラダー工房のリグレッション（jsdom・85項目） |
+| `regression-shinro.js` | 進路設計工房のリグレッション（jsdom・74項目） |
+| `build.py` | 本体2つから配布物を作る |
+| `HANDOFF.md` | **ラダー工房の引き継ぎ書。仕様・設計判断・禁止事項の正典。作業前に必ず読む** |
+| `HANDOFF-進路設計工房.md` | **進路設計工房の引き継ぎ書。税率の更新手順もここ** |
 
 ## 別のパソコンで作業を始める
 
@@ -30,21 +38,23 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 git clone https://github.com/snsdpen-luke/kyouiku.git
 cd kyouiku
 npm install jsdom          # 検証に使う。これだけ
-node regression.js ラダー工房v2.html    # 85項目すべて合格すればOK
+node regression.js ラダー工房v2.html              # 85項目すべて合格すればOK
+node regression-shinro.js 進路設計工房.html       # 74項目すべて合格すればOK
 ```
 
-ブラウザで `ラダー工房v2.html` を直接開けば動く。サーバーは要らない。
+本体のHTMLをブラウザで直接開けば動く。サーバーは要らない。
 
 ## 直したときの手順
 
 ```bash
-node regression.js ラダー工房v2.html    # 1. 検証（必ず通す）
-python3 build.py                        # 2. index.html を作り直す
-git add -A && git commit -m "…"         # 3. 記録
-git push                                # 4. 生徒の画面に反映される
+node regression.js ラダー工房v2.html              # 1. 検証（必ず通す）
+node regression-shinro.js 進路設計工房.html       #    直したほうだけでよい
+python3 build.py                                  # 2. 配布物を作り直す
+git add -A && git commit -m "…"                   # 3. 記録
+git push                                          # 4. 生徒の画面に反映される
 ```
 
-画面右上の版表示（`VER 2026-09-14b`）も更新すること。
+画面右上の版表示（`版 2026-09-18a`）も更新すること。
 本体の `const VER="…"` を書き換える。
 
 ## claude.ai の Artifact 版について
