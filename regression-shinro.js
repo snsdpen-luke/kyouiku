@@ -1,9 +1,9 @@
-/* 進路設計工房 リグレッションテスト
-   使い方: npm install jsdom && node regression-shinro.js 進路設計工房.html   */
+/* 進路シミュレーション リグレッションテスト
+   使い方: npm install jsdom && node regression-shinro.js 進路シミュレーション.html   */
 const {JSDOM,VirtualConsole}=require("jsdom");
 const fs=require("fs");
 const vc=new VirtualConsole(); vc.on("jsdomError",()=>{});
-const TARGET=process.argv[2]||"進路設計工房.html";
+const TARGET=process.argv[2]||"進路シミュレーション.html";
 console.log("対象: "+TARGET+"\n");
 const dom=new JSDOM(fs.readFileSync(TARGET,"utf8"),
  {runScripts:"dangerously",pretendToBeVisual:true,virtualConsole:vc});
@@ -230,13 +230,24 @@ console.log("\n【D】アドバイス");
 console.log("\n【E】求人票（ハローワークの様式）と、タップ説明");
 {
   const h=E("kyujinHTML(JOBS[0])");
-  const need=["求人票（高卒）","求人番号","紹介期限日","受理安定所","仕 事 内 容","労 働 時 間",
-              "賃 金 ・ 手 当","保 険 ・ 年 金 ・ 定 年 等","選 考 等","事 業 所 情 報","青 少 年 雇 用 情 報",
-              "基本給（a）","定額的に支払われる手当（b）","a ＋ b","固定残業代に関する特記事項",
-              "週休二日制","年間休日数","加入保険等","退職金共済","受動喫煙対策","平均勤続年数",
-              "有給休暇の平均取得日数","月平均所定外労働時間"];
+  const need=["求人票","求人区分","受付年月日","紹介期限日","受理安定所","求人番号",
+              "事業所番号","職種","仕事の内容","雇用形態","就業形態","雇用期間","就業場所",
+              "受動喫煙対策","マイカー通勤","必要な免許・資格","就業時間","休憩時間","時間外労働時間",
+              "休日等","週休二日制","年間休日数","年次有給休暇","賃金形態等","基本給（a）",
+              "定額的に支払われる","手当（b）","a ＋ b","固定残業代に関する","その他の手当等",
+              "通勤手当","賃金締切日","賃金支払日","昇給","賞与","加入保険等","退職金共済","退職金制度",
+              "定年制","再雇用制度","入居可能住宅","採用人数","選考方法","選考結果の通知","応募書類等",
+              "選考場所","平均勤続年数","有給休暇の","月平均所定外労働時間","育児休業取得実績",
+              "役員・管理職に"];
   const miss=need.filter(k=>h.indexOf(k)<0);
-  ok(miss.length===0,"本物の求人票の区分と欄名がそろっている"+(miss.length?" → 欠け:"+miss.join(","):""));
+  ok(miss.length===0,"本物の求人票の欄名がそろっている（"+need.length+"欄）"+(miss.length?" → 欠け:"+miss.join(","):""));
+  const bands=["事業所","仕事内容","労働時間","賃　金","その他の労働条件等","選考等","青少年雇用情報"];
+  /* 帯は1文字ずつ改行して積んである（縦書きの字送り崩れを避けるため） */
+  const mb=bands.filter(b=>h.indexOf('<span>'+b.split("").join("<br>")+'</span>')<0);
+  ok(mb.length===0,"左端の縦書きの区分帯が本物どおり7つある"+(mb.length?" → 欠け:"+mb.join(","):""));
+  ok((h.match(/class="band"/g)||[]).length===bands.length,"区分帯は7つだけ（増えても減ってもいない）");
+  ok(h.indexOf('class="hwwrap"')>=0&&h.indexOf('class="hw"')>=0,"用紙は折り返さず、狭い画面では横に流す入れ物に入っている");
+  ok(h.indexOf("実在の事業所ではありません")>=0,"授業用の見本であることが用紙の外に書いてある");
 }
 {
   const keys=E("Object.keys(EXPLAIN).join(',')").split(",");
@@ -259,21 +270,21 @@ console.log("\n【E】求人票（ハローワークの様式）と、タップ�
 }
 {
   w.go(2);
-  const tap=all(".kg.tap");
+  const tap=all(".fr.tap");
   ok(tap.length>=25,"求人票の欄がタップできる状態で描かれている（"+tap.length+"欄）");
-  ok(all(".kq").length===tap.length,"タップできる欄には「？」の印がついている");
-  ok(all(".kx").length===0,"最初は説明が閉じている");
-  const t0=all(".kg.tap").filter(e=>e.dataset.x==="A:nenkyu")[0];
+  ok(all(".hq").length===tap.length,"タップできる欄には「？」の印がついている");
+  ok(all(".expl").length===0,"最初は説明が閉じている");
+  const t0=all(".fr.tap").filter(e=>e.dataset.x==="A:nenkyu")[0];
   t0.click();
-  ok(all(".kx").length===1,"欄をタップすると説明が開く");
+  ok(all(".expl").length===1,"欄をタップすると説明が開く");
   ok($("stage").innerHTML.indexOf("ここを見ると何が分かるか")>=0,"説明に見出しが出る");
   ok($("stage").innerHTML.indexOf("週 1.8日")>=0,"年間休日95日が「週1.8日」に翻訳されて出る");
-  all(".kg.tap").filter(e=>e.dataset.x==="A:nenkyu")[0].click();
-  ok(all(".kx").length===0,"もう一度タップすると閉じる");
+  all(".fr.tap").filter(e=>e.dataset.x==="A:nenkyu")[0].click();
+  ok(all(".expl").length===0,"もう一度タップすると閉じる");
   $("kxAll").click();
-  ok(all(".kx").length===E("Object.keys(EXPLAIN).length"),"「説明をすべて開く」で全部開く");
+  ok(all(".expl").length===E("Object.keys(EXPLAIN).length"),"「説明をすべて開く」で全部開く");
   $("kxAll").click();
-  ok(all(".kx").length===0,"もう一度押すと全部閉じる");
+  ok(all(".expl").length===0,"もう一度押すと全部閉じる");
   reset();
 }
 
