@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>掃除機の頭脳ラボ</title>
+<style>
+  :root {
+    --bg: #f3f5f4; --card: #fff; --ink: #151a18; --muted: #5d6763; --line: #d9dfdc;
+    --accent: #0f6b4f; --bad: #b91c1c; --cm: #6b7280;
+    --floor: #efe6d6; --clean: #9fd8b8; --furn: #8b7355; --wall: #3b3b3b; --robot: #1d4ed8; --dock: #c2410c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121618; --card: #1a2023; --ink: #e6eae8; --muted: #9aa5a0; --line: #2c3438;
+      --accent: #4fbf95; --bad: #f87171; --cm: #9ca3af;
+      --floor: #3a342b; --clean: #2f6b4d; --furn: #a08a6c; --wall: #cfcfcf; --robot: #60a5fa; --dock: #fb923c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14.5px/1.65 "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; }
+  .wrap { max-width: 1260px; margin: 0 auto; padding: 18px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 2px; }
+  .ver { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .sub { color: var(--muted); margin: 0 0 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  h2 { font-size: 15px; margin: 0 0 8px; }
+  h3 { font-size: 13.5px; margin: 12px 0 4px; }
+  details.premise summary { cursor: pointer; font-weight: 700; font-size: 15px; }
+  .premise ol { margin: 6px 0; padding-left: 1.4em; }
+  .premise li { margin-bottom: 4px; }
+  .ref { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 980px) { .ref { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-size: 12px; font-weight: 600; }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+  code { background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+  pre.ex { background: var(--bg); border-radius: 6px; padding: 8px 10px; margin: 4px 0; font-size: 12.5px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 14px; align-items: start; margin-top: 14px; }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+  .editor { display: grid; grid-template-columns: 34px 1fr; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--card); }
+  .gutter { background: var(--bg); color: var(--muted); text-align: right; padding: 8px 6px; white-space: pre; user-select: none; overflow: hidden; }
+  .gutter, textarea#code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13.5px; line-height: 1.55; }
+  textarea#code { border: 0; outline: none; resize: vertical; min-height: 320px; padding: 8px 10px; background: transparent; color: var(--ink); white-space: pre; overflow-x: auto; tab-size: 4; }
+  .gutter .errline { color: #fff; background: var(--bad); border-radius: 3px; }
+  .gutter .runline { color: #fff; background: var(--accent); border-radius: 3px; }
+  .sens { font-size: 13px; background: var(--bg); border-left: 3px solid var(--accent); border-radius: 4px; padding: 5px 10px; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
+  .sens code { background: var(--card); }
+  .hint { font-size: 14px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 8px 12px; margin-top: 10px; }
+  .hint:empty { display: none; }
+  .note { font-size: 12.5px; color: var(--muted); }
+  .lesson .goal { font-size: 13px; color: var(--muted); }
+  .lesson summary .done { color: var(--accent); }
+  button, select, textarea { font: inherit; color: var(--ink); }
+  button { border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--ink); color: var(--card); border: 0; font-weight: 700; padding: 9px; width: 100%; }
+  select { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; }
+  .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; font-size: 13.5px; }
+  .msg { font-size: 13.5px; min-height: 1.4em; margin: 6px 0 0; }
+  .msg.err { color: var(--bad); font-weight: 600; }
+  .msg.ok { color: var(--accent); }
+  canvas { width: 100%; display: block; border-radius: 6px; }
+  input[type=range] { flex: 1; min-width: 120px; }
+  .live { font-size: 13.5px; background: var(--bg); border-radius: 6px; padding: 5px 10px; margin: 8px 0; font-variant-numeric: tabular-nums; }
+  .metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 600px) { .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .metric { background: var(--bg); border-radius: 6px; padding: 6px 8px; }
+  .metric .k { font-size: 11.5px; color: var(--muted); }
+  .metric .v { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .bad { color: var(--bad); } .ok { color: var(--accent); }
+  .levels { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+  .levels button { flex: 1; min-width: 180px; }
+  .levels button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .lvtext { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+  .l2box { margin-top: 14px; border-top: 2px solid var(--accent); padding-top: 6px; }
+  .l2box h3 { color: var(--accent); }
+  .practice { margin-top: 14px; }
+  .practice .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 980px) { .practice .cols { grid-template-columns: 1fr; } }
+  .lesson { border: 1px solid var(--line); border-radius: 6px; margin: 6px 0; }
+  .lesson summary { cursor: pointer; padding: 6px 10px; font-weight: 600; font-size: 14px; }
+  .lesson .body { padding: 0 10px 10px; font-size: 13.5px; }
+  .lesson .body p { margin: 4px 0; }
+  .lesson pre { background: var(--bg); border-radius: 6px; padding: 6px 10px; margin: 4px 0; font-size: 12.5px; overflow-x: auto; }
+  .lesson .look { border-left: 3px solid var(--accent); padding-left: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>掃除機の頭脳ラボ<span class="ver">版 2026-09-24d</span></h1>
+  <p class="sub">ロボット掃除機の動き方をプログラムします。目標は、リビング（5 m × 4 m）をできるだけ広く掃除し、電池が切れる前に充電台へ戻すことです。</p>
+
+  <div class="card">
+    <details class="premise" open>
+      <summary>はじめに読む：プログラムの前提</summary>
+      <ol>
+        <li><b>プログラムは 0.1 秒ごとに、1 行目から読み直されます。</b>「くり返し」は書かなくても、最初から組み込まれています。</li>
+        <li>上から読んでいき、<b>最初に出会った動作の命令</b>で、その 0.1 秒の動きが決まります。そこで読むのをやめます。</li>
+        <li><code>back 5</code>・<code>turn right 90</code>・<code>forward 30</code> のように<b>量を書く命令</b>は、終わるまで続きます（その間はプログラムを読みません）。同じ場所に続けて書くと、上から順番に実行されます。</li>
+        <li><code>forward</code>・<code>follow_wall</code>・<code>spiral</code>・<code>go_home</code> のように<b>量を書かない命令</b>は、0.1 秒だけ動きます。次の 0.1 秒にまた読み直すので、条件が変わるまでその動きが続きます。</li>
+        <li><b>モード</b>は、ロボットが今どの作戦で動いているかを表す名前です。<code>mode wall</code> と書くとモードが wall に変わります（動きはせず、次の行へ進みます）。<code>if mode == wall:</code> で今のモードを調べます。最初のモードは <code>normal</code> です。</li>
+      </ol>
+
+      <div class="ref">
+        <div>
+          <h3>センサ（読むだけの値）</h3>
+          <table>
+            <tr><th>名前</th><th>意味</th><th>値</th></tr>
+            <tr><td><code>bumper</code></td><td>前がぶつかった直後か</td><td>true / false</td></tr>
+            <tr><td><code>front</code></td><td>正面の物までの距離</td><td>0〜100 cm</td></tr>
+            <tr><td><code>right</code></td><td>右側の物までの距離</td><td>0〜40 cm</td></tr>
+            <tr><td><code>battery</code></td><td>電池の残り</td><td>0〜100 %</td></tr>
+            <tr><td><code>dock_signal</code></td><td>充電台の信号が届いているか（1.2 m 以内で、間に物がないとき）</td><td>true / false</td></tr>
+            <tr><td><code>mode</code></td><td>今のモード</td><td>名前</td></tr>
+            <tr><td><code>mode_time</code></td><td>今のモードになってからの時間</td><td>秒</td></tr>
+            <tr><td><code>time</code></td><td>走り始めてからの時間</td><td>秒</td></tr>
+          </table>
+        </div>
+        <div>
+          <h3>動作の命令</h3>
+          <table>
+            <tr><th>書き方</th><th>動き</th></tr>
+            <tr><td><code>forward</code></td><td>まっすぐ進む（0.1 秒）</td></tr>
+            <tr><td><code>forward 30</code></td><td>30 cm 進む。ぶつかったら止まる</td></tr>
+            <tr><td><code>back 5</code></td><td>5 cm 下がる</td></tr>
+            <tr><td><code>turn right 90</code></td><td>右に 90° 回る（<code>left</code> で左）</td></tr>
+            <tr><td><code>turn random</code></td><td>左右どちらかに 90〜180° 回る</td></tr>
+            <tr><td><code>follow_wall</code></td><td>右の壁から 5 cm を保って進む（0.1 秒）</td></tr>
+            <tr><td><code>spiral</code></td><td>円を描いて外へ広がる（0.1 秒）</td></tr>
+            <tr><td><code>go_home</code></td><td>充電台へ向かう。信号がないときは壁に沿って探す（0.1 秒）</td></tr>
+            <tr><td><code>stop</code></td><td>止まる（0.1 秒）</td></tr>
+            <tr><td><code>mode 名前</code></td><td>モードを変える（動かない）</td></tr>
+          </table>
+        </div>
+        <div>
+          <h3>書き方の決まり</h3>
+          <pre class="ex mono"><span style="color:var(--cm)"># 「#」から後ろはメモ（無視される）</span>
+<b>if</b> bumper:
+    back 5
+    turn random
+<b>elif</b> battery &lt; 25:
+    go_home
+<b>else</b>:
+    forward</pre>
+          <p style="font-size:13px;margin:4px 0">・<code>if 条件:</code> の次の行は、<b>行の頭を 4 文字下げます</b>（Tab キーでも下がります）。下げた行が、その条件のときに実行されます。<br>
+          ・<code>elif</code> は「そうでなくて、もし」、<code>else</code> は「どれにも当てはまらないとき」です。<br>
+          ・比べる記号：<code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code> <code>==</code>（等しい） <code>!=</code>（等しくない）<br>
+          ・条件をつなぐ：<code>and</code>（かつ） <code>or</code>（または） <code>not</code>（ではない）<br>
+          ・<code>if</code> の中に <code>if</code> を書くこともできます。</p>
+          <p style="font-size:13px;margin:4px 0">本体：速さ 30 cm/s、直径 34 cm、ブラシの幅 30 cm。回る角度には ±8% ほどの誤差が出ます。電池は満タンで 10 分もちます。</p>
+        </div>
+      </div>
+      <div class="l2box">
+        <h3>レベル2 で増えるもの（今の掃除機：部屋の地図と、方位を測るセンサを持っています）</h3>
+        <p style="font-size:13.5px;margin:2px 0 6px">今の掃除機は、レーザーやカメラで部屋の地図を作り、自分がどこにいるかを知りながら走ります。方位はジャイロという向きを測るセンサで分かるので、<code>turn_to</code> では何度回っても角度の誤差がたまりません。<br>
+        <b>座標</b>：部屋の左上が (0, 0) です。右へ行くほど <code>x</code> が、下へ行くほど <code>y</code> が大きくなります（単位 cm。x は 0〜500、y は 0〜400）。<b>方位</b>：上が 0°、右が 90°、下が 180°、左が 270° です。</p>
+        <div class="ref">
+          <div>
+            <table>
+              <tr><th>センサ</th><th>意味</th><th>値</th></tr>
+              <tr><td><code>x</code>・<code>y</code></td><td>自分の位置</td><td>cm</td></tr>
+              <tr><td><code>heading</code></td><td>自分が向いている方位</td><td>0〜359°</td></tr>
+              <tr><td><code>cleaned_ahead</code></td><td>目の前（20〜35 cm 先）がもう掃除済みか、壁や家具か</td><td>true / false</td></tr>
+              <tr><td><code>dirty_left</code></td><td>行ける範囲に、まだ掃除していない場所が残っているか</td><td>true / false</td></tr>
+            </table>
+          </div>
+          <div>
+            <table>
+              <tr><th>命令</th><th>動き</th></tr>
+              <tr><td><code>turn_to 90</code></td><td>方位 90°（右）を向く。誤差なし</td></tr>
+              <tr><td><code>go_to 250 300</code></td><td>座標 (250, 300) へ行く。地図の上で家具をよける道を計算して進む</td></tr>
+              <tr><td><code>go_dirty</code></td><td>いちばん近い、まだ掃除していない場所へ行く</td></tr>
+              <tr><td><code>remember</code></td><td>今の位置を覚える（動かない）</td></tr>
+              <tr><td><code>go_back</code></td><td>覚えた位置へ行く（道は地図で計算）</td></tr>
+              <tr><td><code>go_home</code></td><td>レベル2 では、地図で道を計算して充電台へ帰る</td></tr>
+            </table>
+          </div>
+          <div>
+            <pre class="ex mono"><span style="color:var(--cm)"># 例：ぶつかったら右を向き、30 cm ずれて下を向く</span>
+<b>if</b> bumper:
+    back 5
+    turn_to 90
+    forward 30
+    turn_to 180
+<b>else</b>:
+    forward</pre>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="card practice">
+    <details open>
+      <summary style="cursor:pointer;font-weight:700;font-size:15px">練習：使い方を1つずつ覚える</summary>
+      <p style="font-size:13.5px;margin:6px 0">上から順に試してください。「エディタに入れる」を押すと、下のプログラム欄にそのプログラムが入ります。そのあと「走らせる」を押します。</p>
+      <div class="cols">
+        <div><h3>レベル1：ぶつかり型</h3><div id="lessons1"></div></div>
+        <div><h3>レベル2：地図型</h3><div id="lessons2"></div></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>プログラム</h2>
+      <div class="levels">
+        <button type="button" data-lv="1" class="on">レベル1：ぶつかり型（昔の掃除機）</button>
+        <button type="button" data-lv="2">レベル2：地図型（今の掃除機）</button>
+      </div>
+      <p class="lvtext" id="lvtext"></p>
+      <div class="editor"><div class="gutter" id="gutter">1</div><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="プログラム"></textarea></div>
+      <p class="msg" id="msg"></p>
+      <div class="bar"><button type="button" id="reset">最初のプログラムに戻す</button><span class="note">プログラムは、この端末に自動で保存されます。</span></div>
+
+      <button class="primary" id="run" type="button" style="margin-top:8px">走らせる</button>
+    </div>
+
+    <div class="card">
+      <canvas id="room"></canvas>
+      <div class="bar">
+        <button type="button" id="pause" disabled>一時停止</button>
+        <input type="range" id="seek" min="0" max="0" value="0" disabled aria-label="再生位置">
+        再生の速さ
+        <select id="speed"><option value="5">×5</option><option value="10" selected>×10</option><option value="20">×20</option><option value="60">×60</option></select>
+      </div>
+      <div class="live" id="live">まだ走らせていません。</div>
+      <div class="sens" id="sens">再生中は、ここに「いま実行している行」と「そのときのセンサの値」が出ます。一時停止して、つまみで1コマずつ調べられます。</div>
+      <div class="metrics">
+        <div class="metric"><div class="k">清掃率</div><div class="v" id="m-cov">—</div></div>
+        <div class="metric"><div class="k">結末</div><div class="v" id="m-end">—</div></div>
+        <div class="metric"><div class="k">かかった時間</div><div class="v" id="m-time">—</div></div>
+        <div class="metric"><div class="k">ぶつかった回数</div><div class="v" id="m-bump">—</div></div>
+        <div class="metric"><div class="k">残りの電池</div><div class="v" id="m-bat">—</div></div>
+      </div>
+      <div class="hint" id="hint"></div>
+      <h2 style="margin-top:14px">試行の履歴</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>#</th><th>レベル</th><th>行数</th><th>清掃率</th><th>結末</th><th>時間</th><th>衝突</th><th>電池</th><th></th></tr></thead>
+          <tbody id="hist"><tr><td colspan="9" style="color:var(--muted)">まだ走らせていません。</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 世界の設定（値はここだけ） =====
+const W = 500, H = 400;                    // 部屋 cm
+const R = 17, V = 30, BRUSH = 15;          // 半径・速さ・ブラシ半径
+const DT = 0.1, BATT_SEC = 600, TURN_W = 2.0, TURN_ERR = 0.08;
+const CELL = 5, GX = W / CELL, GY = H / CELL;
+const DOCK = { x: 250, y: H - R - 2 }, BEACON = 120;
+const SEED = 20260924;
+const FURN = [
+  { t: "rect", x: 20, y: 0, w: 190, h: 85 },      // ソファ
+  { t: "rect", x: 320, y: 0, w: 160, h: 42 },     // テレビ台
+  { t: "rect", x: 452, y: 140, w: 34, h: 130 },   // 本棚
+  { t: "circ", x: 45, y: 345, r: 16 },            // ゴミ箱
+  // テーブル（天板の下は通れる。脚だけが障害物）
+  { t: "circ", x: 170, y: 170, r: 3 }, { t: "circ", x: 300, y: 170, r: 3 },
+  { t: "circ", x: 170, y: 255, r: 3 }, { t: "circ", x: 300, y: 255, r: 3 },
+  // 椅子の脚（脚の間は 32 cm。本体は通れない）
+  { t: "circ", x: 320, y: 195, r: 2 }, { t: "circ", x: 356, y: 195, r: 2 },
+  { t: "circ", x: 320, y: 231, r: 2 }, { t: "circ", x: 356, y: 231, r: 2 },
+  { t: "circ", x: 95, y: 195, r: 2 }, { t: "circ", x: 131, y: 195, r: 2 },
+  { t: "circ", x: 95, y: 231, r: 2 }, { t: "circ", x: 131, y: 231, r: 2 }
+];
+const START_CODE_L2 = `# レベル2：位置 x, y と方位 heading が分かります
+# まずはレベル1 と同じプログラムです。turn_to や go_to を使って改良しましょう
+if bumper:
+    back 5
+    turn random
+else:
+    forward
+`;
+const START_CODE = `# 最初のプログラム：ぶつかったら少し下がって向きを変える
+if bumper:
+    back 5
+    turn random
+else:
+    forward
+`;
+
+// ===== 独自言語：読み取り =====
+const SENSORS = ["bumper", "front", "right", "battery", "dock_signal", "mode", "mode_time", "time"];
+const SENSORS_L2 = ["x", "y", "heading", "cleaned_ahead", "dirty_left"];              // レベル2 だけで使えるセンサ
+const CONT = ["forward", "follow_wall", "spiral", "go_home", "stop"];   // 量を書かない命令
+const INSTANT = ["setMode", "remember"];                                 // 動かずに次の行へ進む命令
+let compLevel = 1;
+class LangError extends Error { constructor(line, msg) { super(msg); this.line = line; } }
+
+function tokenize(text) {
+  const re = /\s*(<=|>=|==|!=|<|>|\(|\)|:|-?\d+(?:\.\d+)?|[A-Za-z_][A-Za-z0-9_]*|\S)/y;
+  const out = []; let m;
+  while (re.lastIndex < text.length && (m = re.exec(text))) { if (m[1].trim()) out.push(m[1]); }
+  return out;
+}
+function parseCond(toks, line) {
+  let i = 0;
+  const peek = () => toks[i], next = () => toks[i++];
+  const orE = () => { let a = andE(); while (peek() === "or") { next(); a = { op: "or", a, b: andE() }; } return a; };
+  const andE = () => { let a = notE(); while (peek() === "and") { next(); a = { op: "and", a, b: notE() }; } return a; };
+  const notE = () => { if (peek() === "not") { next(); return { op: "not", a: notE() }; } return cmpE(); };
+  const cmpE = () => {
+    const a = prim();
+    if (["<", ">", "<=", ">=", "==", "!="].includes(peek())) {
+      const op = next(), b = prim();
+      if (a.k === "sens" && a.n === "mode" && b.k === "name") b.k = "str";
+      else if (b.k === "sens" && b.n === "mode" && a.k === "name") a.k = "str";
+      [a, b].forEach(x => { if (x.k === "name") throw new LangError(line, `「${x.n}」というセンサはありません。`); });
+      return { op, a, b };
+    }
+    if (a.k === "name") throw new LangError(line, `「${a.n}」というセンサはありません。`);
+    return a;
+  };
+  const prim = () => {
+    const t = next();
+    if (t === undefined) throw new LangError(line, "条件が途中で終わっています。");
+    if (t === "(") { const e = orE(); if (next() !== ")") throw new LangError(line, "「)」が足りません。"); return e; }
+    if (/^-?\d/.test(t)) return { k: "num", v: +t };
+    if (t === "true" || t === "false") return { k: "num", v: t === "true" };
+    if (SENSORS_L2.includes(t)) { if (compLevel < 2) throw new LangError(line, `「${t}」はレベル2 で使えます。`); return { k: "sens", n: t }; }
+    if (/^[A-Za-z_]/.test(t)) return SENSORS.includes(t) ? { k: "sens", n: t } : { k: "name", n: t };
+    throw new LangError(line, `「${t}」は条件に使えません。`);
+  };
+  const e = orE();
+  if (i < toks.length) throw new LangError(line, `「${toks[i]}」の前後の書き方が正しくありません。`);
+  return e;
+}
+function parseAction(toks, line) {
+  const [c, a1, a2] = toks;
+  const n = x => { if (x === undefined || !/^\d+(\.\d+)?$/.test(x)) throw new LangError(line, `「${c}」の後ろに数を書いてください（例：${c === "turn" ? "turn right 90" : c + " 30"}）。`); return +x; };
+  switch (c) {
+    case "forward": if (toks.length === 1) return { cmd: "forward" }; if (toks.length === 2) return { cmd: "forwardD", n: n(a1) }; break;
+    case "back": if (toks.length === 2) return { cmd: "back", n: n(a1) }; if (toks.length === 1) n(); break;
+    case "turn":
+      if (a1 === "random" && toks.length === 2) return { cmd: "turnRand" };
+      if ((a1 === "right" || a1 === "left") && toks.length === 3) return { cmd: "turn", dir: a1 === "right" ? 1 : -1, n: n(a2) };
+      throw new LangError(line, "turn の書き方は「turn right 90」「turn left 90」「turn random」のどれかです。");
+    case "follow_wall": case "spiral": case "go_home": case "stop": if (toks.length === 1) return { cmd: c }; break;
+    case "turn_to": case "go_to": case "remember": case "go_back": case "go_dirty":
+      if (compLevel < 2) throw new LangError(line, `「${c}」はレベル2 で使えます。`);
+      if (c === "turn_to" && toks.length === 2) return { cmd: "turnTo", n: n(a1) % 360 };
+      if (c === "go_to" && toks.length === 3) return { cmd: "goTo", x: n(a1), y: n(a2) };
+      if ((c === "remember" || c === "go_back") && toks.length === 1) return { cmd: c === "remember" ? "remember" : "goBack" };
+      if (c === "go_dirty" && toks.length === 1) return { cmd: "goDirty" };
+      throw new LangError(line, c === "go_to" ? "go_to の書き方は「go_to 250 300」です（x と y）。" : c === "turn_to" ? "turn_to の書き方は「turn_to 90」です。" : `「${c}」の後ろには何も書きません。`);
+    case "mode":
+      if (toks.length === 2 && /^[A-Za-z_]\w*$/.test(a1)) return { cmd: "setMode", name: a1 };
+      throw new LangError(line, "モードの変え方は「mode 名前」です（例：mode wall）。名前は英字で書きます。");
+    default: throw new LangError(line, `「${c}」という命令はありません。`);
+  }
+  throw new LangError(line, `「${c}」の書き方が正しくありません。上の「動作の命令」の表を見てください。`);
+}
+function compile(src, level = 1) {
+  compLevel = level;
+  const lines = src.replace(/\t/g, "    ").split("\n").map((raw, i) => ({ no: i + 1, text: raw.replace(/#.*/, "").replace(/\s+$/, "") }))
+    .filter(l => l.text.trim());
+  const indOf = l => l.text.match(/^ */)[0].length;
+  let pos = 0;
+  const block = indent => {
+    const out = [];
+    while (pos < lines.length) {
+      const l = lines[pos], ind = indOf(l);
+      if (ind < indent) break;
+      if (ind > indent) throw new LangError(l.no, "行の頭の下げ方がそろっていません。");
+      const body = l.text.trim(), kw = body.split(/[\s:(]/)[0];
+      if (kw === "if") {
+        const branches = [];
+        let cur = l, head = body;
+        for (;;) {
+          const k = head.split(/[\s:(]/)[0], isElse = k === "else";
+          if (!head.endsWith(":")) throw new LangError(cur.no, "条件の行の終わりに「:」を付けてください。");
+          const condSrc = head.slice(k.length, -1).trim();
+          if (isElse && condSrc) throw new LangError(cur.no, "else の後ろには条件を書きません。");
+          if (!isElse && !condSrc) throw new LangError(cur.no, "条件が書かれていません。");
+          const cond = isElse ? null : parseCond(tokenize(condSrc), cur.no);
+          pos++;
+          const nx = lines[pos];
+          if (!nx || indOf(nx) <= indent) throw new LangError(cur.no, "条件の次の行は、行の頭を 4 文字下げて書いてください。");
+          branches.push({ cond, body: block(indOf(nx)) });
+          const n2 = lines[pos];
+          if (isElse || !n2 || indOf(n2) !== indent) break;
+          const k2 = n2.text.trim().split(/[\s:(]/)[0];
+          if (k2 !== "elif" && k2 !== "else") break;
+          cur = n2; head = n2.text.trim();
+        }
+        out.push({ if: branches, line: l.no });
+      } else if (kw === "elif" || kw === "else") {
+        throw new LangError(l.no, `「${kw}」の前に、同じ下げ方の「if」がありません。`);
+      } else {
+        out.push({ ...parseAction(tokenize(body), l.no), line: l.no });
+        pos++;
+      }
+    }
+    return out;
+  };
+  const prog = block(0);
+  if (pos < lines.length) throw new LangError(lines[pos].no, "行の頭の下げ方がそろっていません。");
+  if (!prog.length) throw new LangError(1, "プログラムが空です。");
+  return prog;
+}
+
+// ===== 実行 =====
+function val(x, env) { return x.k === "num" ? x.v : x.k === "str" ? x.n : env[x.n]; }
+function evalCond(e, env) {
+  switch (e.op) {
+    case "or": return evalCond(e.a, env) || evalCond(e.b, env);
+    case "and": return evalCond(e.a, env) && evalCond(e.b, env);
+    case "not": return !evalCond(e.a, env);
+    case "<": return val(e.a, env) < val(e.b, env);
+    case ">": return val(e.a, env) > val(e.b, env);
+    case "<=": return val(e.a, env) <= val(e.b, env);
+    case ">=": return val(e.a, env) >= val(e.b, env);
+    case "==": return val(e.a, env) === val(e.b, env);
+    case "!=": return val(e.a, env) !== val(e.b, env);
+  }
+  return !!val(e, env);
+}
+// 上から読み、この 0.1 秒の動作の列を返す（モードの変更はその場で反映）
+function runProgram(prog, env, instant) {
+  const walk = stmts => {
+    for (let i = 0; i < stmts.length; i++) {
+      const s = stmts[i];
+      if (s.if) {
+        for (const b of s.if) if (b.cond === null || evalCond(b.cond, env)) { const r = walk(b.body); if (r) return r; break; }
+      } else if (INSTANT.includes(s.cmd)) instant(s, env);
+      else {
+        const seq = [s];                       // 同じ場所に続けて書いた命令は、上から順番に行う
+        for (let j = i + 1; j < stmts.length && !stmts[j].if; j++) {
+          if (INSTANT.includes(stmts[j].cmd)) instant(stmts[j], env); else seq.push(stmts[j]);
+        }
+        return seq;
+      }
+    }
+    return null;
+  };
+  return walk(prog);
+}
+
+// ===== 乱数・幾何 =====
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function inside(px, py) {
+  if (px < 0 || px > W || py < 0 || py > H) return true;
+  for (const f of FURN) {
+    if (f.t === "rect" ? (px >= f.x && px <= f.x + f.w && py >= f.y && py <= f.y + f.h) : (Math.hypot(px - f.x, py - f.y) <= f.r)) return true;
+  }
+  return false;
+}
+function contact(x, y, rad = R) {
+  let best = null, bd = rad;
+  const test = (cx, cy) => { const d = Math.hypot(cx - x, cy - y); if (d < bd) { bd = d; best = Math.atan2(cy - y, cx - x); } };
+  test(x, 0); test(x, H); test(0, y); test(W, y);
+  for (const f of FURN) {
+    if (f.t === "rect") test(Math.max(f.x, Math.min(x, f.x + f.w)), Math.max(f.y, Math.min(y, f.y + f.h)));
+    else { const d = Math.hypot(f.x - x, f.y - y) - f.r; if (d < bd) { bd = d; best = Math.atan2(f.y - y, f.x - x); } }
+  }
+  return best;
+}
+function clearance(x, y) {                      // いちばん近い壁・家具までの距離
+  let d = Math.min(x, W - x, y, H - y);
+  for (const f of FURN) d = Math.min(d, f.t === "rect"
+    ? Math.hypot(x - Math.max(f.x, Math.min(x, f.x + f.w)), y - Math.max(f.y, Math.min(y, f.y + f.h)))
+    : Math.hypot(f.x - x, f.y - y) - f.r);
+  return d;
+}
+function ray(x, y, ang, max) {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  for (let d = R; d <= R + max; d += 1) if (inside(x + c * d, y + s * d)) return d - R;
+  return max;
+}
+function lineClear(x1, y1, x2, y2) {
+  const n = Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 3);
+  for (let i = 1; i < n; i++) { const t = i / n; if (inside(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)) return false; }
+  return true;
+}
+const norm = a => Math.atan2(Math.sin(a), Math.cos(a));
+const FREE = new Uint8Array(GX * GY); let FREE_N = 0;
+for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) if (!inside(i * CELL + CELL / 2, j * CELL + CELL / 2)) { FREE[j * GX + i] = 1; FREE_N++; }
+// レベル2 の地図：ロボットの中心が入れるマス（家具から半径分離れている）
+const OPEN = new Uint8Array(GX * GY), SAFE = new Uint8Array(GX * GY);
+for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) { OPEN[j * GX + i] = contact(i * CELL + CELL / 2, j * CELL + CELL / 2, R + 6) === null ? 1 : 0;
+  SAFE[j * GX + i] = contact(i * CELL + CELL / 2, j * CELL + CELL / 2, R + 1) === null ? 1 : 0; }
+const cellOf = (x, y) => Math.max(0, Math.min(GY - 1, Math.floor(y / CELL))) * GX + Math.max(0, Math.min(GX - 1, Math.floor(x / CELL)));
+const centerOf = k => ({ x: (k % GX) * CELL + CELL / 2, y: Math.floor(k / GX) * CELL + CELL / 2 });
+function segOpen(a, b) {
+  const n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2);
+  for (let i = 1; i < n; i++) { const t = i / n; if (!OPEN[cellOf(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)]) return false; }
+  return true;
+}
+// 地図の上で道を探す（幅優先）。goal(k) が true のマスまでの道の点を返す
+function planPath(sx, sy, goal) {
+  const start = cellOf(sx, sy), prev = new Int32Array(GX * GY).fill(-1), q = [start]; prev[start] = start;
+  let found = -1;
+  for (let h = 0; h < q.length; h++) {
+    const k = q[h]; if (goal(k) && OPEN[k]) { found = k; break; }
+    const i = k % GX, j = (k - i) / GX;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const ni = i + di, nj = j + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue;
+      const nk = nj * GX + ni; if (prev[nk] !== -1) continue;
+      const c = centerOf(nk), near = Math.hypot(c.x - sx, c.y - sy) < 30;   // 出発点の近くは、ぶつからなければ通ってよい
+      if (!(OPEN[nk] || (near && SAFE[nk]))) continue;
+      prev[nk] = k; q.push(nk);
+    }
+  }
+  if (found < 0) return null;
+  const cells = []; for (let k = found; k !== start; k = prev[k]) cells.push(k); cells.reverse();
+  const pts = cells.map(centerOf), out = []; let from = { x: sx, y: sy };
+  for (let i = 0; i < pts.length; i++) {           // まっすぐ行ける所は点を間引く
+    if (i === pts.length - 1 || !segOpen(from, pts[i + 1])) { out.push(pts[i]); from = pts[i]; }
+  }
+  return out;
+}
+
+// ===== シミュレーション =====
+function simulate(prog, level = 1) {
+  const rand = rng(SEED);
+  const s = { x: DOCK.x, y: DOCK.y - 20, th: -Math.PI / 2, t: 0, batt: 100, mode: "normal", modeT: 0,
+              bump: false, bumps: 0, queue: [], prevWall: null, lost: 0, spiralT: 0, lastCmd: "", saved: null, skip: new Uint8Array(GX * GY), curLine: 0 };
+  const clean = new Uint8Array(GX * GY); let cleanN = 0;
+  const frames = [];
+  let end = "電池切れ", lastPos = { x: s.x, y: s.y, t: 0 };
+  const mark = () => {
+    const i0 = Math.max(0, Math.floor((s.x - BRUSH) / CELL)), i1 = Math.min(GX - 1, Math.floor((s.x + BRUSH) / CELL));
+    const j0 = Math.max(0, Math.floor((s.y - BRUSH) / CELL)), j1 = Math.min(GY - 1, Math.floor((s.y + BRUSH) / CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const k = j * GX + i;
+      if (!clean[k] && FREE[k] && Math.hypot(i * CELL + 2.5 - s.x, j * CELL + 2.5 - s.y) <= BRUSH) { clean[k] = 1; cleanN++; }
+    }
+  };
+  const sense = () => {
+    const front = ray(s.x, s.y, s.th, 100), right = ray(s.x, s.y, s.th + Math.PI / 2, 40);
+    const dockD = Math.hypot(DOCK.x - s.x, DOCK.y - s.y);
+    return { front, right, dockD, dock: dockD < BEACON && lineClear(s.x, s.y, DOCK.x, DOCK.y + R) };
+  };
+  const turnAmount = deg => deg * Math.PI / 180 * (1 + TURN_ERR * (2 * rand() - 1));
+  const toManeuver = a => {
+    if (a.cmd === "forwardD") return { k: "fwd", left: a.n };
+    if (a.cmd === "back") return { k: "back", left: a.n };
+    if (a.cmd === "turn") return { k: "turn", dir: a.dir, left: turnAmount(a.n) };
+    if (a.cmd === "turnRand") return { k: "turn", dir: rand() < 0.5 ? 1 : -1, left: turnAmount(90 + 90 * rand()) };
+    if (a.cmd === "turnTo") return { k: "turnTo", target: (a.n - 90) * Math.PI / 180 };
+    const route = (tx, ty) => {
+      const t = cellOf(tx, ty), tc = centerOf(t);
+      const path = planPath(s.x, s.y, k => k === t || (!OPEN[t] && Math.hypot(centerOf(k).x - tc.x, centerOf(k).y - tc.y) < 40));
+      return path ? { k: "goto", path, fresh: true, stuck: 0 } : { k: "back", left: 0 };
+    };
+    if (a.cmd === "goTo") return route(a.x, a.y);
+    if (a.cmd === "goBack") return s.saved ? route(s.saved.x, s.saved.y) : { k: "back", left: 0 };
+    if (a.cmd === "goDirty") {
+      const here = { x: s.x, y: s.y };
+      const path = planPath(s.x, s.y, k => !s.skip[k] && dirtyNear(k) && Math.hypot(centerOf(k).x - here.x, centerOf(k).y - here.y) > 10);
+      return path && path.length ? { k: "goto", path, fresh: true, stuck: 0, dirty: true, goal: path[path.length - 1] } : { k: "back", left: 0 };
+    }
+    return null;
+  };
+  const cont = (cmd, sn) => {                    // 量を書かない命令の 0.1 秒分の (速さ, 回転)
+    switch (cmd) {
+      case "forward": return [V, 0];
+      case "follow_wall": {
+        if (s.bump || sn.front < 12) { s.queue.push({ k: "back", left: 3 }, { k: "turn", dir: -1, left: turnAmount(30) }); return [0, 0]; }
+        const d = sn.right, dd = s.prevWall === null ? 0 : (d - s.prevWall) / DT;
+        s.prevWall = d;
+        s.lost = d >= 40 ? s.lost + DT : 0;
+        if (s.lost > 2) return [V, 0];             // 壁を見失ったら、まっすぐ進んで壁を探す
+        return [V * (d >= 40 ? 0.7 : 1), Math.max(-1.6, Math.min(1.6, 0.12 * (d - 5) + 0.05 * dd))];   // 中で PD 制御が働く
+      }
+      case "spiral": return [V, V / (12 + 1.2 * s.spiralT)];
+      case "go_home": {
+        if (level >= 2 && !sn.dock) {              // 地図があるので、充電台まで道を計算して帰る
+          const path = planPath(s.x, s.y, k => Math.hypot(centerOf(k).x - DOCK.x, centerOf(k).y - (DOCK.y - 40)) < 20);
+          if (path) { s.queue.push({ k: "goto", path, fresh: true, stuck: 0 }); return [0, 0]; }
+        }
+        if (sn.dock) {
+          const e = norm(Math.atan2(DOCK.y - s.y, DOCK.x - s.x) - s.th);
+          if (Math.abs(e) > 0.5) return [0, Math.sign(e) * 1.8];
+          return [V * (sn.dockD < 40 ? 0.5 : 1), 2.0 * e];
+        }
+        return cont("follow_wall", sn);
+      }
+    }
+    return [0, 0];
+  };
+  const LABEL = { forward: "直進", follow_wall: "壁沿い", spiral: "らせん", go_home: "充電台へ", stop: "停止", fwd: "前進（距離）", back: "後退", turn: "旋回", turnTo: "方位を合わせる", goto: "座標へ移動" };
+
+  const cleanedAhead = () => [22, 34].every(d => {
+    const px = s.x + Math.cos(s.th) * d, py = s.y + Math.sin(s.th) * d;
+    if (inside(px, py)) return true;
+    return !!clean[Math.floor(py / CELL) * GX + Math.floor(px / CELL)];
+  });
+  const REACH = [];                              // ブラシが届くマスのずれ
+  for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) if (Math.hypot(di, dj) * CELL <= BRUSH - 2) REACH.push([di, dj]);
+  const dirtyNear = k => {                       // ここへ行けば、まだ掃除していない床にブラシが届くか
+    const i = k % GX, j = (k - i) / GX;
+    for (const [di, dj] of REACH) { const ni = i + di, nj = j + dj; if (ni >= 0 && nj >= 0 && ni < GX && nj < GY) { const q = nj * GX + ni; if (FREE[q] && !clean[q]) return true; } }
+    return false;
+  };
+  const instant = (st, env) => {
+    if (st.cmd === "setMode") { if (s.mode !== st.name) { s.mode = st.name; s.modeT = 0; env.mode = st.name; env.mode_time = 0; } }
+    else if (st.cmd === "remember") s.saved = { x: s.x, y: s.y };
+  };
+  const steps = Math.round(BATT_SEC / DT) + 1;
+  for (let k = 0; k < steps; k++) {
+    const sn = sense();
+    let v = 0, w = 0, act = "停止";
+    const bumpNow = s.bump;
+    if (!s.queue.length) {
+      const env = { bumper: s.bump, front: sn.front, right: sn.right, battery: s.batt, dock_signal: sn.dock, mode: s.mode, mode_time: s.modeT, time: s.t };
+      if (level >= 2) {
+        Object.assign(env, { x: Math.round(s.x), y: Math.round(s.y), heading: compass(s.th), cleaned_ahead: cleanedAhead() });
+        Object.defineProperty(env, "dirty_left", { get: () => !!planPath(s.x, s.y, k => !s.skip[k] && dirtyNear(k)) });   // 調べたときだけ計算する
+      }
+      const seq = runProgram(prog, env, instant);
+      s.curLine = seq ? seq[0].line : 0;
+      if (seq) {
+        if (CONT.includes(seq[0].cmd)) {
+          const cmd = seq[0].cmd;
+          s.spiralT = cmd === "spiral" && s.lastCmd === "spiral" ? s.spiralT + DT : 0;
+          if (cmd !== "follow_wall" && cmd !== "go_home") { s.prevWall = null; s.lost = 0; }
+          [v, w] = cont(cmd, sn); act = LABEL[cmd]; s.lastCmd = cmd;
+          if (cmd === "go_home" && sn.dockD < 6 && s.t > 5) { end = "帰還"; frames.push({ ...pick(s), act, cov: cleanN }); break; }
+        } else {
+          for (const a of seq) { const m = toManeuver(a); if (!m) break; m.line = a.line; s.queue.push(m); }
+          s.lastCmd = "";
+        }
+      }
+    }
+    if (s.queue.length && v === 0 && w === 0) {
+      const m = s.queue[0]; act = LABEL[m.k]; if (m.line) s.curLine = m.line;
+      if (m.k === "fwd") { v = V; m.left -= V * DT; if (m.left <= 0 || s.bump) s.queue.shift(); }
+      else if (m.k === "back") { v = -V * 0.5; m.left -= V * 0.5 * DT; if (m.left <= 0) s.queue.shift(); }
+      else if (m.k === "turn") { w = m.dir * TURN_W; m.left -= TURN_W * DT; if (m.left <= 0) s.queue.shift(); }
+      else if (m.k === "turnTo") {                 // ジャイロで方位を合わせる（誤差はたまらない）
+        const e = norm(m.target - s.th);
+        if (Math.abs(e) < 0.02) { s.th = m.target; s.queue.shift(); } else w = Math.sign(e) * Math.min(TURN_W, Math.abs(e) / DT);
+      } else if (m.k === "goto") {                 // 地図の上で計算した道の点を順にたどる
+        while (m.path.length && Math.hypot(m.path[0].x - s.x, m.path[0].y - s.y) < 4) m.path.shift();
+        const hit = s.bump && !m.fresh; m.fresh = false;   // 向かい始める前のぶつかりは数えない
+        if (hit) {                                 // ぶつかったら少し下がる。掃除し残しへ向かう途中なら、その場所は「行けない」と地図に記録する
+          if (m.dirty) { const g = m.goal; for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) if (Math.hypot(i * CELL + 2.5 - g.x, j * CELL + 2.5 - g.y) < 15) s.skip[j * GX + i] = 1; }
+          s.queue.shift(); s.queue.unshift({ k: "back", left: 4 });
+        }
+        else if (!m.path.length) { if (m.dirty) s.skip[cellOf(m.goal.x, m.goal.y)] = 1; s.queue.shift(); }   // 着いた地点は、次の目標にしない
+        else {
+          const p0 = m.path[0], dx = p0.x - s.x, dy = p0.y - s.y, e = norm(Math.atan2(dy, dx) - s.th);
+          if (Math.abs(e) > 0.3) w = Math.sign(e) * Math.min(TURN_W, Math.abs(e) / DT);
+          else { v = Math.min(V, Math.hypot(dx, dy) / DT); w = Math.max(-TURN_W, Math.min(TURN_W, 2 * e)); }
+          if (++m.stuck > 600) s.queue.shift();    // 60 秒たっても着かなければあきらめる
+        }
+      }
+    }
+    s.bump = false;
+    s.th = norm(s.th + w * DT);
+    const nx = s.x + v * Math.cos(s.th) * DT, ny = s.y + v * Math.sin(s.th) * DT;
+    const c = contact(nx, ny);
+    if (c !== null && v !== 0 && clearance(nx, ny) < clearance(s.x, s.y)) {   // 近づく向きだけ止める（離れる向きには動ける）
+      if (v > 0) { s.bump = true; s.bumps++; }       // 進もうとして止められたら、バンパーが反応する
+      if (v < 0 && s.queue.length && s.queue[0].k === "back") s.queue.shift();   // 後ろがふさがっていたら下がるのをやめる
+    } else { s.x = nx; s.y = ny; if (v > 0) mark(); }
+    if (s.t - lastPos.t >= 20) {                 // 20 秒で 5 cm も動けなければ「詰まった」
+      if (Math.hypot(s.x - lastPos.x, s.y - lastPos.y) < 5) { end = "詰まった"; frames.push({ ...pick(s), act, cov: cleanN }); break; }
+      lastPos = { x: s.x, y: s.y, t: s.t };
+    }
+    s.t += DT; s.modeT += DT; s.batt = Math.max(0, 100 * (1 - s.t / BATT_SEC));
+    if (k % 2 === 0) frames.push({ ...pick(s), act, cov: cleanN, line: s.curLine,
+      sen: { bumper: bumpNow, front: Math.round(sn.front), right: Math.round(sn.right), dock_signal: sn.dock } });
+    if (s.batt <= 0) { end = "電池切れ"; break; }
+  }
+  const last = frames[frames.length - 1]; if (last && !last.sen) Object.assign(last, { line: s.curLine, sen: frames.length > 1 ? frames[frames.length - 2].sen : null });
+  return { frames, end, cov: cleanN / FREE_N, t: s.t, bumps: s.bumps, batt: s.batt, clean };
+}
+const compass = th => Math.round(((th * 180 / Math.PI + 90) % 360 + 360) % 360) % 360;
+function pick(s) { return { x: s.x, y: s.y, th: s.th, t: s.t, batt: s.batt, mode: s.mode }; }
+
+// ===== 画面：エディタ =====
+const $ = q => document.querySelector(q);
+const codeEl = $("#code"), gutter = $("#gutter");
+let errLine = 0;
+let runLine = 0;
+function updateGutter() {
+  const n = codeEl.value.split("\n").length;
+  gutter.innerHTML = Array.from({ length: n }, (_, i) => i + 1 === errLine ? `<span class="errline">${i + 1}</span>`
+    : i + 1 === runLine ? `<span class="runline">${i + 1}</span>` : String(i + 1)).join("\n");
+  gutter.scrollTop = codeEl.scrollTop;
+}
+function check() {
+  const msg = $("#msg");
+  try { compile(codeEl.value, LEVEL); errLine = 0; msg.className = "msg ok"; msg.textContent = "書き方に問題はありません。"; return true; }
+  catch (e) {
+    if (!(e instanceof LangError)) throw e;
+    errLine = e.line; msg.className = "msg err"; msg.textContent = `${e.line} 行目：${e.message}`; return false;
+  } finally { updateGutter(); }
+}
+codeEl.addEventListener("input", () => { errLine = 0; runLine = 0; updateGutter(); $("#msg").textContent = ""; saveSoon(); });
+codeEl.addEventListener("scroll", () => { gutter.scrollTop = codeEl.scrollTop; });
+codeEl.addEventListener("keydown", e => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    codeEl.setRangeText("    ", codeEl.selectionStart, codeEl.selectionEnd, "end"); updateGutter();
+  } else if (e.key === "Enter" && !e.isComposing) {     // 改行したら前の行の下げ方を引き継ぐ（「:」の後はさらに 4 文字）
+    e.preventDefault();
+    const a = codeEl.selectionStart, cur = codeEl.value.slice(0, a).split("\n").pop();
+    let ind = cur.match(/^ */)[0]; if (/:\s*$/.test(cur.replace(/#.*/, ""))) ind += "    ";
+    codeEl.setRangeText("\n" + ind, a, codeEl.selectionEnd, "end"); updateGutter();
+  }
+});
+const START = { 1: START_CODE, 2: START_CODE_L2 };
+const LV_TEXT = { 1: "バンパーと距離センサだけで動きます。自分がどこにいるかは分かりません。",
+                  2: "レベル1 の命令に加えて、自分の位置・方位・掃除済みかどうかが分かります。上の「レベル2 で増えるもの」を見てください。" };
+let LEVEL = 1;
+const codes = { 1: START_CODE, 2: START_CODE_L2 };
+const SAVE_KEY = "soujiki-brain-v1";
+const done = new Set();
+function save() {
+  codes[LEVEL] = codeEl.value;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ codes, level: LEVEL, done: [...done] })); } catch (e) { /* 保存できない環境でも動かす */ }
+}
+let saveTimer = 0;
+function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); }
+function setLevel(lv) {
+  codes[LEVEL] = codeEl.value; LEVEL = lv; codeEl.value = codes[lv]; runLine = 0; saveSoon();
+  document.querySelectorAll(".levels button").forEach(b => b.classList.toggle("on", +b.dataset.lv === lv));
+  $("#lvtext").textContent = LV_TEXT[lv];
+  errLine = 0; updateGutter(); $("#msg").textContent = "";
+  if (play) render(+$("#seek").value); else drawRoom(null, 0);
+}
+document.querySelectorAll(".levels button").forEach(b => b.addEventListener("click", () => setLevel(+b.dataset.lv)));
+$("#reset").addEventListener("click", () => { codeEl.value = START[LEVEL]; errLine = 0; runLine = 0; updateGutter(); $("#msg").textContent = ""; saveSoon(); });
+codeEl.value = START_CODE; $("#lvtext").textContent = LV_TEXT[1]; updateGutter();
+let savedLevel = 1;
+try {                                            // 前に書いたプログラムを戻す
+  const d = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+  if (d) {
+    if (d.codes) { codes[1] = d.codes[1] ?? codes[1]; codes[2] = d.codes[2] ?? codes[2]; }
+    (d.done || []).forEach(i => done.add(i));
+    codeEl.value = codes[1]; savedLevel = d.level === 2 ? 2 : 1;
+  }
+} catch (e) { /* 読めなければ最初のプログラムのまま */ }
+
+// ===== 画面：描画と再生 =====
+const cv = $("#room");
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let ctx, covLayer;
+function setup() {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = w * H / W;
+  cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + "px";
+  ctx = cv.getContext("2d"); ctx.setTransform(dpr * w / W, 0, 0, dpr * w / W, 0, 0);
+  covLayer = document.createElement("canvas"); covLayer.width = W * 2; covLayer.height = H * 2;
+}
+function drawRoom(frames, upto) {
+  const c = ctx;
+  c.fillStyle = css("--floor"); c.fillRect(0, 0, W, H);
+  if (frames) {
+    const L = covLayer.getContext("2d"); L.setTransform(2, 0, 0, 2, 0, 0); L.clearRect(0, 0, W, H);
+    L.strokeStyle = css("--clean"); L.lineWidth = BRUSH * 2; L.lineCap = "round"; L.lineJoin = "round";
+    L.beginPath(); frames.slice(0, upto + 1).forEach((f, i) => i ? L.lineTo(f.x, f.y) : L.moveTo(f.x, f.y)); L.stroke();
+    c.drawImage(covLayer, 0, 0, W, H);
+    if (play && play.res.clean && upto >= frames.length - 1) {   // 走り終わったら、掃除できなかった床を薄い赤で見せる
+      c.fillStyle = css("--bad"); c.globalAlpha = 0.28;
+      for (let k = 0; k < GX * GY; k++) if (FREE[k] && !play.res.clean[k]) c.fillRect((k % GX) * CELL, Math.floor(k / GX) * CELL, CELL, CELL);
+      c.globalAlpha = 1;
+    }
+  }
+  if (LEVEL >= 2) {                             // レベル2：座標の目盛り（100 cm ごと）
+    c.strokeStyle = css("--muted"); c.globalAlpha = 0.25; c.lineWidth = 1;
+    for (let gx = 100; gx < W; gx += 100) { c.beginPath(); c.moveTo(gx, 0); c.lineTo(gx, H); c.stroke(); }
+    for (let gy = 100; gy < H; gy += 100) { c.beginPath(); c.moveTo(0, gy); c.lineTo(W, gy); c.stroke(); }
+    c.globalAlpha = 1; c.fillStyle = css("--muted"); c.font = "10px system-ui, sans-serif";
+    for (let gx = 100; gx < W; gx += 100) c.fillText("x=" + gx, gx + 2, H - 22);
+    for (let gy = 100; gy < H; gy += 100) c.fillText("y=" + gy, 4, gy - 3);
+  }
+  c.fillStyle = css("--furn");
+  for (const f of FURN) { if (f.t === "rect") c.fillRect(f.x, f.y, f.w, f.h); else { c.beginPath(); c.arc(f.x, f.y, Math.max(f.r, 2), 0, 7); c.fill(); } }
+  c.strokeStyle = css("--furn"); c.setLineDash([4, 4]); c.lineWidth = 1;
+  c.strokeRect(165, 165, 140, 95); c.strokeRect(315, 190, 46, 46); c.strokeRect(90, 190, 46, 46); c.setLineDash([]);
+  c.font = "11px system-ui, sans-serif";
+  c.fillStyle = css("--card"); c.fillText("ソファ", 95, 45); c.fillText("テレビ台", 378, 25);
+  c.fillStyle = css("--muted"); c.fillText("テーブル", 215, 215); c.fillText("椅子", 327, 216); c.fillText("椅子", 102, 216); c.fillText("本棚", 455, 135); c.fillText("ゴミ箱", 28, 375);
+  c.fillStyle = css("--dock"); c.fillRect(DOCK.x - 20, H - 6, 40, 6); c.fillText("充電台", DOCK.x - 17, H - 10);
+  c.strokeStyle = css("--wall"); c.lineWidth = 4; c.strokeRect(0, 0, W, H);
+  const f = frames ? frames[upto] : { x: DOCK.x, y: DOCK.y - 20, th: -Math.PI / 2 };
+  c.fillStyle = css("--robot"); c.globalAlpha = 0.9; c.beginPath(); c.arc(f.x, f.y, R, 0, 7); c.fill(); c.globalAlpha = 1;
+  c.strokeStyle = css("--card"); c.lineWidth = 3; c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x + Math.cos(f.th) * R, f.y + Math.sin(f.th) * R); c.stroke();
+}
+const fmtT = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+function showLive(f) {
+  const pos = LEVEL >= 2 ? `　位置 (${Math.round(f.x)}, ${Math.round(f.y)})　方位 ${compass(f.th)}°` : "";
+  $("#live").textContent = `時間 ${fmtT(f.t)}　電池 ${f.batt.toFixed(0)}%　モード ${f.mode}　清掃率 ${(100 * f.cov / FREE_N).toFixed(1)}%${pos}　動き：${f.act}`;
+}
+function showResult(res) {
+  $("#m-cov").textContent = (100 * res.cov).toFixed(1) + "%";
+  const e = $("#m-end"); e.textContent = res.end; e.className = "v " + (res.end === "帰還" ? "ok" : "bad");
+  $("#m-time").textContent = fmtT(res.t); $("#m-bump").textContent = res.bumps; $("#m-bat").textContent = res.batt.toFixed(0) + "%";
+}
+function clearResult() { ["#m-cov", "#m-end", "#m-time", "#m-bump", "#m-bat"].forEach(q => { $(q).textContent = "…"; $(q).className = "v"; }); }
+
+let play = null;      // { res, paused, t0, simT0 }
+function frameAt(fr, simT) { const i = fr.findIndex(f => f.t > simT); return i < 0 ? fr.length - 1 : Math.max(0, i - 1); }
+function showSens(f) {
+  const el = $("#sens");
+  if (codeEl.value !== play.src) { el.textContent = "プログラムを書きかえたので、実行中の行の表示を止めています。もう一度「走らせる」を押してください。"; if (runLine) { runLine = 0; updateGutter(); } return; }
+  if (runLine !== f.line) { runLine = f.line; updateGutter(); }
+  const lineText = f.line ? `${f.line} 行目「${play.src.split("\n")[f.line - 1].trim()}」` : "当てはまる行がありません（止まっています）";
+  const sn = f.sen || {}, v = x => `<code>${x}</code>`;
+  let t = `いま実行している行：<b>${lineText}</b><br>センサ：bumper=${v(sn.bumper)}　front=${v(sn.front + " cm")}　right=${v(sn.right + " cm")}　battery=${v(f.batt.toFixed(0) + "%")}　dock_signal=${v(sn.dock_signal)}　mode=${v(f.mode)}`;
+  if (play.lv >= 2) t += `　x=${v(Math.round(f.x))}　y=${v(Math.round(f.y))}　heading=${v(compass(f.th) + "°")}`;
+  el.innerHTML = t;
+}
+function hintFor(res, src) {
+  const code = src.replace(/#.*/g, "");
+  if (res.end === "詰まった") return "20 秒のあいだ、ほとんど動けませんでした。再生のつまみをいちばん右にして、止まっていたときに何行目が実行されていたか、センサの値がどうだったかを見てみましょう。" +
+    (/\bbumper\b/.test(code) ? "" : "このプログラムには、ぶつかったときの命令（if bumper:）がありません。");
+  if (res.end === "電池切れ") return /\bgo_home\b/.test(code)
+    ? "充電台に帰る前に電池が切れました。つまみを動かして、帰り始めたときの電池が何 % だったかを見てみましょう。帰り始める値（battery < □）を大きくすると、どうなるでしょうか。"
+    : "電池が切れる前に帰る命令（go_home）がありません。練習 1-3 を見てみましょう。";
+  return res.cov < 0.7 ? "帰還できました。薄い赤の場所は、掃除できなかった床です。どうすればそこへ行けるでしょうか。"
+                       : "帰還できました。薄い赤の場所（掃除できなかった床）をもっと減らせるか、試してみましょう。";
+}
+function render(i) {
+  const fr = play.res.frames; drawRoom(fr, i); showLive(fr[i]); showSens(fr[i]); $("#seek").value = i;
+  if (i >= fr.length - 1) { showResult(play.res); $("#hint").textContent = hintFor(play.res, play.src); play.paused = true; $("#pause").textContent = "もう一度再生"; }
+}
+function loop(now) {
+  if (!play || play.paused) return;
+  const fr = play.res.frames, i = frameAt(fr, play.simT0 + (now - play.t0) / 1000 * +$("#speed").value);
+  render(i);
+  if (i < fr.length - 1) requestAnimationFrame(loop);
+}
+function startFrom(i) { play.paused = false; play.simT0 = play.res.frames[i].t; play.t0 = performance.now(); $("#pause").textContent = "一時停止"; requestAnimationFrame(loop); }
+$("#pause").addEventListener("click", () => {
+  if (!play) return;
+  const cur = +$("#seek").value;
+  if (!play.paused) { play.paused = true; $("#pause").textContent = "再生"; }
+  else startFrom(cur >= play.res.frames.length - 1 ? 0 : cur);
+});
+$("#seek").addEventListener("input", () => { if (!play) return; play.paused = true; $("#pause").textContent = "再生"; render(+$("#seek").value); });
+$("#speed").addEventListener("change", () => { if (play && !play.paused) startFrom(+$("#seek").value); });
+
+const trials = [];
+$("#hist").addEventListener("click", e => {
+  const n = e.target.dataset.load; if (!n) return;
+  if (trials[n - 1].lv !== LEVEL) setLevel(trials[n - 1].lv);
+  codeEl.value = trials[n - 1].src; errLine = 0; runLine = 0; updateGutter(); saveSoon();
+  $("#msg").className = "msg ok"; $("#msg").textContent = `試行 ${n} のプログラムを開きました。`;
+});
+$("#run").addEventListener("click", () => {
+  if (!check()) return;
+  const btn = $("#run"); btn.disabled = true; btn.textContent = "計算中…";
+  $("#msg").className = "msg"; $("#msg").textContent = "10 分ぶんの走りを計算しています。少し待ってください。";
+  setTimeout(() => { try { runNow(); } finally { btn.disabled = false; btn.textContent = "走らせる"; } }, 30);
+});
+function runNow() {
+  const src = codeEl.value, res = simulate(compile(src, LEVEL), LEVEL);
+  $("#msg").className = "msg ok"; $("#msg").textContent = "計算が終わりました。再生しています。";
+  $("#hint").textContent = "";
+  checkLessons(res, src, LEVEL); save();
+  trials.push({ n: trials.length + 1, lv: LEVEL, lines: src.split("\n").filter(l => l.replace(/#.*/, "").trim()).length, res, src });
+  $("#hist").innerHTML = trials.slice().reverse().map(t =>
+    `<tr><td>${t.n}</td><td>${t.lv}</td><td>${t.lines}</td><td>${(100 * t.res.cov).toFixed(1)}%</td><td>${t.res.end}</td><td>${fmtT(t.res.t)}</td><td>${t.res.bumps}</td><td>${t.res.batt.toFixed(0)}%</td><td><button type="button" data-load="${t.n}">開く</button></td></tr>`).join("");
+  play = { res, paused: true, src, lv: LEVEL };
+  $("#seek").max = res.frames.length - 1; $("#seek").disabled = false; $("#pause").disabled = false;
+  clearResult(); startFrom(0);
+}
+window.addEventListener("resize", () => { setup(); if (play) render(+$("#seek").value); else drawRoom(null, 0); });
+setup(); drawRoom(null, 0);
+
+const LESSONS = [
+  { lv: 1, title: "1-1　まっすぐ進むだけ", goal: "走らせて、「詰まった」になるのを確かめる", ok: (r, c) => r.end === "詰まった" && /\bforward\b/.test(c), learn: "命令は上から読まれ、0.1 秒ごとに読み直されることを確かめます。",
+    code: "# まっすぐ進むだけ\nforward\n",
+    look: "壁にぶつかっても、押し続けて止まってしまいます（結末は「詰まった」）。ロボットは、プログラムに書いてないことはしません。" },
+  { lv: 1, title: "1-2　ぶつかったら向きを変える", goal: "清掃率 60% 以上", ok: (r, c) => r.cov >= 0.6, learn: "if・else で、センサの値によって動きを変えます。",
+    code: "# ぶつかったら、少し下がって向きを変える\nif bumper:\n    back 5\n    turn random\nelse:\n    forward\n",
+    look: "部屋じゅうを走り回るようになります。ただし、電池が切れても充電台に帰りません。" },
+  { lv: 1, title: "1-3　電池が減ったら帰る", goal: "充電台に帰る（結末が「帰還」）", ok: (r, c) => r.end === "帰還", learn: "elif で条件を増やします。上に書いた条件ほど優先されます。",
+    code: "# 電池が 25% より少なくなったら、充電台へ帰る\nif battery < 25:\n    go_home\nelif bumper:\n    back 5\n    turn random\nelse:\n    forward\n",
+    look: "結末が「帰還」になります。25 の値を変えると、清掃率と帰れるかどうかが変わります。" },
+  { lv: 1, title: "1-4　モードで作戦を切り替える", goal: "mode と follow_wall を使って帰還する", ok: (r, c) => r.end === "帰還" && /\bmode\s+\w+/.test(c) && /\bfollow_wall\b/.test(c), learn: "mode で作戦を切り替え、mode_time で切り替えてからの時間を調べます。",
+    code: "# 60 秒ごとに、壁沿いの掃除（30 秒）に切り替える\nif battery < 25:\n    go_home\nelif mode == normal and mode_time > 60:\n    mode wall\nelif mode == wall and mode_time > 30:\n    mode normal\nelif mode == wall:\n    follow_wall\nelif bumper:\n    back 5\n    turn random\nelse:\n    forward\n",
+    look: "画面の下の「モード」が normal と wall で入れ替わります。壁ぎわの掃除が増えるかを見てください。" },
+  { lv: 2, title: "2-1　座標へ行く", goal: "go_to を使って帰還する", ok: (r, c) => r.end === "帰還" && /\bgo_to\b/.test(c), learn: "go_to で、座標を指定して移動します。家具をよける道は、地図を使ってロボットが計算します。",
+    code: "# 座標 (100, 300) へ行ってから、充電台へ帰る\nif mode == normal:\n    go_to 100 300\n    mode back\nelse:\n    go_home\n",
+    look: "部屋の目盛り（100 cm ごと）と、画面の下の「位置」を見比べてください。左上が (0, 0) です。" },
+  { lv: 2, title: "2-2　方位を合わせる", goal: "turn_to を使って帰還する", ok: (r, c) => r.end === "帰還" && /\bturn_to\b/.test(c), learn: "turn_to は、方位センサ（ジャイロ）で向きを合わせます。上が 0°、右が 90°、下が 180°、左が 270° です。",
+    code: "# 1 辺 80 cm の四角を、方位を合わせながら何周も描く（40 秒）\nif mode == normal:\n    go_to 330 280\n    turn_to 0\n    mode square\nelif mode == square and mode_time < 40:\n    turn_to 90\n    forward 80\n    turn_to 180\n    forward 80\n    turn_to 270\n    forward 80\n    turn_to 0\n    forward 80\nelse:\n    go_home\n",
+    look: "同じ四角を正確になぞります。turn_to 90 などを全部 turn right 90 に書きかえて比べてください。回るたびに誤差がたまり、形が崩れていきます。" },
+  { lv: 2, title: "2-3　Z字に往復する", goal: "turn_to を使って清掃率 25% 以上", ok: (r, c) => r.cov >= 0.25 && /\bturn_to\b/.test(c), learn: "モードを2つ（up と down）使って、上下に往復しながら右へずれていきます。",
+    code: "# 左下の角へ行き、上下に往復しながら右へ 28 cm ずつずれていく\nif mode == normal:\n    go_to 30 380\n    turn_to 0\n    mode up\nelif bumper or front < 3:\n    if mode == up:\n        back 3\n        turn_to 90\n        forward 28\n        turn_to 180\n        mode down\n    else:\n        back 3\n        turn_to 90\n        forward 28\n        turn_to 0\n        mode up\nelse:\n    forward\n",
+    look: "すき間なく往復します。ただし、右の壁に着いたあとの動きを書いていないので、そこで止まってしまいます。家具の上側も掃除できていません。" },
+  { lv: 2, title: "2-4　掃除し残しを拾いに行く", goal: "go_dirty を使って帰還する", ok: (r, c) => r.end === "帰還" && /\bgo_dirty\b/.test(c), learn: "go_dirty は、いちばん近い掃除し残しへ行きます。dirty_left で、行ける範囲に掃除し残しが残っているかを調べます。",
+    code: "# 目の前が掃除済みなら、いちばん近い掃除し残しへ行く\n# 残りがなくなったら帰る\nif battery < 10 or not dirty_left:\n    go_home\nelif bumper or cleaned_ahead:\n    go_dirty\nelse:\n    forward\n",
+    look: "レベル1 より清掃率が上がり、ぶつかる回数が減ります。" },
+  { lv: 2, title: "2-5　課題：組み合わせる", goal: "帰還して、清掃率 83% 以上・電池 20% 以上を残す", ok: (r, c) => r.end === "帰還" && r.cov >= 0.83 && r.batt >= 20, learn: "2-3 の往復と、2-4 の掃除し残しを拾う動きを組み合わせてください。右の壁に着いたら（x > 460 など）、モードを切り替えます。",
+    code: "",
+    look: "目標：充電台に帰ったうえで、清掃率をできるだけ高くします。電池を多く残せたら、なおよいです。" },
+];
+let openLesson = -1;
+function checkLessons(res, src, lv) {
+  const code = src.replace(/#.*/g, ""); let changed = false;
+  LESSONS.forEach((l, i) => { if (l.lv === lv && !done.has(i) && l.ok(res, code)) { done.add(i); changed = true; } });
+  if (changed) { const opened = [...document.querySelectorAll(".lesson")].findIndex(d => d.open); renderLessons(); }
+}
+function renderLessons() {
+  document.querySelectorAll(".lesson").forEach((d, k) => { if (d.open) openLesson = +(d.querySelector("[data-lesson]")?.dataset.lesson ?? openLesson); });
+  const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  [1, 2].forEach(lv => {
+    document.querySelector("#lessons" + lv).innerHTML = LESSONS.map((l, i) => l.lv !== lv ? "" : `
+      <details class="lesson"${openLesson === i ? " open" : ""}><summary>${done.has(i) ? '<span class="done">✓ </span>' : ""}${l.title}</summary><div class="body">
+        <p>${l.learn}</p>
+        <p class="goal">できたら ✓：${l.goal}</p>
+        ${l.code ? `<pre class="mono">${esc(l.code)}</pre><button type="button" data-lesson="${i}">エディタに入れる</button>` : ""}
+        <p class="look"><b>見るところ</b>：${l.look}</p>
+      </div></details>`).join("");
+  });
+}
+document.querySelector(".practice").addEventListener("click", e => {
+  const i = e.target.dataset.lesson; if (i === undefined) return;
+  const l = LESSONS[i];
+  if (LEVEL !== l.lv) setLevel(l.lv);
+  codeEl.value = l.code; errLine = 0; runLine = 0; updateGutter(); saveSoon();
+  $("#msg").className = "msg ok"; $("#msg").textContent = `練習 ${l.title.split("　")[0]} のプログラムを入れました。「走らせる」を押してください。`;
+  codeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+renderLessons();
+if (savedLevel === 2) { codes[1] = codeEl.value; setLevel(2); }
+window.__sim = { simulate, compile, FREE_N };   // 検算用
+</script>
+</body>
+</html>
