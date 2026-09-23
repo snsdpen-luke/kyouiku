@@ -10,13 +10,7 @@
     --accent: #0f6b4f; --bad: #b91c1c; --cm: #6b7280;
     --floor: #efe6d6; --clean: #9fd8b8; --p1: #d3efdf; --p2: #a7dcbf; --p3: #74c39c; --p4: #45a578; --p5: #237e56; --furn: #8b7355; --wall: #3b3b3b; --robot: #1d4ed8; --dock: #c2410c;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #121618; --card: #1a2023; --ink: #e6eae8; --muted: #9aa5a0; --line: #2c3438;
-      --accent: #4fbf95; --bad: #f87171; --cm: #9ca3af;
-      --floor: #3a342b; --clean: #2f6b4d; --p1: #24402f; --p2: #2c5b40; --p3: #357852; --p4: #3f9566; --p5: #4bb37b; --furn: #a08a6c; --wall: #cfcfcf; --robot: #60a5fa; --dock: #fb923c;
-    }
-  }
+  :root { color-scheme: light; }   /* パソコンの設定がダークモードでも、白い画面で表示する */
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 14.5px/1.65 "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; }
@@ -91,7 +85,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>ロボット掃除機シミュレータ<span class="by">made by shoyo_h_uemura</span><span class="ver">版 2026-09-24f</span></h1>
+  <h1>ロボット掃除機シミュレータ<span class="by">made by shoyo_h_uemura</span><span class="ver">版 2026-09-24g</span></h1>
   <p class="sub">ロボット掃除機の動き方をプログラムします。目標は、リビング（5 m × 4 m）をできるだけ広く掃除し、電池が切れる前に充電台へ戻すことです。</p>
 
   <div class="card">
