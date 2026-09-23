@@ -8,13 +8,13 @@
   :root {
     --bg: #f3f5f4; --card: #fff; --ink: #151a18; --muted: #5d6763; --line: #d9dfdc;
     --accent: #0f6b4f; --bad: #b91c1c; --cm: #6b7280;
-    --floor: #efe6d6; --clean: #9fd8b8; --furn: #8b7355; --wall: #3b3b3b; --robot: #1d4ed8; --dock: #c2410c;
+    --floor: #efe6d6; --clean: #9fd8b8; --p1: #d3efdf; --p2: #a7dcbf; --p3: #74c39c; --p4: #45a578; --p5: #237e56; --furn: #8b7355; --wall: #3b3b3b; --robot: #1d4ed8; --dock: #c2410c;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #121618; --card: #1a2023; --ink: #e6eae8; --muted: #9aa5a0; --line: #2c3438;
       --accent: #4fbf95; --bad: #f87171; --cm: #9ca3af;
-      --floor: #3a342b; --clean: #2f6b4d; --furn: #a08a6c; --wall: #cfcfcf; --robot: #60a5fa; --dock: #fb923c;
+      --floor: #3a342b; --clean: #2f6b4d; --p1: #24402f; --p2: #2c5b40; --p3: #357852; --p4: #3f9566; --p5: #4bb37b; --furn: #a08a6c; --wall: #cfcfcf; --robot: #60a5fa; --dock: #fb923c;
     }
   }
   * { box-sizing: border-box; }
@@ -90,7 +90,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>掃除機の頭脳ラボ<span class="ver">版 2026-09-24d</span></h1>
+  <h1>掃除機の頭脳ラボ<span class="ver">版 2026-09-24e</span></h1>
   <p class="sub">ロボット掃除機の動き方をプログラムします。目標は、リビング（5 m × 4 m）をできるだけ広く掃除し、電池が切れる前に充電台へ戻すことです。</p>
 
   <div class="card">
@@ -150,7 +150,7 @@
           ・比べる記号：<code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code> <code>==</code>（等しい） <code>!=</code>（等しくない）<br>
           ・条件をつなぐ：<code>and</code>（かつ） <code>or</code>（または） <code>not</code>（ではない）<br>
           ・<code>if</code> の中に <code>if</code> を書くこともできます。</p>
-          <p style="font-size:13px;margin:4px 0">本体：速さ 30 cm/s、直径 34 cm、ブラシの幅 30 cm。回る角度には ±8% ほどの誤差が出ます。電池は満タンで 10 分もちます。</p>
+          <p style="font-size:13px;margin:4px 0">本体：速さ 30 cm/s、直径 34 cm、ブラシの幅 30 cm。回る角度には ±8% ほどの誤差が出ます。電池は満タンで 10 分もちます。<br>椅子の脚の間は 36 cm です。本体（直径 34 cm）がぎりぎり通れます（左右のすき間は 1 cm ずつ）。テーブルの下は広く通れます。</p>
         </div>
       </div>
       <div class="l2box">
@@ -227,6 +227,10 @@
         再生の速さ
         <select id="speed"><option value="5">×5</option><option value="10" selected>×10</option><option value="20">×20</option><option value="60">×60</option></select>
       </div>
+      <div class="bar" style="font-size:12.5px;color:var(--muted);margin:4px 0">
+        通った回数：<span style="display:inline-flex;gap:2px"><i style="width:18px;height:12px;background:var(--p1)"></i><i style="width:18px;height:12px;background:var(--p2)"></i><i style="width:18px;height:12px;background:var(--p3)"></i><i style="width:18px;height:12px;background:var(--p4)"></i><i style="width:18px;height:12px;background:var(--p5)"></i></span>
+        1 回 → 5 回以上（濃いほど何度も通った場所）　<i style="width:18px;height:12px;background:var(--bad);opacity:.35;display:inline-block"></i> 掃除できなかった床（走り終わった後）
+      </div>
       <div class="live" id="live">まだ走らせていません。</div>
       <div class="sens" id="sens">再生中は、ここに「いま実行している行」と「そのときのセンサの値」が出ます。一時停止して、つまみで1コマずつ調べられます。</div>
       <div class="metrics">
@@ -264,11 +268,11 @@ const FURN = [
   // テーブル（天板の下は通れる。脚だけが障害物）
   { t: "circ", x: 170, y: 170, r: 3 }, { t: "circ", x: 300, y: 170, r: 3 },
   { t: "circ", x: 170, y: 255, r: 3 }, { t: "circ", x: 300, y: 255, r: 3 },
-  // 椅子の脚（脚の間は 32 cm。本体は通れない）
-  { t: "circ", x: 320, y: 195, r: 2 }, { t: "circ", x: 356, y: 195, r: 2 },
-  { t: "circ", x: 320, y: 231, r: 2 }, { t: "circ", x: 356, y: 231, r: 2 },
-  { t: "circ", x: 95, y: 195, r: 2 }, { t: "circ", x: 131, y: 195, r: 2 },
-  { t: "circ", x: 95, y: 231, r: 2 }, { t: "circ", x: 131, y: 231, r: 2 }
+  // 椅子の脚（脚の間は 36 cm。本体 34 cm がぎりぎり通れる。左右のすき間は 1 cm ずつ）
+  { t: "circ", x: 318, y: 193, r: 2 }, { t: "circ", x: 358, y: 193, r: 2 },
+  { t: "circ", x: 318, y: 233, r: 2 }, { t: "circ", x: 358, y: 233, r: 2 },
+  { t: "circ", x: 93, y: 193, r: 2 }, { t: "circ", x: 133, y: 193, r: 2 },
+  { t: "circ", x: 93, y: 233, r: 2 }, { t: "circ", x: 133, y: 233, r: 2 }
 ];
 const START_CODE_L2 = `# レベル2：位置 x, y と方位 heading が分かります
 # まずはレベル1 と同じプログラムです。turn_to や go_to を使って改良しましょう
@@ -526,12 +530,16 @@ function simulate(prog, level = 1) {
   const clean = new Uint8Array(GX * GY); let cleanN = 0;
   const frames = [];
   let end = "電池切れ", lastPos = { x: s.x, y: s.y, t: 0 };
+  const lastVisit = new Float32Array(GX * GY).fill(-99), passT = [], passK = [];   // 何回目の通過かを数えるための記録
   const mark = () => {
     const i0 = Math.max(0, Math.floor((s.x - BRUSH) / CELL)), i1 = Math.min(GX - 1, Math.floor((s.x + BRUSH) / CELL));
     const j0 = Math.max(0, Math.floor((s.y - BRUSH) / CELL)), j1 = Math.min(GY - 1, Math.floor((s.y + BRUSH) / CELL));
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
       const k = j * GX + i;
-      if (!clean[k] && FREE[k] && Math.hypot(i * CELL + 2.5 - s.x, j * CELL + 2.5 - s.y) <= BRUSH) { clean[k] = 1; cleanN++; }
+      if (!FREE[k] || Math.hypot(i * CELL + 2.5 - s.x, j * CELL + 2.5 - s.y) > BRUSH) continue;
+      if (!clean[k]) { clean[k] = 1; cleanN++; }
+      if (s.t - lastVisit[k] > 1.5) { passT.push(s.t); passK.push(k); }   // 1.5 秒以上あいて通ったら、新しい 1 回と数える
+      lastVisit[k] = s.t;
     }
   };
   const sense = () => {
@@ -549,6 +557,7 @@ function simulate(prog, level = 1) {
     const route = (tx, ty) => {
       const t = cellOf(tx, ty), tc = centerOf(t);
       const path = planPath(s.x, s.y, k => k === t || (!OPEN[t] && Math.hypot(centerOf(k).x - tc.x, centerOf(k).y - tc.y) < 40));
+      if (path && OPEN[t]) { if (path.length) path[path.length - 1] = { x: tx, y: ty }; else path.push({ x: tx, y: ty }); }   // 最後は指定された座標そのものへ
       return path ? { k: "goto", path, fresh: true, stuck: 0 } : { k: "back", left: 0 };
     };
     if (a.cmd === "goTo") return route(a.x, a.y);
@@ -640,7 +649,7 @@ function simulate(prog, level = 1) {
         const e = norm(m.target - s.th);
         if (Math.abs(e) < 0.02) { s.th = m.target; s.queue.shift(); } else w = Math.sign(e) * Math.min(TURN_W, Math.abs(e) / DT);
       } else if (m.k === "goto") {                 // 地図の上で計算した道の点を順にたどる
-        while (m.path.length && Math.hypot(m.path[0].x - s.x, m.path[0].y - s.y) < 4) m.path.shift();
+        while (m.path.length && Math.hypot(m.path[0].x - s.x, m.path[0].y - s.y) < (m.path.length > 1 ? 4 : 1)) m.path.shift();   // 最後の点は 1 cm 以内まで寄せる
         const hit = s.bump && !m.fresh; m.fresh = false;   // 向かい始める前のぶつかりは数えない
         if (hit) {                                 // ぶつかったら少し下がる。掃除し残しへ向かう途中なら、その場所は「行けない」と地図に記録する
           if (m.dirty) { const g = m.goal; for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) if (Math.hypot(i * CELL + 2.5 - g.x, j * CELL + 2.5 - g.y) < 15) s.skip[j * GX + i] = 1; }
@@ -673,6 +682,7 @@ function simulate(prog, level = 1) {
     if (s.batt <= 0) { end = "電池切れ"; break; }
   }
   const last = frames[frames.length - 1]; if (last && !last.sen) Object.assign(last, { line: s.curLine, sen: frames.length > 1 ? frames[frames.length - 2].sen : null });
+  frames.pass = { t: passT, k: passK };
   return { frames, end, cov: cleanN / FREE_N, t: s.t, bumps: s.bumps, batt: s.batt, clean };
 }
 const compass = th => Math.round(((th * 180 / Math.PI + 90) % 360 + 360) % 360) % 360;
@@ -746,21 +756,35 @@ try {                                            // 前に書いたプログラ�
 // ===== 画面：描画と再生 =====
 const cv = $("#room");
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-let ctx, covLayer;
+let ctx, covLayer, covState = null;
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+// 通った回数を、マスごとの色の濃さで描く（前のコマからの差分だけ塗り足す）
+function drawPasses(frames, T) {
+  const pass = frames.pass; if (!pass) return;
+  if (!covState || covState.pass !== pass || T < covState.T) {
+    covState = { pass, T: -1, i: 0, cnt: new Uint8Array(GX * GY), img: new ImageData(GX, GY),
+                 col: [1, 2, 3, 4, 5].map(n => hex(css("--p" + n))) };
+  }
+  const st = covState, d = st.img.data;
+  while (st.i < pass.t.length && pass.t[st.i] <= T) {
+    const k = pass.k[st.i++], n = Math.min(5, ++st.cnt[k]), c = st.col[n - 1];
+    d[k * 4] = c[0]; d[k * 4 + 1] = c[1]; d[k * 4 + 2] = c[2]; d[k * 4 + 3] = 255;
+  }
+  st.T = T;
+  covLayer.getContext("2d").putImageData(st.img, 0, 0);
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(covLayer, 0, 0, W, H); ctx.imageSmoothingEnabled = true;
+}
 function setup() {
   const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = w * H / W;
   cv.width = w * dpr; cv.height = h * dpr; cv.style.height = h + "px";
   ctx = cv.getContext("2d"); ctx.setTransform(dpr * w / W, 0, 0, dpr * w / W, 0, 0);
-  covLayer = document.createElement("canvas"); covLayer.width = W * 2; covLayer.height = H * 2;
+  covLayer = document.createElement("canvas"); covLayer.width = GX; covLayer.height = GY; covState = null;
 }
 function drawRoom(frames, upto) {
   const c = ctx;
   c.fillStyle = css("--floor"); c.fillRect(0, 0, W, H);
   if (frames) {
-    const L = covLayer.getContext("2d"); L.setTransform(2, 0, 0, 2, 0, 0); L.clearRect(0, 0, W, H);
-    L.strokeStyle = css("--clean"); L.lineWidth = BRUSH * 2; L.lineCap = "round"; L.lineJoin = "round";
-    L.beginPath(); frames.slice(0, upto + 1).forEach((f, i) => i ? L.lineTo(f.x, f.y) : L.moveTo(f.x, f.y)); L.stroke();
-    c.drawImage(covLayer, 0, 0, W, H);
+    drawPasses(frames, frames[upto].t);
     if (play && play.res.clean && upto >= frames.length - 1) {   // 走り終わったら、掃除できなかった床を薄い赤で見せる
       c.fillStyle = css("--bad"); c.globalAlpha = 0.28;
       for (let k = 0; k < GX * GY; k++) if (FREE[k] && !play.res.clean[k]) c.fillRect((k % GX) * CELL, Math.floor(k / GX) * CELL, CELL, CELL);
@@ -778,7 +802,7 @@ function drawRoom(frames, upto) {
   c.fillStyle = css("--furn");
   for (const f of FURN) { if (f.t === "rect") c.fillRect(f.x, f.y, f.w, f.h); else { c.beginPath(); c.arc(f.x, f.y, Math.max(f.r, 2), 0, 7); c.fill(); } }
   c.strokeStyle = css("--furn"); c.setLineDash([4, 4]); c.lineWidth = 1;
-  c.strokeRect(165, 165, 140, 95); c.strokeRect(315, 190, 46, 46); c.strokeRect(90, 190, 46, 46); c.setLineDash([]);
+  c.strokeRect(165, 165, 140, 95); c.strokeRect(313, 188, 50, 50); c.strokeRect(88, 188, 50, 50); c.setLineDash([]);
   c.font = "11px system-ui, sans-serif";
   c.fillStyle = css("--card"); c.fillText("ソファ", 95, 45); c.fillText("テレビ台", 378, 25);
   c.fillStyle = css("--muted"); c.fillText("テーブル", 215, 215); c.fillText("椅子", 327, 216); c.fillText("椅子", 102, 216); c.fillText("本棚", 455, 135); c.fillText("ゴミ箱", 28, 375);
@@ -895,7 +919,12 @@ const LESSONS = [
   { lv: 2, title: "2-4　掃除し残しを拾いに行く", goal: "go_dirty を使って帰還する", ok: (r, c) => r.end === "帰還" && /\bgo_dirty\b/.test(c), learn: "go_dirty は、いちばん近い掃除し残しへ行きます。dirty_left で、行ける範囲に掃除し残しが残っているかを調べます。",
     code: "# 目の前が掃除済みなら、いちばん近い掃除し残しへ行く\n# 残りがなくなったら帰る\nif battery < 10 or not dirty_left:\n    go_home\nelif bumper or cleaned_ahead:\n    go_dirty\nelse:\n    forward\n",
     look: "レベル1 より清掃率が上がり、ぶつかる回数が減ります。" },
-  { lv: 2, title: "2-5　課題：組み合わせる", goal: "帰還して、清掃率 83% 以上・電池 20% 以上を残す", ok: (r, c) => r.end === "帰還" && r.cov >= 0.83 && r.batt >= 20, learn: "2-3 の往復と、2-4 の掃除し残しを拾う動きを組み合わせてください。右の壁に着いたら（x > 460 など）、モードを切り替えます。",
+  { lv: 2, title: "2-5　課題：椅子の下をくぐる", goal: "椅子の下を通り抜けて、帰還する",
+    ok: (r, c) => r.end === "帰還" && r.frames.some(f => Math.hypot(f.x - 338, f.y - 213) < 6 || Math.hypot(f.x - 113, f.y - 213) < 6),
+    learn: "右の椅子の脚は (318, 193)・(358, 193)・(318, 233)・(358, 233) にあり、太さは半径 2 cm です。ロボットの本体は半径 17 cm です。すき間は左右 1 cm ずつしかありません。",
+    code: "",
+    look: "どの座標から、どの方位で、何 cm 進めばぶつからずに通れるかを、計算してからプログラムにしてください。2 cm ずれたり、向きが 3° ずれたりすると、脚にぶつかります。" },
+  { lv: 2, title: "2-6　課題：組み合わせる", goal: "帰還して、清掃率 83% 以上・電池 20% 以上を残す", ok: (r, c) => r.end === "帰還" && r.cov >= 0.83 && r.batt >= 20, learn: "2-3 の往復と、2-4 の掃除し残しを拾う動きを組み合わせてください。右の壁に着いたら（x > 460 など）、モードを切り替えます。",
     code: "",
     look: "目標：充電台に帰ったうえで、清掃率をできるだけ高くします。電池を多く残せたら、なおよいです。" },
 ];
