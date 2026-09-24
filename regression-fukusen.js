@@ -256,6 +256,38 @@ tap("#backMine");
 tap("#tansen"); ok($("big").classList.contains("show"),"単線図をタップすると大きく出る"); tap("#bigClose");
 ok(!$("big").classList.contains("show"),"閉じられる");
 
+console.log("\n【K】端子からドラッグで線を伸ばす");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1"); { const r=refState(P); S=newState(); S.placed=r.placed; } view=S; sel=null; render();`);
+w.svgPoint=e=>({x:e.clientX,y:e.clientY});
+const dragWire=(from,to,midHit)=>{ w.hitAt=()=>midHit||null; pev("pointerdown",0,0,d.querySelector(`[data-hit="t:${from}"]`)); pev("pointermove",20,20); pev("pointermove",200,200);
+  w.hitAt=()=>to; pev("pointerup",210,210); tap("#stage"); };
+tap(`#pens .pen[data-c="黒"]`);
+w.hitAt=()=>null; pev("pointerdown",0,0,d.querySelector(`[data-hit="t:PW.L"]`)); pev("pointermove",20,20); pev("pointermove",300,300);
+ok(/stroke-dasharray="10 6"/.test($("stage").innerHTML),"ドラッグ中は、指まで伸びる線が出る");
+ok(/fill="#eff6ff"/.test($("stage").innerHTML),"ドラッグ中は、つなげるボックスが青くなる");
+w.hitAt=()=>"box:B1"; pev("pointerup",300,300); tap("#stage");
+ok(E("S.cores.length")===1 && E("S.joints.length")===1 && E("S.cores[0].c")==="黒","ボックスの上で離すと、●ができて線がつながる");
+ok(!$("jointbar").classList.contains("show") && E("sel")===null,"離したあと、何かが選ばれた状態にはならない");
+const jd1=E("S.joints[0].id");
+dragWire("Sa.1","j:"+jd1,"j:"+jd1);
+ok(E("S.cores.length")===2 && E("S.joints.length")===1,"●の上で離すと、その●につながる");
+{ const n=E("S.joints.length"); w.svgPoint=()=>({x:470,y:330}); w.hitAt=()=>null; pev("pointerdown",0,0,d.querySelector(`[data-hit="t:PW.N"]`)); pev("pointermove",20,20); pev("pointermove",200,200);
+  w.hitAt=()=>"core:0"; pev("pointerup",210,210); tap("#stage"); w.svgPoint=e=>({x:e.clientX,y:e.clientY});
+  ok(E("S.cores.length")===3 && E("S.joints.length")===n+1,"ボックスの中なら、線の上で離しても新しい●につながる");
+  E("S.cores.pop(); tidy(); render();"); }
+dragWire("La.W",null);
+ok(E("S.cores.length")===2 && /やめた/.test($("status").textContent),"何も無い所で離すと、線は引かない");
+dragWire("La.W","t:Sa.2");
+ok(E("S.cores.length")===2 && $("status").classList.contains("err"),"ケーブルの無い所へは、ドラッグでもつなげない");
+// ●のドラッグは今までどおり●を動かす
+pev("pointerdown",500,310,d.querySelector(`[data-hit="j:${jd1}"]`)); pev("pointermove",520,320); pev("pointermove",530,330); pev("pointerup",530,330); tap("#stage");
+ok(E(`S.joints.find(j=>j.id==="${jd1}").x`)===530 && E("S.cores.length")===2,"●からのドラッグは、●を動かす（線は伸ばさない）");
+// タップで引く方法も残っている
+tap(`[data-hit="t:PW.N"]`); tap(`[data-hit="box:B1"]`);
+ok(E("S.cores.length")===3,"タップ → タップでも線を引ける");
+w.hitAt=()=>null;
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

@@ -140,7 +140,7 @@
           <ol>
             <li>単線図を見て、要る部品を部品図から選び、図の置きたい所をタップ。記号（イ・ロ…、ボックスは B1・B2…）を単線図と同じにする</li>
             <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
-            <li>線の色を選び、端子（○）→ ボックス（点線の円）をタップ。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子 → その●</li>
+            <li>線の色を選び、端子（○）からボックス（点線の円）までドラッグ（または 端子 → ボックス とタップ）。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子からその●へ</li>
             <li>線をタップ → 色を変える・つなぎ先を変える・消す。●をタップ → 動かす・まとめる・消す</li>
             <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
@@ -156,7 +156,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24e";
+const VER = "2026-09-24f";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -751,6 +751,14 @@ function render() {
   view.joints.forEach(j => { if (!P.box[j.box].shown) return; const q = jointPos(j), on = sel && (sel.end === j.id || sel.joint === j.id), warn = mk.has(j.id);
     g += `<circle cx="${q.x}" cy="${q.y}" r="8" fill="${on ? "#2563eb" : "#151a18"}" stroke="${warn ? "#ef4444" : "#fff"}" stroke-width="${warn ? 4 : 2}"/>`;
     if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="j:${j.id}" cx="${q.x}" cy="${q.y}" r="18" fill="transparent"/>`; });
+  if (drag && drag.kind === "wire" && drag.moving && drag.cur) {    // 伸ばしている線と、離せばつながる所の輪
+    const a = endPos(drag.id), [ok, ...r] = (drag.over || "").split(":"), oid = r.join(":");
+    if ((ok === "t" && oid !== drag.id) || ok === "j") { const q = endPos(ok === "j" ? oid : oid);
+      g += `<circle cx="${q.x}" cy="${q.y}" r="15" fill="none" stroke="#2563eb" stroke-width="4" pointer-events="none"/>`; }
+    const col = COLORS[pen] || "#888";
+    g += `<line x1="${a.x}" y1="${a.y}" x2="${drag.cur.x}" y2="${drag.cur.y}" stroke="${pen === "白" ? "#7b7b7b" : col}" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="10 6" pointer-events="none"/>`;
+    if (pen === "白") g += `<line x1="${a.x}" y1="${a.y}" x2="${drag.cur.x}" y2="${drag.cur.y}" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 6" pointer-events="none"/>`;
+  }
   svg.innerHTML = g;
   svg.classList.toggle("placing", !!placing);
   // 選んだものの操作
@@ -941,7 +949,8 @@ svg.addEventListener("pointerdown", e => {
   if (!h || showingRef || mode !== "draw" || placing) return;
   const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
   let what = null;
-  if (kind === "j") what = { kind: "j", id };
+  if (kind === "t") what = { kind: "wire", id };                    // 端子からドラッグ → 線を伸ばす
+  else if (kind === "j") what = { kind: "j", id };                   // ●からドラッグ → ●を動かす
   else if (kind === "part") what = { kind: "item", id };
   else if (kind === "box") { const it = itemOfBox(id); if (it) what = { kind: "item", id: it.u }; }
   if (!what) return;
@@ -954,14 +963,29 @@ svg.addEventListener("pointermove", e => {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
     drag.moving = true;
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}      // 図を描き直しても指を追い続ける
-    status(drag.kind === "j" ? "ドラッグ中。ボックスの中で指を離す。" : "ドラッグ中。置きたい所で指を離す。");
+    status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
+         : drag.kind === "j" ? "ドラッグ中。ボックスの中で指を離す。" : "ドラッグ中。置きたい所で指を離す。");
+    if (drag.kind === "wire") sel = { end: drag.id };               // つなげるボックスを青くする
   }
   const q = svgPoint(e);
-  if (drag.kind === "j") moveJoint(drag.id, q.x, q.y, true); else moveItem(drag.id, q.x + drag.ox, q.y + drag.oy);
+  if (drag.kind === "wire") { drag.cur = q; drag.over = hitAt(e); }
+  else if (drag.kind === "j") moveJoint(drag.id, q.x, q.y, true); else moveItem(drag.id, q.x + drag.ox, q.y + drag.oy);
   render();
 });
 function endDrag(e) {
   if (!drag || (e && e.pointerId !== drag.pid)) return;
+  if (drag.moving && drag.kind === "wire") {                         // 離した所へつなぐ
+    const d = drag, h = e && e.type === "pointerup" ? hitAt(e) : null; drag = null; dragEnded = true; sel = null;
+    let [kind, ...rest] = (h || "").split(":"), id = rest.join(":");
+    if (kind !== "t" && kind !== "j" && e) {                          // ボックスの円の中なら、下に線が通っていてもボックスで離したことにする
+      const q = svgPoint(e), b = P.boxes.find(b => b.shown && Math.hypot(q.x - b.x, q.y - b.y) <= b.r);
+      if (b) { kind = "box"; id = b.id; }
+    }
+    if (kind === "t" || kind === "j") addCore(d.id, id);
+    else if (kind === "box") connectToBox(d.id, id);
+    else { status("線を引くのをやめた。つなぐ先の上で指を離す。"); render(); }
+    return;
+  }
   if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
   drag = null;
 }
@@ -1017,12 +1041,22 @@ svg.addEventListener("click", e => {
   }
   if (kind === "box") {
     if (!(sel && sel.end)) { const it = itemOfBox(id); sel = it ? { item: it.u } : null; status("ボックスを選んだ。記号を変える・消す。ドラッグで動かせる。線を引くときは、先に端子（○）をタップ。"); render(); return; }
-    const pa = placeOf(sel.end), c = cableBetween(pa, id);
-    if (pa === id) return status("同じボックスの中の接続点どうしは、つながない。1つの接続点にまとめる。", true);
-    if (!c || !cableShown(c)) return status("そこへ行くケーブルがない。単線図のケーブル（薄い帯）に沿ってつなぐ。", true);
-    const j = newJoint(id); addCore(sel.end, j); tidy(); save(); render();
+    connectToBox(sel.end, id);
   }
 });
+/* 端子（か●）start から、ボックス box に新しい●を作ってつなぐ */
+function connectToBox(start, box) {
+  const pa = placeOf(start), c = cableBetween(pa, box);
+  if (pa === box) return status("同じボックスの中の接続点どうしは、つながない。1つの接続点にまとめる。", true);
+  if (!c || !cableShown(c)) return status("そこへ行くケーブルがない。単線図のケーブル（薄い帯）に沿ってつなぐ。", true);
+  const j = newJoint(box); addCore(start, j); tidy(); save(); render();
+}
+/* 指（マウス）の下にある当たり判定。伸ばしている線そのものは当たり判定を持たない */
+function hitAt(e) {
+  const el = document.elementFromPoint ? document.elementFromPoint(e.clientX, e.clientY) : null;
+  const h = el && el.closest && el.closest("#stage [data-hit]");
+  return h ? h.dataset.hit : null;
+}
 $("stage").addEventListener("contextmenu", e => e.preventDefault());
 
 function setCoreColor(c) { if (!(sel && sel.core !== undefined)) return; S.cores[sel.core].c = c; pen = c; changed(); }
