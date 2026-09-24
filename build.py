@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""配布物を作る。本体は次の2つ。ここから機械的に生成する。
+"""配布物を作る。本体は次の3つ。ここから機械的に生成する。
 
   ラダー工房v2.html   → index.html         （GitHub Pages で配るもの）
   進路シミュレーション.html   → shinro/index.html  （同上。URL を /shinro/ で配るため）
+  複線図練習.html     → fukusen/index.html （同上。URL を /fukusen/ で配る）
 
-  python3 build.py                  上の2つを作る
+  python3 build.py                  上の3つを作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
 
 本体を直したら必ず走らせること。生成物を手で編集してはいけない。
@@ -23,6 +24,11 @@ print("生成: index.html")
 os.makedirs("shinro", exist_ok=True)
 shutil.copyfile(SRC2, "shinro/index.html")
 print("生成: shinro/index.html")
+
+# 1c) 複線図れんしゅう
+os.makedirs("fukusen", exist_ok=True)
+shutil.copyfile("複線図練習.html", "fukusen/index.html")
+print("生成: fukusen/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
