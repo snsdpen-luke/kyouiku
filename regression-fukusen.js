@@ -74,9 +74,17 @@ ok(d.querySelectorAll("#stage line").length===1,"電源とボックスを置く�
 put("lamp",480,90);
 ok(d.querySelectorAll("#stage line").length===1,"記号なしのランプは単線図と合わないので、ケーブルは出ない");
 ok($("partbar").classList.contains("show"),"置いた部品を選んだ状態になり、記号のボタンが出る");
+{ const u=E("S.placed[S.placed.length-1].u"), hs=[...d.querySelectorAll(`[data-hit="tx:${u}"]`)];
+  ok(hs.length===2,"記号がまだでも、置いた時からランプの端子（○）が2つ出る");
+  const g=$("stage").innerHTML;
+  ok(/>W<\/text>/.test(g)&&/>B<\/text>/.test(g),"W と B の札も出る");
+  hs[0].dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
+  ok($("status").classList.contains("err")&&/記号/.test($("status").textContent),"記号が合うまでは線を引けないと伝える"); }
 [...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="イ").click();
 ok(d.querySelectorAll("#stage line").length===2,"記号をイにすると単線図と合い、ケーブルが出る");
-put("sw1",480,540,"ロ");
+tap(`#palette button[data-type="sw1"]`); w.svgPoint=()=>({x:480,y:540}); tap("#stage");
+ok(d.querySelectorAll(`[data-hit="tx:${E("S.placed[S.placed.length-1].u")}"]`).length===2,"スイッチも置いた時から端子（点）が2つ出る");
+[...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="ロ").click();
 tap("#judgeBtn");
 ok(/部品/.test($("result").textContent),"記号ちがいのスイッチ → 判定で「部品」の指摘");
 tap(`[data-hit="part:${E("S.placed[S.placed.length-1].u")}"]`);
