@@ -375,6 +375,20 @@ ok(E("S.placed.length")===2 && E("S.cores.length")===1,"全部片づけたのも
 ok(E(`JSON.parse(localStorage.getItem("fukusen:r1")).cores.length`)===1,"戻した図が保存される");
 E(`openProblem("r2")`); ok($("undoBtn").disabled,"問題を切り替えると、戻す履歴は空になる");
 
+console.log("\n【O】拡大・移動");
+E(`try{localStorage.clear()}catch(e){}`); E(`openProblem("r1")`);
+ok($("stage").getAttribute("viewBox")==="0 0 1000 620","最初は全体が見える");
+tap("#zoomIn");
+ok(E("vbox.w")<1000 && $("stage").getAttribute("viewBox")!=="0 0 1000 620","＋で拡大する");
+tap("#panBtn"); ok(E("panMode")===true && $("panBtn").classList.contains("on"),"✋ 移動を押すと、移動モードになる");
+{ const x0=E("vbox.x"); pev("pointerdown",300,300); pev("pointermove",250,300); pev("pointermove",200,300); pev("pointerup",200,300); tap("#stage");
+  ok(E("vbox.x")!==x0 && E("S.placed.length")===0,"移動モードでは、ドラッグで図が動き、何も描かれない"); }
+tap("#panBtn"); ok(E("panMode")===false,"もう一度押すと、描くのに戻る");
+tap("#zoomFit"); ok($("stage").getAttribute("viewBox")==="0 0 1000 620","全体で元に戻る");
+for(let i=0;i<8;i++) tap("#zoomIn"); ok(E("vbox.w")>=250,"拡大しすぎない");
+for(let i=0;i<8;i++) tap("#zoomOut"); ok(E("vbox.w")===1000,"縮小しすぎない");
+tap("#zoomIn"); E(`openProblem("r2")`); ok(E("vbox.w")===1000,"問題を切り替えると全体表示に戻る");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

@@ -25,7 +25,39 @@
   .probs button.done::after { content: " ✓"; }
   .probs .sep { font-size: 12px; color: var(--muted); margin: 0 2px 0 8px; align-self: center; }
   .main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; align-items: start; }
-  @media (max-width: 980px) { .main { grid-template-columns: 1fr; } }
+  /* 拡大・移動のボタン（図の右下） */
+  .zoom { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 4px; z-index: 1; }
+  .zoom button { background: rgba(255,255,255,.94); min-width: 40px; height: 36px; padding: 0 10px; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  #stage.pan { cursor: grab; }
+
+  /* タブレット縦・スマホ: 1列に並べ、単線図 → 部品図 → 操作 → 図 → 結果 の順にする */
+  @media (max-width: 980px) {
+    .main { display: flex; flex-direction: column; gap: 8px; }
+    .main > .left, .main > .side { display: contents; }
+    #cardTansen { order: 1; } #cardPalette { order: 2; } .toolbar { order: 3; margin: 0; }
+    .banner { order: 4; } .stagewrap { order: 5; } .status { order: 6; } #cardResult { order: 7; }
+    #tansen { max-height: 34vh; }
+    #stage { height: 58vh; min-height: 300px; }
+  }
+  @media (max-width: 600px) {
+    .wrap { padding: 8px 10px 24px; }
+    h1 { font-size: 18px; }
+    .sub { display: block; margin: 2px 0 0; font-size: 11.5px; }
+    .probs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; margin: 6px 0; }
+    .probs button { flex: 0 0 auto; min-width: 50px; }
+    .probs .sep { flex: 0 0 auto; }
+    .toolbar { gap: 4px; }
+    .toolbar button { padding: 5px 8px; font-size: 13px; }
+    .toolbar .lab { display: none; }
+    .toolbar > span[style] { display: none; }
+    .pen { width: 38px; height: 32px; }
+    .palette { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .palette button { font-size: 10px; min-height: 56px; }
+    .selbar { top: 4px; left: 4px; right: 4px; padding: 4px 6px; gap: 4px; }
+    .selbar button { padding: 4px 8px; font-size: 13px; }
+    .zoom button { min-width: 38px; height: 34px; padding: 0 8px; }
+    #stage { height: 60vh; }
+  }
   .side { display: flex; flex-direction: column; gap: 8px; }
   button { font: inherit; color: var(--ink); border: 1px solid var(--line); background: var(--card);
            border-radius: 6px; padding: 5px 11px; cursor: pointer; touch-action: manipulation; }
@@ -90,8 +122,8 @@
   <div class="probs" id="probs"></div>
 
   <div class="main">
-    <div>
-      <div class="bar">
+    <div class="left">
+      <div class="bar toolbar">
         <span class="lab">線の色</span>
         <span id="pens"></span>
         <span style="flex:1"></span>
@@ -127,12 +159,18 @@
         <button id="unselP">選ぶのをやめる</button>
         </div>
         <svg id="stage" viewBox="0 0 1000 620"></svg>
+        <div class="zoom" id="zoomBar">
+          <button id="zoomOut" aria-label="縮小">−</button>
+          <button id="zoomIn" aria-label="拡大">＋</button>
+          <button id="panBtn" aria-label="図を動かす">✋ 移動</button>
+          <button id="zoomFit">全体</button>
+        </div>
       </div>
       <div class="status" id="status"></div>
     </div>
 
     <div class="side">
-      <div class="card">
+      <div class="card" id="cardTansen">
         <h2 id="ptitle"></h2>
         <div class="note" id="pnote"></div>
         <svg id="tansen" viewBox="0 0 1000 620" aria-label="単線図"></svg>
@@ -143,12 +181,12 @@
           <div class="note" id="condNote"></div>
         </details>
       </div>
-      <div class="card">
+      <div class="card" id="cardPalette">
         <h2>部品図 <span class="note">タップして、図の置きたい所をタップ</span></h2>
         <div class="paltabs" id="palTabs"></div>
         <div class="palette" id="palette"></div>
       </div>
-      <div class="card">
+      <div class="card" id="cardResult">
         <div class="result" id="result"></div>
         <details class="how">
           <summary>描き方</summary>
@@ -161,6 +199,7 @@
             <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
             <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
+            <li>図が小さいときは、図の右下の「＋」で拡大し、「✋ 移動」で見る所を動かす。「全体」で元に戻る</li>
           </ol>
         </details>
       </div>
@@ -173,7 +212,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24j";
+const VER = "2026-09-24k";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1096,7 +1135,7 @@ function render() {
   layoutJoints();
   const uidOf = {}; (view.placed || []).forEach(it => { if (it.pid) uidOf[it.pid] = it.u; });
   let g = "";
-  if (!(view.placed || []).length) g += `<text x="500" y="300" text-anchor="middle" font-size="18" fill="#9ca3af">右の単線図を見て、部品図から要る部品を選び、ここに置く</text>`;
+  if (!(view.placed || []).length) g += `<text x="500" y="300" text-anchor="middle" font-size="18" fill="#9ca3af">単線図を見て、部品図から要る部品を選び、ここに置く</text>`;
   // ケーブル（単線図のとおりに置けた所だけ、薄く出す）
   P.cables.forEach(c => {
     if (!cableShown(c)) return;
@@ -1187,13 +1226,28 @@ function drawTansen() {
   const A = id => { if (P.box[id]) return { x: P.box[id].ax, y: P.box[id].ay }; const ps = P.place[id]; return { x: ps.reduce((s, p) => s + p.ax, 0) / ps.length, y: ps.reduce((s, p) => s + p.ay, 0) / ps.length }; };
   P.cables.forEach(c => { const a = A(c.a), b = A(c.b);
     g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#151a18" stroke-width="4"/>`; });
-  /* ケーブルの種類は、ボックスから離れた側（器具寄り）に、線の外側へずらして書く。ボックスに集まる線どうしで文字がぶつからない */
-  P.cables.forEach(c => { let a = A(c.a), b = A(c.b); if (P.box[c.a] && !P.box[c.b]) [a, b] = [b, a];
-    const dx = b.x - a.x, dy = b.y - a.y, vert = Math.abs(dy) > Math.abs(dx) * 1.2, hor = Math.abs(dx) > Math.abs(dy) * 1.2;
-    const t = hor || !(P.box[c.a] || P.box[c.b]) ? 0.5 : 0.4, mx = a.x + dx * t, my = a.y + dy * t;
-    const anchor = vert ? "start" : hor ? "middle" : (dx > 0 ? "end" : "start");     // 斜めの線は、ボックスから見て外側へ書く
-    const ox = vert ? 16 : hor ? 0 : (dx > 0 ? -16 : 16), oy = hor ? -14 : vert ? 10 : 0;
-    g += `<text x="${mx + ox}" y="${my + oy}" text-anchor="${anchor}" font-size="30" font-weight="700" fill="#151a18" stroke="#fcfcfa" stroke-width="8" paint-order="stroke">${esc(c.spec)}</text>`; });
+  /* ケーブルの種類。公表問題の図と同じく、縦の線には縦書き、横の線には線の上、斜めの線には線の外側に書く */
+  P.cables.forEach(c => { let a = A(c.a), b = A(c.b); if (!P.box[c.a] && P.box[c.b]) [a, b] = [b, a];
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+    const tw = c.spec.length * 16, st = `font-size="28" font-weight="700" fill="#151a18" stroke="#fcfcfa" stroke-width="8" paint-order="stroke"`;
+    const srcEnd = pt => P.parts.some(p => p.type === "src" && Math.hypot(p.ax - pt.x, p.ay - pt.y) < 2);
+    if (Math.abs(ux) < 0.35) {                                         // 縦の線: 縦書き（下から上へ読む）
+      const lo = Math.min(a.y, b.y) + (srcEnd(a.y < b.y ? a : b) ? 60 : 40), hi = Math.max(a.y, b.y) - 40;
+      const my = Math.max(lo + tw / 2, Math.min(hi - tw / 2, (a.y + b.y) / 2)), mx = (a.x + b.x) / 2 - 7;   // 縦書きの字は mx の左側に出るので、線にかからない
+      g += `<text x="${mx}" y="${my}" transform="rotate(-90 ${mx} ${my})" text-anchor="middle" ${st}>${esc(c.spec)}</text>`;
+    } else if (Math.abs(uy) < 0.35) {                                  // 横の線: 線の上、両端の記号のあいだ
+      const L = a.x < b.x ? a : b, R = a.x < b.x ? b : a;
+      const lo = L.x + (srcEnd(L) ? 95 : 40) + tw / 2, hi = R.x - (srcEnd(R) ? 95 : 40) - tw / 2;
+      const mx = lo <= hi ? Math.max(lo, Math.min(hi, (L.x + R.x) / 2)) : (L.x + R.x) / 2;
+      g += `<text x="${mx}" y="${(a.y + b.y) / 2 - 12}" text-anchor="middle" ${st}>${esc(c.spec)}</text>`;
+    } else {                                                           // 斜めの線: ボックスから見て外側
+      const px = -uy, py = ux; let side = 1;
+      const ex = a.x + dx * 0.55 + px * 18;
+      if ((px > 0 && ex + tw > 995) || (px < 0 && ex - tw < 5)) side = -1;
+      const sx = px * side, sy = py * side, mx = a.x + dx * 0.55 + sx * 18, my = a.y + dy * 0.55 + sy * 18;
+      g += `<text x="${mx}" y="${my + (sy > 0 ? 24 : 0)}" text-anchor="${sx > 0 ? "start" : "end"}" ${st}>${esc(c.spec)}</text>`;
+    }
+  });
   P.boxes.forEach(b => { g += sym(b.kind || "box", b.ax, b.ay, 1.6);
     g += `<text x="${b.ax + 34}" y="${b.ay - 26}" font-size="30" font-weight="700" fill="#8b8271">${esc(b.id)}</text>`; });
   P.parts.forEach(p => {
@@ -1323,10 +1377,34 @@ function addCore(a, b) {
 function newJoint(box) { const j = { id: "#j" + (seq++), box }; S.joints.push(j); return j.id; }
 function tidy() { S.joints = S.joints.filter(j => S.cores.some(k => k.a === j.id || k.b === j.id)); }
 
+/* 見える範囲。拡大すると w・h が小さくなる。x・y は左上 */
+let vbox = { x: 0, y: 0, w: 1000, h: 620 }, panMode = false;
+function applyView() { svg.setAttribute("viewBox", `${vbox.x} ${vbox.y} ${vbox.w} ${vbox.h}`); }
+/* 図の枠の縦横比。スマホの縦長の枠では、拡大したとき縦も使えるよう、見える範囲をこの比にする */
+function aspect() { const r = svg.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r.height / r.width : 0.62; }
+function clampView() {
+  vbox.w = Math.max(250, Math.min(1000, vbox.w)); vbox.h = vbox.w * aspect();
+  vbox.x = Math.max(-vbox.w * 0.25, Math.min(1000 - vbox.w * 0.75, vbox.x));
+  if (vbox.h >= 620) vbox.y = (620 - vbox.h) / 2;            // 図の高さより広く見えているときは、上下の真ん中に
+  else vbox.y = Math.max(-vbox.h * 0.25, Math.min(620 - vbox.h * 0.75, vbox.y));
+}
+function fitView() { vbox = { x: 0, y: 0, w: 1000, h: 620 }; clampView(); applyView(); }
+window.addEventListener("resize", () => { const cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView(); });
+function zoomBy(f) {   // 見ている所の真ん中を中心に拡大・縮小
+  const cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2;
+  vbox.w /= f; clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView();
+  if (vbox.w >= 1000) setPan(false);
+}
+function setPan(on) { panMode = on; $("panBtn").classList.toggle("on", on); svg.classList.toggle("pan", on);
+  status(on ? "移動中。図を指（マウス）で動かす。もう一度「✋ 移動」を押すと、描くのに戻る。" : ""); }
+$("zoomIn").onclick = () => zoomBy(1.5);
+$("zoomOut").onclick = () => zoomBy(1 / 1.5);
+$("zoomFit").onclick = () => { fitView(); setPan(false); };
+$("panBtn").onclick = () => { if (vbox.w >= 1000) zoomBy(1.5); setPan(!panMode); };
 /* 画面上のタップ位置を、図の座標（viewBox）に直す */
 function svgPoint(e) {
-  const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, k = Math.min(r.width / vb.width, r.height / vb.height) || 1;
-  return { x: (e.clientX - r.left - (r.width - vb.width * k) / 2) / k, y: (e.clientY - r.top - (r.height - vb.height * k) / 2) / k };
+  const r = svg.getBoundingClientRect(), k = Math.min(r.width / vbox.w, r.height / vbox.h) || 1;
+  return { x: vbox.x + (e.clientX - r.left - (r.width - vbox.w * k) / 2) / k, y: vbox.y + (e.clientY - r.top - (r.height - vbox.h * k) / 2) / k };
 }
 function moveJoint(jid, x, y, drag) {
   const j = S.joints.find(j => j.id === jid), b = P.box[j.box], dx = x - b.x, dy = y - b.y, m = Math.hypot(dx, dy), lim = b.r - 12;
@@ -1357,6 +1435,7 @@ function reattach(i, target) {
 let drag = null, dragEnded = false;
 svg.addEventListener("pointerdown", e => {
   dragEnded = false;
+  if (panMode) { drag = { kind: "pan", x: e.clientX, y: e.clientY, vx: vbox.x, vy: vbox.y, moving: false, pid: e.pointerId }; return; }
   const h = e.target.closest && e.target.closest("[data-hit]");
   if (!h || showingRef || mode !== "draw" || placing) return;
   const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
@@ -1375,9 +1454,13 @@ svg.addEventListener("pointermove", e => {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
     drag.moving = true;
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}      // 図を描き直しても指を追い続ける
-    status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
+    if (drag.kind !== "pan") status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
          : drag.kind === "j" ? "ドラッグ中。ボックスの中で指を離す。" : "ドラッグ中。置きたい所で指を離す。");
     if (drag.kind === "wire") sel = { end: drag.id };               // つなげるボックスを青くする
+  }
+  if (drag.kind === "pan") {
+    const r = svg.getBoundingClientRect(), k = Math.min(r.width / vbox.w, r.height / vbox.h) || 1;
+    vbox.x = drag.vx - (e.clientX - drag.x) / k; vbox.y = drag.vy - (e.clientY - drag.y) / k; clampView(); applyView(); return;
   }
   const q = svgPoint(e);
   if (drag.kind === "j") {                                           // ●をボックスの外まで引っぱり出したら、線を伸ばすに切り替える
@@ -1394,6 +1477,7 @@ svg.addEventListener("pointermove", e => {
 });
 function endDrag(e) {
   if (!drag || (e && e.pointerId !== drag.pid)) return;
+  if (drag.kind === "pan") { if (drag.moving) dragEnded = true; drag = null; return; }
   if (drag.moving && drag.kind === "wire") {                         // 離した所へつなぐ
     const d = drag, h = e && e.type === "pointerup" ? hitAt(e) : null; drag = null; dragEnded = true; sel = null;
     let [kind, ...rest] = (h || "").split(":"), id = rest.join(":");
@@ -1412,10 +1496,14 @@ function endDrag(e) {
   if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
   drag = null;
 }
+/* 指で動かしている間は、ブラウザにスクロールの動きとして扱わせない。
+   扱わせると、動かした直後のボタンのタップが「スクロールを止める操作」として捨てられる（実測） */
+svg.addEventListener("touchmove", e => { if (drag) e.preventDefault(); }, { passive: false });
 svg.addEventListener("pointerup", endDrag);
 svg.addEventListener("pointercancel", endDrag);
 
 svg.addEventListener("click", e => {
+  if (panMode) { dragEnded = false; return; }                        // 移動中はタップで描かない
   if (showingRef) return;
   if (dragEnded) { dragEnded = false; return; }                     // ドラッグの終わりはタップとして扱わない
   if (placing) {                                                     // 部品を置く
@@ -1609,6 +1697,7 @@ function drawTabs() {
 }
 function openProblem(id) {
   P = prep(PROBLEMS.find(p => p.id === id));
+  fitView(); setPan(false);
   S = load(id) || newState(); S.flip = S.flip || {}; view = S; hist = []; lastSaved = JSON.stringify(S); $("undoBtn").disabled = true; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
