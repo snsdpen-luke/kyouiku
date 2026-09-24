@@ -61,6 +61,11 @@
   .result .cat { border-left: 4px solid var(--bad); background: #fef2f2; border-radius: 4px; padding: 5px 8px; margin: 5px 0; font-size: 13.5px; }
   .result .cat.pass { border-color: var(--accent); background: #ecfdf5; color: var(--accent); font-weight: 700; }
   .result .hint { border-left: 4px solid var(--sel); background: #eff6ff; border-radius: 4px; padding: 6px 8px; margin: 6px 0; font-size: 13.5px; }
+  details.cond { margin-top: 6px; border-top: 1px solid var(--line); padding-top: 6px; }
+  details.cond summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
+  details.cond ol { margin: 4px 0 4px; padding-left: 1.3em; font-size: 12.5px; }
+  details.cond li { margin-bottom: 3px; }
+  .tag { font-size: 11px; font-weight: 700; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
   details.how summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
   details.how ol { margin: 4px 0 2px; padding-left: 1.3em; font-size: 12.5px; }
   details.how li { margin-bottom: 2px; }
@@ -131,6 +136,11 @@
         <div class="note" id="pnote"></div>
         <svg id="tansen" viewBox="0 0 1000 620" aria-label="単線図"></svg>
         <div class="note">単線図（タップで大きく）</div>
+        <details class="cond" id="condBox" hidden>
+          <summary>施工条件 <span class="tag" id="condTag"></span></summary>
+          <ol id="condList"></ol>
+          <div class="note" id="condNote"></div>
+        </details>
       </div>
       <div class="card">
         <h2>部品図 <span class="note">タップして、図の置きたい所をタップ</span></h2>
@@ -481,7 +491,7 @@ function simulate(st, states) {
   }));
   if (short) return { short };
   const els = [];
-  P.parts.forEach(p => (TYPES[p.type].el || []).forEach(e => els.push({ p, a: u.find(p.id + "." + e.a), b: u.find(p.id + "." + e.b), g: 1 / e.R, rated: e.rated })));
+  P.parts.forEach(p => (TYPES[p.type].el || []).forEach(e => els.push({ p, a: u.find(p.id + "." + e.a), b: u.find(p.id + "." + e.b), g: 1 / e.R, rated: p.rated || e.rated })));   // p.rated で器具ごとに定格を変えられる（電源表示灯を 200V につなぐ など）
   const idx = {}, unk = [];
   els.forEach(e => [e.a, e.b].forEach(r => { if (!fixed[r] && idx[r] === undefined) { idx[r] = unk.length; unk.push(r); } }));
   const n = unk.length;
@@ -606,8 +616,12 @@ function judge(st) {
   st.cores.forEach((k, i) => {
     const pot = potOf[u.find(k.a)], need = pot && P.potColor && P.potColor[pot];
     if (need && k.c !== need)
-      add("色", ENDNAME(k.a) + " と " + ENDNAME(k.b) + " を結ぶ線の色。", pot === "N" ? "電源の N（接地側）からスイッチを通らずにつながっている線は、すべて白にする決まり。" : "電源の " + pot + " からスイッチを通らずにつながっている線は、すべて" + need + "にする決まり。", ["core:" + i]);
+      add("色", ENDNAME(k.a) + " と " + ENDNAME(k.b) + " を結ぶ線の色。", pot === "N" ? "電源の N（接地側）からスイッチを通らずにつながっている線は、すべて白にする決まり。" : pot === "E" ? "接地線は緑にする決まり。" : "電源の " + pot + " からスイッチを通らずにつながっている線は、すべて" + need + "にする決まり。", ["core:" + i]);
   });
+  /* 施工条件で端子ごとに色が決まっているもの（P.termColor = { "器具.端子": "赤", … }） */
+  Object.keys(P.termColor || {}).forEach(tid => { const need = P.termColor[tid];
+    st.cores.forEach((k, i) => { if ((k.a === tid || k.b === tid) && k.c !== need)
+      add("色", ENDNAME(tid) + " につないだ線の色。", "施工条件で、この端子には" + need + "の線をつなぐと決まっている。", ["core:" + i]); }); });
   return iss;
 }
 
@@ -1295,6 +1309,10 @@ function openProblem(id) {
   S = load(id) || newState(); S.flip = S.flip || {}; view = S; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
+  $("condBox").hidden = !(P.cond && P.cond.length);
+  $("condList").innerHTML = (P.cond || []).map(c => "<li>" + esc(c) + "</li>").join("");
+  $("condTag").textContent = P.condTag || ""; $("condTag").hidden = !P.condTag;
+  $("condNote").textContent = P.condNote || "";
   $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
   penButtons($("pens"), c => { pen = c; render(); });
   penButtons($("selPens"), setCoreColor);
