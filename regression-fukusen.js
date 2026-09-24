@@ -208,11 +208,11 @@ pev("pointermove",502,311);
 ok(E(`S.joints.find(j=>j.id==="${jg}").x`)===undefined,"少し（6px 未満）動かしただけでは動かない");
 pev("pointermove",520,340); pev("pointermove",530,350);
 ok(E(`(()=>{const j=S.joints.find(j=>j.id==="${jg}");return j.x===530&&j.y===350;})()`),"ドラッグについてくる");
-pev("pointermove",900,600);
-ok(E(`(()=>{const j=S.joints.find(j=>j.id==="${jg}"),b=P.box.B1;return Math.hypot(j.x-b.x,j.y-b.y)<=b.r-11;})()`),"ボックスの外まで引っぱっても縁で止まる");
-pev("pointerup",900,600); tap("#stage");
+pev("pointerup",530,350); tap("#stage");
 ok(!$("jointbar").classList.contains("show") && E("sel")===null,"ドラッグの終わりは「タップして選んだ」にならない");
-ok(E(`(()=>{try{return JSON.parse(localStorage.getItem("fukusen:r1")).joints.some(j=>j.id==="${jg}"&&j.x!==undefined)}catch(e){return false}})()`),"動かした位置は保存される");
+ok(E(`(()=>{try{return JSON.parse(localStorage.getItem("fukusen:r1")).joints.some(j=>j.id==="${jg}"&&j.x===530)}catch(e){return false}})()`),"動かした位置は保存される");
+pev("pointerdown",530,350,d.querySelector(`[data-hit="j:${jg}"]`)); pev("pointermove",540,360); pev("pointermove",900,600); pev("pointerup",900,600); tap("#stage");
+ok(E(`S.joints.find(j=>j.id==="${jg}").x`)===530 && /やめた/.test($("status").textContent),"ボックスの外まで引っぱって何も無い所で離すと、●は元の位置のまま（線も引かない）");
 pev("pointerdown",0,0,d.querySelector(`[data-hit="j:${jg}"]`)); pev("pointerup",0,0); tap(`[data-hit="j:${jg}"]`);
 ok($("jointbar").classList.contains("show"),"動かさずに離せば、ふつうのタップ（選ぶ）になる");
 tap("#unselJ");
@@ -287,6 +287,38 @@ ok(E(`S.joints.find(j=>j.id==="${jd1}").x`)===530 && E("S.cores.length")===2,"�
 tap(`[data-hit="t:PW.N"]`); tap(`[data-hit="box:B1"]`);
 ok(E("S.cores.length")===3,"タップ → タップでも線を引ける");
 w.hitAt=()=>null;
+
+console.log("\n【L】●からドラッグで線を伸ばす");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1"); { const r=refState(P); S=newState(); S.placed=r.placed; } view=S; sel=null; render();`);
+tap(`#pens .pen[data-c="黒"]`);
+tap(`[data-hit="t:PW.L"]`); tap(`[data-hit="box:B1"]`);
+const jLw=E("S.joints[0].id");
+// ボックスの中だけで動かす → ●が動く
+w.svgPoint=()=>({x:500,y:310}); pev("pointerdown",0,0,d.querySelector(`[data-hit="j:${jLw}"]`));
+w.svgPoint=()=>({x:520,y:320}); pev("pointermove",30,30); w.svgPoint=()=>({x:530,y:330}); pev("pointermove",40,40); pev("pointerup",40,40); tap("#stage");
+ok(E(`S.joints[0].x`)===530 && E("S.cores.length")===1,"ボックスの中で動かすと、●が動く（線は増えない）");
+// ボックスの外へ引っぱり出す → 線を伸ばす、●は元の位置へ
+w.hitAt=()=>null;
+w.svgPoint=()=>({x:530,y:330}); pev("pointerdown",0,0,d.querySelector(`[data-hit="j:${jLw}"]`));
+w.svgPoint=()=>({x:540,y:340}); pev("pointermove",30,30);
+w.svgPoint=()=>({x:500,y:450}); pev("pointermove",60,60);
+ok(/stroke-dasharray="10 6"/.test($("stage").innerHTML),"ボックスの外へ引っぱり出すと、線が伸びる");
+ok(E(`S.joints[0].x`)===530,"●は元の位置に戻る");
+ok(!$("jointbar").classList.contains("show"),"線を伸ばしている間は、接続点の操作の帯を出さない");
+w.hitAt=()=>"t:Sa.1"; w.svgPoint=()=>({x:470,y:520}); pev("pointerup",60,60); tap("#stage");
+ok(E("S.cores.length")===2 && E(`S.cores.some(k=>(k.a==="${jLw}"&&k.b==="Sa.1")||(k.b==="${jLw}"&&k.a==="Sa.1"))`),"器具の端子で離すと、●からその端子へ線がつながる");
+// 外へ出てから自分のボックスに戻って離す → 取りやめ
+w.hitAt=()=>null; w.svgPoint=()=>({x:530,y:330}); pev("pointerdown",0,0,d.querySelector(`[data-hit="j:${jLw}"]`));
+w.svgPoint=()=>({x:500,y:450}); pev("pointermove",60,60);
+w.hitAt=()=>"box:B1"; w.svgPoint=()=>({x:490,y:300}); pev("pointerup",60,60); tap("#stage");
+ok(E("S.cores.length")===2 && !$("status").classList.contains("err") && /やめた/.test($("status").textContent),"自分のボックスに戻って離すと、取りやめ");
+// ケーブルの無い器具へ → つながらない
+w.hitAt=()=>null; w.svgPoint=()=>({x:530,y:330}); pev("pointerdown",0,0,d.querySelector(`[data-hit="j:${jLw}"]`));
+w.svgPoint=()=>({x:300,y:100}); pev("pointermove",60,60);
+w.hitAt=()=>"t:PW.N"; pev("pointerup",60,60); tap("#stage");
+ok(E("S.cores.length")===3,"電源の N へ（ケーブルが通っている）ならつながる");
+w.hitAt=()=>null; w.svgPoint=e=>({x:e.clientX,y:e.clientY});
 
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));

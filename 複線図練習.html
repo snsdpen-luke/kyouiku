@@ -141,6 +141,7 @@
             <li>単線図を見て、要る部品を部品図から選び、図の置きたい所をタップ。記号（イ・ロ…、ボックスは B1・B2…）を単線図と同じにする</li>
             <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
             <li>線の色を選び、端子（○）からボックス（点線の円）までドラッグ（または 端子 → ボックス とタップ）。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子からその●へ</li>
+            <li>●をボックスの外まで引っぱり出すと、●から線を伸ばせる（器具の端子や、ほかのボックスへ）。ボックスの中で動かすと●が動く</li>
             <li>線をタップ → 色を変える・つなぎ先を変える・消す。●をタップ → 動かす・まとめる・消す</li>
             <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
@@ -156,7 +157,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24f";
+const VER = "2026-09-24g";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -764,7 +765,7 @@ function render() {
   // 選んだものの操作
   const cs = sel && sel.core !== undefined;
   $("selbar").classList.toggle("show", !!cs && !showingRef);
-  $("jointbar").classList.toggle("show", !!(sel && sel.end && sel.end[0] === "#") && !showingRef);
+  $("jointbar").classList.toggle("show", !!(sel && sel.end && sel.end[0] === "#") && !showingRef && !(drag && drag.moving));   // 線を伸ばしている間は出さない
   const it = sel && sel.item && S.placed.find(x => x.u === sel.item);
   $("partbar").classList.toggle("show", !!it && !showingRef);
   if (it) drawPartBar(it);
@@ -950,7 +951,7 @@ svg.addEventListener("pointerdown", e => {
   const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
   let what = null;
   if (kind === "t") what = { kind: "wire", id };                    // 端子からドラッグ → 線を伸ばす
-  else if (kind === "j") what = { kind: "j", id };                   // ●からドラッグ → ●を動かす
+  else if (kind === "j") { const j = S.joints.find(j => j.id === id); what = { kind: "j", id, orig: { x: j.x, y: j.y } }; }   // ●からドラッグ → ボックスの中なら●を動かす。外へ出たら線を伸ばす
   else if (kind === "part") what = { kind: "item", id };
   else if (kind === "box") { const it = itemOfBox(id); if (it) what = { kind: "item", id: it.u }; }
   if (!what) return;
@@ -968,6 +969,14 @@ svg.addEventListener("pointermove", e => {
     if (drag.kind === "wire") sel = { end: drag.id };               // つなげるボックスを青くする
   }
   const q = svgPoint(e);
+  if (drag.kind === "j") {                                           // ●をボックスの外まで引っぱり出したら、線を伸ばすに切り替える
+    const j = S.joints.find(j => j.id === drag.id), b = P.box[j.box];
+    if (Math.hypot(q.x - b.x, q.y - b.y) > b.r + 4) {
+      if (drag.orig.x === undefined) { delete j.x; delete j.y; } else { j.x = drag.orig.x; j.y = drag.orig.y; }   // ●は元の位置に戻す
+      drag.kind = "wire"; sel = { end: drag.id };
+      status("線を伸ばしている。つなぐ先（器具の端子か、ほかのボックス）で指を離す。自分のボックスに戻って離すと取りやめ。");
+    }
+  }
   if (drag.kind === "wire") { drag.cur = q; drag.over = hitAt(e); }
   else if (drag.kind === "j") moveJoint(drag.id, q.x, q.y, true); else moveItem(drag.id, q.x + drag.ox, q.y + drag.oy);
   render();
@@ -980,6 +989,9 @@ function endDrag(e) {
     if (kind !== "t" && kind !== "j" && e) {                          // ボックスの円の中なら、下に線が通っていてもボックスで離したことにする
       const q = svgPoint(e), b = P.boxes.find(b => b.shown && Math.hypot(q.x - b.x, q.y - b.y) <= b.r);
       if (b) { kind = "box"; id = b.id; }
+    }
+    if (d.id[0] === "#" && ((kind === "box" && id === placeOf(d.id)) || (kind === "j" && placeOf(id) === placeOf(d.id)) || (kind === "j" && id === d.id))) {
+      status("線を引くのをやめた。"); render(); return;                // ●から伸ばして、自分のボックスに戻って離した
     }
     if (kind === "t" || kind === "j") addCore(d.id, id);
     else if (kind === "box") connectToBox(d.id, id);
