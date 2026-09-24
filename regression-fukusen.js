@@ -168,6 +168,26 @@ const jd=E(`S.joints[0].id`), n1=E("S.cores.length"), m1=E(`S.cores.filter(k=>k.
 tap(`[data-hit="j:${jd}"]`); tap("#delJoint"); yes();
 ok(E("S.cores.length")===n1-m1 && !E(`S.joints.some(j=>j.id==="${jd}")`),"●を消すと、つながる線も消える（自前の確認つき）");
 
+console.log("\n【I】●をドラッグで動かす");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1"); S=refState(P); view=S; sel=null; render();`);
+const jg=E(`S.cores.find(k=>k.a==="PW.N").b`);
+const pev=(type,x,y,el)=>{ const ev=new w.MouseEvent(type,{bubbles:true,clientX:x,clientY:y}); Object.defineProperty(ev,"pointerId",{value:1}); (el||$("stage")).dispatchEvent(ev); };
+w.svgPoint=e=>({x:e.clientX,y:e.clientY});
+pev("pointerdown",500,310,d.querySelector(`[data-hit="j:${jg}"]`));
+pev("pointermove",502,311);
+ok(E(`S.joints.find(j=>j.id==="${jg}").x`)===undefined,"少し（6px 未満）動かしただけでは動かない");
+pev("pointermove",520,340); pev("pointermove",530,350);
+ok(E(`(()=>{const j=S.joints.find(j=>j.id==="${jg}");return j.x===530&&j.y===350;})()`),"ドラッグについてくる");
+pev("pointermove",900,600);
+ok(E(`(()=>{const j=S.joints.find(j=>j.id==="${jg}"),b=P.box.B1;return Math.hypot(j.x-b.x,j.y-b.y)<=b.r-11;})()`),"ボックスの外まで引っぱっても縁で止まる");
+pev("pointerup",900,600); tap("#stage");
+ok(!$("jointbar").classList.contains("show") && E("sel")===null,"ドラッグの終わりは「タップして選んだ」にならない");
+ok(E(`(()=>{try{return JSON.parse(localStorage.getItem("fukusen:r1")).joints.some(j=>j.id==="${jg}"&&j.x!==undefined)}catch(e){return false}})()`),"動かした位置は保存される");
+pev("pointerdown",0,0,d.querySelector(`[data-hit="j:${jg}"]`)); pev("pointerup",0,0); tap(`[data-hit="j:${jg}"]`);
+ok($("jointbar").classList.contains("show"),"動かさずに離せば、ふつうのタップ（選ぶ）になる");
+tap("#unselJ");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

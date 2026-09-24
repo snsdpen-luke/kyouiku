@@ -42,7 +42,7 @@
   .pen.c緑 { background: #1a7f3a; color: #fff; }
   .pen.on { outline: 3px solid var(--sel); outline-offset: 2px; }
   #stage { width: 100%; height: calc(100vh - 250px); min-height: 420px; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px;
-           touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+           touch-action: pinch-zoom; user-select: none; -webkit-user-select: none; }   /* 指で●をドラッグしても画面がスクロールしない */
   .status { font-size: 13.5px; min-height: 1.5em; margin: 6px 2px 0; color: var(--muted); }
   .status.err { color: var(--bad); font-weight: 600; }
   .banner { font-size: 14px; font-weight: 700; border-radius: 6px; padding: 6px 10px; margin: 0 0 8px; display: none; }
@@ -113,7 +113,7 @@
         <li>器具の端子（○）をタップ → つなぐ先のジョイントボックス（点線の円）をタップ。ボックスの中に接続点（●）ができる</li>
         <li>同じ接続点につなぐ線は、端子 → その●をタップ</li>
         <li>引いた線をタップすると、色を変える・つなぎ先を変える・消すができる</li>
-        <li>●をタップすると、動かす・ほかの●とまとめる・消すができる</li>
+        <li>●はドラッグで動かせる。タップすると、動かす・ほかの●とまとめる・消すができる</li>
         <li>電源の下のボタンで、L と N の上下を入れ替えられる</li>
       </ol>
       <div class="stack">
@@ -131,7 +131,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24b";
+const VER = "2026-09-24c";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -673,9 +673,9 @@ function svgPoint(e) {
   const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, k = Math.min(r.width / vb.width, r.height / vb.height) || 1;
   return { x: (e.clientX - r.left - (r.width - vb.width * k) / 2) / k, y: (e.clientY - r.top - (r.height - vb.height * k) / 2) / k };
 }
-function moveJoint(jid, x, y) {
+function moveJoint(jid, x, y, drag) {
   const j = S.joints.find(j => j.id === jid), b = P.box[j.box], dx = x - b.x, dy = y - b.y, m = Math.hypot(dx, dy), lim = b.r - 12;
-  if (m > b.r + 10) return false;                                  // ボックスの外は受け付けない
+  if (m > b.r + 10 && !drag) return false;                         // タップで動かすとき、ボックスの外は受け付けない（ドラッグは縁で止める）
   const f = m > lim ? lim / m : 1;
   j.x = Math.round(b.x + dx * f); j.y = Math.round(b.y + dy * f);
   return true;
@@ -698,8 +698,35 @@ function reattach(i, target) {
   k[endKey] = target; tidy(); return null;
 }
 
+/* ●のドラッグ。少し動かすまではタップとして扱う（選ぶ操作と取り違えないため） */
+let drag = null, dragEnded = false;
+svg.addEventListener("pointerdown", e => {
+  dragEnded = false;
+  const h = e.target.closest && e.target.closest("[data-hit]");
+  if (!h || showingRef || mode !== "draw" || !h.dataset.hit.startsWith("j:")) return;
+  drag = { id: h.dataset.hit.slice(2), x: e.clientX, y: e.clientY, moving: false, pid: e.pointerId };
+});
+svg.addEventListener("pointermove", e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  if (!drag.moving) {
+    if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
+    drag.moving = true;
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}      // 図を描き直しても指を追い続ける
+    status("ドラッグ中。ボックスの中で指を離す。");
+  }
+  const q = svgPoint(e); moveJoint(drag.id, q.x, q.y, true); render();
+});
+function endDrag(e) {
+  if (!drag || (e && e.pointerId !== drag.pid)) return;
+  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status("接続点を動かした。"); save(); render(); }
+  drag = null;
+}
+svg.addEventListener("pointerup", endDrag);
+svg.addEventListener("pointercancel", endDrag);
+
 svg.addEventListener("click", e => {
   if (showingRef) return;
+  if (dragEnded) { dragEnded = false; return; }                     // ドラッグの終わりはタップとして扱わない
   if (sel && sel.act === "move") {                                   // 接続点を動かす: 置きたい場所をタップ
     const q = svgPoint(e);
     if (!moveJoint(sel.joint, q.x, q.y)) return status("ボックス " + (S.joints.find(j => j.id === sel.joint) || {}).box + " の中をタップする。", true);
