@@ -173,7 +173,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24i";
+const VER = "2026-09-24j";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -257,6 +257,38 @@ const COLORS = { "黒": "#1f1f1f", "白": "#ffffff", "赤": "#d62828", "緑": "#
            any:true は「f の反対でもよい」（3路のように入/切の向きが決まらないもの）
    ref:    お手本。[端点, 端点, 色]。端点は "器具.端子" か "ボックス:接続点番号"
    ============================================================ */
+/* ---------- 候補問題のデータを短く書くための道具 ---------- */
+const COMMON_COND = [
+  "電源からの接地側電線には、すべて白色を使用する",
+  "電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する",
+  "ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する",
+  "ボックスを経由する電線は、すべて接続箇所を設ける",
+  "記載のない電線の種類は VVF1.6 とする（公表問題の注記）",
+];
+/* ケーブル。心線の色は種類から決める（2C 黒白 ／ 3C 黒白赤 ／ ×2 なら2本分） */
+function C(a, b, spec, colors) {
+  spec = spec || "VVF1.6-2C";
+  if (!colors) { const m = spec.match(/-(\d)C(?:×(\d))?/), n = +m[1], k = m[2] ? +m[2] : 1; colors = [];
+    for (let i = 0; i < k; i++) colors.push(...["黒", "白", "赤", "緑"].slice(0, n)); }
+  return { a, b, spec, colors };
+}
+function PT(id, type, label, x, y, place) { const p = { id, type, label, x, y }; if (place) p.place = place; return p; }
+function SRC(id, x, y, type, sub, terms, place) {
+  type = type || "src";
+  const p = { id, type, label: "", x, y, sub: sub || (type === "src" ? "1φ2W 100V" : "") };
+  if (terms) p.terms = terms; else if (type !== "gnd") p.terms = [{ k: "L", lab: "L", pot: "L" }, { k: "N", lab: "N", pot: "N" }];
+  if (place) p.place = place;
+  return p;
+}
+function RLY(id, label, x, y, t1, t2) { return { id, type: "rly", label, x, y, place: "RY", terms: [{ k: "1", lab: t1 }, { k: "2", lab: t2 }] }; }
+function K(o) {
+  return Object.assign({ potColor: { L: "黒", N: "白", E: "緑" } }, o, {
+    id: "k" + o.no, official: true, tab: "No." + o.no, title: "No." + o.no + "　" + o.title,
+    cond: COMMON_COND.concat(o.cond || []), condTag: "仮",
+    condNote: "ネットの解説サイト（検索結果の要約）と回路からの読みで作った仮の施工条件。公式の施工条件に差し替える予定。",
+  });
+}
+
 const PROBLEMS = [
   {
     id: "r1", tab: "練習1", title: "練習1　スイッチでランプを点ける",
@@ -351,8 +383,253 @@ const PROBLEMS = [
           ["Sa.3", "B1:4", "赤"], ["Sb.3", "B1:4", "赤"],
           ["Sb.0", "B1:5", "黒"], ["La.C", "B1:5", "黒"]],
   },
+  /* ============================================================
+     令和8年度 候補問題 No.1〜13
+     配線図: 電気技術者試験センター 公表（令和8年1月16日）
+     施工条件: ネットの解説サイトの検索結果の要約と、回路からの読みで作った【仮】のもの。
+               公式の施工条件が届いたら cond / ケーブルの心線 / termColor を差し替える
+     ============================================================ */
+  K({ no: 1, title: "位置表示灯内蔵スイッチと3つの照明",
+    note: "スイッチ イ（位置表示灯内蔵）は引掛シーリング イ、ロ はランプレセプタクル ロ、ハ は蛍光灯 ハ を点滅する。",
+    parts: [SRC("PW", 90, 300), PT("Ca", "ceilK", "イ", 360, 80),
+            PT("Sa", "swH", "イ", 280, 560, "SW"), PT("Sb", "sw1", "ロ", 360, 560, "SW"), PT("Sc", "sw1", "ハ", 440, 560, "SW"),
+            PT("Lb", "lamp", "ロ", 720, 80), PT("Fc", "fl", "ハ", 720, 560)],
+    boxes: [{ id: "B1", x: 360, y: 300 }, { id: "B2", x: 720, y: 300 }],
+    cables: [C("PW", "B1", "EM-EEF2.0-2C"), C("Ca", "B1"), C("SW", "B1", "VVF1.6-2C×2"), C("B1", "B2", "VVF1.6-3C"),
+             C("Lb", "B2"), C("Fc", "B2")],
+    expect: [{ p: "Ca", f: s => s.Sa }, { p: "Lb", f: s => s.Sb }, { p: "Fc", f: s => s.Sc }, { p: "Sa", f: s => !s.Sa }],
+    cond: ["位置表示灯内蔵スイッチは、スイッチが切のとき表示灯が点く（異時点滅と同じ働き）。端子は普通のスイッチと同じ2つ",
+           "スイッチ3つへは VVF1.6-2C を2本使う（電源の黒と、イ・ロ・ハの返り線）。枠の中の渡り線は黒"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"], ["Sa.1", "Sb.1", "黒"], ["Sb.1", "Sc.1", "黒"],
+          ["PW.N", "B1:2", "白"], ["Ca.W", "B1:2", "白"], ["B1:2", "B2:1", "白"],
+          ["Sa.2", "B1:3", "白"], ["Ca.L", "B1:3", "黒"],
+          ["Sb.2", "B1:4", "黒"], ["B1:4", "B2:2", "赤"],
+          ["Sc.2", "B1:5", "白"], ["B1:5", "B2:3", "黒"],
+          ["Lb.W", "B2:1", "白"], ["Fc.W", "B2:1", "白"], ["Lb.C", "B2:2", "黒"], ["Fc.L", "B2:3", "黒"]] }),
+
+  K({ no: 2, title: "常時点灯の確認表示灯と2口コンセント",
+    note: "スイッチ イ はランプレセプタクル イ（2つ）を点滅する。確認表示灯（パイロットランプ）は常時点灯。",
+    parts: [SRC("PW", 90, 300), PT("La", "lamp", "イ", 330, 80),
+            PT("Pl", "pl", "", 580, 80, "F"), PT("Sa", "sw1", "イ", 660, 80, "F"),
+            Object.assign(PT("Lb", "lamp", "イ", 900, 300), { omit: true }),
+            PT("O2", "outlet2", "", 620, 560), PT("O1", "outlet", "", 330, 560)],
+    boxes: [{ id: "B1", x: 330, y: 300 }, { id: "B2", x: 620, y: 300 }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("La", "B1"), C("B1", "B2", "VVF1.6-3C"), C("F", "B2", "VVF1.6-3C"),
+             C("Lb", "B2"), C("O2", "B2"), C("O1", "O2")],
+    expect: [{ p: "La", f: s => s.Sa }, { p: "Lb", f: s => s.Sa }, { p: "Pl", f: s => true }, { p: "O2", f: s => true }, { p: "O1", f: s => true }],
+    cond: ["確認表示灯（パイロットランプ）は常時点灯とする（電源の黒と白のあいだにつなぐ）",
+           "コンセントからコンセントへは、コンセントの端子で渡す"],
+    ref: [["PW.L", "B1:1", "黒"], ["B1:1", "B2:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["La.W", "B1:2", "白"], ["B1:2", "B2:2", "白"],
+          ["La.C", "B1:3", "黒"], ["B1:3", "B2:3", "赤"],
+          ["Sa.1", "B2:1", "黒"], ["Sa.1", "Pl.1", "黒"], ["O2.L", "B2:1", "黒"],
+          ["Pl.2", "B2:2", "白"], ["Lb.W", "B2:2", "白"], ["O2.W", "B2:2", "白"],
+          ["Sa.2", "B2:3", "赤"], ["Lb.C", "B2:3", "黒"],
+          ["O2.L", "O1.L", "黒"], ["O2.W", "O1.W", "白"]] }),
+
+  K({ no: 3, title: "タイムスイッチと接地極付コンセント",
+    note: "タイムスイッチ イ は引掛シーリング イ を、スイッチ ロ はランプレセプタクル ロ を入り切りする。",
+    parts: [SRC("PW", 200, 70), PT("Sa", "sw1", "ロ", 200, 570),
+            PT("Ta", "ts", "イ", 500, 90), PT("Ca", "ceilK", "イ", 820, 110), PT("Lb", "lamp", "ロ", 840, 330),
+            PT("OE", "outletE", "", 500, 560), PT("G", "gnd", "", 720, 560)],
+    boxes: [{ id: "B1", x: 200, y: 330 }, { id: "B2", x: 500, y: 330 }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("Sa", "B1"), C("B1", "B2", "VVF1.6-3C"), C("Ta", "B2"), C("Ca", "Ta"),
+             C("Lb", "B2"), C("OE", "B2"), C("OE", "G", "E1.6", ["緑"])],
+    expect: [{ p: "Ca", f: s => s.Ta }, { p: "Lb", f: s => s.Sa }, { p: "Ta", f: s => true }, { p: "OE", f: s => true }],
+    cond: ["タイムスイッチは端子台で代用する。端子は左から S1・S2・L1",
+           "S1 には電源の黒、S2（接地側）には白、L1 から引掛シーリングへ",
+           "接地極付コンセントの接地極（E）から接地極（E_D）へは緑の接地線（E1.6）"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"], ["B1:1", "B2:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["B1:2", "B2:2", "白"],
+          ["Sa.2", "B1:3", "白"], ["B1:3", "B2:3", "赤"],
+          ["Ta.S1", "B2:1", "黒"], ["OE.L", "B2:1", "黒"],
+          ["Ta.S2", "B2:2", "白"], ["OE.W", "B2:2", "白"], ["Lb.W", "B2:2", "白"],
+          ["Lb.C", "B2:3", "黒"],
+          ["Ta.S2", "Ca.W", "白"], ["Ta.L1", "Ca.L", "黒"],
+          ["OE.E", "G.E", "緑"]] }),
+
+  K({ no: 4, title: "三相200V の電動機と電源表示灯",
+    note: "単相100V（B）と三相200V（BE）の2つの電源。スイッチ イ は引掛シーリング イ を点滅する。電源表示灯は三相側で常に点く。",
+    potColor: { L: "黒", N: "白", R: "赤", S: "白", T: "黒" },
+    parts: [SRC("PW", 110, 90, "brkB", "1φ2W 100V"),
+            SRC("PX", 110, 250, "brkBE", "3φ3W 200V", [{ k: "R", lab: "R", pot: "R" }, { k: "S", lab: "S", pot: "S" }, { k: "T", lab: "T", pot: "T" }]),
+            Object.assign(PT("Lr", "lamp", "", 300, 540), { alias: "電源表示灯", rated: 200, wPot: "S" }),
+            PT("M", "motor", "", 480, 560),
+            PT("Ca", "ceilK", "イ", 640, 380), PT("Sa", "sw1", "イ", 800, 560, "F"), PT("O", "outlet", "", 880, 560, "F")],
+    boxes: [{ id: "B1", x: 480, y: 260 }, { id: "B2", x: 840, y: 110 }],
+    cables: [C("PW", "B2", "VVF2.0-2C"), C("PX", "B1", "VVF2.0-3C"), C("M", "B1", "VVF2.0-3C"), C("Lr", "B1"),
+             C("Ca", "B2"), C("F", "B2", "VVF1.6-3C")],
+    expect: [{ p: "Lr", f: s => true }, { p: "M", f: s => true }, { p: "Ca", f: s => s.Sa }, { p: "O", f: s => true }],
+    cond: ["三相電源の色は R 相 赤・S 相 白・T 相 黒",
+           "電源表示灯（ランプレセプタクル）は S 相と T 相のあいだにつなぐ。受金ねじ部に S 相（白）",
+           "電動機（施工省略）へは VVF2.0-3C の3本を R・S・T にそれぞれつなぐ"],
+    ref: [["PX.R", "B1:1", "赤"], ["M.U", "B1:1", "赤"],
+          ["PX.S", "B1:2", "白"], ["M.V", "B1:2", "白"], ["Lr.W", "B1:2", "白"],
+          ["PX.T", "B1:3", "黒"], ["M.W3", "B1:3", "黒"], ["Lr.C", "B1:3", "黒"],
+          ["PW.L", "B2:1", "黒"], ["Sa.1", "B2:1", "黒"], ["Sa.1", "O.L", "黒"],
+          ["PW.N", "B2:2", "白"], ["Ca.W", "B2:2", "白"], ["O.W", "B2:2", "白"],
+          ["Sa.2", "B2:3", "赤"], ["Ca.L", "B2:3", "黒"]] }),
+
+  K({ no: 5, title: "200V コンセントと100V の照明",
+    note: "スイッチ イ は蛍光灯 イ（施工省略）、ロ はランプレセプタクル ロ を点滅する。200V の接地極付コンセントは別の電源（BE）から。",
+    potColor: { L: "黒", N: "白", E: "緑" },
+    parts: [SRC("PW", 110, 90, "brkB", "電源100V"),
+            SRC("PX", 110, 230, "brkBE", "電源200V", [{ k: "L1", lab: "L1", pot: "L1" }, { k: "L2", lab: "L2", pot: "L2" }], "P2"),
+            Object.assign(SRC("G", 110, 350, "gnd"), { place: "P2" }),
+            PT("Lr", "lamp", "ロ", 380, 400),
+            PT("Sa", "sw1", "イ", 470, 560, "F"), PT("Sb", "sw1", "ロ", 550, 560, "F"), PT("O", "outlet", "", 630, 560, "F"),
+            PT("Fl", "fl", "イ", 860, 330), PT("O200", "outlet200", "", 240, 560)],
+    boxes: [{ id: "B1", x: 550, y: 120 }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("P2", "O200", "VVF2.0-3C", ["黒", "赤", "緑"]), C("Lr", "B1"),
+             C("F", "B1", "VVF1.6-2C×2"), C("Fl", "B1")],
+    expect: [{ p: "Fl", f: s => s.Sa }, { p: "Lr", f: s => s.Sb }, { p: "O", f: s => true }, { p: "O200", f: s => true }],
+    cond: ["電源側（B・BE・接地端子）は5極の端子台で代用する",
+           "200V の回路は VVF2.0-3C（黒・赤・緑）。黒と赤は電源の2本に（どちら側でもよい）、緑は接地",
+           "スイッチ2つとコンセントへは VVF1.6-2C を2本使う（心線の数は未確認）"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"], ["Sa.1", "Sb.1", "黒"], ["Sb.1", "O.L", "黒"],
+          ["PW.N", "B1:2", "白"], ["Lr.W", "B1:2", "白"], ["Fl.W", "B1:2", "白"], ["O.W", "B1:2", "白"],
+          ["Sa.2", "B1:3", "黒"], ["Fl.L", "B1:3", "黒"],
+          ["Sb.2", "B1:4", "白"], ["Lr.C", "B1:4", "黒"],
+          ["PX.L1", "O200.X", "黒"], ["PX.L2", "O200.Y", "赤"], ["G.E", "O200.E", "緑"]] }),
+
+  K({ no: 6, title: "3路スイッチで2灯と露出形コンセント",
+    note: "2つの3路スイッチ イ のどちらからでも、引掛シーリング イ（2つ）を点滅できる。",
+    parts: [SRC("PW", 910, 300), PT("O", "outletRo", "", 650, 80), PT("Sa", "sw3", "イ", 650, 560),
+            PT("Ca", "ceilK", "イ", 330, 80), Object.assign(PT("Cb", "ceilK", "イ", 110, 80), { omit: true }), PT("Sb", "sw3", "イ", 330, 560)],
+    boxes: [{ id: "B1", x: 650, y: 300 }, { id: "B2", x: 330, y: 300 }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("O", "B1"), C("Sa", "B1", "VVF1.6-3C"), C("B1", "B2", "VVF1.6-3C"),
+             C("Ca", "B2"), C("Cb", "B2"), C("Sb", "B2", "VVF1.6-3C")],
+    expect: [{ p: "Ca", f: s => s.Sa !== s.Sb, any: true }, { p: "Cb", f: s => s.Sa !== s.Sb, any: true }, { p: "O", f: s => true }],
+    cond: ["3路スイッチの記号「0」の端子には電源側または負荷側の線を、記号「1」「3」の端子にはスイッチどうしを結ぶ線をつなぐ"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.0", "B1:1", "黒"], ["O.L", "B1:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["O.W", "B1:2", "白"], ["B1:2", "B2:1", "白"],
+          ["Sa.1", "B1:3", "白"], ["B1:3", "B2:2", "黒"],
+          ["Sa.3", "B1:4", "赤"], ["B1:4", "B2:3", "赤"],
+          ["Ca.W", "B2:1", "白"], ["Cb.W", "B2:1", "白"],
+          ["Sb.1", "B2:2", "白"], ["Sb.3", "B2:3", "赤"],
+          ["Sb.0", "B2:4", "黒"], ["Ca.L", "B2:4", "黒"], ["Cb.L", "B2:4", "黒"]] }),
+
+  K({ no: 7, title: "3路と4路スイッチで3か所から点滅",
+    note: "3路スイッチ イ（2つ）と4路スイッチ イ の、どれを切り替えてもランプレセプタクル イ（2つ）が点滅する。",
+    parts: [SRC("PW", 150, 70), PT("Sa", "sw3", "イ", 150, 560),
+            PT("La", "lamp", "イ", 480, 80), Object.assign(PT("Lb", "lamp", "イ", 790, 80), { omit: true }),
+            PT("S4", "sw4", "イ", 480, 560), PT("Sb", "sw3", "イ", 790, 560)],
+    boxes: [{ id: "B1", x: 150, y: 320 }, { id: "B2", x: 480, y: 320, kind: "obox" }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("Sa", "B1", "VVF1.6-3C"), C("B1", "B2", "VVF1.6-3C"),
+             C("La", "B2"), C("Lb", "B2"), C("S4", "B2", "VVF1.6-2C×2"), C("Sb", "B2", "VVF1.6-3C")],
+    expect: [{ p: "La", f: s => (s.Sa ^ s.Sb ^ s.S4) === 1, any: true }, { p: "Lb", f: s => (s.Sa ^ s.Sb ^ s.S4) === 1, any: true }],
+    cond: ["3路スイッチの記号「0」の端子には電源側または負荷側の線を、記号「1」「3」の端子にはスイッチどうしを結ぶ線をつなぐ",
+           "4路スイッチは 1–2・3–4 と 1–4・3–2 が切り替わる。1・3 を一方の3路スイッチへ、2・4 をもう一方へ",
+           "4路スイッチへは VVF1.6-2C を2本使う。右のボックスはアウトレットボックス"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.0", "B1:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["B1:2", "B2:1", "白"],
+          ["Sa.1", "B1:3", "白"], ["B1:3", "B2:2", "黒"],
+          ["Sa.3", "B1:4", "赤"], ["B1:4", "B2:3", "赤"],
+          ["La.W", "B2:1", "白"], ["Lb.W", "B2:1", "白"],
+          ["S4.1", "B2:2", "黒"], ["S4.3", "B2:3", "白"],
+          ["S4.2", "B2:4", "黒"], ["Sb.1", "B2:4", "白"],
+          ["S4.4", "B2:5", "白"], ["Sb.3", "B2:5", "赤"],
+          ["Sb.0", "B2:6", "黒"], ["La.C", "B2:6", "黒"], ["Lb.C", "B2:6", "黒"]] }),
+
+  K({ no: 8, title: "リモコンリレーで3つの照明",
+    note: "リモコンリレー イ・ロ・ハ が、引掛シーリング イ、ランプレセプタクル ロ、引掛シーリング ハ（施工省略）をそれぞれ入り切りする。リモコンスイッチとトランスは施工省略。",
+    parts: [SRC("PW", 110, 110, "brkB", "1φ2W 100V"),
+            RLY("Ra", "イ", 330, 470, "1", "2"), RLY("Rb", "ロ", 410, 470, "3", "4"), RLY("Rc", "ハ", 490, 470, "5", "6"),
+            PT("Ci", "ceil", "イ", 900, 80), PT("Lr", "lamp", "ロ", 900, 380), Object.assign(PT("Ch", "ceilK", "ハ", 690, 560), { omit: true })],
+    boxes: [{ id: "B1", x: 690, y: 190, kind: "obox" }],
+    cables: [C("PW", "B1", "VVR2.0-2C"), C("RY", "B1", "VVF1.6-2C×3"), C("Ci", "B1"), C("Lr", "B1"), C("Ch", "B1")],
+    expect: [{ p: "Ci", f: s => s.Ra }, { p: "Lr", f: s => s.Rb }, { p: "Ch", f: s => s.Rc }],
+    cond: ["リモコンリレーは6極の端子台で代用する。1–2 がイ、3–4 がロ、5–6 がハ",
+           "電源の黒をボックスで分けて 1・3・5 に、2・4・6 からそれぞれの照明へ",
+           "各リモコンリレーへは、それぞれ VVF1.6-2C を使う（3本）"],
+    ref: [["PW.L", "B1:1", "黒"], ["Ra.1", "B1:1", "黒"], ["Rb.1", "B1:1", "黒"], ["Rc.1", "B1:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["Ci.W", "B1:2", "白"], ["Lr.W", "B1:2", "白"], ["Ch.W", "B1:2", "白"],
+          ["Ra.2", "B1:3", "白"], ["Ci.L", "B1:3", "黒"],
+          ["Rb.2", "B1:4", "白"], ["Lr.C", "B1:4", "黒"],
+          ["Rc.2", "B1:5", "白"], ["Ch.L", "B1:5", "黒"]] }),
+
+  K({ no: 9, title: "接地極付接地端子付コンセント（EET）",
+    note: "スイッチ イ はランプレセプタクル イ と引掛シーリング イ を点滅する。EET の先の2口コンセントは施工省略。",
+    potColor: { L: "黒", N: "白", E: "緑" },
+    parts: [SRC("PW", 430, 60), PT("La", "lamp", "イ", 130, 80), PT("Sa", "sw1", "イ", 130, 560), PT("Ci", "ceil", "イ", 430, 560),
+            PT("EET", "outletEET", "", 740, 300), Object.assign(PT("O2", "outlet2", "", 740, 70), { omit: true }), SRC("G", 900, 540, "gnd")],
+    boxes: [{ id: "B1", x: 430, y: 300 }, { id: "B2", x: 130, y: 300 }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("B1", "B2", "VVF1.6-3C"), C("La", "B2"), C("Sa", "B2"), C("Ci", "B1"),
+             C("EET", "B1", "VVF2.0-2C"), C("O2", "EET"), C("EET", "G", "E1.6", ["緑"])],
+    expect: [{ p: "La", f: s => s.Sa }, { p: "Ci", f: s => s.Sa }, { p: "EET", f: s => true }, { p: "O2", f: s => true }],
+    cond: ["EET の接地極（E）から接地極（E_D）へは緑の接地線（E1.6）（施工省略かどうかは未確認）",
+           "EET から施工省略の2口コンセントへ渡す"],
+    ref: [["PW.L", "B1:1", "黒"], ["EET.L", "B1:1", "黒"], ["B1:1", "B2:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["EET.W", "B1:2", "白"], ["Ci.W", "B1:2", "白"], ["B1:2", "B2:2", "白"],
+          ["Ci.L", "B1:3", "黒"], ["B1:3", "B2:3", "赤"],
+          ["Sa.1", "B2:1", "黒"], ["La.W", "B2:2", "白"], ["Sa.2", "B2:3", "白"], ["La.C", "B2:3", "黒"],
+          ["EET.L", "O2.L", "黒"], ["EET.W", "O2.W", "白"], ["EET.E", "G.E", "緑"]] }),
+
+  K({ no: 10, title: "同時点滅の確認表示灯",
+    note: "スイッチ イ は引掛シーリング イ とランプレセプタクル イ を点滅する。確認表示灯（パイロットランプ）は同時点滅。",
+    parts: [SRC("PW", 110, 300, "brkB", "1φ2W 100V"), PT("Ca", "ceilK", "イ", 450, 80), PT("La", "lamp", "イ", 820, 300),
+            PT("Pl", "pl", "イ", 370, 560, "F"), PT("Sa", "sw1", "イ", 450, 560, "F"), PT("O", "outlet", "", 530, 560, "F")],
+    boxes: [{ id: "B1", x: 450, y: 300 }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("Ca", "B1"), C("La", "B1"), C("F", "B1", "VVF1.6-3C")],
+    expect: [{ p: "Ca", f: s => s.Sa }, { p: "La", f: s => s.Sa }, { p: "Pl", f: s => s.Sa }, { p: "O", f: s => true }],
+    cond: ["確認表示灯（パイロットランプ）は、引掛シーリング及びランプレセプタクルと同時点滅とする（照明と並列）"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"], ["Sa.1", "O.L", "黒"],
+          ["PW.N", "B1:2", "白"], ["Ca.W", "B1:2", "白"], ["La.W", "B1:2", "白"], ["O.W", "B1:2", "白"], ["O.W", "Pl.2", "白"],
+          ["Sa.2", "B1:3", "赤"], ["Ca.L", "B1:3", "黒"], ["La.C", "B1:3", "黒"], ["Sa.2", "Pl.1", "黒"]] }),
+
+  K({ no: 11, title: "金属管（ねじなし電線管）の配線",
+    note: "スイッチ イ は引掛シーリング イ、ロ はランプレセプタクル ロ を点滅する。スイッチ イ とコンセントへは金属管（E19）の中の IV1.6。",
+    parts: [SRC("PW", 90, 150), PT("Ca", "ceilK", "イ", 860, 150), PT("Lb", "lamp", "ロ", 250, 440),
+            PT("Sa", "sw1", "イ", 410, 560, "F"), PT("O", "outlet", "", 490, 560, "F"), PT("Sb", "sw1", "ロ", 720, 480)],
+    boxes: [{ id: "B1", x: 450, y: 170, kind: "obox" }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("Ca", "B1"), C("Lb", "B1"), C("F", "B1", "IV1.6（E19）", ["黒", "白", "赤"]), C("Sb", "B1")],
+    expect: [{ p: "Ca", f: s => s.Sa }, { p: "Lb", f: s => s.Sb }, { p: "O", f: s => true }],
+    cond: ["金属管（E19）の中は IV1.6 の3本（黒・白・赤）。黒は電源側、白はコンセントの W、赤はスイッチの返り線",
+           "ボックスと金属管のボンド線は、施工条件に指定があるときだけ（この練習では扱わない）"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"], ["Sa.1", "O.L", "黒"], ["Sb.1", "B1:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["Ca.W", "B1:2", "白"], ["Lb.W", "B1:2", "白"], ["O.W", "B1:2", "白"],
+          ["Sa.2", "B1:3", "赤"], ["Ca.L", "B1:3", "黒"],
+          ["Sb.2", "B1:4", "白"], ["Lb.C", "B1:4", "黒"]] }),
+
+  K({ no: 12, title: "合成樹脂製可とう電線管（PF管）の配線",
+    note: "スイッチ イ は引掛シーリング イ、ロ はランプレセプタクル ロ を点滅する。スイッチ ロ とコンセントへは PF管（PF16）の中の IV1.6。",
+    parts: [SRC("PW", 650, 60), PT("Lb", "lamp", "ロ", 300, 80), PT("Ca", "ceilK", "イ", 300, 560),
+            PT("Sb", "sw1", "ロ", 850, 300, "F"), PT("O", "outlet", "", 930, 300, "F"), PT("Sa", "sw1", "イ", 650, 560)],
+    boxes: [{ id: "B1", x: 300, y: 310 }, { id: "B2", x: 620, y: 310, kind: "obox" }],
+    cables: [C("PW", "B2", "VVF2.0-2C"), C("B2", "B1", "VVF1.6-3C"), C("Lb", "B1"), C("Ca", "B1"),
+             C("F", "B2", "IV1.6（PF16）", ["黒", "白", "赤"]), C("Sa", "B2")],
+    expect: [{ p: "Ca", f: s => s.Sa }, { p: "Lb", f: s => s.Sb }, { p: "O", f: s => true }],
+    cond: ["PF管（PF16）の中は IV1.6 の3本（黒・白・赤）。黒は電源側、白はコンセントの W、赤はスイッチの返り線",
+           "右のボックスはアウトレットボックス"],
+    ref: [["PW.L", "B2:1", "黒"], ["Sb.1", "B2:1", "黒"], ["Sb.1", "O.L", "黒"], ["Sa.1", "B2:1", "黒"],
+          ["PW.N", "B2:2", "白"], ["O.W", "B2:2", "白"], ["B2:2", "B1:1", "白"],
+          ["Sa.2", "B2:3", "白"], ["B2:3", "B1:2", "黒"],
+          ["Sb.2", "B2:4", "赤"], ["B2:4", "B1:3", "赤"],
+          ["Lb.W", "B1:1", "白"], ["Ca.W", "B1:1", "白"], ["Ca.L", "B1:2", "黒"], ["Lb.C", "B1:3", "黒"]] }),
+
+  K({ no: 13, title: "自動点滅器と屋外灯",
+    note: "スイッチ イ はランプレセプタクル イ を点滅する。自動点滅器 ロ は、暗くなると屋外灯 ロ（施工省略）を点ける。",
+    potColor: { L: "黒", N: "白", E: "緑" },
+    parts: [SRC("PW", 120, 60), PT("Sa", "sw1", "イ", 120, 570), PT("La", "lamp", "イ", 440, 80),
+            PT("OE", "outletE", "", 440, 560), SRC("G", 620, 570, "gnd"),
+            PT("A", "swA", "ロ", 760, 300), PT("Od", "outdoor", "ロ", 880, 540)],
+    boxes: [{ id: "B1", x: 120, y: 320 }, { id: "B2", x: 440, y: 320 }],
+    cables: [C("PW", "B1", "VVF2.0-2C"), C("Sa", "B1"), C("B1", "B2", "VVF1.6-3C"), C("La", "B2"), C("OE", "B2"),
+             C("A", "B2"), C("Od", "A", "VVR1.6-2C"), C("OE", "G", "E1.6", ["緑"])],
+    expect: [{ p: "La", f: s => s.Sa }, { p: "Od", f: s => s.A }, { p: "A", f: s => true }, { p: "OE", f: s => true }],
+    cond: ["自動点滅器は端子台で代用する。端子は 1・2・3",
+           "1 には電源の黒、2（接地側）には白（電源からと屋外灯から）、3 から屋外灯へ",
+           "屋外灯へは VVR1.6-2C。接地極付コンセントの接地極から接地極（E_D）へは緑の接地線（E1.6）"],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"], ["B1:1", "B2:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["B1:2", "B2:2", "白"],
+          ["Sa.2", "B1:3", "白"], ["B1:3", "B2:3", "赤"],
+          ["A.1", "B2:1", "黒"], ["OE.L", "B2:1", "黒"],
+          ["A.2", "B2:2", "白"], ["OE.W", "B2:2", "白"], ["La.W", "B2:2", "白"],
+          ["La.C", "B2:3", "黒"],
+          ["A.2", "Od.W", "白"], ["A.3", "Od.L", "黒"],
+          ["OE.E", "G.E", "緑"]] }),
 ];
-/* 公式の候補問題（No.1〜No.13）はここに足す。データが入るまでボタンは「準備中」 */
+/* 公式の候補問題（No.1〜No.13）は上に K() で書いてある */
 const OFFICIAL_SLOTS = 13;
 
 /* ============================================================
@@ -547,7 +824,7 @@ function csolve(A, b) {
    ============================================================ */
 const TLAB = t => t.lab ? "「" + t.lab + "」" + (t.desc ? "（" + t.desc + "）" : "") : "";
 const TNAME = t => TYPES[t].name;
-const PNAME = p => TYPES[p.type].nolabel ? TYPES[p.type].name : (TYPES[p.type].name + (p.label ? " " + p.label : ""));
+const PNAME = p => (p.alias || TYPES[p.type].name) + (TYPES[p.type].nolabel || !p.label ? "" : " " + p.label);
 const ENDNAME = e => e[0] === "#" ? ("ボックス " + (view.joints.find(j => j.id === e) || {}).box + " の接続点") : (PNAME(P.term[e].part) + " の端子" + TLAB(P.term[e]));
 const CABNAME = c => (P.box[c.a] ? c.a : PNAME(P.place[c.a][0]) + (P.place[c.a].length > 1 ? "の枠" : "")) + " と " + (P.box[c.b] ? c.b : PNAME(P.place[c.b][0]) + (P.place[c.b].length > 1 ? "の枠" : "")) + " の間のケーブル（" + c.spec + "）";
 function allStates() {
@@ -599,7 +876,7 @@ function judge(st) {
     if (same || (x.any && inv)) return;
     if (x.any) { add("動作", PNAME(p) + " が、どちらのスイッチで切り替えても点いたり消えたりする、にならない。", "3路スイッチは「0」の端子が、1 か 3 のどちらかにつながる。0 には電源側かランプ側を、1 と 3 には相手の3路スイッチへ行く線をつなぐ。", [x.p]); return; }
     const i = on.findIndex((g, k) => g !== want[k]);
-    const what = TYPES[p.type].outlet ? (want[i] ? "に電気が来ない（来るはず）" : "に電気が来る（来ないはず）") : (want[i] ? "が点かない（点くはず）" : "が点く（点かないはず）");
+    const what = !TYPES[p.type].light ? (want[i] ? "に電気が来ない（来るはず）" : "に電気が来る（来ないはず）") : (want[i] ? "が点かない（点くはず）" : "が点く（点かないはず）");
     add("動作", (P.switches.length ? STATE_TEXT(states[i]) + " のとき、" : "") + PNAME(p) + " " + what + "。", "「スイッチを操作して確かめる」で、その組み合わせにしてみよう。電源の L から負荷を通って N まで、たどれるか。", [x.p]);
   });
 
@@ -607,8 +884,9 @@ function judge(st) {
   const u = nets(st, null);
   const potOf = {};
   P.parts.filter(p => isSrc(p.type)).forEach(p => p.terms.forEach(t => { potOf[u.find(t.id)] = t.pot; }));
-  P.parts.forEach(p => p.terms.forEach(t => { if (t.w && coresAt(t.id).length && potOf[u.find(t.id)] !== "N")
-    add("接地側", PNAME(p) + " の端子" + TLAB(t) + "に、接地側（電源の N）の線が来ていない。", "「" + t.lab + "」の端子は接地側。スイッチを通さずに、電源の N（白）から直接来る線をつなぐ。", [t.id]); }));
+  P.parts.forEach(p => p.terms.forEach(t => { const need = p.wPot || "N"; if (t.w && coresAt(t.id).length && potOf[u.find(t.id)] !== need)
+    add("接地側", PNAME(p) + " の端子" + TLAB(t) + "に、" + (need === "N" ? "接地側（電源の N）" : "電源の " + need + " 相") + "の線が来ていない。",
+      need === "N" ? "「" + t.lab + "」の端子は接地側。スイッチを通さずに、電源の N（白）から直接来る線をつなぐ。" : "施工条件で、この器具の「" + t.lab + "」の端子には電源の " + need + " 相をつなぐと決まっている。", [t.id]); }));
   P.cables.forEach(c => {
     const ks = st.cores.filter(k => routeOf(k.a, k.b) === c);
     if (ks.length !== c.colors.length) return;
@@ -771,7 +1049,7 @@ function coreLine(k, i, extra) {
   const a = endPos(k.a), b = endPos(k.b);
   const col = COLORS[k.c] || "#888", selected = sel && sel.core === i;
   let d = `M${a.x} ${a.y} L${b.x} ${b.y}`;
-  if (k.a[0] !== "#" && k.b[0] !== "#") {   // 渡り線: 端子の並ぶ側へふくらませ、ほかの端子や器具の上を通らないようにする
+  if (k.a[0] !== "#" && k.b[0] !== "#" && P.term[k.a].part.place === P.term[k.b].part.place) {   // 渡り線: 端子の並ぶ側へふくらませ、ほかの端子や器具の上を通らないようにする
     const sd = P.term[k.a].part.side, v = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[sd];
     const bulge = 30 + Math.hypot(b.x - a.x, b.y - a.y) * 0.1;
     d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 - v[0] * bulge} ${(a.y + b.y) / 2 - v[1] * bulge} ${b.x} ${b.y}`;
@@ -826,7 +1104,8 @@ function render() {
     const n = view.cores.filter(k => routeOf(k.a, k.b) === c).length;
     g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${mk.has("cab:" + c.id) ? "#fca5a5" : "#e9e3d6"}" stroke-opacity="${mk.has("cab:" + c.id) ? 0.8 : 0.45}" stroke-width="30" stroke-linecap="round"/>`;
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, ok = n === c.colors.length;
-    g += `<g opacity=".8"><rect x="${mx - 58}" y="${my - 11}" width="116" height="22" rx="4" fill="#fff" fill-opacity=".7"/>`
+    const lw = (c.spec.length + 5) * 7 + 12;
+    g += `<g opacity=".8"><rect x="${mx - lw / 2}" y="${my - 11}" width="${lw}" height="22" rx="4" fill="#fff" fill-opacity=".7"/>`
        + `<text x="${mx}" y="${my + 5}" text-anchor="middle" font-size="12" fill="#a39a8a">${esc(c.spec)}　<tspan fill="${ok ? "#5fa58c" : "#a39a8a"}" font-weight="700">${n}/${c.colors.length}本</tspan></text></g>`;
   });
   // ボックス
@@ -925,6 +1204,9 @@ function drawTansen() {
       return;
     }
     g += sym(p.type, p.ax, p.ay, 1.9);
+    if (TYPES[p.type].source && p.sub) g += `<text x="${p.ax}" y="${p.ay - 40}" text-anchor="middle" font-size="22" fill="#151a18">${esc(p.sub)}</text>`;
+    if (p.omit || /施工省略/.test(TYPES[p.type].name)) g += `<text x="${p.ax}" y="${p.ay + 58}" text-anchor="middle" font-size="22" fill="#6b7280">施工省略</text>`;
+    if (p.alias) g += `<text x="${p.ax}" y="${p.ay + (p.omit ? 84 : 60)}" text-anchor="middle" font-size="22" fill="#6b7280">${esc(p.alias)}</text>`;
     if (p.label) g += `<text x="${p.ax - 40}" y="${p.ay - 26}" text-anchor="end" font-size="36" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`;
   });
   Object.keys(P.place).forEach(pl => { const ps = P.place[pl]; if (ps.length < 2) return;

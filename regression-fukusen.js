@@ -48,7 +48,10 @@ ids.forEach(id=>{
   // 電源 L と N を同じ接続点に（短絡）
   ok(cats(id,`st=>{ const k=st.cores.find(k=>k.a==="PW.N"); const l=st.cores.find(k=>k.a==="PW.L"); k.b=l.b; }`).includes("短絡"),id+": 電源のLとNを同じ接続点へ → 短絡");
   // スイッチを飛ばす（スイッチの帰り線を電源側の接続点へ）
-  ok(cats(id,`st=>{ const k=st.cores.find(k=>/^Sa\\.(2|3)$/.test(k.a)); const l=st.cores.find(k=>k.a==="PW.L"); k.b=l.b; }`).length>0,id+": スイッチの帰り線を電源側へ → 不合格");
+  ok(cats(id,`st=>{ /* 最初のスイッチ（リレー等）の端子につながる線のうち、電源の L の●以外へ行くものを、L の●へ付け替える */
+      const l=st.cores.find(k=>k.a==="PW.L"||k.b==="PW.L"), lj=l.a==="PW.L"?l.b:l.a, sw=P.switches[0];
+      const k=st.cores.find(k=>[k.a,k.b].some(e=>e.startsWith(sw.id+"."))&&[k.a,k.b].some(e=>e[0]==="#"&&e!==lj));
+      if(k){ if(k.a[0]==="#") k.a=lj; else k.b=lj; } }`).length>0,id+": スイッチの帰り線を電源側へ → 不合格");
 });
 
 console.log("\n【C】3路スイッチ");
