@@ -423,6 +423,18 @@ w.svgPoint=()=>({x:0,y:0});
 E(`openProblem("k5")`);
 ok(/Q/.test([...d.querySelectorAll('#tansen path[stroke-width="4"]')].map(p=>p.getAttribute("d")).join(" ")),"単線図の線は、角を丸く曲がる");
 
+console.log("\n【R】3路・4路の形");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("k7"); S=refState(P); view=S; render();`);
+{ const b=E("P.box.B1.y"), t=k=>JSON.parse(E(`JSON.stringify(P.term["${k}"])`));
+  ok(Math.abs(t("Sa.1").y-t("Sa.3").y)<1 && t("Sa.0").y>t("Sa.1").y,"3路は 1・3 がボックス側に並び、0 が奥（V の字）");
+  ok(Math.abs(t("S4.1").y-t("S4.3").y)<1 && t("S4.2").y>t("S4.1").y && Math.abs(t("S4.2").x-t("S4.4").x)>Math.abs(t("S4.1").x-t("S4.3").x),"4路は 2×2（奥の 2・4 は外へ広げる）"); }
+tap("#modeBtn");
+{ const n0=(($("stage").innerHTML.match(/stroke-dasharray="4 5"/g))||[]).length;
+  ok(n0===2,"4路は、切り替え先のつながりを点線で2本示す"); }
+tap("#modeBtn");
+ok(JSON.parse(judgeRef("k7")).length===0,"形を変えても、No.7 のお手本は合格");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
