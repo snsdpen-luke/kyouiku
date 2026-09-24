@@ -7,72 +7,75 @@
 <style>
   :root {
     --bg: #f3f5f4; --card: #fff; --ink: #151a18; --muted: #5d6763; --line: #d9dfdc;
-    --accent: #0f6b4f; --bad: #b91c1c; --warn: #b45309;
-    --cable: #e9e3d6; --cableTx: #6d6555; --box: #8b8271; --sel: #2563eb; --lit: #fbbf24;
+    --accent: #0f6b4f; --bad: #b91c1c; --warn: #b45309; --sel: #2563eb;
   }
   :root { color-scheme: light; }   /* パソコンの設定がダークモードでも、白い画面で表示する */
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 14.5px/1.6 "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; }
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 14px 16px 40px; }
-  h1 { font-size: 21px; margin: 0 0 2px; }
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 12px 16px 32px; }
+  h1 { font-size: 20px; margin: 0; display: inline-block; }
   .ver { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
-  .sub { color: var(--muted); margin: 0 0 8px; font-size: 13px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
-  h2 { font-size: 15px; margin: 0 0 6px; }
-  .probs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-  .probs button { min-width: 64px; }
+  .sub { color: var(--muted); font-size: 12.5px; margin-left: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  h2 { font-size: 14.5px; margin: 0 0 4px; }
+  .probs { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+  .probs button { min-width: 56px; padding: 4px 8px; }
   .probs button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
   .probs button.done::after { content: " ✓"; }
   .probs .sep { font-size: 12px; color: var(--muted); margin: 0 2px 0 8px; align-self: center; }
-  .probs button { padding: 4px 8px; }
-  .main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; align-items: start; }
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; align-items: start; }
   @media (max-width: 980px) { .main { grid-template-columns: 1fr; } }
+  .side { display: flex; flex-direction: column; gap: 8px; }
   button { font: inherit; color: var(--ink); border: 1px solid var(--line); background: var(--card);
-           border-radius: 6px; padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
+           border-radius: 6px; padding: 5px 11px; cursor: pointer; touch-action: manipulation; }
   button:disabled { opacity: .45; cursor: not-allowed; }
   button.primary { background: var(--ink); color: var(--card); border-color: var(--ink); font-weight: 700; }
   button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
-  .bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 0 0 8px; }
+  .bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 0 0 6px; }
   .bar .lab { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
-  .pen { width: 44px; height: 34px; padding: 0; font-weight: 700; }
+  .pen { width: 44px; height: 32px; padding: 0; font-weight: 700; }
   .pen.c黒 { background: #1f1f1f; color: #fff; }
   .pen.c白 { background: #fff; color: #333; }
   .pen.c赤 { background: #d62828; color: #fff; }
   .pen.c緑 { background: #1a7f3a; color: #fff; }
   .pen.on { outline: 3px solid var(--sel); outline-offset: 2px; }
-  #stage { width: 100%; height: calc(100vh - 250px); min-height: 420px; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px;
-           touch-action: pinch-zoom; user-select: none; -webkit-user-select: none; }   /* 指で●をドラッグしても画面がスクロールしない */
-  .status { font-size: 13.5px; min-height: 1.5em; margin: 6px 2px 0; color: var(--muted); }
+  #stage { width: 100%; height: calc(100vh - 175px); min-height: 440px; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+           touch-action: pinch-zoom; user-select: none; -webkit-user-select: none; }   /* 指で部品や●をドラッグしても画面がスクロールしない */
+  #stage.placing { cursor: crosshair; outline: 3px solid var(--sel); outline-offset: -3px; }
+  .status { font-size: 13.5px; min-height: 1.5em; margin: 4px 2px 0; color: var(--muted); }
   .status.err { color: var(--bad); font-weight: 600; }
-  .banner { font-size: 14px; font-weight: 700; border-radius: 6px; padding: 6px 10px; margin: 0 0 8px; display: none; }
+  .banner { font-size: 14px; font-weight: 700; border-radius: 6px; padding: 6px 10px; margin: 0 0 6px; display: none; }
   .banner.show { display: block; }
   .banner.short { background: #fee2e2; color: var(--bad); }
   .banner.ref { background: #e0f2fe; color: #075985; }
-  .side h2 { margin-top: 2px; }
-  .side .note { font-size: 13px; color: var(--muted); }
-  .side ol { margin: 4px 0 8px; padding-left: 1.3em; font-size: 13px; }
-  .side li { margin-bottom: 3px; }
-  .result { margin-top: 10px; }
+  .note { font-size: 12.5px; color: var(--muted); }
+  #tansen { width: 100%; display: block; background: #fcfcfa; border: 1px solid var(--line); border-radius: 6px; cursor: zoom-in; margin-top: 6px; }
+  .palette { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .palette button { display: flex; flex-direction: column; align-items: center; padding: 4px 2px 3px; font-size: 11.5px; line-height: 1.25; min-height: 62px; }
+  .palette button svg { width: 34px; height: 30px; }
+  .palette button.on { background: #eff6ff; color: var(--ink); border-color: var(--sel); outline: 2px solid var(--sel); font-weight: 700; }
   .result .cat { border-left: 4px solid var(--bad); background: #fef2f2; border-radius: 4px; padding: 5px 8px; margin: 5px 0; font-size: 13.5px; }
   .result .cat.pass { border-color: var(--accent); background: #ecfdf5; color: var(--accent); font-weight: 700; }
   .result .hint { border-left: 4px solid var(--sel); background: #eff6ff; border-radius: 4px; padding: 6px 8px; margin: 6px 0; font-size: 13.5px; }
-  .stack { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-  .stack button { width: 100%; }
+  details.how summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
+  details.how ol { margin: 4px 0 2px; padding-left: 1.3em; font-size: 12.5px; }
+  details.how li { margin-bottom: 2px; }
   .selbar { display: none; }
   .selbar.show { display: flex; }
-  #pop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 10; }
-  #pop.show { display: flex; }
-  #pop .box { background: #fff; border-radius: 10px; padding: 16px 18px; max-width: 420px; width: 90%; }
-  #pop .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+  #pop, #big { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 10; }
+  #pop.show, #big.show { display: flex; }
+  #pop .box { background: #fff; border-radius: 10px; padding: 16px 18px; max-width: 440px; width: 90%; }
+  #pop .btns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
+  #big .box { background: #fff; border-radius: 10px; padding: 12px; width: min(1100px, 94vw); }
+  #big svg { width: 100%; max-height: 80vh; display: block; }
   svg text { font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; }
   .hit { cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>複線図れんしゅう<span class="ver" id="ver"></span></h1>
-  <p class="sub">第二種電気工事士 技能試験の候補問題を、単線図から複線図に描き直す練習。線を引いたら、スイッチを操作して確かめ、判定する。</p>
+  <h1>複線図れんしゅう<span class="ver" id="ver"></span></h1><span class="sub">第二種電気工事士 技能試験 ― 単線図を読んで部品を置き、複線図に描き直す</span>
 
   <div class="probs" id="probs"></div>
 
@@ -83,6 +86,10 @@
         <span id="pens"></span>
         <span style="flex:1"></span>
         <button id="modeBtn">スイッチを操作して確かめる</button>
+        <button class="primary" id="judgeBtn">判定する</button>
+        <button id="hintBtn" disabled>ヒント</button>
+        <button id="refBtn">お手本</button>
+        <button id="clearBtn">消す</button>
       </div>
       <div class="bar selbar" id="selbar">
         <span class="lab">選んだ線を</span>
@@ -98,40 +105,54 @@
         <button id="delJoint">消す</button>
         <button id="unselJ">選ぶのをやめる</button>
       </div>
+      <div class="bar selbar" id="partbar">
+        <span class="lab" id="partName"></span>
+        <span class="lab" id="partLabLab">記号</span>
+        <span id="partLabels"></span>
+        <button id="delPart">この部品を消す</button>
+        <button id="unselP">選ぶのをやめる</button>
+      </div>
       <div class="banner short" id="shortBanner">短絡（ショート）！ 電源の線どうしが直接つながった。本物なら配線用遮断器が切れる。</div>
       <div class="banner ref" id="refBanner">お手本を表示している。自分の図は残してある。 <button id="backMine">自分の図に戻る</button></div>
       <svg id="stage" viewBox="0 0 1000 620"></svg>
       <div class="status" id="status"></div>
     </div>
 
-    <div class="card side">
-      <h2 id="ptitle"></h2>
-      <div class="note" id="pnote"></div>
-      <h2 style="margin-top:10px">描き方</h2>
-      <ol>
-        <li>下の色ボタンで線の色を選ぶ</li>
-        <li>器具の端子（○）をタップ → つなぐ先のジョイントボックス（点線の円）をタップ。ボックスの中に接続点（●）ができる</li>
-        <li>同じ接続点につなぐ線は、端子 → その●をタップ</li>
-        <li>引いた線をタップすると、色を変える・つなぎ先を変える・消すができる</li>
-        <li>●はドラッグで動かせる。タップすると、動かす・ほかの●とまとめる・消すができる</li>
-        <li>電源の下のボタンで、L と N の上下を入れ替えられる</li>
-      </ol>
-      <div class="stack">
-        <button class="primary" id="judgeBtn">判定する</button>
-        <button id="hintBtn" disabled>ヒントを見る</button>
-        <button id="refBtn">お手本を見る</button>
-        <button id="clearBtn">線をすべて消す</button>
+    <div class="side">
+      <div class="card">
+        <h2 id="ptitle"></h2>
+        <div class="note" id="pnote"></div>
+        <svg id="tansen" viewBox="0 0 1000 620" aria-label="単線図"></svg>
+        <div class="note">単線図（タップで大きく）</div>
       </div>
-      <div class="result" id="result"></div>
+      <div class="card">
+        <h2>部品図 <span class="note">タップして、図の置きたい所をタップ</span></h2>
+        <div class="palette" id="palette"></div>
+      </div>
+      <div class="card">
+        <div class="result" id="result"></div>
+        <details class="how">
+          <summary>描き方</summary>
+          <ol>
+            <li>単線図を見て、要る部品を部品図から選び、図の置きたい所をタップ。記号（イ・ロ…、ボックスは B1・B2…）を単線図と同じにする</li>
+            <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
+            <li>線の色を選び、端子（○）→ ボックス（点線の円）をタップ。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子 → その●</li>
+            <li>線をタップ → 色を変える・つなぎ先を変える・消す。●をタップ → 動かす・まとめる・消す</li>
+            <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
+            <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
+          </ol>
+        </details>
+      </div>
     </div>
   </div>
 </div>
 
 <div id="pop"><div class="box"><div id="popMsg"></div><div class="btns" id="popBtns"></div></div></div>
+<div id="big"><div class="box"><svg id="tansenBig" viewBox="0 0 1000 620"></svg><div class="bar" style="justify-content:flex-end;margin:8px 0 0"><button id="bigClose">閉じる</button></div></div></div>
 
 <script>
 "use strict";
-const VER = "2026-09-24c";
+const VER = "2026-09-24d";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -268,44 +289,57 @@ const PROBLEMS = [
 const OFFICIAL_SLOTS = 13;
 
 /* ============================================================
-   問題の下ごしらえ（端子の位置などを計算して持たせる）
+   問題の下ごしらえ
+   問題の x,y は「お手本の配置」（単線図もこれで描く）。ax,ay に控える。
+   生徒の図では、生徒が置いた位置を x,y に入れて描く（applyLayout）
    ============================================================ */
 function prep(P) {
   if (P._ready) return P;
   P.part = {}; P.box = {}; P.place = {};
-  P.parts.forEach(p => { p.place = p.place || p.id; P.part[p.id] = p;
+  P.parts.forEach(p => { p.place = p.place || p.id; p.ax = p.x; p.ay = p.y; p.side0 = p.side; P.part[p.id] = p;
     (P.place[p.place] = P.place[p.place] || []).push(p); });
-  P.boxes.forEach(b => { b.r = b.r || 78; P.box[b.id] = b; });
+  P.boxes.forEach(b => { b.r = b.r || 78; b.ax = b.x; b.ay = b.y; P.box[b.id] = b; });
   P.cables.forEach((c, i) => { c.id = "c" + i; });
-  const anchor = pl => { const ps = P.place[pl]; return { x: ps.reduce((s, p) => s + p.x, 0) / ps.length, y: ps.reduce((s, p) => s + p.y, 0) / ps.length }; };
-  P.anchor = id => P.box[id] ? P.box[id] : anchor(id);
-  P.parts.forEach(p => {
-    const T = TYPES[p.type];
-    p.terms = (p.terms || T.terms).map(t => Object.assign({}, t));
-    const cab = P.cables.find(c => c.a === p.place || c.b === p.place);
-    let side = p.side;
-    if (!side && cab) {
-      const o = P.anchor(cab.a === p.place ? cab.b : cab.a), me = P.anchor(p.place);
-      const dx = o.x - me.x, dy = o.y - me.y;
-      side = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "bottom" : "top");
-    }
-    p.side = side || "top";
-    p.terms.forEach(t => { t.id = p.id + "." + t.k; });
-  });
+  P.parts.forEach(p => { p.terms = (p.terms || TYPES[p.type].terms).map(t => Object.assign({}, t)); p.terms.forEach(t => { t.id = p.id + "." + t.k; }); });
   P.term = {};
   P.parts.forEach(p => p.terms.forEach(t => { P.term[t.id] = Object.assign({ part: p }, t); }));
-  placeTerms(P, {});
   P.switches = P.parts.filter(p => TYPES[p.type].sw);
   P._ready = true;
   return P;
 }
+/* 場所（ボックスか器具の場所）の中心。まだ置いていなければ null */
+function anchorOf(id) {
+  if (P.box[id]) return P.box[id].shown ? P.box[id] : null;
+  const ps = (P.place[id] || []).filter(p => p.shown);
+  if (!ps.length) return null;
+  return { x: ps.reduce((s, p) => s + p.x, 0) / ps.length, y: ps.reduce((s, p) => s + p.y, 0) / ps.length };
+}
+const cableShown = c => !!(anchorOf(c.a) && anchorOf(c.b));
 
-/* 端子の位置。flip[器具ID] が true なら端子の並びを逆にする（電源の L と N の上下など） */
-function placeTerms(P, flip) {
+/* st.placed の位置を問題の器具・ボックスに写し、端子の位置を決める */
+function applyLayout(st) {
+  P.parts.forEach(p => { p.shown = false; }); P.boxes.forEach(b => { b.shown = false; });
+  (st.placed || []).forEach(it => { if (!it.pid) return; const o = it.type === "box" ? P.box[it.pid] : P.part[it.pid]; if (!o) return;
+    o.shown = true; o.x = it.x; o.y = it.y; });
   P.parts.forEach(p => {
+    if (!p.shown) return;
+    let side = p.side0;
+    if (!side) {
+      const cab = P.cables.find(c => (c.a === p.place || c.b === p.place) && anchorOf(c.a === p.place ? c.b : c.a));
+      if (cab) { const o = anchorOf(cab.a === p.place ? cab.b : cab.a), me = anchorOf(p.place), dx = o.x - me.x, dy = o.y - me.y;
+        side = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "bottom" : "top"); }
+    }
+    p.side = side || "top";
+  });
+  placeTerms(st.flip || {});
+}
+/* 端子の位置。flip[器具ID] が true なら端子の並びを逆にする（電源の L と N の上下など） */
+function placeTerms(flip) {
+  P.parts.forEach(p => {
+    if (!p.shown) return;
     const n = p.terms.length, gap = n === 2 ? 38 : 32, d = p.type === "src" ? 44 : 34;
     p.terms.forEach((t, i) => {
-      const o = ((flip && flip[p.id] ? n - 1 - i : i) - (n - 1) / 2) * gap;
+      const o = ((flip[p.id] ? n - 1 - i : i) - (n - 1) / 2) * gap;
       t.x = p.x + (p.side === "left" ? -d : p.side === "right" ? d : o);
       t.y = p.y + (p.side === "top" ? -d : p.side === "bottom" ? d : o);
       P.term[t.id].x = t.x; P.term[t.id].y = t.y;
@@ -315,13 +349,15 @@ function placeTerms(P, flip) {
 
 /* ============================================================
    図の状態
+   S.placed: [{u, type, label, x, y, pid}]  生徒が置いた部品。pid は対応する問題の器具（ボックス）。
+             記号が単線図と合わなければ pid は null（どれとも対応しない部品）
    S.joints: [{id, box, x?, y?}]  x,y は生徒が動かした位置（無ければ自動で並べる）
    S.cores:  [{a, b, c}]  端点は端子ID か "#接続点ID"
    S.flip:   {器具ID: true}  端子の並びを逆にしたもの
    ============================================================ */
-let P = null, S = null, view = null, sel = null, pen = "黒", mode = "draw", swState = {}, judged = null, hintStep = 0, showingRef = false, mine = null;
+let P = null, S = null, view = null, sel = null, pen = "黒", mode = "draw", swState = {}, judged = null, hintStep = 0, showingRef = false, placing = null;
 let seq = 1;
-const newState = () => ({ joints: [], cores: [], flip: {} });
+const newState = () => ({ placed: [], joints: [], cores: [], flip: {} });
 
 function placeOf(end) {
   if (end[0] === "#") { const j = view.joints.find(j => j.id === end); return j ? j.box : null; }
@@ -338,8 +374,14 @@ function routeOf(a, b) {
   return cableBetween(pa, pb) || undefined;
 }
 
+/* お手本: 部品はお手本の配置、線は ref のとおり */
+function answerPlaced(Pr) {
+  return Pr.parts.map(p => ({ u: "u" + (seq++), type: p.type, label: p.type === "src" ? "" : (p.label || ""), x: p.ax, y: p.ay, pid: p.id }))
+    .concat(Pr.boxes.map(b => ({ u: "u" + (seq++), type: "box", label: b.id, x: b.ax, y: b.ay, pid: b.id })));
+}
 function refState(Pr) {
   const st = newState(), map = {};
+  st.placed = answerPlaced(Pr);
   const end = e => {
     if (!e.includes(":")) return e;
     if (!map[e]) { const id = "#r" + (seq++); map[e] = id; st.joints.push({ id, box: e.split(":")[0] }); }
@@ -429,10 +471,11 @@ function csolve(A, b) {
 
 /* ============================================================
    判定
-   出す順: 未完成 → 短絡 → 動作 → 接地側 → 色
+   出す順: 部品 → 未完成 → 短絡 → 動作 → 接地側 → 色
    各指摘は 3 段: lv1 分類だけ / lv2 場所 / lv3 理由
    ============================================================ */
 const TLAB = t => t.lab ? "「" + t.lab + "」" + (t.desc ? "（" + t.desc + "）" : "") : "";
+const TNAME = t => t === "box" ? "ジョイントボックス" : TYPES[t].name;
 const PNAME = p => p.type === "src" ? "電源" : (TYPES[p.type].name + (p.label ? " " + p.label : ""));
 const ENDNAME = e => e[0] === "#" ? ("ボックス " + (view.joints.find(j => j.id === e) || {}).box + " の接続点") : (PNAME(P.term[e].part) + " の端子" + TLAB(P.term[e]));
 const CABNAME = c => (P.box[c.a] ? c.a : PNAME(P.place[c.a][0]) + (P.place[c.a].length > 1 ? "の枠" : "")) + " と " + (P.box[c.b] ? c.b : PNAME(P.place[c.b][0]) + (P.place[c.b].length > 1 ? "の枠" : "")) + " の間のケーブル（" + c.spec + "）";
@@ -448,32 +491,43 @@ function judge(st) {
   const add = (cat, lv2, lv3, mark) => iss.push({ cat, lv2, lv3, mark: mark || [] });
   view = st;
   const coresAt = e => st.cores.filter(c => c.a === e || c.b === e);
+  const got = new Set((st.placed || []).filter(it => it.pid).map(it => it.pid));
 
-  // 未完成
-  P.parts.forEach(p => p.terms.forEach(t => { if (!coresAt(t.id).length && !t.optional)
-    add("未完成", ENDNAME(t.id) + " に、まだ線がつながっていない。", "器具の端子は全部どこかへつなぐ。", [t.id]); }));
+  // 部品（単線図と合っているか）
+  P.parts.forEach(p => { if (!got.has(p.id))
+    add("部品", "単線図の " + PNAME(p) + " を、まだ置いていない。", "部品図から選んで置き、記号を単線図と同じにする。", []); });
+  P.boxes.forEach(b => { if (!got.has(b.id))
+    add("部品", "単線図のジョイントボックス " + b.id + " を、まだ置いていない。", "部品図の「ジョイントボックス」を置き、記号を " + b.id + " にする。", []); });
+  (st.placed || []).filter(it => !it.pid).forEach(it =>
+    add("部品", "単線図のどれとも合わない部品がある（" + TNAME(it.type) + (it.label ? " " + it.label : "・記号なし") + "）。", "単線図に無い部品か、記号が単線図と違う。単線図の記号をもう一度見よう。", ["u:" + it.u]));
+
+  // 未完成（置いた器具についてだけ見る）
+  P.parts.forEach(p => { if (got.has(p.id)) p.terms.forEach(t => { if (!coresAt(t.id).length && !t.optional)
+    add("未完成", ENDNAME(t.id) + " に、まだ線がつながっていない。", "器具の端子は全部どこかへつなぐ。", [t.id]); }); });
   st.joints.forEach(j => { if (coresAt(j.id).length < 2)
     add("未完成", "ボックス " + j.box + " に、線が1本しか来ていない接続点がある。", "接続点は2本以上の線をつなぐ所。1本だけなら、どこにもつながっていない。", [j.id]); });
+  const ends = pl => P.box[pl] ? got.has(pl) : (P.place[pl] || []).some(p => got.has(p.id));
   P.cables.forEach(c => {
+    if (!ends(c.a) || !ends(c.b)) return;
     const n = st.cores.filter(k => routeOf(k.a, k.b) === c).length;
     if (n !== c.colors.length)
       add("未完成", CABNAME(c) + " を通る線が " + n + " 本ある。", c.spec + " の「" + c.spec.split("-")[1] + "」は心線の本数。このケーブルには線が " + c.colors.length + " 本入っている。", ["cab:" + c.id]);
   });
 
   // 短絡と動作
-  let shortSeen = false; const bad = {};
+  let shortSeen = false;
   const states = allStates(), results = states.map(s => simulate(st, s));
   results.forEach((r, i) => { if (r.short && !shortSeen) { shortSeen = true;
     add("短絡", STATE_TEXT(states[i]) + " にすると、電源の " + r.short[0] + " と " + r.short[1] + " が直接つながる。", "電源の線どうしが負荷（ランプなど）を通らずにつながると短絡。スイッチを操作して、どの組み合わせで起きるか確かめよう。"); } });
   if (!shortSeen) (P.expect || []).forEach(x => {
     const p = P.part[x.p];
-    const got = results.map(r => r.load[x.p] && r.load[x.p].on), want = states.map(s => !!x.f(s));
+    const on = results.map(r => r.load[x.p] && r.load[x.p].on), want = states.map(s => !!x.f(s));
     const over = results.findIndex(r => r.load[x.p] && r.load[x.p].over);
     if (over >= 0) { add("動作", STATE_TEXT(states[over]) + " のとき、" + PNAME(p) + " に定格より高い電圧がかかる。", "100V の器具に 200V がかかっている。どの2本の線の間につないだか確かめよう。", [x.p]); return; }
-    const same = got.every((g, i) => g === want[i]), inv = got.every((g, i) => g !== want[i]);
+    const same = on.every((g, i) => g === want[i]), inv = on.every((g, i) => g !== want[i]);
     if (same || (x.any && inv)) return;
     if (x.any) { add("動作", PNAME(p) + " が、どちらのスイッチで切り替えても点いたり消えたりする、にならない。", "3路スイッチは「0」の端子が、1 か 3 のどちらかにつながる。0 には電源側かランプ側を、1 と 3 には相手の3路スイッチへ行く線をつなぐ。", [x.p]); return; }
-    const i = got.findIndex((g, k) => g !== want[k]);
+    const i = on.findIndex((g, k) => g !== want[k]);
     const what = p.type === "outlet" ? (want[i] ? "に電気が来ない（来るはず）" : "に電気が来る（来ないはず）") : (want[i] ? "が点かない（点くはず）" : "が点く（点かないはず）");
     add("動作", (P.switches.length ? STATE_TEXT(states[i]) + " のとき、" : "") + PNAME(p) + " " + what + "。", "「スイッチを操作して確かめる」で、その組み合わせにしてみよう。電源の L から負荷を通って N まで、たどれるか。", [x.p]);
   });
@@ -505,18 +559,47 @@ const svg = document.getElementById("stage");
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+/* 図記号。k は大きさの倍率。部品図・単線図・複線図で同じ形を使う */
+function sym(type, x, y, k, lit) {
+  const r = 18 * k, sw = 2 * Math.max(1, k * 0.8), ink = "#151a18";
+  const txt = (s, fs) => `<text x="${x}" y="${y + fs * 0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${ink}">${s}</text>`;
+  const circ = fill => `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill || "#fff"}" stroke="${ink}" stroke-width="${sw}"/>`;
+  switch (type) {
+    case "src": return `<rect x="${x - 34 * k}" y="${y - 20 * k}" width="${68 * k}" height="${40 * k}" rx="${5 * k}" fill="#f5f1e8" stroke="#8b8271" stroke-width="${sw * 0.7}"/>` + txt("電源", 15 * k);
+    case "box": return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/><line x1="${x - r * 0.7}" y1="${y + r * 0.7}" x2="${x + r * 0.7}" y2="${y - r * 0.7}" stroke="${ink}" stroke-width="${sw}"/>`;
+    case "lamp": return circ(lit ? "#fbbf24" : null) + txt("R", 15 * k);
+    case "ceil": return circ(lit ? "#fbbf24" : null) + txt("CL", 12 * k);
+    case "pl": return circ(lit ? "#fbbf24" : null) + `<path d="M${x - r * 0.62} ${y - r * 0.62}L${x + r * 0.62} ${y + r * 0.62}M${x + r * 0.62} ${y - r * 0.62}L${x - r * 0.62} ${y + r * 0.62}" stroke="${ink}" stroke-width="${sw}"/>`;
+    case "fan": return circ() + txt("∞", 17 * k);
+    case "outlet": return circ(lit ? "#bbf7d0" : null) + `<path d="M${x - 6 * k} ${y - 7 * k}V${y + 7 * k}M${x + 6 * k} ${y - 7 * k}V${y + 7 * k}" stroke="${ink}" stroke-width="${3 * k}"/>`;
+    case "sw1": return `<circle cx="${x}" cy="${y}" r="${13 * k}" fill="${ink}"/>`;
+    case "sw3": return `<circle cx="${x}" cy="${y}" r="${13 * k}" fill="${ink}"/><text x="${x + 16 * k}" y="${y + 17 * k}" font-size="${13 * k}" font-weight="700">3</text>`;
+  }
+  return "";
+}
+
+/* 端子の札。W・N は白い線、B・L は黒い線、L2 は赤い線をつなぐ端子 */
+function badge(t, x, y) {
+  const kind = (t.w || t.pot === "N") ? "w" : (t.lab === "B" || t.pot === "L" || t.pot === "L1") ? "b" : t.pot === "L2" ? "r" : "";
+  if (!kind) return `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#151a18">${esc(t.lab)}</text>`;
+  const bg = { w: "#fff", b: "#1f1f1f", r: "#d62828" }[kind], fg = kind === "w" ? "#151a18" : "#fff";
+  return `<rect x="${x - 10}" y="${y - 9}" width="20" height="18" rx="4" fill="${bg}" stroke="${kind === "w" ? "#6b7280" : bg}" stroke-width="1.5"/>`
+       + `<text x="${x}" y="${y + 4.5}" text-anchor="middle" font-size="12.5" font-weight="700" fill="${fg}">${esc(t.lab)}</text>`;
+}
+
 /* 接続点は、つながる相手の方向に寄せて輪に並べる（線の交差を減らす） */
 let jpos = {};
 function layoutJoints() {
   jpos = {};
   P.boxes.forEach(b => {
+    if (!b.shown) return;
     view.joints.filter(x => x.box === b.id && x.x !== undefined).forEach(j => { jpos[j.id] = { x: j.x, y: j.y }; });
     const list = view.joints.filter(x => x.box === b.id && x.x === undefined), n = list.length;
     if (!n) return;
     if (n === 1) { jpos[list[0].id] = { x: b.x, y: b.y }; return; }
     const want = list.map(j => { let sx = 0, sy = 0;
       view.cores.forEach(k => { const o = k.a === j.id ? k.b : k.b === j.id ? k.a : null; if (!o || o[0] === "#") return;
-        const t = P.term[o]; const dx = t.x - b.x, dy = t.y - b.y, m = Math.hypot(dx, dy) || 1; sx += dx / m; sy += dy / m; });
+        const t = P.term[o]; if (!t.part.shown) return; const dx = t.x - b.x, dy = t.y - b.y, m = Math.hypot(dx, dy) || 1; sx += dx / m; sy += dy / m; });
       return { j, a: Math.atan2(sy, sx) }; }).sort((p, q) => p.a - q.a);
     let best = null;
     for (let s = 0; s < n; s++) {     // 輪のどこから並べ始めると、それぞれの向きに一番近いか
@@ -533,35 +616,32 @@ function endPos(e) {
   if (e[0] === "#") return jointPos(view.joints.find(j => j.id === e));
   const t = P.term[e]; return { x: t.x, y: t.y };
 }
+const endShown = e => e[0] === "#" ? !!(view.joints.find(j => j.id === e) && P.box[view.joints.find(j => j.id === e).box].shown) : !!(P.term[e] && P.term[e].part.shown);
 
-function drawPart(p, sim) {
+function drawPart(p, sim, uid) {
   const T = TYPES[p.type]; let g = "";
   const x = p.x, y = p.y;
-  const lit = sim && sim.load && sim.load[p.id] && sim.load[p.id].on;
+  const lit = !!(sim && sim.load && sim.load[p.id] && sim.load[p.id].on);
+  const selected = sel && sel.item && sel.item === uid, warn = marks.includes("u:" + uid);
+  if (selected || warn) g += `<circle cx="${x}" cy="${y}" r="${p.type === "src" ? 46 : 30}" fill="${warn ? "#fecaca" : "#dbeafe"}"/>`;
+  if (lit) g += `<circle cx="${x}" cy="${y}" r="30" fill="${T.outlet ? "#bbf7d0" : "#fde68a"}"/>`;
   if (p.type === "src") {
     g += `<rect x="${x - 48}" y="${y - 28}" width="96" height="56" rx="6" fill="#f5f1e8" stroke="#8b8271"/>`;
     g += `<text x="${x}" y="${y - 6}" text-anchor="middle" font-size="15" font-weight="700">電源</text>`;
     g += `<text x="${x}" y="${y + 14}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(p.sub || "")}</text>`;
-    if (mode === "draw" && !showingRef) { const vert = p.side === "left" || p.side === "right";
+    if (mode === "draw" && !showingRef && p.terms.length) { const vert = p.side === "left" || p.side === "right";
       g += `<g class="hit" data-hit="flip:${p.id}"><rect x="${x - 54}" y="${y + 36}" width="108" height="28" rx="14" fill="#fff" stroke="#8b8271"/>`
          + `<text x="${x}" y="${y + 55}" text-anchor="middle" font-size="12.5" fill="#151a18">${vert ? "⇅ 上下" : "⇆ 左右"}入れ替え</text></g>`; }
-  } else if (T.sw) {
-    const on = sim && swState[p.id];
-    g += `<circle cx="${x}" cy="${y}" r="13" fill="#151a18"/>`;
-    if (p.type === "sw3") g += `<text x="${x + 17}" y="${y + 16}" font-size="13" font-weight="700">3</text>`;
-    g += `<text x="${x}" y="${y + 40}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(T.name)}</text>`;
-    if (mode === "sim") g += `<g class="hit" data-hit="sw:${p.id}"><rect x="${x - 34}" y="${y + 46}" width="68" height="26" rx="13" fill="${on ? "#0f6b4f" : "#fff"}" stroke="#0f6b4f"/><text x="${x}" y="${y + 64}" text-anchor="middle" font-size="13" font-weight="700" fill="${on ? "#fff" : "#0f6b4f"}">${esc(T.stateText(!!on))}</text></g>`;
   } else {
-    if (lit) g += `<circle cx="${x}" cy="${y}" r="30" fill="${T.outlet ? "#bbf7d0" : "#fde68a"}"/>`;
-    g += `<circle cx="${x}" cy="${y}" r="18" fill="${lit && !T.outlet ? "#fbbf24" : "#fff"}" stroke="#151a18" stroke-width="2"/>`;
-    const mk = { lamp: "R", ceil: "CL", pl: "×", fan: "∞", outlet: "" }[p.type];
-    if (p.type === "outlet") g += `<line x1="${x - 6}" y1="${y - 7}" x2="${x - 6}" y2="${y + 7}" stroke="#151a18" stroke-width="3"/><line x1="${x + 6}" y1="${y - 7}" x2="${x + 6}" y2="${y + 7}" stroke="#151a18" stroke-width="3"/>`;
-    else g += `<text x="${x}" y="${y + 5}" text-anchor="middle" font-size="${mk.length > 1 ? 12 : 15}" font-weight="700">${mk}</text>`;
-    const ny = p.side === "bottom" ? y - 28 : y + 36;
-    g += `<text x="${x}" y="${ny}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(T.name)}</text>`;
+    g += sym(p.type, x, y, 1, lit && !T.outlet);
+    const below = p.side !== "bottom";
+    g += `<text x="${x}" y="${below ? y + (T.sw ? 36 : 38) : y - 26}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(T.name)}</text>`;
     if (sim && T.outlet && lit) g += `<text x="${x + 24}" y="${y - 16}" font-size="12" font-weight="700" fill="#0f6b4f">100V</text>`;
+    if (T.sw && mode === "sim" && P.part[p.id]) { const on = swState[p.id], by = below ? y + 44 : y + 20;
+      g += `<g class="hit" data-hit="sw:${p.id}"><rect x="${x - 34}" y="${by}" width="68" height="26" rx="13" fill="${on ? "#0f6b4f" : "#fff"}" stroke="#0f6b4f"/><text x="${x}" y="${by + 18}" text-anchor="middle" font-size="13" font-weight="700" fill="${on ? "#fff" : "#0f6b4f"}">${esc(T.stateText(!!on))}</text></g>`; }
+    if (p.label) g += `<text x="${x - 24}" y="${y - 16}" text-anchor="end" font-size="16" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`;
   }
-  if (p.label && p.type !== "src") g += `<text x="${x - 24}" y="${y - 16}" text-anchor="end" font-size="16" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`;
+  if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="part:${uid}" cx="${x}" cy="${y}" r="${p.type === "src" ? 30 : 22}" fill="transparent"/>`;
   return g;
 }
 
@@ -584,81 +664,210 @@ function coreLine(k, i, extra) {
 
 let marks = [];
 function render() {
+  applyLayout(view);
   const sim = mode === "sim" ? simulate(view, swState) : null;
   $("shortBanner").classList.toggle("show", !!(sim && sim.short));
   $("refBanner").classList.toggle("show", showingRef);
   const mk = new Set(marks);
   layoutJoints();
+  const uidOf = {}; (view.placed || []).forEach(it => { if (it.pid) uidOf[it.pid] = it.u; });
   let g = "";
-  // ケーブル（単線図の下敷き）
+  if (!(view.placed || []).length) g += `<text x="500" y="300" text-anchor="middle" font-size="18" fill="#9ca3af">右の単線図を見て、部品図から要る部品を選び、ここに置く</text>`;
+  // ケーブル（単線図のとおりに置けた所だけ、薄く出す）
   P.cables.forEach(c => {
-    const a = P.anchor(c.a), b = P.anchor(c.b);
+    if (!cableShown(c)) return;
+    const a = anchorOf(c.a), b = anchorOf(c.b);
     const n = view.cores.filter(k => routeOf(k.a, k.b) === c).length;
-    g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${mk.has("cab:" + c.id) ? "#fecaca" : "#e9e3d6"}" stroke-width="30" stroke-linecap="round"/>`;
-    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-    const ok = n === c.colors.length;
-    g += `<g><rect x="${mx - 58}" y="${my - 11}" width="116" height="22" rx="4" fill="#fff" stroke="#d9dfdc"/>`
-       + `<text x="${mx}" y="${my + 5}" text-anchor="middle" font-size="12" fill="#6d6555">${esc(c.spec)}　<tspan fill="${ok ? "#0f6b4f" : "#6d6555"}" font-weight="700">${n}/${c.colors.length}本</tspan></text></g>`;
+    g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${mk.has("cab:" + c.id) ? "#fca5a5" : "#e9e3d6"}" stroke-opacity="${mk.has("cab:" + c.id) ? 0.8 : 0.45}" stroke-width="30" stroke-linecap="round"/>`;
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, ok = n === c.colors.length;
+    g += `<g opacity=".8"><rect x="${mx - 58}" y="${my - 11}" width="116" height="22" rx="4" fill="#fff" fill-opacity=".7"/>`
+       + `<text x="${mx}" y="${my + 5}" text-anchor="middle" font-size="12" fill="#a39a8a">${esc(c.spec)}　<tspan fill="${ok ? "#5fa58c" : "#a39a8a"}" font-weight="700">${n}/${c.colors.length}本</tspan></text></g>`;
   });
   // ボックス
   P.boxes.forEach(b => {
-    g += `<circle class="hit" data-hit="box:${b.id}" cx="${b.x}" cy="${b.y}" r="${b.r}" fill="${sel && canReachBox(b.id) ? "#eff6ff" : "#fbfaf7"}" stroke="#8b8271" stroke-width="2" stroke-dasharray="7 6"/>`;
+    if (!b.shown) return;
+    const selB = sel && sel.item && sel.item === uidOf[b.id];
+    g += `<circle class="hit" data-hit="box:${b.id}" cx="${b.x}" cy="${b.y}" r="${b.r}" fill="${sel && canReachBox(b.id) ? "#eff6ff" : selB ? "#dbeafe" : "#fbfaf7"}" stroke="${selB ? "#2563eb" : "#8b8271"}" stroke-width="2" stroke-dasharray="7 6"/>`;
     g += `<text x="${b.x + b.r * 0.72}" y="${b.y - b.r * 0.78}" font-size="14" font-weight="700" fill="#8b8271">${b.id}</text>`;
   });
+  // どれとも対応しない部品（記号ちがい・余分）
+  (view.placed || []).filter(it => !it.pid).forEach(it => {
+    if (it.type === "box") {
+      const selB = sel && sel.item === it.u, warn = mk.has("u:" + it.u);
+      g += `<circle class="hit" data-hit="part:${it.u}" cx="${it.x}" cy="${it.y}" r="78" fill="${warn ? "#fef2f2" : selB ? "#dbeafe" : "#fbfaf7"}" stroke="${selB ? "#2563eb" : "#8b8271"}" stroke-width="2" stroke-dasharray="7 6"/>`;
+      g += `<text x="${it.x + 56}" y="${it.y - 61}" font-size="14" font-weight="700" fill="#8b8271">${esc(it.label || "？")}</text>`;
+    } else g += drawPart({ id: it.u, type: it.type, label: it.label, x: it.x, y: it.y, side: "top", terms: [], sub: "" }, null, it.u);
+  });
   // 器具
-  P.parts.forEach(p => { g += drawPart(p, sim); });
+  P.parts.forEach(p => { if (p.shown) g += drawPart(p, sim, uidOf[p.id]); });
   // 同じ枠の器具を囲む
-  Object.keys(P.place).forEach(pl => { const ps = P.place[pl]; if (ps.length < 2) return;
+  Object.keys(P.place).forEach(pl => { const ps = P.place[pl].filter(p => p.shown); if (ps.length < 2) return;
     const xs = ps.map(p => p.x), ys = ps.map(p => p.y);
     g += `<rect x="${Math.min(...xs) - 40}" y="${Math.min(...ys) - 48}" width="${Math.max(...xs) - Math.min(...xs) + 80}" height="${Math.max(...ys) - Math.min(...ys) + 96}" rx="8" fill="none" stroke="#a89e89" stroke-dasharray="3 4"/>`; });
   // 線
-  view.cores.forEach((k, i) => { g += coreLine(k, i, mk.has("core:" + i) ? "#ef4444" : null); });
+  view.cores.forEach((k, i) => { if (endShown(k.a) && endShown(k.b)) g += coreLine(k, i, mk.has("core:" + i) ? "#ef4444" : null); });
   // 端子
-  P.parts.forEach(p => p.terms.forEach(t => {
+  P.parts.forEach(p => { if (p.shown) p.terms.forEach(t => {
     const on = sel && sel.end === t.id, warn = mk.has(t.id);
     g += `<circle cx="${t.x}" cy="${t.y}" r="8" fill="${on ? "#2563eb" : "#fff"}" stroke="${warn ? "#ef4444" : "#151a18"}" stroke-width="${warn ? 4 : 2}"/>`;
     if (t.lab) {
-      let dy = p.side === "top" ? 22 : p.side === "bottom" ? -13 : 5, dx = p.side === "left" ? 22 : p.side === "right" ? -22 : 0;
-      if (p.type === "src") { dx = -dx * 0.9; dy = p.side === "top" || p.side === "bottom" ? -dy : -10; }   // 電源は箱の文字と重ならないよう外側に
-      g += `<text x="${t.x + dx}" y="${t.y + dy}" text-anchor="middle" font-size="13" font-weight="700" fill="${t.w || t.pot === "N" ? "#5d6763" : "#151a18"}">${esc(t.lab)}</text>`; }
+      let dx, dy;
+      if (p.type === "src") { dx = p.side === "left" ? -24 : p.side === "right" ? 24 : 0; dy = p.side === "top" ? -22 : p.side === "bottom" ? 22 : 0; }   // 電源は箱の外側に
+      else {   // 端子の並びの外側（はしの端子は並びの先、まん中の端子は外側）に置き、器具の記号にかぶらないようにする
+        const i = p.terms.indexOf(t), n = p.terms.length, along = n > 1 && (i === 0 || i === n - 1) ? (i === 0 ? -1 : 1) : 0, vert = p.side === "left" || p.side === "right";
+        const out = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[p.side];
+        dx = along ? (vert ? 0 : along * 22) : out[0] * 22; dy = along ? (vert ? along * 20 : 0) : out[1] * 20;
+      }
+      g += badge(t, t.x + dx, t.y + dy); }
     if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="t:${t.id}" cx="${t.x}" cy="${t.y}" r="19" fill="transparent"/>`;
-  }));
+  }); });
   // 接続点
-  view.joints.forEach(j => { const q = jointPos(j), on = sel && (sel.end === j.id || sel.joint === j.id), warn = mk.has(j.id);
+  view.joints.forEach(j => { if (!P.box[j.box].shown) return; const q = jointPos(j), on = sel && (sel.end === j.id || sel.joint === j.id), warn = mk.has(j.id);
     g += `<circle cx="${q.x}" cy="${q.y}" r="8" fill="${on ? "#2563eb" : "#151a18"}" stroke="${warn ? "#ef4444" : "#fff"}" stroke-width="${warn ? 4 : 2}"/>`;
     if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="j:${j.id}" cx="${q.x}" cy="${q.y}" r="18" fill="transparent"/>`; });
-  // 部品のラベル（電源）
   svg.innerHTML = g;
-  // 選んだ線の操作
+  svg.classList.toggle("placing", !!placing);
+  // 選んだものの操作
   const cs = sel && sel.core !== undefined;
   $("selbar").classList.toggle("show", !!cs && !showingRef);
   $("jointbar").classList.toggle("show", !!(sel && sel.end && sel.end[0] === "#") && !showingRef);
+  const it = sel && sel.item && S.placed.find(x => x.u === sel.item);
+  $("partbar").classList.toggle("show", !!it && !showingRef);
+  if (it) drawPartBar(it);
   ["reCore", "mvJoint", "mgJoint"].forEach(id => $(id).classList.toggle("on", !!(sel && sel.act && $(id).dataset.act === sel.act)));
   document.querySelectorAll("#selPens .pen").forEach(b => b.classList.toggle("on", cs && view.cores[sel.core] && view.cores[sel.core].c === b.dataset.c));
   document.querySelectorAll("#pens .pen").forEach(b => b.classList.toggle("on", b.dataset.c === pen));
+  document.querySelectorAll("#palette button").forEach(b => b.classList.toggle("on", b.dataset.type === placing));
   $("modeBtn").classList.toggle("on", mode === "sim");
   $("modeBtn").textContent = mode === "sim" ? "線を引くのに戻る" : "スイッチを操作して確かめる";
 }
 
 function canReachBox(boxId) {
   if (!sel || !sel.end) return false;
-  const pa = placeOf(sel.end);
-  return pa !== boxId && !!cableBetween(pa, boxId);
+  const pa = placeOf(sel.end), c = cableBetween(pa, boxId);
+  return pa !== boxId && !!c && cableShown(c);
+}
+
+/* ---------- 単線図（お手本の配置から描く） ---------- */
+function drawTansen() {
+  let g = "";
+  const A = id => { if (P.box[id]) return { x: P.box[id].ax, y: P.box[id].ay }; const ps = P.place[id]; return { x: ps.reduce((s, p) => s + p.ax, 0) / ps.length, y: ps.reduce((s, p) => s + p.ay, 0) / ps.length }; };
+  P.cables.forEach(c => { const a = A(c.a), b = A(c.b);
+    g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#151a18" stroke-width="4"/>`; });
+  /* ケーブルの種類は、ボックスから離れた側（器具寄り）に、線の外側へずらして書く。ボックスに集まる線どうしで文字がぶつからない */
+  P.cables.forEach(c => { let a = A(c.a), b = A(c.b); if (P.box[c.a] && !P.box[c.b]) [a, b] = [b, a];
+    const dx = b.x - a.x, dy = b.y - a.y, vert = Math.abs(dy) > Math.abs(dx) * 1.2, hor = Math.abs(dx) > Math.abs(dy) * 1.2;
+    const t = hor || !(P.box[c.a] || P.box[c.b]) ? 0.5 : 0.4, mx = a.x + dx * t, my = a.y + dy * t;
+    const anchor = vert ? "start" : hor ? "middle" : (dx > 0 ? "end" : "start");     // 斜めの線は、ボックスから見て外側へ書く
+    const ox = vert ? 16 : hor ? 0 : (dx > 0 ? -16 : 16), oy = hor ? -14 : vert ? 10 : 0;
+    g += `<text x="${mx + ox}" y="${my + oy}" text-anchor="${anchor}" font-size="30" font-weight="700" fill="#151a18" stroke="#fcfcfa" stroke-width="8" paint-order="stroke">${esc(c.spec)}</text>`; });
+  P.boxes.forEach(b => { g += sym("box", b.ax, b.ay, 1.6);
+    g += `<text x="${b.ax + 34}" y="${b.ay - 26}" font-size="30" font-weight="700" fill="#8b8271">${esc(b.id)}</text>`; });
+  P.parts.forEach(p => {
+    if (p.type === "src") {
+      g += `<rect x="${p.ax - 80}" y="${p.ay - 42}" width="160" height="84" rx="8" fill="#f5f1e8" stroke="#8b8271" stroke-width="3"/>`
+         + `<text x="${p.ax}" y="${p.ay - 4}" text-anchor="middle" font-size="32" font-weight="700">電源</text>`
+         + `<text x="${p.ax}" y="${p.ay + 30}" text-anchor="middle" font-size="24">${esc(p.sub || "")}</text>`;
+      return;
+    }
+    g += sym(p.type, p.ax, p.ay, 1.9);
+    if (p.label) g += `<text x="${p.ax - 40}" y="${p.ay - 26}" text-anchor="end" font-size="36" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`;
+  });
+  Object.keys(P.place).forEach(pl => { const ps = P.place[pl]; if (ps.length < 2) return;
+    const xs = ps.map(p => p.ax), ys = ps.map(p => p.ay);
+    g += `<rect x="${Math.min(...xs) - 50}" y="${Math.min(...ys) - 50}" width="${Math.max(...xs) - Math.min(...xs) + 100}" height="${Math.max(...ys) - Math.min(...ys) + 100}" rx="10" fill="none" stroke="#8b8271" stroke-width="3" stroke-dasharray="8 8"/>`; });
+  $("tansen").innerHTML = g; $("tansenBig").innerHTML = g;
+}
+$("tansen").addEventListener("click", () => $("big").classList.add("show"));
+$("bigClose").onclick = () => $("big").classList.remove("show");
+$("big").addEventListener("click", e => { if (e.target === $("big")) $("big").classList.remove("show"); });
+
+/* ---------- 部品図 ---------- */
+const PALETTE = ["src", "box", "lamp", "ceil", "sw1", "sw3", "outlet", "pl", "fan"];
+const LABELS = ["イ", "ロ", "ハ", "ニ", "ホ", "ヘ"];
+const BOXLABELS = ["B1", "B2", "B3", "B4"];
+function drawPalette() {
+  const host = $("palette"); host.innerHTML = "";
+  PALETTE.forEach(t => {
+    const b = document.createElement("button"); b.dataset.type = t;
+    b.innerHTML = `<svg viewBox="-36 -30 72 60">${sym(t, 0, 0, t === "src" ? 0.95 : 1.25)}</svg><span>${esc(TNAME(t))}</span>`;
+    b.onclick = () => { if (showingRef) return; placing = placing === t ? null : t; sel = null; if (mode !== "draw") mode = "draw";
+      status(placing ? TNAME(t) + " を置く。図の置きたい所をタップ。" : ""); render(); };
+    host.appendChild(b);
+  });
+}
+
+/* ---------- 選んだ部品の操作（記号・消す） ---------- */
+function drawPartBar(it) {
+  $("partName").textContent = TNAME(it.type) + " を";
+  const host = $("partLabels"); host.innerHTML = "";
+  $("partLabLab").style.display = it.type === "src" ? "none" : "";
+  if (it.type === "src") return;
+  const opts = it.type === "box" ? BOXLABELS : LABELS.concat([""]);
+  opts.forEach(l => { const b = document.createElement("button"); b.textContent = l || "なし"; b.dataset.lab = l;
+    if ((it.label || "") === l) b.classList.add("on");
+    b.onclick = () => setLabel(it.u, l); host.appendChild(b); host.appendChild(document.createTextNode(" ")); });
 }
 
 /* ============================================================
-   操作（タップだけで描ける。ドラッグは使わない）
+   操作（タップだけで描ける。ドラッグは近道）
    ============================================================ */
 function status(msg, err) { const s = $("status"); s.textContent = msg || ""; s.className = "status" + (err ? " err" : ""); }
-function changed() { judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; $("hintBtn").disabled = true; save(); render(); }
+function changed() { judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント"; save(); render(); }
+
+/* 置いた部品を、問題の器具（ボックス）に対応させる。種類と記号が同じで、まだ誰も対応していないもの。
+   同じ種類・記号が複数あるときは、お手本の配置で一番近いもの */
+function assign(it) {
+  const taken = new Set(S.placed.filter(x => x !== it && x.pid).map(x => x.pid));
+  const cand = it.type === "box" ? P.boxes.filter(b => b.id === it.label && !taken.has(b.id))
+    : P.parts.filter(p => p.type === it.type && (it.type === "src" || (p.label || "") === (it.label || "")) && !taken.has(p.id));
+  let best = null, bd = Infinity;
+  cand.forEach(c => { const d = Math.hypot(c.ax - it.x, c.ay - it.y); if (d < bd) { bd = d; best = c; } });
+  it.pid = best ? best.id : null;
+}
+function assignFree() { S.placed.forEach(it => { if (!it.pid) assign(it); }); }
+/* 器具（ボックス）が図から外れたら、つながっていた線を消す */
+function purge(pid, isBox) {
+  if (!pid) return;
+  if (isBox) { const js = new Set(S.joints.filter(j => j.box === pid).map(j => j.id));
+    S.cores = S.cores.filter(k => !js.has(k.a) && !js.has(k.b)); S.joints = S.joints.filter(j => j.box !== pid); }
+  else S.cores = S.cores.filter(k => !k.a.startsWith(pid + ".") && !k.b.startsWith(pid + "."));
+  tidy();
+}
+function placeItem(type, x, y) {
+  x = Math.max(50, Math.min(950, Math.round(x))); y = Math.max(50, Math.min(570, Math.round(y)));
+  let label = "";
+  if (type === "box") { const used = new Set(S.placed.filter(i => i.type === "box").map(i => i.label)); label = BOXLABELS.find(l => !used.has(l)) || ""; }
+  const it = { u: "u" + (seq++), type, label, x, y, pid: null };
+  S.placed.push(it); assign(it);
+  return it;
+}
+function setLabel(u, l) {
+  const it = S.placed.find(x => x.u === u); if (!it || (it.label || "") === l) return;
+  const old = it.pid; it.label = l; it.pid = null; purge(old, it.type === "box"); assign(it); assignFree();
+  status(it.pid ? "記号を「" + (l || "なし") + "」にした。" : "記号を「" + (l || "なし") + "」にした。この部品は、まだ単線図のどれとも合っていない。");
+  changed();
+}
+function removeItem(u) {
+  const it = S.placed.find(x => x.u === u); if (!it) return;
+  purge(it.pid, it.type === "box"); S.placed = S.placed.filter(x => x !== it); assignFree(); sel = null;
+  status("部品を消した。"); changed();
+}
+function moveItem(u, x, y) {
+  const it = S.placed.find(i => i.u === u); if (!it) return;
+  x = Math.max(40, Math.min(960, Math.round(x))); y = Math.max(40, Math.min(580, Math.round(y)));
+  if (it.type === "box" && it.pid) S.joints.forEach(j => { if (j.box === it.pid && j.x !== undefined) { j.x += x - it.x; j.y += y - it.y; } });
+  it.x = x; it.y = y;
+}
+const itemOfBox = id => S.placed.find(i => i.type === "box" && i.pid === id);
 
 function addCore(a, b) {
   if (a === b) return status("同じ所どうしはつなげない。", true);
   const r = routeOf(a, b);
-  if (r === undefined) {
+  if (r === undefined || (r && !cableShown(r))) {
     const pa = placeOf(a), pb = placeOf(b);
     if (pa === pb && P.box[pa]) return status("同じボックスの中の接続点どうしは、つながない。1つの接続点にまとめる。", true);
-    return status("そこへ行くケーブルがない。単線図のケーブル（太い帯）に沿ってつなぐ。", true);
+    return status("そこへ行くケーブルがない。単線図のケーブル（薄い帯）に沿ってつなぐ。", true);
   }
   if (S.cores.some(k => (k.a === a && k.b === b) || (k.a === b && k.b === a))) return status("その2か所は、もう線でつながっている。", true);
   S.cores.push({ a, b, c: pen });
@@ -698,13 +907,20 @@ function reattach(i, target) {
   k[endKey] = target; tidy(); return null;
 }
 
-/* ●のドラッグ。少し動かすまではタップとして扱う（選ぶ操作と取り違えないため） */
+/* ドラッグ: 部品・ボックス・●。少し動かすまではタップとして扱う（選ぶ操作と取り違えないため） */
 let drag = null, dragEnded = false;
 svg.addEventListener("pointerdown", e => {
   dragEnded = false;
   const h = e.target.closest && e.target.closest("[data-hit]");
-  if (!h || showingRef || mode !== "draw" || !h.dataset.hit.startsWith("j:")) return;
-  drag = { id: h.dataset.hit.slice(2), x: e.clientX, y: e.clientY, moving: false, pid: e.pointerId };
+  if (!h || showingRef || mode !== "draw" || placing) return;
+  const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
+  let what = null;
+  if (kind === "j") what = { kind: "j", id };
+  else if (kind === "part") what = { kind: "item", id };
+  else if (kind === "box") { const it = itemOfBox(id); if (it) what = { kind: "item", id: it.u }; }
+  if (!what) return;
+  drag = Object.assign(what, { x: e.clientX, y: e.clientY, moving: false, pid: e.pointerId });
+  if (what.kind === "item") { const it = S.placed.find(i => i.u === what.id), q = svgPoint(e); drag.ox = it.x - q.x; drag.oy = it.y - q.y; }
 });
 svg.addEventListener("pointermove", e => {
   if (!drag || e.pointerId !== drag.pid) return;
@@ -712,13 +928,15 @@ svg.addEventListener("pointermove", e => {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
     drag.moving = true;
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}      // 図を描き直しても指を追い続ける
-    status("ドラッグ中。ボックスの中で指を離す。");
+    status(drag.kind === "j" ? "ドラッグ中。ボックスの中で指を離す。" : "ドラッグ中。置きたい所で指を離す。");
   }
-  const q = svgPoint(e); moveJoint(drag.id, q.x, q.y, true); render();
+  const q = svgPoint(e);
+  if (drag.kind === "j") moveJoint(drag.id, q.x, q.y, true); else moveItem(drag.id, q.x + drag.ox, q.y + drag.oy);
+  render();
 });
 function endDrag(e) {
   if (!drag || (e && e.pointerId !== drag.pid)) return;
-  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status("接続点を動かした。"); save(); render(); }
+  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
   drag = null;
 }
 svg.addEventListener("pointerup", endDrag);
@@ -727,16 +945,21 @@ svg.addEventListener("pointercancel", endDrag);
 svg.addEventListener("click", e => {
   if (showingRef) return;
   if (dragEnded) { dragEnded = false; return; }                     // ドラッグの終わりはタップとして扱わない
+  if (placing) {                                                     // 部品を置く
+    const q = svgPoint(e), it = placeItem(placing, q.x, q.y); placing = null; sel = { item: it.u };
+    status(it.type === "src" ? "電源を置いた。" : TNAME(it.type) + " を置いた。上のボタンで記号を単線図と同じにする。");
+    changed(); return;
+  }
   if (sel && sel.act === "move") {                                   // 接続点を動かす: 置きたい場所をタップ
     const q = svgPoint(e);
     if (!moveJoint(sel.joint, q.x, q.y)) return status("ボックス " + (S.joints.find(j => j.id === sel.joint) || {}).box + " の中をタップする。", true);
     sel = null; status("接続点を動かした。"); save(); render(); return;
   }
-  const h = e.target.closest("[data-hit]"); if (!h) return;
+  const h = e.target.closest("[data-hit]"); if (!h) { if (sel) { sel = null; status(""); render(); } return; }
   const [kind, ...rest] = h.dataset.hit.split(":"); const id = rest.join(":");
   if (kind === "sw") { swState[id] = !swState[id]; render(); return; }
   if (mode !== "draw") return;
-  if (kind === "flip") { S.flip = S.flip || {}; S.flip[id] = !S.flip[id]; placeTerms(P, S.flip); sel = null; status("端子の並びを入れ替えた。つないだ線はそのまま。"); save(); render(); return; }
+  if (kind === "flip") { S.flip = S.flip || {}; S.flip[id] = !S.flip[id]; sel = null; status("端子の並びを入れ替えた。つないだ線はそのまま。"); save(); render(); return; }
   if (sel && sel.act === "merge") {
     if (kind !== "j") return status("まとめる先の●をタップする。", true);
     if (id === sel.joint) return status("同じ●。別の●を選ぶ。", true);
@@ -752,6 +975,10 @@ svg.addEventListener("click", e => {
     if (err) { tidy(); render(); return status(err, true); }
     sel = null; status("線のつなぎ先を変えた。"); changed(); return;
   }
+  if (kind === "part") {
+    if (sel && sel.end) return status("線は、器具の端子（○）からつなぐ。", true);
+    sel = { item: id }; status("部品を選んだ。記号を変える・消す。ドラッグで動かせる。"); render(); return;
+  }
   if (kind === "core") { sel = { core: +id }; status("線を選んだ。色を変える・つなぎ先を変える・消す。"); render(); return; }
   if (kind === "j" && !(sel && sel.end)) { sel = { end: id, joint: id }; status("接続点を選んだ。動かす・まとめる・消す。この●から別のボックスへ線を引くこともできる。"); render(); return; }
   if (kind === "t" || kind === "j") {
@@ -759,10 +986,10 @@ svg.addEventListener("click", e => {
     sel = { end: id }; status(ENDNAME(id) + " を選んだ。つなぐ先（ボックスか、その中の●）をタップ。"); render(); return;
   }
   if (kind === "box") {
-    if (!(sel && sel.end)) return status("先に器具の端子（○）か、接続点（●）をタップする。");
-    const pa = placeOf(sel.end);
+    if (!(sel && sel.end)) { const it = itemOfBox(id); sel = it ? { item: it.u } : null; status("ボックスを選んだ。記号を変える・消す。ドラッグで動かせる。線を引くときは、先に端子（○）をタップ。"); render(); return; }
+    const pa = placeOf(sel.end), c = cableBetween(pa, id);
     if (pa === id) return status("同じボックスの中の接続点どうしは、つながない。1つの接続点にまとめる。", true);
-    if (!cableBetween(pa, id)) return status("そこへ行くケーブルがない。単線図のケーブル（太い帯）に沿ってつなぐ。", true);
+    if (!c || !cableShown(c)) return status("そこへ行くケーブルがない。単線図のケーブル（薄い帯）に沿ってつなぐ。", true);
     const j = newJoint(id); addCore(sel.end, j); tidy(); save(); render();
   }
 });
@@ -770,8 +997,11 @@ $("stage").addEventListener("contextmenu", e => e.preventDefault());
 
 function setCoreColor(c) { if (!(sel && sel.core !== undefined)) return; S.cores[sel.core].c = c; pen = c; changed(); }
 $("delCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; S.cores.splice(sel.core, 1); tidy(); sel = null; status("線を消した。"); changed(); };
-$("unsel").onclick = () => { sel = null; status(""); render(); };
-$("unselJ").onclick = () => { sel = null; status(""); render(); };
+$("unsel").onclick = $("unselJ").onclick = $("unselP").onclick = () => { sel = null; status(""); render(); };
+$("delPart").onclick = () => { if (!(sel && sel.item)) return; const u = sel.item, it = S.placed.find(x => x.u === u); if (!it) return;
+  const n = it.pid ? S.cores.filter(k => it.type === "box" ? S.joints.some(j => j.box === it.pid && (k.a === j.id || k.b === j.id)) : (k.a.startsWith(it.pid + ".") || k.b.startsWith(it.pid + "."))).length : 0;
+  if (!n) return removeItem(u);
+  ask("この部品と、つながっている線 " + n + " 本を消す？", () => removeItem(u), "消す"); };
 $("reCore").dataset.act = "reattach"; $("mvJoint").dataset.act = "move"; $("mgJoint").dataset.act = "merge";
 $("reCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; const k = S.cores[sel.core];
   if (k.a[0] !== "#" && k.b[0] !== "#") return status("渡り線はボックスを通らないので、消して引き直す。", true);
@@ -780,9 +1010,11 @@ $("mvJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "move"
 $("mgJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "merge"; status("まとめる先の●（同じボックスの中）をタップ。"); render(); };
 $("delJoint").onclick = () => { if (!(sel && sel.joint)) return; const jid = sel.joint, n = S.cores.filter(k => k.a === jid || k.b === jid).length;
   ask("この接続点と、つながっている線 " + n + " 本を消す？", () => { S.cores = S.cores.filter(k => k.a !== jid && k.b !== jid); S.joints = S.joints.filter(j => j.id !== jid); sel = null; status("接続点を消した。"); changed(); }, "消す"); };
-$("modeBtn").onclick = () => { if (showingRef) return; mode = mode === "draw" ? "sim" : "draw"; sel = null;
+$("modeBtn").onclick = () => { if (showingRef) return; mode = mode === "draw" ? "sim" : "draw"; sel = null; placing = null;
   status(mode === "sim" ? "スイッチの下のボタンで入/切を切り替えて、ランプやコンセントを確かめる。" : ""); render(); };
-$("clearBtn").onclick = () => { if (showingRef) return; ask("線をすべて消して、最初から描き直す？", () => { const f = S.flip; S = newState(); S.flip = f || {}; view = S; sel = null; changed(); status("すべて消した。"); }, "消す"); };
+$("clearBtn").onclick = () => { if (showingRef) return;
+  ask("何を消す？", () => { S.cores = []; S.joints = []; sel = null; changed(); status("線をすべて消した。部品はそのまま。"); }, "線だけ消す",
+    { label: "部品も全部片づける", fn: () => { S = newState(); view = S; sel = null; changed(); status("すべて片づけた。"); } }); };
 
 function penButtons(host, cb) {
   host.innerHTML = "";
@@ -794,8 +1026,9 @@ function penButtons(host, cb) {
 }
 
 /* ---------- 判定とヒント ---------- */
-const CATS = ["未完成", "短絡", "動作", "接地側", "色"];
+const CATS = ["部品", "未完成", "短絡", "動作", "接地側", "色"];
 const LV1 = {
+  "部品": n => "単線図と合わない所が " + n + " か所ある（置き忘れ・余分・記号のちがい）。",
   "未完成": n => "まだ描き終わっていない所が " + n + " か所ある。",
   "短絡": () => "スイッチの組み合わせによって、短絡（ショート）が起きる。",
   "動作": n => "スイッチを操作したときの点き方が、決まりどおりでない器具が " + n + " つある。",
@@ -804,16 +1037,16 @@ const LV1 = {
 };
 function doJudge() {
   if (showingRef) return;
-  judged = judge(S); hintStep = 0; marks = [];
+  judged = judge(S); view = S; hintStep = 0; marks = [];
   const box = $("result"); let h = "";
   if (!judged.length) {
-    h = `<div class="cat pass">合格！ 結線も色も決まりどおり。</div>`;
+    h = `<div class="cat pass">合格！ 部品も結線も色も決まりどおり。</div>`;
     const cnt = P.boxes.map(b => b.id + " の接続点 " + S.joints.filter(j => j.box === b.id).length + " か所").join("、");
     h += `<div class="note">${esc(cnt)}。</div>`;
     markDone(P.id);
   } else CATS.forEach(c => { const n = judged.filter(x => x.cat === c).length; if (n) h += `<div class="cat"><b>${c}</b>　${esc(LV1[c](n))}</div>`; });
   box.innerHTML = h;
-  $("hintBtn").disabled = !judged.length;
+  $("hintBtn").disabled = !judged.length; $("hintBtn").textContent = "ヒント";
   render();
 }
 function doHint() {
@@ -825,31 +1058,35 @@ function doHint() {
   d.innerHTML = "<b>" + esc(it.cat) + "</b>　" + esc(it.lv2) + (deep ? "<br>" + esc(it.lv3) : "") + (it.mark.length ? "<br><span class=\"note\">図の赤い所。</span>" : "");
   $("result").appendChild(d);
   hintStep++;
-  $("hintBtn").textContent = hintStep % 2 === 1 ? "もう少しくわしく" : "次のヒント";
+  $("hintBtn").textContent = hintStep % 2 === 1 ? "くわしく" : "次のヒント";
   render();
 }
 $("judgeBtn").onclick = doJudge;
 $("hintBtn").onclick = doHint;
 $("refBtn").onclick = () => {
   if (showingRef) return;
-  ask("お手本を表示する？ 自分で描いた図は消えない。", () => { showingRef = true; mine = S; view = refState(P); sel = null; mode = "draw"; marks = []; render(); status("お手本。線の色と、どの接続点に何本集まるかを見比べよう。"); }, "見る");
+  ask("お手本を表示する？ 自分で描いた図は消えない。", () => { showingRef = true; view = refState(P); view.flip = {}; sel = null; placing = null; mode = "draw"; marks = []; render(); status("お手本。線の色と、どの接続点に何本集まるかを見比べよう。"); }, "見る");
 };
 $("backMine").onclick = () => { showingRef = false; view = S; status(""); render(); };
 
 /* ---------- 自前の確認ダイアログ（ブラウザの confirm は使わない） ---------- */
-function ask(msg, onYes, yesLabel) {
+function ask(msg, onYes, yesLabel, alt) {
   $("popMsg").textContent = msg; const b = $("popBtns"); b.innerHTML = "";
-  const no = document.createElement("button"); no.textContent = "やめる"; no.onclick = () => $("pop").classList.remove("show");
+  const close = () => $("pop").classList.remove("show");
+  const no = document.createElement("button"); no.textContent = "やめる"; no.onclick = close; b.appendChild(no);
+  if (alt) { const a = document.createElement("button"); a.id = "altBtn"; a.textContent = alt.label; a.onclick = () => { close(); alt.fn(); }; b.appendChild(a); }
   const ok = document.createElement("button"); ok.className = "primary"; ok.id = "okBtn"; ok.textContent = yesLabel || "はい";
-  ok.onclick = () => { $("pop").classList.remove("show"); onYes(); };
-  b.appendChild(no); b.appendChild(ok); $("pop").classList.add("show");
+  ok.onclick = () => { close(); onYes(); };
+  b.appendChild(ok); $("pop").classList.add("show");
 }
 
 /* ---------- 保存（この端末のブラウザだけ。消えても困らないものだけ） ---------- */
 const KEY = "fukusen:";
 function save() { try { localStorage.setItem(KEY + P.id, JSON.stringify(S)); } catch (e) {} }
 function load(id) { try { const s = JSON.parse(localStorage.getItem(KEY + id) || "null"); if (s && Array.isArray(s.cores) && Array.isArray(s.joints)) {
-  s.joints.forEach(j => { const n = +String(j.id).replace(/\D/g, ""); if (n >= seq) seq = n + 1; }); return s; } } catch (e) {} return null; }
+  if (!Array.isArray(s.placed)) s.placed = s.cores.length ? answerPlaced(P) : [];   // 部品を置く前の版で描いた図は、お手本の配置で開く
+  [...s.joints.map(j => j.id), ...s.placed.map(i => i.u)].forEach(id => { const n = +String(id).replace(/\D/g, ""); if (n >= seq) seq = n + 1; });
+  return s; } } catch (e) {} return null; }
 const doneMem = new Set();   // 保存できない環境でも、開いている間は印を残す
 function doneSet() { let s = []; try { s = JSON.parse(localStorage.getItem(KEY + "done") || "[]"); } catch (e) {} return new Set([...s, ...doneMem]); }
 function markDone(id) { doneMem.add(id); const s = doneSet(); try { localStorage.setItem(KEY + "done", JSON.stringify([...s])); } catch (e) {} drawTabs(); }
@@ -867,14 +1104,15 @@ function drawTabs() {
 }
 function openProblem(id) {
   P = prep(PROBLEMS.find(p => p.id === id));
-  S = load(id) || newState(); S.flip = S.flip || {}; view = S; placeTerms(P, S.flip); sel = null; mode = "draw"; swState = {}; showingRef = false;
+  S = load(id) || newState(); S.flip = S.flip || {}; view = S; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
-  $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒントを見る";
+  $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
   penButtons($("pens"), c => { pen = c; render(); });
   penButtons($("selPens"), setCoreColor);
-  status(""); drawTabs(); render();
+  drawTansen(); status(""); drawTabs(); render();
 }
+drawPalette();
 openProblem(PROBLEMS[0].id);
 </script>
 </body>

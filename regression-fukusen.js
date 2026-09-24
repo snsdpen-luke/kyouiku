@@ -29,7 +29,7 @@ const ids=JSON.parse(E("JSON.stringify(PROBLEMS.map(p=>p.id))"));
 console.log("【A】お手本は合格し、何も描かないと不合格");
 ids.forEach(id=>{
   ok(cats(id).length===0,id+": お手本 → 指摘なし"+(cats(id).length?" → "+cats(id).join(","):""));
-  ok(E(`(()=>{openProblem("${id}");const r=judge(newState());view=S;return r.some(x=>x.cat==="未完成");})()`),id+": 空の図 → 未完成");
+  ok(E(`(()=>{openProblem("${id}");const r=judge(newState());view=S;return r.some(x=>x.cat==="部品");})()`),id+": 空の図 → 部品（置き忘れ）");
 });
 
 console.log("\n【B】典型的な誤答が落ちる");
@@ -64,6 +64,25 @@ ok(E(`(()=>{const r=simulate(refState(P),{Sa:false});return r.load.O1.on;})()`),
 console.log("\n【E】画面をタップして描ける");
 E(`try{localStorage.clear()}catch(e){}`);
 E(`openProblem("r1")`);
+ok(/単線図/.test(d.getElementById("stage").textContent) && d.querySelectorAll(`#tansen line[stroke-width="4"]`).length===3,"最初は何も置いていない。単線図にはケーブル3本が描かれている");
+ok(d.querySelectorAll("#palette button").length>=9,"部品図が並んでいる");
+/* 部品を置く: 部品図をタップ → 図をタップ → 記号を選ぶ */
+const put=(type,x,y,lab)=>{ tap(`#palette button[data-type="${type}"]`); w.svgPoint=()=>({x,y}); tap("#stage");
+  if(lab!==undefined){ const b=[...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab===lab); b.click(); } };
+put("src",120,300); put("box",480,300);
+ok(d.querySelectorAll("#stage line").length===1,"電源とボックスを置くと、その間のケーブルだけ出る");
+put("lamp",480,90);
+ok(d.querySelectorAll("#stage line").length===1,"記号なしのランプは単線図と合わないので、ケーブルは出ない");
+ok($("partbar").classList.contains("show"),"置いた部品を選んだ状態になり、記号のボタンが出る");
+[...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="イ").click();
+ok(d.querySelectorAll("#stage line").length===2,"記号をイにすると単線図と合い、ケーブルが出る");
+put("sw1",480,540,"ロ");
+tap("#judgeBtn");
+ok(/部品/.test($("result").textContent),"記号ちがいのスイッチ → 判定で「部品」の指摘");
+tap(`[data-hit="part:${E("S.placed[S.placed.length-1].u")}"]`);
+[...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="イ").click();
+ok(d.querySelectorAll("#stage line").length===3,"記号を直すとケーブルが出る");
+tap("#unselP");
 const pen=c=>tap(`#pens .pen[data-c="${c}"]`);
 const line=(a,b)=>{ tap(`[data-hit="t:${a}"]`); tap(b.startsWith("box:")?`[data-hit="${b}"]`:`[data-hit="${b}"]`); };
 const jointOf=(t)=>E(`(()=>{const k=S.cores.find(k=>k.a==="${t}"||k.b==="${t}");return k.a[0]==="#"?k.a:k.b;})()`);
@@ -103,7 +122,9 @@ ok(E("swState.Sa")===true,"確かめるモードでスイッチを入れられ�
 tap("#modeBtn");
 // 消す
 tap("#clearBtn"); yes();
-ok(E("S.cores.length")===0,"自前の確認で「消す」→ すべて消える");
+ok(E("S.cores.length")===0 && E("S.placed.length")===4,"「線だけ消す」→ 線は消え、部品は残る");
+tap("#clearBtn"); $("altBtn").click();
+ok(E("S.placed.length")===0,"「部品も全部片づける」→ 部品も消える");
 // お手本
 tap("#refBtn"); yes();
 ok($("refBanner").classList.contains("show")&&E("view.cores.length")===6,"お手本を表示");
@@ -115,7 +136,7 @@ E(`openProblem("r1")`);
 ok(E(`P.term["La.W"].lab`)==="W" && E(`P.term["La.C"].lab`)==="B","ランプレセプタクルの端子は W と B");
 ok(/受金ねじ部/.test(E(`ENDNAME("La.W")`)),"メッセージでは W（受金ねじ部）と説明する");
 ok(E(`["ceil","outlet","fan"].every(t=>TYPES[t].terms.map(x=>x.lab).join()==="W,B")`),"引掛シーリング・コンセント・換気扇も W と B");
-E(`try{localStorage.clear()}catch(e){}`); E(`openProblem("r1")`);
+E(`try{localStorage.clear()}catch(e){}`); E(`openProblem("r1"); S=refState(P); view=S; save(); render();`);
 const yL=E(`P.term["PW.L"].y`), yN=E(`P.term["PW.N"].y`);
 tap(`[data-hit="flip:PW"]`);
 ok(E(`P.term["PW.L"].y`)===yN && E(`P.term["PW.N"].y`)===yL,"電源の L と N を上下入れ替えられる");
@@ -187,6 +208,45 @@ ok(E(`(()=>{try{return JSON.parse(localStorage.getItem("fukusen:r1")).joints.som
 pev("pointerdown",0,0,d.querySelector(`[data-hit="j:${jg}"]`)); pev("pointerup",0,0); tap(`[data-hit="j:${jg}"]`);
 ok($("jointbar").classList.contains("show"),"動かさずに離せば、ふつうのタップ（選ぶ）になる");
 tap("#unselJ");
+
+console.log("\n【J】部品の配置");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1"); S=refState(P); view=S; sel=null; render();`);
+// 端子の札の色
+{ const g=$("stage").innerHTML;
+  ok(/fill="#1f1f1f"[^>]*\/?>(<\/rect>)?<text[^>]*fill="#fff">B</.test(g) && /fill="#fff" stroke="#6b7280"[^>]*\/?>(<\/rect>)?<text[^>]*>W</.test(g),"B は黒地、W は白地の札");
+  ok(/fill="#1f1f1f"[^>]*\/?>(<\/rect>)?<text[^>]*fill="#fff">L</.test(g) && /fill="#fff" stroke="#6b7280"[^>]*\/?>(<\/rect>)?<text[^>]*>N</.test(g),"L は黒地、N は白地の札");
+  ok(/stroke-opacity="0.45"/.test(g),"ケーブルの帯は薄く（透明度を上げて）表示"); }
+// 部品のドラッグ
+const uLa=E(`S.placed.find(i=>i.pid==="La").u`);
+w.svgPoint=e=>({x:e.clientX,y:e.clientY});
+pev("pointerdown",500,80,d.querySelector(`[data-hit="part:${uLa}"]`)); pev("pointermove",520,90); pev("pointermove",600,120); pev("pointerup",600,120); tap("#stage");
+ok(E(`(()=>{const i=S.placed.find(i=>i.u==="${uLa}");return i.x===600&&i.y===120;})()`),"部品をドラッグで動かせる");
+ok(E(`P.term["La.W"].x`)!==500-19,"端子も一緒に動く");
+// ボックスのドラッグで、動かした●も一緒に動く
+const jj=E(`S.joints[0].id`); E(`moveJoint("${jj}",480,300); render();`);
+pev("pointerdown",500,310,d.querySelector(`[data-hit="box:B1"]`)); pev("pointermove",520,310); pev("pointermove",540,330); pev("pointerup",540,330); tap("#stage");
+ok(E(`(()=>{const j=S.joints.find(j=>j.id==="${jj}");return j.x===520&&j.y===320;})()`),"ボックスをドラッグすると、中の●も一緒に動く");
+// 部品を消すと、その部品の線も消える
+const n0b=E("S.cores.length");
+tap(`[data-hit="part:${uLa}"]`); tap("#delPart"); yes();
+ok(E("S.cores.length")===n0b-2 && !E(`S.placed.some(i=>i.u==="${uLa}")`),"部品を消すと、つながっていた線も消える（自前の確認つき）");
+ok(E(`judge(S).some(x=>x.cat==="部品")`),"消したランプは「置き忘れ」になる"); E("view=S");
+// 3路: 同じ種類・記号が2つ → お手本の配置で近い方に対応
+E(`openProblem("r4"); S=newState(); view=S; render();`);
+ok(E(`(()=>{const a=placeItem("sw3",700,540); a.label="イ"; a.pid=null; assign(a); return a.pid;})()`)==="Sb","右に置いた3路スイッチは、単線図の右のスイッチに対応する");
+// 古い版の保存（部品を置く前）: お手本の配置で開く
+E(`localStorage.setItem("fukusen:r1", JSON.stringify({joints:[{id:"#j900",box:"B1"}],cores:[{a:"PW.L",b:"#j900",c:"黒"}],flip:{}}))`);
+E(`openProblem("r1")`);
+ok(E("S.placed.length")===4 && E("S.cores.length")===1,"古い版で描いた図は、お手本の配置で部品を置いて開く");
+ok(E("seq")>900,"古い図の番号とぶつからない");
+// お手本は単線図の配置
+E(`openProblem("r1")`); tap("#refBtn"); yes();
+ok(E(`P.part.La.x===P.part.La.ax && P.part.La.y===P.part.La.ay`),"お手本は単線図どおりの配置で出る");
+tap("#backMine");
+// 単線図の拡大
+tap("#tansen"); ok($("big").classList.contains("show"),"単線図をタップすると大きく出る"); tap("#bigClose");
+ok(!$("big").classList.contains("show"),"閉じられる");
 
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
