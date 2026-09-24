@@ -87,8 +87,16 @@
       <div class="bar selbar" id="selbar">
         <span class="lab">選んだ線を</span>
         <span id="selPens"></span>
+        <button id="reCore">つなぎ先を変える</button>
         <button id="delCore">消す</button>
         <button id="unsel">選ぶのをやめる</button>
+      </div>
+      <div class="bar selbar" id="jointbar">
+        <span class="lab">選んだ接続点を</span>
+        <button id="mvJoint">動かす</button>
+        <button id="mgJoint">ほかの●とまとめる</button>
+        <button id="delJoint">消す</button>
+        <button id="unselJ">選ぶのをやめる</button>
       </div>
       <div class="banner short" id="shortBanner">短絡（ショート）！ 電源の線どうしが直接つながった。本物なら配線用遮断器が切れる。</div>
       <div class="banner ref" id="refBanner">お手本を表示している。自分の図は残してある。 <button id="backMine">自分の図に戻る</button></div>
@@ -104,7 +112,9 @@
         <li>下の色ボタンで線の色を選ぶ</li>
         <li>器具の端子（○）をタップ → つなぐ先のジョイントボックス（点線の円）をタップ。ボックスの中に接続点（●）ができる</li>
         <li>同じ接続点につなぐ線は、端子 → その●をタップ</li>
-        <li>引いた線をタップすると、色を変えたり消したりできる</li>
+        <li>引いた線をタップすると、色を変える・つなぎ先を変える・消すができる</li>
+        <li>●をタップすると、動かす・ほかの●とまとめる・消すができる</li>
+        <li>電源の下のボタンで、L と N の上下を入れ替えられる</li>
       </ol>
       <div class="stack">
         <button class="primary" id="judgeBtn">判定する</button>
@@ -121,24 +131,25 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24a";
+const VER = "2026-09-24b";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
    器具の種類
    terms: 端子。w:true は接地側（白をつなぐ決まりの端子）
+          lab は図の表示。W＝白（接地側）、B＝黒（非接地側）をつなぐ端子
    el:    中の負荷（R[Ω] と定格電圧）。電圧を計算して点灯を決める
    sw:    スイッチの中でつながる端子の組。引数は状態（true/false）
    ============================================================ */
 const TYPES = {
   src:    { name: "電源" },
-  lamp:   { name: "ランプレセプタクル", terms: [{ k: "W", lab: "受金", w: true }, { k: "C", lab: "中心" }],
+  lamp:   { name: "ランプレセプタクル", terms: [{ k: "W", lab: "W", desc: "受金ねじ部", w: true }, { k: "C", lab: "B", desc: "中心接触部" }],
             el: [{ a: "W", b: "C", R: 100, rated: 100 }], light: true },
-  ceil:   { name: "引掛シーリング", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "" }],
+  ceil:   { name: "引掛シーリング", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "B" }],
             el: [{ a: "W", b: "L", R: 100, rated: 100 }], light: true },
-  fan:    { name: "換気扇（施工省略）", terms: [{ k: "W", lab: "白", w: true }, { k: "L", lab: "黒" }],
+  fan:    { name: "換気扇（施工省略）", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "B" }],
             el: [{ a: "W", b: "L", R: 200, rated: 100 }] },
-  outlet: { name: "コンセント", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "" }],
+  outlet: { name: "コンセント", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "B" }],
             el: [{ a: "W", b: "L", R: 1e6, rated: 100 }], outlet: true },
   pl:     { name: "パイロットランプ", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
             el: [{ a: "1", b: "2", R: 1e5, rated: 100 }], light: true },
@@ -279,28 +290,38 @@ function prep(P) {
       side = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "bottom" : "top");
     }
     p.side = side || "top";
-    const n = p.terms.length, gap = n === 2 ? 38 : 32, d = p.type === "src" ? 44 : 34;
-    p.terms.forEach((t, i) => {
-      const o = (i - (n - 1) / 2) * gap;
-      t.x = p.x + (p.side === "left" ? -d : p.side === "right" ? d : o);
-      t.y = p.y + (p.side === "top" ? -d : p.side === "bottom" ? d : o);
-      t.id = p.id + "." + t.k;
-    });
+    p.terms.forEach(t => { t.id = p.id + "." + t.k; });
   });
   P.term = {};
   P.parts.forEach(p => p.terms.forEach(t => { P.term[t.id] = Object.assign({ part: p }, t); }));
+  placeTerms(P, {});
   P.switches = P.parts.filter(p => TYPES[p.type].sw);
   P._ready = true;
   return P;
 }
 
+/* 端子の位置。flip[器具ID] が true なら端子の並びを逆にする（電源の L と N の上下など） */
+function placeTerms(P, flip) {
+  P.parts.forEach(p => {
+    const n = p.terms.length, gap = n === 2 ? 38 : 32, d = p.type === "src" ? 44 : 34;
+    p.terms.forEach((t, i) => {
+      const o = ((flip && flip[p.id] ? n - 1 - i : i) - (n - 1) / 2) * gap;
+      t.x = p.x + (p.side === "left" ? -d : p.side === "right" ? d : o);
+      t.y = p.y + (p.side === "top" ? -d : p.side === "bottom" ? d : o);
+      P.term[t.id].x = t.x; P.term[t.id].y = t.y;
+    });
+  });
+}
+
 /* ============================================================
    図の状態
-   S.joints: [{id, box}]     S.cores: [{a, b, c}]  端点は端子ID か "#接続点ID"
+   S.joints: [{id, box, x?, y?}]  x,y は生徒が動かした位置（無ければ自動で並べる）
+   S.cores:  [{a, b, c}]  端点は端子ID か "#接続点ID"
+   S.flip:   {器具ID: true}  端子の並びを逆にしたもの
    ============================================================ */
 let P = null, S = null, view = null, sel = null, pen = "黒", mode = "draw", swState = {}, judged = null, hintStep = 0, showingRef = false, mine = null;
 let seq = 1;
-const newState = () => ({ joints: [], cores: [] });
+const newState = () => ({ joints: [], cores: [], flip: {} });
 
 function placeOf(end) {
   if (end[0] === "#") { const j = view.joints.find(j => j.id === end); return j ? j.box : null; }
@@ -411,8 +432,9 @@ function csolve(A, b) {
    出す順: 未完成 → 短絡 → 動作 → 接地側 → 色
    各指摘は 3 段: lv1 分類だけ / lv2 場所 / lv3 理由
    ============================================================ */
+const TLAB = t => t.lab ? "「" + t.lab + "」" + (t.desc ? "（" + t.desc + "）" : "") : "";
 const PNAME = p => p.type === "src" ? "電源" : (TYPES[p.type].name + (p.label ? " " + p.label : ""));
-const ENDNAME = e => e[0] === "#" ? ("ボックス " + (view.joints.find(j => j.id === e) || {}).box + " の接続点") : (PNAME(P.term[e].part) + " の端子" + (P.term[e].lab ? "「" + P.term[e].lab + "」" : ""));
+const ENDNAME = e => e[0] === "#" ? ("ボックス " + (view.joints.find(j => j.id === e) || {}).box + " の接続点") : (PNAME(P.term[e].part) + " の端子" + TLAB(P.term[e]));
 const CABNAME = c => (P.box[c.a] ? c.a : PNAME(P.place[c.a][0]) + (P.place[c.a].length > 1 ? "の枠" : "")) + " と " + (P.box[c.b] ? c.b : PNAME(P.place[c.b][0]) + (P.place[c.b].length > 1 ? "の枠" : "")) + " の間のケーブル（" + c.spec + "）";
 function allStates() {
   const sw = P.switches, out = [];
@@ -461,7 +483,7 @@ function judge(st) {
   const potOf = {};
   P.parts.filter(p => p.type === "src").forEach(p => p.terms.forEach(t => { potOf[u.find(t.id)] = t.pot; }));
   P.parts.forEach(p => p.terms.forEach(t => { if (t.w && coresAt(t.id).length && potOf[u.find(t.id)] !== "N")
-    add("接地側", PNAME(p) + " の端子「" + t.lab + "」に、接地側（電源の N）の線が来ていない。", "「" + t.lab + "」の端子は接地側。スイッチを通さずに、電源の N（白）から直接来る線をつなぐ。", [t.id]); }));
+    add("接地側", PNAME(p) + " の端子" + TLAB(t) + "に、接地側（電源の N）の線が来ていない。", "「" + t.lab + "」の端子は接地側。スイッチを通さずに、電源の N（白）から直接来る線をつなぐ。", [t.id]); }));
   P.cables.forEach(c => {
     const ks = st.cores.filter(k => routeOf(k.a, k.b) === c);
     if (ks.length !== c.colors.length) return;
@@ -488,7 +510,8 @@ let jpos = {};
 function layoutJoints() {
   jpos = {};
   P.boxes.forEach(b => {
-    const list = view.joints.filter(x => x.box === b.id), n = list.length;
+    view.joints.filter(x => x.box === b.id && x.x !== undefined).forEach(j => { jpos[j.id] = { x: j.x, y: j.y }; });
+    const list = view.joints.filter(x => x.box === b.id && x.x === undefined), n = list.length;
     if (!n) return;
     if (n === 1) { jpos[list[0].id] = { x: b.x, y: b.y }; return; }
     const want = list.map(j => { let sx = 0, sy = 0;
@@ -519,6 +542,9 @@ function drawPart(p, sim) {
     g += `<rect x="${x - 48}" y="${y - 28}" width="96" height="56" rx="6" fill="#f5f1e8" stroke="#8b8271"/>`;
     g += `<text x="${x}" y="${y - 6}" text-anchor="middle" font-size="15" font-weight="700">電源</text>`;
     g += `<text x="${x}" y="${y + 14}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(p.sub || "")}</text>`;
+    if (mode === "draw" && !showingRef) { const vert = p.side === "left" || p.side === "right";
+      g += `<g class="hit" data-hit="flip:${p.id}"><rect x="${x - 54}" y="${y + 36}" width="108" height="28" rx="14" fill="#fff" stroke="#8b8271"/>`
+         + `<text x="${x}" y="${y + 55}" text-anchor="middle" font-size="12.5" fill="#151a18">${vert ? "⇅ 上下" : "⇆ 左右"}入れ替え</text></g>`; }
   } else if (T.sw) {
     const on = sim && swState[p.id];
     g += `<circle cx="${x}" cy="${y}" r="13" fill="#151a18"/>`;
@@ -591,12 +617,14 @@ function render() {
   P.parts.forEach(p => p.terms.forEach(t => {
     const on = sel && sel.end === t.id, warn = mk.has(t.id);
     g += `<circle cx="${t.x}" cy="${t.y}" r="8" fill="${on ? "#2563eb" : "#fff"}" stroke="${warn ? "#ef4444" : "#151a18"}" stroke-width="${warn ? 4 : 2}"/>`;
-    if (t.lab) { const dy = p.side === "top" ? 21 : p.side === "bottom" ? -12 : 4, dx = p.side === "left" ? 22 : p.side === "right" ? -22 : 0;
-      g += `<text x="${t.x + dx}" y="${t.y + dy}" text-anchor="middle" font-size="11" fill="#151a18">${esc(t.lab)}</text>`; }
+    if (t.lab) {
+      let dy = p.side === "top" ? 22 : p.side === "bottom" ? -13 : 5, dx = p.side === "left" ? 22 : p.side === "right" ? -22 : 0;
+      if (p.type === "src") { dx = -dx * 0.9; dy = p.side === "top" || p.side === "bottom" ? -dy : -10; }   // 電源は箱の文字と重ならないよう外側に
+      g += `<text x="${t.x + dx}" y="${t.y + dy}" text-anchor="middle" font-size="13" font-weight="700" fill="${t.w || t.pot === "N" ? "#5d6763" : "#151a18"}">${esc(t.lab)}</text>`; }
     if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="t:${t.id}" cx="${t.x}" cy="${t.y}" r="19" fill="transparent"/>`;
   }));
   // 接続点
-  view.joints.forEach(j => { const q = jointPos(j), on = sel && sel.end === j.id, warn = mk.has(j.id);
+  view.joints.forEach(j => { const q = jointPos(j), on = sel && (sel.end === j.id || sel.joint === j.id), warn = mk.has(j.id);
     g += `<circle cx="${q.x}" cy="${q.y}" r="8" fill="${on ? "#2563eb" : "#151a18"}" stroke="${warn ? "#ef4444" : "#fff"}" stroke-width="${warn ? 4 : 2}"/>`;
     if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="j:${j.id}" cx="${q.x}" cy="${q.y}" r="18" fill="transparent"/>`; });
   // 部品のラベル（電源）
@@ -604,6 +632,8 @@ function render() {
   // 選んだ線の操作
   const cs = sel && sel.core !== undefined;
   $("selbar").classList.toggle("show", !!cs && !showingRef);
+  $("jointbar").classList.toggle("show", !!(sel && sel.end && sel.end[0] === "#") && !showingRef);
+  ["reCore", "mvJoint", "mgJoint"].forEach(id => $(id).classList.toggle("on", !!(sel && sel.act && $(id).dataset.act === sel.act)));
   document.querySelectorAll("#selPens .pen").forEach(b => b.classList.toggle("on", cs && view.cores[sel.core] && view.cores[sel.core].c === b.dataset.c));
   document.querySelectorAll("#pens .pen").forEach(b => b.classList.toggle("on", b.dataset.c === pen));
   $("modeBtn").classList.toggle("on", mode === "sim");
@@ -638,12 +668,65 @@ function addCore(a, b) {
 function newJoint(box) { const j = { id: "#j" + (seq++), box }; S.joints.push(j); return j.id; }
 function tidy() { S.joints = S.joints.filter(j => S.cores.some(k => k.a === j.id || k.b === j.id)); }
 
+/* 画面上のタップ位置を、図の座標（viewBox）に直す */
+function svgPoint(e) {
+  const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, k = Math.min(r.width / vb.width, r.height / vb.height) || 1;
+  return { x: (e.clientX - r.left - (r.width - vb.width * k) / 2) / k, y: (e.clientY - r.top - (r.height - vb.height * k) / 2) / k };
+}
+function moveJoint(jid, x, y) {
+  const j = S.joints.find(j => j.id === jid), b = P.box[j.box], dx = x - b.x, dy = y - b.y, m = Math.hypot(dx, dy), lim = b.r - 12;
+  if (m > b.r + 10) return false;                                  // ボックスの外は受け付けない
+  const f = m > lim ? lim / m : 1;
+  j.x = Math.round(b.x + dx * f); j.y = Math.round(b.y + dy * f);
+  return true;
+}
+/* 接続点 from を to にまとめる。from の線は全部 to につなぎ替える */
+function mergeJoints(from, to) {
+  S.cores.forEach(k => { if (k.a === from) k.a = to; if (k.b === from) k.b = to; });
+  const seen = new Set();
+  S.cores = S.cores.filter(k => { if (k.a === k.b) return false; const key = [k.a, k.b].sort().join("|"); if (seen.has(key)) return false; seen.add(key); return true; });
+  tidy();
+}
+/* 線 i のボックス側の端を、別の接続点 target（"#…"）へ付け替える */
+function reattach(i, target) {
+  const k = S.cores[i], box = placeOf(target);
+  const endKey = ["a", "b"].find(s => k[s][0] === "#" && placeOf(k[s]) === box);
+  if (!endKey) return "この線がつながっているボックスの中で選ぶ。";
+  if (k[endKey] === target) return "今と同じ接続点。";
+  const other = endKey === "a" ? k.b : k.a;
+  if (S.cores.some((c, n) => n !== i && ((c.a === other && c.b === target) || (c.b === other && c.a === target)))) return "その2か所は、もう線でつながっている。";
+  k[endKey] = target; tidy(); return null;
+}
+
 svg.addEventListener("click", e => {
-  const h = e.target.closest("[data-hit]"); if (!h || showingRef) return;
+  if (showingRef) return;
+  if (sel && sel.act === "move") {                                   // 接続点を動かす: 置きたい場所をタップ
+    const q = svgPoint(e);
+    if (!moveJoint(sel.joint, q.x, q.y)) return status("ボックス " + (S.joints.find(j => j.id === sel.joint) || {}).box + " の中をタップする。", true);
+    sel = null; status("接続点を動かした。"); save(); render(); return;
+  }
+  const h = e.target.closest("[data-hit]"); if (!h) return;
   const [kind, ...rest] = h.dataset.hit.split(":"); const id = rest.join(":");
   if (kind === "sw") { swState[id] = !swState[id]; render(); return; }
   if (mode !== "draw") return;
-  if (kind === "core") { sel = { core: +id }; status("線を選んだ。色を変えるか、消す。"); render(); return; }
+  if (kind === "flip") { S.flip = S.flip || {}; S.flip[id] = !S.flip[id]; placeTerms(P, S.flip); sel = null; status("端子の並びを入れ替えた。つないだ線はそのまま。"); save(); render(); return; }
+  if (sel && sel.act === "merge") {
+    if (kind !== "j") return status("まとめる先の●をタップする。", true);
+    if (id === sel.joint) return status("同じ●。別の●を選ぶ。", true);
+    if (placeOf(id) !== placeOf(sel.joint)) return status("同じボックスの中の●どうししか、まとめられない。", true);
+    mergeJoints(sel.joint, id); sel = null; status("接続点を1つにまとめた。"); changed(); return;
+  }
+  if (sel && sel.act === "reattach") {
+    let target = null;
+    if (kind === "j") target = id;
+    else if (kind === "box") { const k = S.cores[sel.core]; if (![k.a, k.b].some(e => e[0] === "#" && placeOf(e) === id)) return status("この線がつながっているボックスの中で選ぶ。", true); target = newJoint(id); }
+    else return status("新しいつなぎ先の●か、ボックスの空いた所をタップする。", true);
+    const err = reattach(sel.core, target);
+    if (err) { tidy(); render(); return status(err, true); }
+    sel = null; status("線のつなぎ先を変えた。"); changed(); return;
+  }
+  if (kind === "core") { sel = { core: +id }; status("線を選んだ。色を変える・つなぎ先を変える・消す。"); render(); return; }
+  if (kind === "j" && !(sel && sel.end)) { sel = { end: id, joint: id }; status("接続点を選んだ。動かす・まとめる・消す。この●から別のボックスへ線を引くこともできる。"); render(); return; }
   if (kind === "t" || kind === "j") {
     if (sel && sel.end) { addCore(sel.end, id); return; }
     sel = { end: id }; status(ENDNAME(id) + " を選んだ。つなぐ先（ボックスか、その中の●）をタップ。"); render(); return;
@@ -661,9 +744,18 @@ $("stage").addEventListener("contextmenu", e => e.preventDefault());
 function setCoreColor(c) { if (!(sel && sel.core !== undefined)) return; S.cores[sel.core].c = c; pen = c; changed(); }
 $("delCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; S.cores.splice(sel.core, 1); tidy(); sel = null; status("線を消した。"); changed(); };
 $("unsel").onclick = () => { sel = null; status(""); render(); };
+$("unselJ").onclick = () => { sel = null; status(""); render(); };
+$("reCore").dataset.act = "reattach"; $("mvJoint").dataset.act = "move"; $("mgJoint").dataset.act = "merge";
+$("reCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; const k = S.cores[sel.core];
+  if (k.a[0] !== "#" && k.b[0] !== "#") return status("渡り線はボックスを通らないので、消して引き直す。", true);
+  sel.act = "reattach"; status("新しいつなぎ先の●をタップ。ボックスの空いた所なら新しい●を作る。"); render(); };
+$("mvJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "move"; status("ボックスの中の、置きたい場所をタップ。"); render(); };
+$("mgJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "merge"; status("まとめる先の●（同じボックスの中）をタップ。"); render(); };
+$("delJoint").onclick = () => { if (!(sel && sel.joint)) return; const jid = sel.joint, n = S.cores.filter(k => k.a === jid || k.b === jid).length;
+  ask("この接続点と、つながっている線 " + n + " 本を消す？", () => { S.cores = S.cores.filter(k => k.a !== jid && k.b !== jid); S.joints = S.joints.filter(j => j.id !== jid); sel = null; status("接続点を消した。"); changed(); }, "消す"); };
 $("modeBtn").onclick = () => { if (showingRef) return; mode = mode === "draw" ? "sim" : "draw"; sel = null;
   status(mode === "sim" ? "スイッチの下のボタンで入/切を切り替えて、ランプやコンセントを確かめる。" : ""); render(); };
-$("clearBtn").onclick = () => { if (showingRef) return; ask("線をすべて消して、最初から描き直す？", () => { S = newState(); view = S; sel = null; changed(); status("すべて消した。"); }, "消す"); };
+$("clearBtn").onclick = () => { if (showingRef) return; ask("線をすべて消して、最初から描き直す？", () => { const f = S.flip; S = newState(); S.flip = f || {}; view = S; sel = null; changed(); status("すべて消した。"); }, "消す"); };
 
 function penButtons(host, cb) {
   host.innerHTML = "";
@@ -748,7 +840,7 @@ function drawTabs() {
 }
 function openProblem(id) {
   P = prep(PROBLEMS.find(p => p.id === id));
-  S = load(id) || newState(); view = S; sel = null; mode = "draw"; swState = {}; showingRef = false;
+  S = load(id) || newState(); S.flip = S.flip || {}; view = S; placeTerms(P, S.flip); sel = null; mode = "draw"; swState = {}; showingRef = false;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
   $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒントを見る";

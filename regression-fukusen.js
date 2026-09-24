@@ -110,6 +110,64 @@ ok($("refBanner").classList.contains("show")&&E("view.cores.length")===6,"お手
 tap("#backMine");
 ok(E("view===S"),"自分の図に戻る");
 
+console.log("\n【G】端子の表示・電源の入れ替え");
+E(`openProblem("r1")`);
+ok(E(`P.term["La.W"].lab`)==="W" && E(`P.term["La.C"].lab`)==="B","ランプレセプタクルの端子は W と B");
+ok(/受金ねじ部/.test(E(`ENDNAME("La.W")`)),"メッセージでは W（受金ねじ部）と説明する");
+ok(E(`["ceil","outlet","fan"].every(t=>TYPES[t].terms.map(x=>x.lab).join()==="W,B")`),"引掛シーリング・コンセント・換気扇も W と B");
+E(`try{localStorage.clear()}catch(e){}`); E(`openProblem("r1")`);
+const yL=E(`P.term["PW.L"].y`), yN=E(`P.term["PW.N"].y`);
+tap(`[data-hit="flip:PW"]`);
+ok(E(`P.term["PW.L"].y`)===yN && E(`P.term["PW.N"].y`)===yL,"電源の L と N を上下入れ替えられる");
+ok(E(`d=document.querySelector('[data-hit="t:PW.L"]'),+d.getAttribute("cy")`)===yN,"図の端子も入れ替わる");
+E(`openProblem("r2")`); E(`openProblem("r1")`);
+ok(E(`P.term["PW.L"].y`)===yN,"入れ替えは保存され、開き直しても残る");
+ok(JSON.parse(judgeRef("r1")).length===0,"入れ替えても判定は変わらない（お手本は合格）");
+tap(`[data-hit="flip:PW"]`);
+ok(E(`P.term["PW.L"].y`)===yL,"もう一度押すと元に戻る");
+
+console.log("\n【H】接続点をあとからいじる");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1"); S=refState(P); view=S; render();`);
+const J=t=>E(`(()=>{const k=S.cores.find(k=>k.a==="${t}"||k.b==="${t}");return k.a[0]==="#"?k.a:k.b;})()`);
+// 動かす
+const jL=J("PW.L");
+tap(`[data-hit="j:${jL}"]`);
+ok($("jointbar").classList.contains("show"),"●をタップすると接続点の操作が出る");
+tap("#mvJoint");
+w.svgPoint=()=>({x:470,y:280});
+tap(`[data-hit="box:B1"]`);
+ok(E(`(()=>{const j=S.joints.find(j=>j.id==="${jL}");return j.x===470&&j.y===280;})()`),"動かすを押して、ボックスの中をタップした所へ●が動く");
+ok(E(`jointPos(S.joints.find(j=>j.id==="${jL}")).x`)===470,"動かした位置で描かれる");
+tap(`[data-hit="j:${jL}"]`); tap("#mvJoint");
+w.svgPoint=()=>({x:900,y:600});
+tap(`[data-hit="box:B1"]`);
+ok(E(`S.joints.find(j=>j.id==="${jL}").x`)===470 && $("status").classList.contains("err"),"ボックスの外へは動かせない");
+tap("#unselJ");
+w.svgPoint=()=>({x:0,y:0});
+// まとめる（Nの●とスイッチ帰りの●をまとめる → 不合格になる）
+const jN=J("PW.N"), jR=J("Sa.2");
+tap(`[data-hit="j:${jR}"]`); tap("#mgJoint"); tap(`[data-hit="j:${jN}"]`);
+ok(E("S.joints.length")===2 && E(`S.cores.filter(k=>k.a==="${jN}"||k.b==="${jN}").length`)===4,"まとめると●が1つ減り、線はまとめ先へ移る");
+// つなぎ先を変える（La.C の線を新しい●へ）
+const iC=E(`S.cores.findIndex(k=>k.a==="La.C"||k.b==="La.C")`);
+tap(`[data-hit="core:${iC}"]`); tap("#reCore"); tap(`[data-hit="box:B1"]`);
+ok(E("S.joints.length")===3 && E(`S.cores.filter(k=>k.a==="${jN}"||k.b==="${jN}").length`)===3,"線のつなぎ先を、ボックスの新しい●へ変えられる");
+const iS=E(`S.cores.findIndex(k=>k.a==="Sa.2"||k.b==="Sa.2")`), jNew=J("La.C");
+tap(`[data-hit="core:${iS}"]`); tap("#reCore"); tap(`[data-hit="j:${jNew}"]`);
+tap("#judgeBtn");
+ok(d.querySelector("#result .cat.pass")&&d.querySelectorAll("#result .cat:not(.pass)").length===0,"まとめ・付け替えで元の正しい形に戻せば合格");
+// 渡り線は付け替えできない
+E(`openProblem("r3"); S=refState(P); view=S; render();`);
+const iW=E(`S.cores.findIndex(k=>k.a[0]!=="#"&&k.b[0]!=="#")`);
+tap(`[data-hit="core:${iW}"]`); tap("#reCore");
+ok($("status").classList.contains("err"),"渡り線は付け替えの対象外と伝える");
+tap("#unsel");
+// 消す
+const jd=E(`S.joints[0].id`), n1=E("S.cores.length"), m1=E(`S.cores.filter(k=>k.a==="${jd}"||k.b==="${jd}").length`);
+tap(`[data-hit="j:${jd}"]`); tap("#delJoint"); yes();
+ok(E("S.cores.length")===n1-m1 && !E(`S.joints.some(j=>j.id==="${jd}")`),"●を消すと、つながる線も消える（自前の確認つき）");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
