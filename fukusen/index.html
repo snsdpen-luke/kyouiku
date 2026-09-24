@@ -140,6 +140,7 @@
         <div class="bar selbar" id="selbar">
         <span class="lab">選んだ線を</span>
         <span id="selPens"></span>
+        <button id="straightCore">まっすぐに戻す</button>
         <button id="reCore">つなぎ先を変える</button>
         <button id="delCore">消す</button>
         <button id="unsel">選ぶのをやめる</button>
@@ -195,7 +196,7 @@
             <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
             <li>線の色を選び、端子（○）からボックス（点線の円）までドラッグ（または 端子 → ボックス とタップ）。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子からその●へ</li>
             <li>●をボックスの外まで引っぱり出すと、●から線を伸ばせる（器具の端子や、ほかのボックスへ）。ボックスの中で動かすと●が動く</li>
-            <li>線をタップ → 色を変える・つなぎ先を変える・消す。●をタップ → 動かす・まとめる・消す</li>
+            <li>線をタップ → 色を変える・つなぎ先を変える・消す。線の真ん中の青い丸をドラッグすると、線が曲がる。●をタップ → 動かす・まとめる・消す</li>
             <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
             <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
@@ -212,7 +213,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24o";
+const VER = "2026-09-24p";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1111,11 +1112,15 @@ function drawPart(p, sim, uid) {
   return g;
 }
 
+/* 曲げた線の真ん中（2次曲線の t=0.5）。つまみはここに出す */
+function bendMid(k, a, b) { const q = k.q || { x: 0, y: 0 }; return { x: (a.x + b.x) / 2 + q.x / 2, y: (a.y + b.y) / 2 + q.y / 2 }; }
 function coreLine(k, i, extra) {
   const a = endPos(k.a), b = endPos(k.b);
   const col = COLORS[k.c] || "#888", selected = sel && sel.core === i;
   let d = `M${a.x} ${a.y} L${b.x} ${b.y}`;
-  if (k.a[0] !== "#" && k.b[0] !== "#" && P.term[k.a].part.place === P.term[k.b].part.place) {   // 渡り線: 端子の並ぶ側へふくらませ、ほかの端子や器具の上を通らないようにする
+  if (k.q) {                                                         // 曲げた線: 両端の真ん中から k.q ずらした所を引っぱる2次曲線
+    d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 + k.q.x} ${(a.y + b.y) / 2 + k.q.y} ${b.x} ${b.y}`;
+  } else if (k.a[0] !== "#" && k.b[0] !== "#" && P.term[k.a].part.place === P.term[k.b].part.place) {   // 渡り線: 端子の並ぶ側へふくらませ、ほかの端子や器具の上を通らないようにする
     const sd = P.term[k.a].part.side, v = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[sd];
     const bulge = 30 + Math.hypot(b.x - a.x, b.y - a.y) * 0.1;
     d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 - v[0] * bulge} ${(a.y + b.y) / 2 - v[1] * bulge} ${b.x} ${b.y}`;
@@ -1125,6 +1130,10 @@ function coreLine(k, i, extra) {
   g += `<path d="${d}" fill="none" stroke="${k.c === "白" ? "#7b7b7b" : col}" stroke-width="5.5" stroke-linecap="round"/>`;
   if (k.c === "白") g += `<path d="${d}" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;
   if (!showingRef) g += `<path class="hit" data-hit="core:${i}" d="${d}" fill="none" stroke="transparent" stroke-width="16"/>`;
+  if (selected && !showingRef && mode === "draw") {                  // 曲げるつまみ（線の真ん中）
+    const m = bendMid(k, a, b);
+    g += `<g class="hit" data-hit="bend:${i}"><circle cx="${m.x}" cy="${m.y}" r="18" fill="transparent"/><circle cx="${m.x}" cy="${m.y}" r="9" fill="#2563eb" stroke="#fff" stroke-width="2"/></g>`;
+  }
   return g;
 }
 
@@ -1264,10 +1273,25 @@ function drawTansen() {
     ps.forEach((p, i) => { t += hs[i]; TP[p.id] = { x: c.x + u[0] * t, y: c.y + u[1] * t, stack: u }; t += hs[i]; });
   });
   const A = id => P.box[id] ? A0(id) : TP[P.place[id][0].id];
-  P.cables.forEach(c => { const a = A(c.a), b = A(c.b);
-    g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#151a18" stroke-width="4"/>`; });
+  /* ケーブルの道。公表問題の図と同じく、ボックス（か電源）から横に出て、角を丸く曲がり、縦に器具へ入る。
+     どちらもボックスでなければ、上にある方から出る。ほぼ縦か横に並ぶものは、まっすぐ */
+  const hub = id => !!P.box[id] || (P.place[id] || []).some(p => isSrc(p.type));
+  const routes = P.cables.map(c => {
+    let s0 = A(c.a), e0 = A(c.b), sid = c.a;
+    if ((!hub(c.a) && hub(c.b)) || (hub(c.a) === hub(c.b) && e0.y < s0.y)) { [s0, e0] = [e0, s0]; sid = c.b; }
+    const dx = e0.x - s0.x, dy = e0.y - s0.y;
+    if (Math.abs(dx) < 30 || Math.abs(dy) < 30) return { c, d: `M${s0.x} ${s0.y}L${e0.x} ${e0.y}`, legs: [[s0, e0]] };
+    const sy = s0.y + (P.box[sid] ? Math.sign(dy) * 16 : 0);          // ボックスから曲がって出る線は、少しずらして重ならないように
+    const s1 = { x: s0.x, y: sy }, k = { x: e0.x, y: sy }, r = Math.min(34, Math.abs(dx) / 2, Math.abs(e0.y - sy) / 2);
+    const hx = Math.sign(dx), vy = Math.sign(e0.y - sy);
+    return { c, d: `M${s1.x} ${s1.y}L${k.x - hx * r} ${k.y}Q${k.x} ${k.y} ${k.x} ${k.y + vy * r}L${e0.x} ${e0.y}`, legs: [[s1, k], [k, e0]] };
+  });
+  routes.forEach(rt => { g += `<path d="${rt.d}" fill="none" stroke="#151a18" stroke-width="4"/>`; });
   /* ケーブルの種類。公表問題の図と同じく、縦の線には縦書き、横の線には線の上、斜めの線には線の外側に書く */
-  P.cables.forEach(c => { let a = A(c.a), b = A(c.b); if (!P.box[c.a] && P.box[c.b]) [a, b] = [b, a];
+  routes.forEach(({ c, legs }) => {
+    const L = seg => Math.hypot(seg[1].x - seg[0].x, seg[1].y - seg[0].y);
+    let [a, b] = legs.length === 1 ? legs[0] : L(legs[1]) >= 90 ? legs[1] : (L(legs[0]) >= L(legs[1]) ? legs[0] : legs[1]);   // 曲がった線は、器具へ入る縦の区間に書く（公表問題と同じ）
+    if (legs.length === 1 && !P.box[c.a] && P.box[c.b]) { const t = A(c.a); if (Math.hypot(t.x - a.x, t.y - a.y) < 1) [a, b] = [b, a]; }
     const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
     const tw = c.spec.length * 16, st = `font-size="28" font-weight="700" fill="#151a18" stroke="#fcfcfa" stroke-width="8" paint-order="stroke"`;
     const srcEnd = pt => P.parts.some(p => p.type === "src" && Math.hypot(p.ax - pt.x, p.ay - pt.y) < 2);
@@ -1484,7 +1508,8 @@ svg.addEventListener("pointerdown", e => {
   if (!h || showingRef || mode !== "draw" || placing) return;
   const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
   let what = null;
-  if (kind === "t") what = { kind: "wire", id };                    // 端子からドラッグ → 線を伸ばす
+  if (kind === "bend") what = { kind: "bend", id: +id };              // 線のつまみ → 線を曲げる
+  else if (kind === "t") what = { kind: "wire", id };                    // 端子からドラッグ → 線を伸ばす
   else if (kind === "j") { const j = S.joints.find(j => j.id === id); what = { kind: "j", id, orig: { x: j.x, y: j.y } }; }   // ●からドラッグ → ボックスの中なら●を動かす。外へ出たら線を伸ばす
   else if (kind === "part") what = { kind: "item", id };
   else if (kind === "box") { const it = itemOfBox(id); if (it) what = { kind: "item", id: it.u }; }
@@ -1498,7 +1523,8 @@ svg.addEventListener("pointermove", e => {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
     drag.moving = true;
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}      // 図を描き直しても指を追い続ける
-    if (drag.kind !== "pan") status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
+    if (drag.kind === "bend") status("線を曲げている。好きな所で指を離す。");
+    else if (drag.kind !== "pan") status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
          : drag.kind === "j" ? "ドラッグ中。ボックスの中で指を離す。" : "ドラッグ中。置きたい所で指を離す。");
     if (drag.kind === "wire") sel = { end: drag.id };               // つなげるボックスを青くする
   }
@@ -1515,6 +1541,8 @@ svg.addEventListener("pointermove", e => {
       status("線を伸ばしている。つなぐ先（器具の端子か、ほかのボックス）で指を離す。自分のボックスに戻って離すと取りやめ。");
     }
   }
+  if (drag.kind === "bend") { const k = S.cores[drag.id], a = endPos(k.a), b = endPos(k.b);   // つまみの所を曲線が通るように
+    k.q = { x: Math.round(2 * q.x - (a.x + b.x)), y: Math.round(2 * q.y - (a.y + b.y)) }; render(); return; }
   if (drag.kind === "wire") { drag.cur = q; drag.over = hitAt(e); }
   else if (drag.kind === "j") moveJoint(drag.id, q.x, q.y, true); else moveItem(drag.id, q.x + drag.ox, q.y + drag.oy);
   render();
@@ -1537,7 +1565,7 @@ function endDrag(e) {
     else { status("線を引くのをやめた。つなぐ先の上で指を離す。"); render(); }
     return;
   }
-  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
+  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "bend" ? "線を曲げた。「まっすぐに戻す」で元に戻る。" : drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
   drag = null;
 }
 /* 指で動かしている間は、ブラウザにスクロールの動きとして扱わせない。
@@ -1588,7 +1616,8 @@ svg.addEventListener("click", e => {
     if (sel && sel.end) return status("線は、器具の端子（○）からつなぐ。", true);
     sel = { item: id }; status("部品を選んだ。記号を変える・消す。ドラッグで動かせる。"); render(); return;
   }
-  if (kind === "core") { sel = { core: +id }; status("線を選んだ。色を変える・つなぎ先を変える・消す。"); render(); return; }
+  if (kind === "bend") return;                                        // つまみはドラッグで使う
+  if (kind === "core") { sel = { core: +id }; status("線を選んだ。真ん中の青い丸をドラッグすると曲がる。色を変える・つなぎ先を変える・消すもできる。"); render(); return; }
   if (kind === "j" && !(sel && sel.end)) { sel = { end: id, joint: id }; status("接続点を選んだ。動かす・まとめる・消す。この●から別のボックスへ線を引くこともできる。"); render(); return; }
   if (kind === "t" || kind === "j") {
     if (sel && sel.end) { addCore(sel.end, id); return; }
@@ -1615,6 +1644,7 @@ function hitAt(e) {
 $("stage").addEventListener("contextmenu", e => e.preventDefault());
 
 function setCoreColor(c) { if (!(sel && sel.core !== undefined)) return; S.cores[sel.core].c = c; pen = c; changed(); }
+$("straightCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; delete S.cores[sel.core].q; status("線をまっすぐに戻した。"); save(); render(); };
 $("delCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; S.cores.splice(sel.core, 1); tidy(); sel = null; status("線を消した。"); changed(); };
 $("unsel").onclick = $("unselJ").onclick = $("unselP").onclick = () => { sel = null; status(""); render(); };
 $("delPart").onclick = () => { if (!(sel && sel.item)) return; const u = sel.item, it = S.placed.find(x => x.u === u); if (!it) return;

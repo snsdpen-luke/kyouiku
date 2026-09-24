@@ -67,7 +67,7 @@ ok(E(`(()=>{const r=simulate(refState(P),{Sa:false});return r.load.O1.on;})()`),
 console.log("\n【E】画面をタップして描ける");
 E(`try{localStorage.clear()}catch(e){}`);
 E(`openProblem("r1")`);
-ok(/単線図/.test(d.getElementById("stage").textContent) && d.querySelectorAll(`#tansen line[stroke-width="4"]`).length===3,"最初は何も置いていない。単線図にはケーブル3本が描かれている");
+ok(/単線図/.test(d.getElementById("stage").textContent) && d.querySelectorAll(`#tansen path[stroke-width="4"]`).length===3,"最初は何も置いていない。単線図にはケーブル3本が描かれている");
 ok(d.querySelectorAll("#palette button").length>=9,"部品図が並んでいる");
 /* 部品を置く: 部品図をタップ → 図をタップ → 記号を選ぶ */
 const put=(type,x,y,lab)=>{ tap(`#palette button[data-type="${type}"]`); w.svgPoint=()=>({x,y}); tap("#stage");
@@ -401,6 +401,27 @@ tap("#modeBtn");
 tap("#modeBtn");
 ok(d.querySelector(`#palette button[data-type="sw1"] svg circle`)!==null,"部品図のスイッチは公表問題の●のまま");
 ok(E(`TYPES.sw3.terms.map(t=>t.k).join()`)==="1,0,3","3路は 1・0・3 の順（0 が真ん中）");
+
+console.log("\n【Q】線を曲げる・単線図の曲がり");
+const JS=x=>JSON.parse(E("JSON.stringify("+x+")"));
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1"); S=refState(P); view=S; sel=null; mode="draw"; render();`);
+tap(`[data-hit="core:0"]`);
+ok(d.querySelector(`[data-hit="bend:0"]`)!==null,"線を選ぶと、真ん中に曲げるつまみが出る");
+{ const a=JS(`endPos(S.cores[0].a)`), b=JS(`endPos(S.cores[0].b)`), mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+  w.svgPoint=e=>({x:e.clientX,y:e.clientY});
+  pev("pointerdown",mx,my,d.querySelector(`[data-hit="bend:0"]`)); pev("pointermove",mx+10,my+10); pev("pointermove",mx+40,my+60); pev("pointerup",mx+40,my+60); tap("#stage");
+  ok(E("S.cores[0].q")!==undefined && /Q/.test(d.querySelector(`[data-hit="core:0"]`).getAttribute("d")),"つまみをドラッグすると、線が曲がる");
+  const m=JS(`bendMid(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`);
+  ok(Math.abs(m.x-(mx+40))<=1 && Math.abs(m.y-(my+60))<=1,"曲線は、指を離した所を通る"); }
+ok(E(`JSON.parse(localStorage.getItem("fukusen:r1")).cores[0].q!==undefined`),"曲げた形は保存される");
+ok(JSON.parse(judgeRef("r1")).length===0 && E("judge(S).length")===0,"曲げても判定は変わらない"); E("view=S");
+tap(`[data-hit="core:0"]`); tap("#straightCore");
+ok(E("S.cores[0].q")===undefined,"「まっすぐに戻す」で元に戻る");
+tap("#undoBtn"); ok(E("S.cores[0].q")!==undefined,"1つ戻すで、曲げた形に戻る");
+w.svgPoint=()=>({x:0,y:0});
+E(`openProblem("k5")`);
+ok(/Q/.test([...d.querySelectorAll('#tansen path[stroke-width="4"]')].map(p=>p.getAttribute("d")).join(" ")),"単線図の線は、角を丸く曲がる");
 
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
