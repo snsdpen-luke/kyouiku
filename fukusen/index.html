@@ -212,7 +212,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24n";
+const VER = "2026-09-24l";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -724,18 +724,8 @@ function placeTerms(flip) {
     p.terms.forEach(t => { P.term[t.id].x = t.x; P.term[t.id].y = t.y; });
   });
 }
-/* 器具 p の端子を、p.side の向きに1列に並べる。
-   端子2つのスイッチ（CONTACT で upright）は縦に立てる: ボックス側に1つ、反対側に1つ。
-   上下の端子を少し左右にずらし、ボックスから奥の端子へ行く線が手前の端子の上を通らないようにする */
+/* 器具 p の端子を、p.side の向きに1列に並べる */
 function termRow(p, flipped) {
-  if (UPRIGHT[p.type] && p.terms.length === 2) {
-    const out = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[p.side] || [0, -1], perp = [-out[1], out[0]];
-    const ts = flipped ? [p.terms[1], p.terms[0]] : p.terms;
-    const d = CONTACT[p.type] ? 30 : 36;
-    ts[0].x = p.x + out[0] * d - perp[0] * 11; ts[0].y = p.y + out[1] * d - perp[1] * 11;
-    ts[1].x = p.x - out[0] * d + perp[0] * 11; ts[1].y = p.y - out[1] * d + perp[1] * 11;
-    return;
-  }
   const n = p.terms.length, gap = n === 2 ? 38 : 32, d = p.type === "src" ? 44 : 34;
   p.terms.forEach((t, i) => {
     const o = ((flipped ? n - 1 - i : i) - (n - 1) / 2) * gap;
@@ -1068,8 +1058,6 @@ const endShown = e => e[0] === "#" ? !!(view.joints.find(j => j.id === e) && P.b
 /* 複線図の上のスイッチは、●ではなく接点の記号（端子の○と刃）で描く。
    刃は線が来る側と反対（器具の内側）へ倒す。確かめるモードでは入/切で刃が動く */
 const CONTACT = { sw1: 1, swH: 1, rly: 1, sw3: 1, sw4: 1 };
-/* 縦に立てて描く器具（端子2つで、連用取付枠に入るもの）。どの問題でも同じ */
-const UPRIGHT = { sw1: 1, swH: 1, rly: 1, pl: 1, outlet: 1, outlet2: 1, outletRo: 1 };
 function contact(p, sim) {
   const T = TYPES[p.type], on = !!(sim && swState[p.id]), ink = "#151a18";
   const inV = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[p.side] || [0, 1];
@@ -1085,12 +1073,6 @@ function contact(p, sim) {
   } else if (p.type === "sw4") {                                     // 平行 1–2・3–4 ／ 交差 1–4・3–2
     const arc = (A, B, h) => `<path d="M${A.x} ${A.y}Q${(A.x + B.x) / 2 + inV[0] * h} ${(A.y + B.y) / 2 + inV[1] * h} ${B.x} ${B.y}" fill="none" stroke="${ink}" stroke-width="3"/>`;
     g += on ? arc(tp("1"), tp("4"), 60) + arc(tp("3"), tp("2"), 30) : arc(tp("1"), tp("2"), 30) + arc(tp("3"), tp("4"), 30);
-  } else if (UPRIGHT[p.type]) {                                      // 縦のスイッチ: 手前の端子から、奥の端子のわきへ刃を伸ばす
-    const A = p.terms[0], B = p.terms[1], dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy) || 1;
-    const n = [(B.x - p.x) - dx / 2, (B.y - p.y) - dy / 2], nl = Math.hypot(n[0], n[1]) || 1;   // 奥の端子がずれている側
-    const E = on ? B : { x: A.x + dx * 0.85 + n[0] / nl * len * 0.42, y: A.y + dy * 0.85 + n[1] / nl * len * 0.42 };
-    g += `<line x1="${A.x}" y1="${A.y}" x2="${E.x}" y2="${E.y}" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`;
-    if (p.type === "swH") g += `<text x="${p.x + 20}" y="${p.y + 5}" font-size="13" font-weight="700" fill="${ink}">H</text>`;
   } else {
     g += blade(p.terms[0], p.terms[1], on);
     if (p.type === "swH") { const m = { x: (p.terms[0].x + p.terms[1].x) / 2 + inV[0] * 30, y: (p.terms[0].y + p.terms[1].y) / 2 + inV[1] * 30 };
@@ -1114,15 +1096,13 @@ function drawPart(p, sim, uid) {
     g += CONTACT[p.type] ? contact(p, sim) : sym(p.type === "swA" ? "swAbox" : p.type, x, y, 1, lit && !T.outlet);
     const below = p.side !== "bottom", vert = p.side === "left" || p.side === "right";
     const nx = vert ? (p.side === "left" ? x - 6 : x + 6) : x, na = vert ? (p.side === "left" ? "start" : "end") : "middle";   // 端子が縦に並ぶときは、札と反対側へ寄せる
-    const up = UPRIGHT[p.type] && p.terms.length === 2;
-    const grouped = P.place && P.part[p.id] && (P.place[p.place] || []).length > 1;   // 枠の中は短い名前で（隣とくっつかないように）
-    g += `<text x="${up ? x : nx}" y="${up ? (below ? y + 58 : y - 48) : below ? y + (T.sw ? 36 : 38) : y - 26}" text-anchor="${up ? "middle" : na}" font-size="${grouped ? 10.5 : 12}" fill="#5d6763">${esc(grouped ? T.short : T.name)}</text>`;
+    g += `<text x="${nx}" y="${below ? y + (T.sw ? 36 : 38) : y - 26}" text-anchor="${na}" font-size="12" fill="#5d6763">${esc(T.name)}</text>`;
     if (sim && T.outlet && lit) g += `<text x="${x + 24}" y="${y - 16}" font-size="12" font-weight="700" fill="#0f6b4f">100V</text>`;
-    if (T.sw && mode === "sim" && P.part[p.id]) { const on = swState[p.id], by = UPRIGHT[p.type] ? (below ? y + 64 : y - 90) : below ? y + 44 : y + 20;
+    if (T.sw && mode === "sim" && P.part[p.id]) { const on = swState[p.id], by = below ? y + 44 : y + 20;
       g += `<g class="hit" data-hit="sw:${p.id}"><rect x="${x - 34}" y="${by}" width="68" height="26" rx="13" fill="${on ? "#0f6b4f" : "#fff"}" stroke="#0f6b4f"/><text x="${x}" y="${by + 18}" text-anchor="middle" font-size="13" font-weight="700" fill="${on ? "#fff" : "#0f6b4f"}">${esc(T.stateText(!!on))}</text></g>`; }
-    if (p.label) g += `<text x="${x - 24}" y="${y + (UPRIGHT[p.type] ? 6 : -16)}" text-anchor="end" font-size="16" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`;
+    if (p.label) g += `<text x="${x - 24}" y="${y - 16}" text-anchor="end" font-size="16" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`;
   }
-  if (T.source && p.terms.length > 1 && mode === "draw" && !showingRef && P.part[p.id] && (P.place[p.place] || []).length === 1) {   // 電源の端子の並び（L と N の上下など）を入れ替える
+  if (T.source && p.terms.length > 1 && mode === "draw" && !showingRef && P.part[p.id]) {   // 電源の端子の並び（L と N の上下など）を入れ替える
     const vert = p.side === "left" || p.side === "right", by = p.type === "src" ? y + 36 : y + 46;
     g += `<g class="hit" data-hit="flip:${p.id}"><rect x="${x - 54}" y="${by}" width="108" height="28" rx="14" fill="#fff" stroke="#8b8271"/>`
        + `<text x="${x}" y="${by + 19}" text-anchor="middle" font-size="12.5" fill="#151a18">${vert ? "⇅ 上下" : "⇆ 左右"}入れ替え</text></g>`;
@@ -1156,10 +1136,6 @@ function drawTerm(p, t, hit, mk) {
   if (t.lab) {
     let dx, dy;
     if (isSrc(p.type)) { dx = p.side === "left" ? -24 : p.side === "right" ? 24 : 0; dy = p.side === "top" ? -22 : p.side === "bottom" ? 22 : 0; }   // 電源は箱の外側に
-    else if (UPRIGHT[p.type] && p.terms.length === 2) {               // 縦の器具: 端子がずれている側の横へ
-      const out = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[p.side] || [0, -1];
-      const rx = t.x - p.x, ry = t.y - p.y, along = rx * out[0] + ry * out[1], lx = rx - out[0] * along, ly = ry - out[1] * along, l = Math.hypot(lx, ly) || 1;
-      dx = lx / l * 24; dy = ly / l * 24; }
     else {   // 端子の並びの外側（はしの端子は並びの先、まん中の端子は外側）に置き、器具の記号にかぶらないようにする
       const i = p.terms.indexOf(t), n = p.terms.length, along = n > 1 && (i === 0 || i === n - 1) ? (i === 0 ? -1 : 1) : 0, vert = p.side === "left" || p.side === "right";
       const out = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[p.side];
@@ -1229,8 +1205,7 @@ function render() {
   // 同じ枠の器具を囲む
   Object.keys(P.place).forEach(pl => { const ps = P.place[pl].filter(p => p.shown); if (ps.length < 2) return;
     const xs = ps.map(p => p.x), ys = ps.map(p => p.y);
-    const up = ps.some(p => UPRIGHT[p.type]), t0 = up ? 58 : 48, b0 = up ? 70 : 48;
-    g += `<rect x="${Math.min(...xs) - 42}" y="${Math.min(...ys) - t0}" width="${Math.max(...xs) - Math.min(...xs) + 84}" height="${Math.max(...ys) - Math.min(...ys) + t0 + b0}" rx="8" fill="none" stroke="#a89e89" stroke-dasharray="3 4"/>`; });
+    g += `<rect x="${Math.min(...xs) - 40}" y="${Math.min(...ys) - 48}" width="${Math.max(...xs) - Math.min(...xs) + 80}" height="${Math.max(...ys) - Math.min(...ys) + 96}" rx="8" fill="none" stroke="#a89e89" stroke-dasharray="3 4"/>`; });
   // 線
   view.cores.forEach((k, i) => { if (endShown(k.a) && endShown(k.b)) g += coreLine(k, i, mk.has("core:" + i) ? "#ef4444" : null); });
   // 端子
