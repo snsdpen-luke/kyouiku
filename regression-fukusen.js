@@ -350,6 +350,28 @@ E(`S=newState(); view=S; placeItem("obox",500,310);`);
 E(`render()`);
 ok(d.querySelector('rect[data-hit^="part:"][stroke-dasharray]')!==null,"アウトレットボックスは図の中で四角に描く");
 
+console.log("\n【N】1つ戻す");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1")`);
+ok($("undoBtn").disabled,"開いた直後は戻せない");
+put("src",120,300); put("box",480,300);
+ok(E("S.placed.length")===2 && !$("undoBtn").disabled,"部品を置くと戻せるようになる");
+tap(`#pens .pen[data-c="黒"]`); tap(`[data-hit="t:PW.L"]`); tap(`[data-hit="box:B1"]`);
+ok(E("S.cores.length")===1,"線を1本引いた");
+tap("#undoBtn");
+ok(E("S.cores.length")===0 && E("S.joints.length")===0 && E("S.placed.length")===2,"1つ戻すと、線と●が消え、部品は残る");
+d.dispatchEvent(new w.KeyboardEvent("keydown",{key:"z",ctrlKey:true,bubbles:true}));
+ok(E("S.placed.length")===1,"Ctrl+Z でも戻る（ボックスが消える）");
+tap("#undoBtn");
+ok(E("S.placed.length")===0 && $("undoBtn").disabled,"最初まで戻ると、もう戻せない");
+put("src",120,300); put("box",480,300); tap(`[data-hit="t:PW.L"]`); tap(`[data-hit="box:B1"]`);
+tap(`[data-hit="core:0"]`); tap(`#selPens .pen[data-c="赤"]`); tap("#undoBtn");
+ok(E("S.cores[0].c")==="黒","色を変えたのも戻せる");
+tap("#clearBtn"); $("altBtn").click(); tap("#undoBtn");
+ok(E("S.placed.length")===2 && E("S.cores.length")===1,"全部片づけたのも戻せる");
+ok(E(`JSON.parse(localStorage.getItem("fukusen:r1")).cores.length`)===1,"戻した図が保存される");
+E(`openProblem("r2")`); ok($("undoBtn").disabled,"問題を切り替えると、戻す履歴は空になる");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

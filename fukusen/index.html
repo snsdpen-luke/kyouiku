@@ -99,6 +99,7 @@
         <button class="primary" id="judgeBtn">判定する</button>
         <button id="hintBtn" disabled>ヒント</button>
         <button id="refBtn">お手本</button>
+        <button id="undoBtn" title="1つ前に戻す（Ctrl+Z）" disabled>↶ 1つ戻す</button>
         <button id="clearBtn">消す</button>
       </div>
       <div class="banner short" id="shortBanner">短絡（ショート）！ 電源の線どうしが直接つながった。本物なら配線用遮断器が切れる。</div>
@@ -159,6 +160,7 @@
             <li>線をタップ → 色を変える・つなぎ先を変える・消す。●をタップ → 動かす・まとめる・消す</li>
             <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
+            <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
           </ol>
         </details>
       </div>
@@ -171,7 +173,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24h";
+const VER = "2026-09-24i";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -891,6 +893,7 @@ function render() {
   document.querySelectorAll("#palette button").forEach(b => b.classList.toggle("on", b.dataset.type === placing));
   $("modeBtn").classList.toggle("on", mode === "sim");
   $("modeBtn").textContent = mode === "sim" ? "線を引くのに戻る" : "スイッチを操作して確かめる";
+  $("undoBtn").disabled = !hist.length || showingRef;
 }
 
 function canReachBox(boxId) {
@@ -1284,7 +1287,25 @@ function ask(msg, onYes, yesLabel, alt) {
 
 /* ---------- 保存（この端末のブラウザだけ。消えても困らないものだけ） ---------- */
 const KEY = "fukusen:";
-function save() { try { localStorage.setItem(KEY + P.id, JSON.stringify(S)); } catch (e) {} }
+/* 1つ前に戻す。保存するたびに、変える前の図を積んでおく（最大100手） */
+let hist = [], lastSaved = null;
+function save() {
+  const now = JSON.stringify(S);
+  if (lastSaved !== null && now !== lastSaved) { hist.push(lastSaved); if (hist.length > 100) hist.shift(); }
+  lastSaved = now;
+  try { localStorage.setItem(KEY + P.id, now); } catch (e) {}
+  $("undoBtn").disabled = !hist.length;
+}
+function undo() {
+  if (showingRef || drag || !hist.length) return;
+  lastSaved = hist.pop(); S = JSON.parse(lastSaved); view = S; sel = null; placing = null;
+  try { localStorage.setItem(KEY + P.id, lastSaved); } catch (e) {}
+  judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
+  $("undoBtn").disabled = !hist.length;
+  status("1つ前に戻した。"); render();
+}
+$("undoBtn").onclick = undo;
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === "z" || e.key === "Z")) { e.preventDefault(); undo(); } });
 function load(id) { try { const s = JSON.parse(localStorage.getItem(KEY + id) || "null"); if (s && Array.isArray(s.cores) && Array.isArray(s.joints)) {
   if (!Array.isArray(s.placed)) s.placed = s.cores.length ? answerPlaced(P) : [];   // 部品を置く前の版で描いた図は、お手本の配置で開く
   [...s.joints.map(j => j.id), ...s.placed.map(i => i.u)].forEach(id => { const n = +String(id).replace(/\D/g, ""); if (n >= seq) seq = n + 1; });
@@ -1306,7 +1327,7 @@ function drawTabs() {
 }
 function openProblem(id) {
   P = prep(PROBLEMS.find(p => p.id === id));
-  S = load(id) || newState(); S.flip = S.flip || {}; view = S; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
+  S = load(id) || newState(); S.flip = S.flip || {}; view = S; hist = []; lastSaved = JSON.stringify(S); $("undoBtn").disabled = true; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
   $("condBox").hidden = !(P.cond && P.cond.length);
