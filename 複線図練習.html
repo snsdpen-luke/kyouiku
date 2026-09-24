@@ -212,7 +212,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24k";
+const VER = "2026-09-24l";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -247,7 +247,7 @@ const TYPES = {
   /* 点滅器 */
   sw1:    { name: "スイッチ", short: "スイッチ", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
             sw: s => s ? [["1", "2"]] : [], stateText: s => s ? "入" : "切" },
-  sw3:    { name: "3路スイッチ", short: "3路スイッチ", terms: [{ k: "0", lab: "0" }, { k: "1", lab: "1" }, { k: "3", lab: "3" }],
+  sw3:    { name: "3路スイッチ", short: "3路スイッチ", terms: [{ k: "1", lab: "1" }, { k: "0", lab: "0" }, { k: "3", lab: "3" }],   // 0 を真ん中に（刃が 1 か 3 を向く）
             sw: s => s ? [["0", "3"]] : [["0", "1"]], stateText: s => s ? "0–3" : "0–1" },
   /* 4路: 1・3 と 2・4 が組。平行 1–2・3–4 ／ 交差 1–4・3–2（公式問題を入れるとき、実物の端子で確かめること） */
   sw4:    { name: "4路スイッチ", short: "4路スイッチ", terms: [{ k: "1", lab: "1" }, { k: "2", lab: "2" }, { k: "3", lab: "3" }, { k: "4", lab: "4" }],
@@ -1000,6 +1000,7 @@ function sym(type, x, y, k, lit) {
     case "sw4": return dot("4");
     case "swH": return dot("H");
     case "swA": return dot("A(3A)");
+    case "swAbox": return box(34 * k, 24 * k) + txt("A", 13 * k);
     case "ts": return box(30 * k, 24 * k) + txt("TS", 12 * k);
     case "rly": return `<rect x="${x - 7 * k}" y="${y - 11 * k}" width="${14 * k}" height="${22 * k}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/><path d="M${x - 6 * k} ${y - 9 * k}L${x + 6 * k} ${y}L${x - 6 * k} ${y + 9 * k}Z" fill="${ink}"/>`;
     /* コンセント */
@@ -1054,6 +1055,32 @@ function endPos(e) {
 }
 const endShown = e => e[0] === "#" ? !!(view.joints.find(j => j.id === e) && P.box[view.joints.find(j => j.id === e).box].shown) : !!(P.term[e] && P.term[e].part.shown);
 
+/* 複線図の上のスイッチは、●ではなく接点の記号（端子の○と刃）で描く。
+   刃は線が来る側と反対（器具の内側）へ倒す。確かめるモードでは入/切で刃が動く */
+const CONTACT = { sw1: 1, swH: 1, rly: 1, sw3: 1, sw4: 1 };
+function contact(p, sim) {
+  const T = TYPES[p.type], on = !!(sim && swState[p.id]), ink = "#151a18";
+  const inV = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[p.side] || [0, 1];
+  const tp = k => p.terms.find(t => t.k === k);
+  const blade = (A, B, closed) => { const dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy);
+    const E = closed ? B : { x: A.x + dx * 0.95 + inV[0] * len * 0.8, y: A.y + dy * 0.95 + inV[1] * len * 0.8 };   // 画像の記号のように、長めに斜めに上げる
+    return `<line x1="${A.x}" y1="${A.y}" x2="${E.x}" y2="${E.y}" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`; };
+  let g = "";
+  if (p.type === "sw3") {                                            // 0 から、1 か 3 のどちらかへ
+    const A = tp("0"), B = on ? tp("3") : tp("1"), dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy);
+    const E = { x: A.x + dx * 0.9 + inV[0] * len * 0.4, y: A.y + dy * 0.9 + inV[1] * len * 0.4 };
+    g += `<line x1="${A.x}" y1="${A.y}" x2="${E.x}" y2="${E.y}" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`;
+  } else if (p.type === "sw4") {                                     // 平行 1–2・3–4 ／ 交差 1–4・3–2
+    const arc = (A, B, h) => `<path d="M${A.x} ${A.y}Q${(A.x + B.x) / 2 + inV[0] * h} ${(A.y + B.y) / 2 + inV[1] * h} ${B.x} ${B.y}" fill="none" stroke="${ink}" stroke-width="3"/>`;
+    g += on ? arc(tp("1"), tp("4"), 60) + arc(tp("3"), tp("2"), 30) : arc(tp("1"), tp("2"), 30) + arc(tp("3"), tp("4"), 30);
+  } else {
+    g += blade(p.terms[0], p.terms[1], on);
+    if (p.type === "swH") { const m = { x: (p.terms[0].x + p.terms[1].x) / 2 + inV[0] * 30, y: (p.terms[0].y + p.terms[1].y) / 2 + inV[1] * 30 };
+      g += `<text x="${m.x + 14}" y="${m.y + 5}" font-size="13" font-weight="700" fill="${ink}">H</text>`; }
+  }
+  return g;
+}
+
 function drawPart(p, sim, uid) {
   const T = TYPES[p.type]; let g = "";
   const x = p.x, y = p.y;
@@ -1066,7 +1093,7 @@ function drawPart(p, sim, uid) {
     g += `<text x="${x}" y="${y - 6}" text-anchor="middle" font-size="15" font-weight="700">電源</text>`;
     g += `<text x="${x}" y="${y + 14}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(p.sub || "")}</text>`;
   } else {
-    g += sym(p.type, x, y, 1, lit && !T.outlet);
+    g += CONTACT[p.type] ? contact(p, sim) : sym(p.type === "swA" ? "swAbox" : p.type, x, y, 1, lit && !T.outlet);
     const below = p.side !== "bottom", vert = p.side === "left" || p.side === "right";
     const nx = vert ? (p.side === "left" ? x - 6 : x + 6) : x, na = vert ? (p.side === "left" ? "start" : "end") : "middle";   // 端子が縦に並ぶときは、札と反対側へ寄せる
     g += `<text x="${nx}" y="${below ? y + (T.sw ? 36 : 38) : y - 26}" text-anchor="${na}" font-size="12" fill="#5d6763">${esc(T.name)}</text>`;

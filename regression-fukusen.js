@@ -73,9 +73,9 @@ ok(d.querySelectorAll("#palette button").length>=9,"部品図が並んでいる"
 const put=(type,x,y,lab)=>{ tap(`#palette button[data-type="${type}"]`); w.svgPoint=()=>({x,y}); tap("#stage");
   if(lab!==undefined){ const b=[...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab===lab); b.click(); } };
 put("src",120,300); put("box",480,300);
-ok(d.querySelectorAll("#stage line").length===1,"電源とボックスを置くと、その間のケーブルだけ出る");
+ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===1,"電源とボックスを置くと、その間のケーブルだけ出る");
 put("lamp",480,90);
-ok(d.querySelectorAll("#stage line").length===1,"記号なしのランプは単線図と合わないので、ケーブルは出ない");
+ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===1,"記号なしのランプは単線図と合わないので、ケーブルは出ない");
 ok($("partbar").classList.contains("show"),"置いた部品を選んだ状態になり、記号のボタンが出る");
 { const u=E("S.placed[S.placed.length-1].u"), hs=[...d.querySelectorAll(`[data-hit="tx:${u}"]`)];
   ok(hs.length===2,"記号がまだでも、置いた時からランプの端子（○）が2つ出る");
@@ -84,7 +84,7 @@ ok($("partbar").classList.contains("show"),"置いた部品を選んだ状態に
   hs[0].dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   ok($("status").classList.contains("err")&&/記号/.test($("status").textContent),"記号が合うまでは線を引けないと伝える"); }
 [...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="イ").click();
-ok(d.querySelectorAll("#stage line").length===2,"記号をイにすると単線図と合い、ケーブルが出る");
+ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===2,"記号をイにすると単線図と合い、ケーブルが出る");
 tap(`#palette button[data-type="sw1"]`); w.svgPoint=()=>({x:480,y:540}); tap("#stage");
 ok(d.querySelectorAll(`[data-hit="tx:${E("S.placed[S.placed.length-1].u")}"]`).length===2,"スイッチも置いた時から端子（点）が2つ出る");
 [...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="ロ").click();
@@ -92,7 +92,7 @@ tap("#judgeBtn");
 ok(/部品/.test($("result").textContent),"記号ちがいのスイッチ → 判定で「部品」の指摘");
 tap(`[data-hit="part:${E("S.placed[S.placed.length-1].u")}"]`);
 [...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="イ").click();
-ok(d.querySelectorAll("#stage line").length===3,"記号を直すとケーブルが出る");
+ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===3,"記号を直すとケーブルが出る");
 tap("#unselP");
 const pen=c=>tap(`#pens .pen[data-c="${c}"]`);
 const line=(a,b)=>{ tap(`[data-hit="t:${a}"]`); tap(b.startsWith("box:")?`[data-hit="${b}"]`:`[data-hit="${b}"]`); };
@@ -388,6 +388,19 @@ tap("#zoomFit"); ok($("stage").getAttribute("viewBox")==="0 0 1000 620","全体�
 for(let i=0;i<8;i++) tap("#zoomIn"); ok(E("vbox.w")>=250,"拡大しすぎない");
 for(let i=0;i<8;i++) tap("#zoomOut"); ok(E("vbox.w")===1000,"縮小しすぎない");
 tap("#zoomIn"); E(`openProblem("r2")`); ok(E("vbox.w")===1000,"問題を切り替えると全体表示に戻る");
+
+console.log("\n【P】複線図のスイッチは接点の記号");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("r1"); S=refState(P); view=S; mode="draw"; render();`);
+{ const g=$("stage").innerHTML, sx=E("P.part.Sa.x"), sy=E("P.part.Sa.y");
+  ok(!new RegExp('<circle cx="'+sx+'" cy="'+sy+'" r="9"').test(g),"複線図のスイッチに黒い●を描かない");
+  ok(/stroke-width="4" stroke-linecap="round"/.test(g),"端子の○と刃で描く"); }
+tap("#modeBtn");
+{ const before=$("stage").innerHTML; tap(`[data-hit="sw:Sa"]`); const after=$("stage").innerHTML;
+  ok(before!==after && after.includes(`x2="${E("P.term['Sa.2'].x")}" y2="${E("P.term['Sa.2'].y")}"`),"確かめるモードで入にすると、刃がもう片方の端子に倒れる"); }
+tap("#modeBtn");
+ok(d.querySelector(`#palette button[data-type="sw1"] svg circle`)!==null,"部品図のスイッチは公表問題の●のまま");
+ok(E(`TYPES.sw3.terms.map(t=>t.k).join()`)==="1,0,3","3路は 1・0・3 の順（0 が真ん中）");
 
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
