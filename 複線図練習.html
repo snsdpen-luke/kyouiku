@@ -51,9 +51,12 @@
   .banner.ref { background: #e0f2fe; color: #075985; }
   .note { font-size: 12.5px; color: var(--muted); }
   #tansen { width: 100%; display: block; background: #fcfcfa; border: 1px solid var(--line); border-radius: 6px; cursor: zoom-in; margin-top: 6px; }
-  .palette { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
-  .palette button { display: flex; flex-direction: column; align-items: center; padding: 4px 2px 3px; font-size: 11.5px; line-height: 1.25; min-height: 62px; }
-  .palette button svg { width: 34px; height: 30px; }
+  .paltabs { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+  .paltabs button { padding: 3px 8px; font-size: 12.5px; }
+  .palette { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .palette button { display: flex; flex-direction: column; align-items: center; padding: 3px 2px 3px; font-size: 10.5px; line-height: 1.2; min-height: 60px; }
+  .palette button[hidden] { display: none; }
+  .palette button svg { width: 48px; height: 32px; }
   .palette button.on { background: #eff6ff; color: var(--ink); border-color: var(--sel); outline: 2px solid var(--sel); font-weight: 700; }
   .result .cat { border-left: 4px solid var(--bad); background: #fef2f2; border-radius: 4px; padding: 5px 8px; margin: 5px 0; font-size: 13.5px; }
   .result .cat.pass { border-color: var(--accent); background: #ecfdf5; color: var(--accent); font-weight: 700; }
@@ -131,6 +134,7 @@
       </div>
       <div class="card">
         <h2>部品図 <span class="note">タップして、図の置きたい所をタップ</span></h2>
+        <div class="paltabs" id="palTabs"></div>
         <div class="palette" id="palette"></div>
       </div>
       <div class="card">
@@ -157,7 +161,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24g";
+const VER = "2026-09-24h";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -167,23 +171,69 @@ document.getElementById("ver").textContent = "版 " + VER;
    el:    中の負荷（R[Ω] と定格電圧）。電圧を計算して点灯を決める
    sw:    スイッチの中でつながる端子の組。引数は状態（true/false）
    ============================================================ */
+const WB = [{ k: "W", lab: "W", w: true }, { k: "L", lab: "B" }];               // 白（接地側）と黒をつなぐ端子
+const WBE = WB.concat([{ k: "E", lab: "E", earth: true }]);                    // 接地極付（E は緑の接地線）
+const LOAD = (R, rated) => [{ a: "W", b: "L", R, rated: rated || 100 }];
 const TYPES = {
-  src:    { name: "電源" },
-  lamp:   { name: "ランプレセプタクル", terms: [{ k: "W", lab: "W", desc: "受金ねじ部", w: true }, { k: "C", lab: "B", desc: "中心接触部" }],
+  /* 電源の仲間（source）。端子は問題データで決める。ここの terms は、置いたばかりで単線図と対応する前の表示用 */
+  src:    { name: "電源", short: "電源", source: true, nolabel: true, terms: [{ k: "L", lab: "L", pot: "L" }, { k: "N", lab: "N", pot: "N" }] },
+  brkB:   { name: "配線用遮断器", short: "配線用遮断器", source: true, nolabel: true, terms: [{ k: "L", lab: "L", pot: "L" }, { k: "N", lab: "N", pot: "N" }] },
+  brkBE:  { name: "漏電遮断器", short: "漏電遮断器", source: true, nolabel: true, terms: [{ k: "L", lab: "L", pot: "L" }, { k: "N", lab: "N", pot: "N" }] },
+  gnd:    { name: "接地極（施工省略）", short: "接地極", source: true, nolabel: true, terms: [{ k: "E", lab: "E", pot: "E", earth: true }] },
+  /* ボックスの仲間 */
+  box:    { name: "ジョイントボックス", short: "ジョイントボックス", box: true },
+  obox:   { name: "アウトレットボックス", short: "アウトレットボックス", box: true },
+  /* 照明 */
+  lamp:   { name: "ランプレセプタクル", short: "ランプレセプタクル", terms: [{ k: "W", lab: "W", desc: "受金ねじ部", w: true }, { k: "C", lab: "B", desc: "中心接触部" }],
             el: [{ a: "W", b: "C", R: 100, rated: 100 }], light: true },
-  ceil:   { name: "引掛シーリング", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "B" }],
-            el: [{ a: "W", b: "L", R: 100, rated: 100 }], light: true },
-  fan:    { name: "換気扇（施工省略）", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "B" }],
-            el: [{ a: "W", b: "L", R: 200, rated: 100 }] },
-  outlet: { name: "コンセント", terms: [{ k: "W", lab: "W", w: true }, { k: "L", lab: "B" }],
-            el: [{ a: "W", b: "L", R: 1e6, rated: 100 }], outlet: true },
-  pl:     { name: "パイロットランプ", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
+  ceilK:  { name: "引掛シーリング（角）", short: "引掛シーリング（角）", terms: WB, el: LOAD(100), light: true },
+  ceil:   { name: "引掛シーリング（丸）", short: "引掛シーリング（丸）", terms: WB, el: LOAD(100), light: true },
+  fl:     { name: "蛍光灯（施工省略）", short: "蛍光灯", terms: WB, el: LOAD(100), light: true },
+  outdoor:{ name: "屋外灯（施工省略）", short: "屋外灯", terms: WB, el: LOAD(100), light: true },
+  pl:     { name: "確認表示灯（パイロットランプ）", short: "確認表示灯", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
             el: [{ a: "1", b: "2", R: 1e5, rated: 100 }], light: true },
-  sw1:    { name: "スイッチ", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
+  fan:    { name: "換気扇（施工省略）", short: "換気扇", terms: WB, el: LOAD(200) },     // 練習用に残す（公表問題に無いので部品図には出さない）
+  /* 点滅器 */
+  sw1:    { name: "スイッチ", short: "スイッチ", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
             sw: s => s ? [["1", "2"]] : [], stateText: s => s ? "入" : "切" },
-  sw3:    { name: "3路スイッチ", terms: [{ k: "0", lab: "0" }, { k: "1", lab: "1" }, { k: "3", lab: "3" }],
+  sw3:    { name: "3路スイッチ", short: "3路スイッチ", terms: [{ k: "0", lab: "0" }, { k: "1", lab: "1" }, { k: "3", lab: "3" }],
             sw: s => s ? [["0", "3"]] : [["0", "1"]], stateText: s => s ? "0–3" : "0–1" },
+  /* 4路: 1・3 と 2・4 が組。平行 1–2・3–4 ／ 交差 1–4・3–2（公式問題を入れるとき、実物の端子で確かめること） */
+  sw4:    { name: "4路スイッチ", short: "4路スイッチ", terms: [{ k: "1", lab: "1" }, { k: "2", lab: "2" }, { k: "3", lab: "3" }, { k: "4", lab: "4" }],
+            sw: s => s ? [["1", "4"], ["3", "2"]] : [["1", "2"], ["3", "4"]], stateText: s => s ? "交差" : "平行" },
+  swH:    { name: "位置表示灯内蔵スイッチ", short: "位置表示灯内蔵", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
+            sw: s => s ? [["1", "2"]] : [], el: [{ a: "1", b: "2", R: 1e5, rated: 100 }], stateText: s => s ? "入" : "切" },
+  /* 自動点滅器（試験では端子台で代用）: 1 電源, 2 接地側, 3 負荷へ。暗いと 1–3 がつながる */
+  swA:    { name: "自動点滅器", short: "自動点滅器", terms: [{ k: "1", lab: "1" }, { k: "2", lab: "2", w: true }, { k: "3", lab: "3" }],
+            sw: s => s ? [["1", "3"]] : [], el: [{ a: "1", b: "2", R: 1e5, rated: 100 }], stateText: s => s ? "暗い" : "明るい" },
+  /* タイムスイッチ（試験では端子台で代用）: S1 電源, S2 接地側, L1 負荷へ */
+  ts:     { name: "タイムスイッチ", short: "タイムスイッチ", terms: [{ k: "S1", lab: "S1" }, { k: "S2", lab: "S2", w: true }, { k: "L1", lab: "L1" }],
+            sw: s => s ? [["S1", "L1"]] : [], el: [{ a: "S1", b: "S2", R: 1e5, rated: 100 }], stateText: s => s ? "入" : "切" },
+  /* リモコンリレー（試験では端子台で代用）: 1個が2端子。3個なら同じ枠に3つ置く */
+  rly:    { name: "リモコンリレー", short: "リモコンリレー", terms: [{ k: "1", lab: "" }, { k: "2", lab: "" }],
+            sw: s => s ? [["1", "2"]] : [], stateText: s => s ? "入" : "切" },
+  /* コンセント */
+  outlet:   { name: "コンセント", short: "コンセント", terms: WB, el: LOAD(1e6), outlet: true },
+  outlet2:  { name: "コンセント（2口）", short: "2口", terms: WB, el: LOAD(1e6), outlet: true },
+  outletE:  { name: "コンセント（接地極付）", short: "接地極付 E", terms: WBE, el: LOAD(1e6), outlet: true },
+  outletET: { name: "コンセント（接地端子付）", short: "接地端子付 ET", terms: WBE, el: LOAD(1e6), outlet: true },
+  outletEET:{ name: "コンセント（接地極付接地端子付）", short: "接地極付接地端子付 EET", terms: WBE, el: LOAD(1e6), outlet: true },
+  outlet200:{ name: "コンセント（20A 250V 接地極付）", short: "20A 250V E", terms: [{ k: "X", lab: "" }, { k: "Y", lab: "" }, { k: "E", lab: "E", earth: true }],
+              el: [{ a: "X", b: "Y", R: 1e6, rated: 200 }], outlet: true },
+  outletRo: { name: "露出形コンセント", short: "露出形", terms: WB, el: LOAD(1e6), outlet: true },
+  /* 電動機（施工省略）。三相 200V */
+  motor:  { name: "電動機（施工省略）", short: "電動機", nolabel: true, terms: [{ k: "U", lab: "U" }, { k: "V", lab: "V" }, { k: "W3", lab: "W" }],
+            el: [{ a: "U", b: "V", R: 1e3, rated: 200 }, { a: "V", b: "W3", R: 1e3, rated: 200 }, { a: "W3", b: "U", R: 1e3, rated: 200 }] },
 };
+const isSrc = t => !!(TYPES[t] && TYPES[t].source);
+const isBox = t => !!(TYPES[t] && TYPES[t].box);
+/* 部品図。令和8年度の公表問題（No.1〜13）の配線図に出てくる器具。ずっと施工省略のもの（リモコンスイッチ・リモコントランス）は入れない */
+const PALETTE = [
+  { name: "ボックス・電源", items: ["box", "obox", "src", "brkB", "brkBE", "gnd", "motor"] },
+  { name: "照明", items: ["lamp", "ceilK", "ceil", "fl", "outdoor", "pl"] },
+  { name: "点滅器", items: ["sw1", "sw3", "sw4", "swH", "swA", "ts", "rly"] },
+  { name: "コンセント", items: ["outlet", "outlet2", "outletE", "outletET", "outletEET", "outlet200", "outletRo"] },
+];
 const COLORS = { "黒": "#1f1f1f", "白": "#ffffff", "赤": "#d62828", "緑": "#1a7f3a" };
 
 /* ============================================================
@@ -324,7 +374,7 @@ const cableShown = c => !!(anchorOf(c.a) && anchorOf(c.b));
 /* st.placed の位置を問題の器具・ボックスに写し、端子の位置を決める */
 function applyLayout(st) {
   P.parts.forEach(p => { p.shown = false; }); P.boxes.forEach(b => { b.shown = false; });
-  (st.placed || []).forEach(it => { if (!it.pid) return; const o = it.type === "box" ? P.box[it.pid] : P.part[it.pid]; if (!o) return;
+  (st.placed || []).forEach(it => { if (!it.pid) return; const o = isBox(it.type) ? P.box[it.pid] : P.part[it.pid]; if (!o) return;
     o.shown = true; o.x = it.x; o.y = it.y; });
   P.parts.forEach(p => {
     if (!p.shown) return;
@@ -385,8 +435,8 @@ function routeOf(a, b) {
 
 /* お手本: 部品はお手本の配置、線は ref のとおり */
 function answerPlaced(Pr) {
-  return Pr.parts.map(p => ({ u: "u" + (seq++), type: p.type, label: p.type === "src" ? "" : (p.label || ""), x: p.ax, y: p.ay, pid: p.id }))
-    .concat(Pr.boxes.map(b => ({ u: "u" + (seq++), type: "box", label: b.id, x: b.ax, y: b.ay, pid: b.id })));
+  return Pr.parts.map(p => ({ u: "u" + (seq++), type: p.type, label: TYPES[p.type].nolabel ? "" : (p.label || ""), x: p.ax, y: p.ay, pid: p.id }))
+    .concat(Pr.boxes.map(b => ({ u: "u" + (seq++), type: b.kind || "box", label: b.id, x: b.ax, y: b.ay, pid: b.id })));
 }
 function refState(Pr) {
   const st = newState(), map = {};
@@ -406,7 +456,7 @@ function refState(Pr) {
    負荷（ランプなど）を抵抗として節点電圧を解く。交流は複素数で扱う
    ============================================================ */
 const POT = {
-  L: [100, 0], N: [0, 0],
+  L: [100, 0], N: [0, 0], E: [0, 0],
   L1: [100, 0], L2: [-100, 0],
   R: [200 / Math.sqrt(3), 0], S: [200 / Math.sqrt(3) * Math.cos(-2 * Math.PI / 3), 200 / Math.sqrt(3) * Math.sin(-2 * Math.PI / 3)],
   T: [200 / Math.sqrt(3) * Math.cos(2 * Math.PI / 3), 200 / Math.sqrt(3) * Math.sin(2 * Math.PI / 3)],
@@ -424,7 +474,7 @@ function nets(st, states) {
 function simulate(st, states) {
   const u = nets(st, states);
   const fixed = {}; let short = null;
-  P.parts.filter(p => p.type === "src").forEach(p => p.terms.forEach(t => {
+  P.parts.filter(p => isSrc(p.type)).forEach(p => p.terms.forEach(t => {
     const r = u.find(t.id), v = POT[t.pot];
     if (fixed[r] && (fixed[r].v[0] !== v[0] || fixed[r].v[1] !== v[1])) short = short || [fixed[r].pot, t.pot];
     else fixed[r] = { v, pot: t.pot };
@@ -484,8 +534,8 @@ function csolve(A, b) {
    各指摘は 3 段: lv1 分類だけ / lv2 場所 / lv3 理由
    ============================================================ */
 const TLAB = t => t.lab ? "「" + t.lab + "」" + (t.desc ? "（" + t.desc + "）" : "") : "";
-const TNAME = t => t === "box" ? "ジョイントボックス" : TYPES[t].name;
-const PNAME = p => p.type === "src" ? "電源" : (TYPES[p.type].name + (p.label ? " " + p.label : ""));
+const TNAME = t => TYPES[t].name;
+const PNAME = p => TYPES[p.type].nolabel ? TYPES[p.type].name : (TYPES[p.type].name + (p.label ? " " + p.label : ""));
 const ENDNAME = e => e[0] === "#" ? ("ボックス " + (view.joints.find(j => j.id === e) || {}).box + " の接続点") : (PNAME(P.term[e].part) + " の端子" + TLAB(P.term[e]));
 const CABNAME = c => (P.box[c.a] ? c.a : PNAME(P.place[c.a][0]) + (P.place[c.a].length > 1 ? "の枠" : "")) + " と " + (P.box[c.b] ? c.b : PNAME(P.place[c.b][0]) + (P.place[c.b].length > 1 ? "の枠" : "")) + " の間のケーブル（" + c.spec + "）";
 function allStates() {
@@ -537,14 +587,14 @@ function judge(st) {
     if (same || (x.any && inv)) return;
     if (x.any) { add("動作", PNAME(p) + " が、どちらのスイッチで切り替えても点いたり消えたりする、にならない。", "3路スイッチは「0」の端子が、1 か 3 のどちらかにつながる。0 には電源側かランプ側を、1 と 3 には相手の3路スイッチへ行く線をつなぐ。", [x.p]); return; }
     const i = on.findIndex((g, k) => g !== want[k]);
-    const what = p.type === "outlet" ? (want[i] ? "に電気が来ない（来るはず）" : "に電気が来る（来ないはず）") : (want[i] ? "が点かない（点くはず）" : "が点く（点かないはず）");
+    const what = TYPES[p.type].outlet ? (want[i] ? "に電気が来ない（来るはず）" : "に電気が来る（来ないはず）") : (want[i] ? "が点かない（点くはず）" : "が点く（点かないはず）");
     add("動作", (P.switches.length ? STATE_TEXT(states[i]) + " のとき、" : "") + PNAME(p) + " " + what + "。", "「スイッチを操作して確かめる」で、その組み合わせにしてみよう。電源の L から負荷を通って N まで、たどれるか。", [x.p]);
   });
 
   // 接地側と色
   const u = nets(st, null);
   const potOf = {};
-  P.parts.filter(p => p.type === "src").forEach(p => p.terms.forEach(t => { potOf[u.find(t.id)] = t.pot; }));
+  P.parts.filter(p => isSrc(p.type)).forEach(p => p.terms.forEach(t => { potOf[u.find(t.id)] = t.pot; }));
   P.parts.forEach(p => p.terms.forEach(t => { if (t.w && coresAt(t.id).length && potOf[u.find(t.id)] !== "N")
     add("接地側", PNAME(p) + " の端子" + TLAB(t) + "に、接地側（電源の N）の線が来ていない。", "「" + t.lab + "」の端子は接地側。スイッチを通さずに、電源の N（白）から直接来る線をつなぐ。", [t.id]); }));
   P.cables.forEach(c => {
@@ -570,28 +620,72 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 
 /* 図記号。k は大きさの倍率。部品図・単線図・複線図で同じ形を使う */
 function sym(type, x, y, k, lit) {
-  const r = 18 * k, sw = 2 * Math.max(1, k * 0.8), ink = "#151a18";
-  const txt = (s, fs) => `<text x="${x}" y="${y + fs * 0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${ink}">${s}</text>`;
-  const circ = fill => `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill || "#fff"}" stroke="${ink}" stroke-width="${sw}"/>`;
+  const ink = "#151a18", sw = 2 * Math.max(1, k * 0.8), R = 17 * k, lamp = lit ? "#fbbf24" : "#fff";
+  const txt = (t, fs, dx, dy, anchor, w) => `<text x="${x + (dx || 0)}" y="${y + (dy || 0) + fs * 0.36}" text-anchor="${anchor || "middle"}" font-size="${fs}" font-weight="${w || 700}" fill="${ink}">${t}</text>`;
+  const circ = (r, fill) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill || "#fff"}" stroke="${ink}" stroke-width="${sw}"/>`;
+  const box = (w, h, fill) => `<rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" fill="${fill || "#fff"}" stroke="${ink}" stroke-width="${sw}"/>`;
+  /* 引掛シーリングの「( )」 */
+  const paren = s2 => `<path d="M${x - 3 * s2} ${y - 6 * s2}Q${x - 8 * s2} ${y} ${x - 3 * s2} ${y + 6 * s2}M${x + 3 * s2} ${y - 6 * s2}Q${x + 8 * s2} ${y} ${x + 3 * s2} ${y + 6 * s2}" fill="none" stroke="${ink}" stroke-width="${sw}"/>`;
+  /* 点滅器の ●（右下に添字） */
+  const dot = sub => `<circle cx="${x}" cy="${y}" r="${9 * k}" fill="${ink}"/>` + (sub ? txt(sub, 12 * k, 11 * k, 9 * k, "start") : "");
+  /* コンセント: 円の上に2本の縦線、下は黒く塗る。右下に添字 */
+  const outlet = sub => {
+    const r = 15 * k, h = 0.42 * r, c = Math.sqrt(r * r - h * h), vx = 0.3 * r, vy = Math.sqrt(r * r - vx * vx);
+    return circ(r, lit ? "#bbf7d0" : null)
+      + `<path d="M${x - c} ${y + h}A${r} ${r} 0 0 0 ${x + c} ${y + h}Z" fill="${ink}"/>`
+      + `<path d="M${x - c} ${y + h}H${x + c}M${x - vx} ${y - vy}V${y + h}M${x + vx} ${y - vy}V${y + h}" stroke="${ink}" stroke-width="${sw}"/>`
+      + (sub ? txt(sub, 11 * k, r + 2 * k, r * 0.55, "start") : "");
+  };
   switch (type) {
     case "src": return `<rect x="${x - 34 * k}" y="${y - 20 * k}" width="${68 * k}" height="${40 * k}" rx="${5 * k}" fill="#f5f1e8" stroke="#8b8271" stroke-width="${sw * 0.7}"/>` + txt("電源", 15 * k);
-    case "box": return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/><line x1="${x - r * 0.7}" y1="${y + r * 0.7}" x2="${x + r * 0.7}" y2="${y - r * 0.7}" stroke="${ink}" stroke-width="${sw}"/>`;
-    case "lamp": return circ(lit ? "#fbbf24" : null) + txt("R", 15 * k);
-    case "ceil": return circ(lit ? "#fbbf24" : null) + txt("CL", 12 * k);
-    case "pl": return circ(lit ? "#fbbf24" : null) + `<path d="M${x - r * 0.62} ${y - r * 0.62}L${x + r * 0.62} ${y + r * 0.62}M${x + r * 0.62} ${y - r * 0.62}L${x - r * 0.62} ${y + r * 0.62}" stroke="${ink}" stroke-width="${sw}"/>`;
-    case "fan": return circ() + txt("∞", 17 * k);
-    case "outlet": return circ(lit ? "#bbf7d0" : null) + `<path d="M${x - 6 * k} ${y - 7 * k}V${y + 7 * k}M${x + 6 * k} ${y - 7 * k}V${y + 7 * k}" stroke="${ink}" stroke-width="${3 * k}"/>`;
-    case "sw1": return `<circle cx="${x}" cy="${y}" r="${13 * k}" fill="${ink}"/>`;
-    case "sw3": return `<circle cx="${x}" cy="${y}" r="${13 * k}" fill="${ink}"/><text x="${x + 16 * k}" y="${y + 17 * k}" font-size="${13 * k}" font-weight="700">3</text>`;
+    case "brkB": return box(26 * k, 22 * k) + txt("B", 14 * k);
+    case "brkBE": return box(32 * k, 22 * k) + txt("BE", 13 * k);
+    case "gnd": return `<path d="M${x} ${y - 14 * k}V${y}M${x - 12 * k} ${y}H${x + 12 * k}M${x - 8 * k} ${y + 5 * k}H${x + 8 * k}M${x - 4 * k} ${y + 10 * k}H${x + 4 * k}" stroke="${ink}" stroke-width="${sw}"/>`
+                     + txt("E<tspan font-size='" + 8 * k + "' dy='" + 3 * k + "'>D</tspan>", 12 * k, 15 * k, 6 * k, "start");
+    case "motor": return circ(R) + txt("M", 16 * k);
+    /* ジョイントボックス: 斜線3本入りの円 ／ アウトレットボックス: 四角 */
+    case "box": { const r = 15 * k, d = [0.7071, -0.7071], n = [0.7071, 0.7071];
+      let g = circ(r);
+      [-0.5, 0, 0.5].forEach(o => { const cx = x + n[0] * o * r, cy = y + n[1] * o * r, L = Math.sqrt(1 - o * o) * r * 0.9;
+        g += `<line x1="${cx - d[0] * L}" y1="${cy - d[1] * L}" x2="${cx + d[0] * L}" y2="${cy + d[1] * L}" stroke="${ink}" stroke-width="${sw * 0.8}"/>`; });
+      return g; }
+    case "obox": return box(28 * k, 28 * k);
+    /* 照明 */
+    case "lamp": return circ(R, lamp) + txt("R", 18 * k, 0, 0, "middle", 500);
+    case "ceil": return circ(R, lamp) + paren(k);
+    case "ceilK": return box(40 * k, 22 * k, lamp) + paren(k);
+    case "fl": return `<rect x="${x - 30 * k}" y="${y - 6 * k}" width="${60 * k}" height="${12 * k}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/>` + circ(12 * k, lamp);
+    case "outdoor": { const r2 = 9 * k;
+      return circ(R, lamp) + `<circle cx="${x}" cy="${y}" r="${r2}" fill="none" stroke="${ink}" stroke-width="${sw}"/>`
+        + [45, 135, 225, 315].map(a => { const c = Math.cos(a * Math.PI / 180), s2 = Math.sin(a * Math.PI / 180);
+          return `<line x1="${x + c * (r2 - 2 * k)}" y1="${y + s2 * (r2 - 2 * k)}" x2="${x + c * (r2 + 2 * k)}" y2="${y + s2 * (r2 + 2 * k)}" stroke="${lamp}" stroke-width="${4 * k}"/>`; }).join(""); }
+    case "pl": return circ(8 * k, lamp);
+    case "fan": return circ(R) + txt("∞", 17 * k);
+    /* 点滅器 */
+    case "sw1": return dot("");
+    case "sw3": return dot("3");
+    case "sw4": return dot("4");
+    case "swH": return dot("H");
+    case "swA": return dot("A(3A)");
+    case "ts": return box(30 * k, 24 * k) + txt("TS", 12 * k);
+    case "rly": return `<rect x="${x - 7 * k}" y="${y - 11 * k}" width="${14 * k}" height="${22 * k}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/><path d="M${x - 6 * k} ${y - 9 * k}L${x + 6 * k} ${y}L${x - 6 * k} ${y + 9 * k}Z" fill="${ink}"/>`;
+    /* コンセント */
+    case "outlet": return outlet("");
+    case "outlet2": return outlet("2");
+    case "outletE": return outlet("E");
+    case "outletET": return outlet("ET");
+    case "outletEET": return outlet("EET");
+    case "outlet200": return outlet("E") + txt("20A 250V", 9 * k, 17 * k, 16 * k, "start", 500);
+    case "outletRo": return outlet("") + txt("露出形", 10 * k, 17 * k, -12 * k, "start", 500);
   }
   return "";
 }
 
-/* 端子の札。W・N は白い線、B・L は黒い線、L2 は赤い線をつなぐ端子 */
+/* 端子の札。W・N は白い線、B・L は黒い線、L2 は赤い線、E は緑の線（接地）をつなぐ端子 */
 function badge(t, x, y) {
-  const kind = (t.w || t.pot === "N") ? "w" : (t.lab === "B" || t.pot === "L" || t.pot === "L1") ? "b" : t.pot === "L2" ? "r" : "";
+  const kind = (t.w || t.pot === "N") ? "w" : (t.lab === "B" || t.pot === "L" || t.pot === "L1") ? "b" : t.pot === "L2" ? "r" : (t.earth || t.pot === "E") ? "g" : "";
   if (!kind) return `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#151a18">${esc(t.lab)}</text>`;
-  const bg = { w: "#fff", b: "#1f1f1f", r: "#d62828" }[kind], fg = kind === "w" ? "#151a18" : "#fff";
+  const bg = { w: "#fff", b: "#1f1f1f", r: "#d62828", g: "#1a7f3a" }[kind], fg = kind === "w" ? "#151a18" : "#fff";
   return `<rect x="${x - 10}" y="${y - 9}" width="20" height="18" rx="4" fill="${bg}" stroke="${kind === "w" ? "#6b7280" : bg}" stroke-width="1.5"/>`
        + `<text x="${x}" y="${y + 4.5}" text-anchor="middle" font-size="12.5" font-weight="700" fill="${fg}">${esc(t.lab)}</text>`;
 }
@@ -638,9 +732,6 @@ function drawPart(p, sim, uid) {
     g += `<rect x="${x - 48}" y="${y - 28}" width="96" height="56" rx="6" fill="#f5f1e8" stroke="#8b8271"/>`;
     g += `<text x="${x}" y="${y - 6}" text-anchor="middle" font-size="15" font-weight="700">電源</text>`;
     g += `<text x="${x}" y="${y + 14}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(p.sub || "")}</text>`;
-    if (mode === "draw" && !showingRef && P.part[p.id]) { const vert = p.side === "left" || p.side === "right";
-      g += `<g class="hit" data-hit="flip:${p.id}"><rect x="${x - 54}" y="${y + 36}" width="108" height="28" rx="14" fill="#fff" stroke="#8b8271"/>`
-         + `<text x="${x}" y="${y + 55}" text-anchor="middle" font-size="12.5" fill="#151a18">${vert ? "⇅ 上下" : "⇆ 左右"}入れ替え</text></g>`; }
   } else {
     g += sym(p.type, x, y, 1, lit && !T.outlet);
     const below = p.side !== "bottom", vert = p.side === "left" || p.side === "right";
@@ -650,6 +741,11 @@ function drawPart(p, sim, uid) {
     if (T.sw && mode === "sim" && P.part[p.id]) { const on = swState[p.id], by = below ? y + 44 : y + 20;
       g += `<g class="hit" data-hit="sw:${p.id}"><rect x="${x - 34}" y="${by}" width="68" height="26" rx="13" fill="${on ? "#0f6b4f" : "#fff"}" stroke="#0f6b4f"/><text x="${x}" y="${by + 18}" text-anchor="middle" font-size="13" font-weight="700" fill="${on ? "#fff" : "#0f6b4f"}">${esc(T.stateText(!!on))}</text></g>`; }
     if (p.label) g += `<text x="${x - 24}" y="${y - 16}" text-anchor="end" font-size="16" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`;
+  }
+  if (T.source && p.terms.length > 1 && mode === "draw" && !showingRef && P.part[p.id]) {   // 電源の端子の並び（L と N の上下など）を入れ替える
+    const vert = p.side === "left" || p.side === "right", by = p.type === "src" ? y + 36 : y + 46;
+    g += `<g class="hit" data-hit="flip:${p.id}"><rect x="${x - 54}" y="${by}" width="108" height="28" rx="14" fill="#fff" stroke="#8b8271"/>`
+       + `<text x="${x}" y="${by + 19}" text-anchor="middle" font-size="12.5" fill="#151a18">${vert ? "⇅ 上下" : "⇆ 左右"}入れ替え</text></g>`;
   }
   if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="part:${uid}" cx="${x}" cy="${y}" r="${p.type === "src" ? 30 : 22}" fill="transparent"/>`;
   return g;
@@ -679,7 +775,7 @@ function drawTerm(p, t, hit, mk) {
   g += `<circle cx="${t.x}" cy="${t.y}" r="8" fill="${on ? "#2563eb" : "#fff"}" stroke="${warn ? "#ef4444" : "#151a18"}" stroke-width="${warn ? 4 : 2}"/>`;
   if (t.lab) {
     let dx, dy;
-    if (p.type === "src") { dx = p.side === "left" ? -24 : p.side === "right" ? 24 : 0; dy = p.side === "top" ? -22 : p.side === "bottom" ? 22 : 0; }   // 電源は箱の外側に
+    if (isSrc(p.type)) { dx = p.side === "left" ? -24 : p.side === "right" ? 24 : 0; dy = p.side === "top" ? -22 : p.side === "bottom" ? 22 : 0; }   // 電源は箱の外側に
     else {   // 端子の並びの外側（はしの端子は並びの先、まん中の端子は外側）に置き、器具の記号にかぶらないようにする
       const i = p.terms.indexOf(t), n = p.terms.length, along = n > 1 && (i === 0 || i === n - 1) ? (i === 0 ? -1 : 1) : 0, vert = p.side === "left" || p.side === "right";
       const out = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[p.side];
@@ -688,6 +784,12 @@ function drawTerm(p, t, hit, mk) {
     g += badge(t, t.x + dx, t.y + dy); }
   if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="${hit}" cx="${t.x}" cy="${t.y}" r="19" fill="transparent"/>`;
   return g;
+}
+
+/* 複線図の中のボックス（大きな点線）。ジョイントボックスは円、アウトレットボックスは角を丸めた四角 */
+function boxShape(kind, x, y, r, attrs) {
+  if (kind === "obox") return `<rect ${attrs} x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="10" stroke-width="2" stroke-dasharray="7 6"/>`;
+  return `<circle ${attrs} cx="${x}" cy="${y}" r="${r}" stroke-width="2" stroke-dasharray="7 6"/>`;
 }
 
 let marks = [];
@@ -715,22 +817,22 @@ function render() {
   P.boxes.forEach(b => {
     if (!b.shown) return;
     const selB = sel && sel.item && sel.item === uidOf[b.id];
-    g += `<circle class="hit" data-hit="box:${b.id}" cx="${b.x}" cy="${b.y}" r="${b.r}" fill="${sel && canReachBox(b.id) ? "#eff6ff" : selB ? "#dbeafe" : "#fbfaf7"}" stroke="${selB ? "#2563eb" : "#8b8271"}" stroke-width="2" stroke-dasharray="7 6"/>`;
+    g += boxShape(b.kind || "box", b.x, b.y, b.r, `class="hit" data-hit="box:${b.id}" fill="${sel && canReachBox(b.id) ? "#eff6ff" : selB ? "#dbeafe" : "#fbfaf7"}" stroke="${selB ? "#2563eb" : "#8b8271"}"`);
     g += `<text x="${b.x + b.r * 0.72}" y="${b.y - b.r * 0.78}" font-size="14" font-weight="700" fill="#8b8271">${b.id}</text>`;
   });
   // どれとも対応しない部品（記号ちがい・余分）
   const extraTerms = [];
   (view.placed || []).filter(it => !it.pid).forEach(it => {
-    if (it.type === "box") {
+    if (isBox(it.type)) {
       const selB = sel && sel.item === it.u, warn = mk.has("u:" + it.u);
-      g += `<circle class="hit" data-hit="part:${it.u}" cx="${it.x}" cy="${it.y}" r="78" fill="${warn ? "#fef2f2" : selB ? "#dbeafe" : "#fbfaf7"}" stroke="${selB ? "#2563eb" : "#8b8271"}" stroke-width="2" stroke-dasharray="7 6"/>`;
+      g += boxShape(it.type, it.x, it.y, 78, `class="hit" data-hit="part:${it.u}" fill="${warn ? "#fef2f2" : selB ? "#dbeafe" : "#fbfaf7"}" stroke="${selB ? "#2563eb" : "#8b8271"}"`);
       g += `<text x="${it.x + 56}" y="${it.y - 61}" font-size="14" font-weight="700" fill="#8b8271">${esc(it.label || "？")}</text>`;
     } else {
       /* 記号がまだ単線図と合っていなくても、置いた時から端子（W/B や スイッチの2点）を出す。線はまだ引けない */
       const q = { id: it.u, type: it.type, label: it.label, x: it.x, y: it.y, sub: "",
-                  terms: (TYPES[it.type].terms || (it.type === "src" ? [{ k: "L", lab: "L", pot: "L" }, { k: "N", lab: "N", pot: "N" }] : [])).map(t => Object.assign({}, t, { id: it.u + "." + t.k })) };
+                  terms: (TYPES[it.type].terms || []).map(t => Object.assign({}, t, { id: it.u + "." + t.k })) };
       let nb = null, nd = Infinity;
-      (view.placed || []).filter(b => b.type === "box").forEach(b => { const d = Math.hypot(b.x - it.x, b.y - it.y); if (d < nd) { nd = d; nb = b; } });
+      (view.placed || []).filter(b => isBox(b.type)).forEach(b => { const d = Math.hypot(b.x - it.x, b.y - it.y); if (d < nd) { nd = d; nb = b; } });
       if (nb) { const dx = nb.x - it.x, dy = nb.y - it.y; q.side = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "bottom" : "top"); } else q.side = "top";
       termRow(q, false);
       extraTerms.push(q);
@@ -796,7 +898,7 @@ function drawTansen() {
     const anchor = vert ? "start" : hor ? "middle" : (dx > 0 ? "end" : "start");     // 斜めの線は、ボックスから見て外側へ書く
     const ox = vert ? 16 : hor ? 0 : (dx > 0 ? -16 : 16), oy = hor ? -14 : vert ? 10 : 0;
     g += `<text x="${mx + ox}" y="${my + oy}" text-anchor="${anchor}" font-size="30" font-weight="700" fill="#151a18" stroke="#fcfcfa" stroke-width="8" paint-order="stroke">${esc(c.spec)}</text>`; });
-  P.boxes.forEach(b => { g += sym("box", b.ax, b.ay, 1.6);
+  P.boxes.forEach(b => { g += sym(b.kind || "box", b.ax, b.ay, 1.6);
     g += `<text x="${b.ax + 34}" y="${b.ay - 26}" font-size="30" font-weight="700" fill="#8b8271">${esc(b.id)}</text>`; });
   P.parts.forEach(p => {
     if (p.type === "src") {
@@ -817,28 +919,38 @@ $("tansen").addEventListener("click", () => $("big").classList.add("show"));
 $("bigClose").onclick = () => $("big").classList.remove("show");
 $("big").addEventListener("click", e => { if (e.target === $("big")) $("big").classList.remove("show"); });
 
-/* ---------- 部品図 ---------- */
-const PALETTE = ["src", "box", "lamp", "ceil", "sw1", "sw3", "outlet", "pl", "fan"];
+/* ---------- 部品図（見出しで切り替える） ---------- */
 const LABELS = ["イ", "ロ", "ハ", "ニ", "ホ", "ヘ"];
 const BOXLABELS = ["B1", "B2", "B3", "B4"];
+let palTab = 0;
 function drawPalette() {
-  const host = $("palette"); host.innerHTML = "";
-  PALETTE.forEach(t => {
-    const b = document.createElement("button"); b.dataset.type = t;
-    b.innerHTML = `<svg viewBox="-36 -30 72 60">${sym(t, 0, 0, t === "src" ? 0.95 : 1.25)}</svg><span>${esc(TNAME(t))}</span>`;
-    b.onclick = () => { if (showingRef) return; placing = placing === t ? null : t; sel = null; if (mode !== "draw") mode = "draw";
-      status(placing ? TNAME(t) + " を置く。図の置きたい所をタップ。" : ""); render(); };
-    host.appendChild(b);
+  const tabs = $("palTabs"), host = $("palette"); tabs.innerHTML = ""; host.innerHTML = "";
+  PALETTE.forEach((grp, gi) => {
+    const tb = document.createElement("button"); tb.textContent = grp.name; tb.dataset.tab = gi;
+    tb.onclick = () => { palTab = gi; showTab(); }; tabs.appendChild(tb);
+    grp.items.forEach(t => {
+      const b = document.createElement("button"); b.dataset.type = t; b.dataset.grp = gi;
+      const wide = ["src", "fl", "ceilK", "outlet200", "outletRo", "swA", "brkBE"].includes(t);
+      b.innerHTML = `<svg viewBox="-40 -26 80 52">${sym(t, { swA: -14, outlet200: -20, outletRo: -18, outletEET: -14, outletET: -8, sw3: -4, sw4: -4, swH: -4 }[t] || 0, 0, wide ? 0.95 : 1.2)}</svg><span>${esc(TYPES[t].short)}</span>`;
+      b.title = TYPES[t].name;
+      b.onclick = () => { if (showingRef) return; placing = placing === t ? null : t; sel = null; if (mode !== "draw") mode = "draw";
+        status(placing ? TNAME(t) + " を置く。図の置きたい所をタップ。" : ""); render(); };
+      host.appendChild(b);
+    });
   });
+  showTab();
 }
-
+function showTab() {
+  document.querySelectorAll("#palTabs button").forEach(b => b.classList.toggle("on", +b.dataset.tab === palTab));
+  document.querySelectorAll("#palette button").forEach(b => { b.hidden = +b.dataset.grp !== palTab; });
+}
 /* ---------- 選んだ部品の操作（記号・消す） ---------- */
 function drawPartBar(it) {
   $("partName").textContent = TNAME(it.type) + " を";
   const host = $("partLabels"); host.innerHTML = "";
-  $("partLabLab").style.display = it.type === "src" ? "none" : "";
-  if (it.type === "src") return;
-  const opts = it.type === "box" ? BOXLABELS : LABELS.concat([""]);
+  $("partLabLab").style.display = TYPES[it.type].nolabel ? "none" : "";
+  if (TYPES[it.type].nolabel) return;
+  const opts = isBox(it.type) ? BOXLABELS : LABELS.concat([""]);
   opts.forEach(l => { const b = document.createElement("button"); b.textContent = l || "なし"; b.dataset.lab = l;
     if ((it.label || "") === l) b.classList.add("on");
     b.onclick = () => setLabel(it.u, l); host.appendChild(b); host.appendChild(document.createTextNode(" ")); });
@@ -854,8 +966,8 @@ function changed() { judged = null; hintStep = 0; marks = []; $("result").innerH
    同じ種類・記号が複数あるときは、お手本の配置で一番近いもの */
 function assign(it) {
   const taken = new Set(S.placed.filter(x => x !== it && x.pid).map(x => x.pid));
-  const cand = it.type === "box" ? P.boxes.filter(b => b.id === it.label && !taken.has(b.id))
-    : P.parts.filter(p => p.type === it.type && (it.type === "src" || (p.label || "") === (it.label || "")) && !taken.has(p.id));
+  const cand = isBox(it.type) ? P.boxes.filter(b => (b.kind || "box") === it.type && b.id === it.label && !taken.has(b.id))
+    : P.parts.filter(p => p.type === it.type && (TYPES[it.type].nolabel || (p.label || "") === (it.label || "")) && !taken.has(p.id));
   let best = null, bd = Infinity;
   cand.forEach(c => { const d = Math.hypot(c.ax - it.x, c.ay - it.y); if (d < bd) { bd = d; best = c; } });
   it.pid = best ? best.id : null;
@@ -872,29 +984,29 @@ function purge(pid, isBox) {
 function placeItem(type, x, y) {
   x = Math.max(50, Math.min(950, Math.round(x))); y = Math.max(50, Math.min(570, Math.round(y)));
   let label = "";
-  if (type === "box") { const used = new Set(S.placed.filter(i => i.type === "box").map(i => i.label)); label = BOXLABELS.find(l => !used.has(l)) || ""; }
+  if (isBox(type)) { const used = new Set(S.placed.filter(i => isBox(i.type)).map(i => i.label)); label = BOXLABELS.find(l => !used.has(l)) || ""; }
   const it = { u: "u" + (seq++), type, label, x, y, pid: null };
   S.placed.push(it); assign(it);
   return it;
 }
 function setLabel(u, l) {
   const it = S.placed.find(x => x.u === u); if (!it || (it.label || "") === l) return;
-  const old = it.pid; it.label = l; it.pid = null; purge(old, it.type === "box"); assign(it); assignFree();
+  const old = it.pid; it.label = l; it.pid = null; purge(old, isBox(it.type)); assign(it); assignFree();
   status(it.pid ? "記号を「" + (l || "なし") + "」にした。" : "記号を「" + (l || "なし") + "」にした。この部品は、まだ単線図のどれとも合っていない。");
   changed();
 }
 function removeItem(u) {
   const it = S.placed.find(x => x.u === u); if (!it) return;
-  purge(it.pid, it.type === "box"); S.placed = S.placed.filter(x => x !== it); assignFree(); sel = null;
+  purge(it.pid, isBox(it.type)); S.placed = S.placed.filter(x => x !== it); assignFree(); sel = null;
   status("部品を消した。"); changed();
 }
 function moveItem(u, x, y) {
   const it = S.placed.find(i => i.u === u); if (!it) return;
   x = Math.max(40, Math.min(960, Math.round(x))); y = Math.max(40, Math.min(580, Math.round(y)));
-  if (it.type === "box" && it.pid) S.joints.forEach(j => { if (j.box === it.pid && j.x !== undefined) { j.x += x - it.x; j.y += y - it.y; } });
+  if (isBox(it.type) && it.pid) S.joints.forEach(j => { if (j.box === it.pid && j.x !== undefined) { j.x += x - it.x; j.y += y - it.y; } });
   it.x = x; it.y = y;
 }
-const itemOfBox = id => S.placed.find(i => i.type === "box" && i.pid === id);
+const itemOfBox = id => S.placed.find(i => isBox(i.type) && i.pid === id);
 
 function addCore(a, b) {
   if (a === b) return status("同じ所どうしはつなげない。", true);
@@ -1009,7 +1121,7 @@ svg.addEventListener("click", e => {
   if (dragEnded) { dragEnded = false; return; }                     // ドラッグの終わりはタップとして扱わない
   if (placing) {                                                     // 部品を置く
     const q = svgPoint(e), it = placeItem(placing, q.x, q.y); placing = null; sel = { item: it.u };
-    status(it.type === "src" ? "電源を置いた。" : TNAME(it.type) + " を置いた。上のボタンで記号を単線図と同じにする。");
+    status(TYPES[it.type].nolabel ? TNAME(it.type) + " を置いた。" : TNAME(it.type) + " を置いた。上のボタンで記号を単線図と同じにする。");
     changed(); return;
   }
   if (sel && sel.act === "move") {                                   // 接続点を動かす: 置きたい場所をタップ
@@ -1075,7 +1187,7 @@ function setCoreColor(c) { if (!(sel && sel.core !== undefined)) return; S.cores
 $("delCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; S.cores.splice(sel.core, 1); tidy(); sel = null; status("線を消した。"); changed(); };
 $("unsel").onclick = $("unselJ").onclick = $("unselP").onclick = () => { sel = null; status(""); render(); };
 $("delPart").onclick = () => { if (!(sel && sel.item)) return; const u = sel.item, it = S.placed.find(x => x.u === u); if (!it) return;
-  const n = it.pid ? S.cores.filter(k => it.type === "box" ? S.joints.some(j => j.box === it.pid && (k.a === j.id || k.b === j.id)) : (k.a.startsWith(it.pid + ".") || k.b.startsWith(it.pid + "."))).length : 0;
+  const n = it.pid ? S.cores.filter(k => isBox(it.type) ? S.joints.some(j => j.box === it.pid && (k.a === j.id || k.b === j.id)) : (k.a.startsWith(it.pid + ".") || k.b.startsWith(it.pid + "."))).length : 0;
   if (!n) return removeItem(u);
   ask("この部品と、つながっている線 " + n + " 本を消す？", () => removeItem(u), "消す"); };
 $("reCore").dataset.act = "reattach"; $("mvJoint").dataset.act = "move"; $("mgJoint").dataset.act = "merge";

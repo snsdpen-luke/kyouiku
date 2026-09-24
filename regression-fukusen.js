@@ -320,6 +320,36 @@ w.hitAt=()=>"t:PW.N"; pev("pointerup",60,60); tap("#stage");
 ok(E("S.cores.length")===3,"電源の N へ（ケーブルが通っている）ならつながる");
 w.hitAt=()=>null; w.svgPoint=e=>({x:e.clientX,y:e.clientY});
 
+console.log("\n【M】部品図（公表問題の図記号）");
+E(`try{localStorage.clear()}catch(e){}`); E(`openProblem("r1")`);
+{ const types=JSON.parse(E("JSON.stringify(PALETTE.flatMap(g=>g.items))"));
+  ok(types.length>=25 && d.querySelectorAll("#palette button").length===types.length,"部品図に公表問題の器具が並ぶ（"+types.length+"種）");
+  ok(!types.includes("fan"),"公表問題に無い換気扇は部品図に出さない");
+  ok(d.querySelectorAll("#palTabs button").length===4,"見出しは4つ（ボックス・電源／照明／点滅器／コンセント）");
+  ok(d.querySelectorAll("#palette button:not([hidden])").length===E("PALETTE[0].items.length"),"見出しの1つ目の部品だけが見えている");
+  [...d.querySelectorAll("#palTabs button")][2].click();
+  ok([...d.querySelectorAll("#palette button:not([hidden])")].every(b=>E(`PALETTE[2].items.includes("${b.dataset.type}")`)),"見出しを押すと、その部品に切り替わる");
+  const bad=[];
+  types.forEach(t=>{ const svgs=d.querySelector(`#palette button[data-type="${t}"] svg`); if(!svgs||svgs.innerHTML.length<30) bad.push(t); });
+  ok(!bad.length,"どの部品にも図記号が描かれている"+(bad.length?" → "+bad.join(","):""));
+  const noTerm=[];
+  E(`S=newState(); view=S; render();`);
+  types.forEach((t,i)=>{ if(E(`isBox("${t}")`)) return; E(`placeItem("${t}", ${100+(i%8)*110}, ${120+Math.floor(i/8)*150}); render();`);
+    const it=JSON.parse(E("JSON.stringify(S.placed[S.placed.length-1])"));
+    if(d.querySelectorAll(it.pid?`[data-hit^="t:${it.pid}."]`:`[data-hit="tx:${it.u}"]`).length<1) noTerm.push(t); });
+  ok(!noTerm.length,"どの器具も、置いた時から端子が出る"+(noTerm.length?" → "+noTerm.join(","):""));
+  ok(/fill="#1a7f3a"[^>]*\/?>(<\/rect>)?<text[^>]*fill="#fff">E</.test($("stage").innerHTML),"接地の E は緑の札");
+  const sw=E(`JSON.stringify(PALETTE[2].items.map(t=>[t,!!TYPES[t].sw]))`);
+  ok(JSON.parse(sw).every(([t,v])=>v),"点滅器はどれも入/切ができる");
+}
+// ボックスの種類を取り違えない
+E(`openProblem("r1"); S=newState(); view=S;`);
+ok(E(`(()=>{const a=placeItem("obox",500,310); return a.label==="B1" && a.pid===null;})()`),"単線図がジョイントボックスの所にアウトレットボックスを置いても、対応しない");
+ok(E(`(()=>{S=newState(); view=S; const a=placeItem("box",500,310); return a.label==="B1" && a.pid==="B1";})()`),"ジョイントボックスなら対応する");
+E(`S=newState(); view=S; placeItem("obox",500,310);`);
+E(`render()`);
+ok(d.querySelector('rect[data-hit^="part:"][stroke-dasharray]')!==null,"アウトレットボックスは図の中で四角に描く");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
