@@ -4,8 +4,9 @@
   ラダー工房v2.html   → index.html         （GitHub Pages で配るもの）
   進路シミュレーション.html   → shinro/index.html  （同上。URL を /shinro/ で配るため）
   馬レース.html        → uma/index.html     （同上。文化祭の QR コードは /uma/ を指す）
+  サンプラー.html      → sampler/index.html （同上。こえサンプラー）
 
-  python3 build.py                  上の3つを作る
+  python3 build.py                  上の4つを作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
 
 本体を直したら必ず走らせること。生成物を手で編集してはいけない。
@@ -15,6 +16,7 @@ import io, os, sys, shutil
 SRC = "ラダー工房v2.html"
 SRC2 = "進路シミュレーション.html"
 SRC3 = "馬レース.html"
+SRC4 = "サンプラー.html"
 s = io.open(SRC, encoding="utf-8").read()
 
 # 1) GitHub Pages 用。中身は本体そのまま。URL を短くするためだけの複製
@@ -30,6 +32,11 @@ print("生成: shinro/index.html")
 os.makedirs("uma", exist_ok=True)
 shutil.copyfile(SRC3, "uma/index.html")
 print("生成: uma/index.html")
+
+# 1d) こえサンプラー。マイクを使うので https の GitHub Pages で配る
+os.makedirs("sampler", exist_ok=True)
+shutil.copyfile(SRC4, "sampler/index.html")
+print("生成: sampler/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
