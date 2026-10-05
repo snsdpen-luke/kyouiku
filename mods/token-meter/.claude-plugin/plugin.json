@@ -1,0 +1,1 @@
+{ "name": "token-meter", "version": "0.1.0", "description": "アカウントの利用上限(5時間/7日)と、セッションごとのトークン使用量を表示する", "types": "./types/index.d.ts" }
