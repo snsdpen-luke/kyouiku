@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="color-scheme" content="dark">
+<title>こえサンプラー</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#14161b; --panel:#1e2229; --panel2:#272c35; --line:#353b46;
+  --text:#f1f3f6; --sub:#9aa3b2; --rec:#ff4b4b; --accent:#4fc3f7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Meiryo",sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;overflow:hidden}
+button{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;height:60px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:20px;margin:0;white-space:nowrap;letter-spacing:.05em}
+header .ver{font-size:11px;color:var(--sub);margin-left:auto;white-space:nowrap}
+.modes{display:flex;gap:6px;margin-left:12px}
+.mode{border:2px solid var(--line);background:var(--panel2);border-radius:10px;padding:6px 14px;font-size:16px;font-weight:700;cursor:pointer}
+.mode.on{border-color:var(--accent);background:#173445}
+.mode.rec.on{border-color:var(--rec);background:#4a1717}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer}
+.btn:active{filter:brightness(1.3)}
+.btn:disabled{opacity:.4;cursor:default}
+
+main{display:flex;gap:16px;padding:16px;height:calc(100% - 60px)}
+.padwrap{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.hint{font-size:14px;color:var(--sub);margin-bottom:10px;text-align:center;min-height:20px}
+body.recmode .hint{color:#ffb3b3}
+.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  width:min(100%,calc(100vh - 140px));aspect-ratio:1}
+.pad{position:relative;border:none;border-radius:14px;cursor:pointer;touch-action:none;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 70%,#fff 0%),color-mix(in srgb,var(--c) 55%,#000));
+  box-shadow:0 4px 0 color-mix(in srgb,var(--c) 40%,#000),inset 0 1px 0 rgba(255,255,255,.25);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;overflow:hidden;
+  transition:transform .05s}
+.pad .nm{font-size:clamp(13px,2.2vw,20px);font-weight:800;white-space:pre-line;text-shadow:0 1px 2px rgba(0,0,0,.6);text-align:center;line-height:1.15;word-break:break-all}
+.pad .ky{position:absolute;left:8px;top:6px;font-size:12px;font-weight:700;opacity:.8;background:rgba(0,0,0,.3);border-radius:4px;padding:0 5px}
+.pad .tg{position:absolute;right:8px;top:6px;font-size:11px;font-weight:700;background:#fff;color:#111;border-radius:4px;padding:0 5px;display:none}
+.pad.user .tg{display:block}
+.pad.sel{outline:3px solid #fff;outline-offset:2px}
+.pad.hit{transform:translateY(3px);filter:brightness(1.6);box-shadow:0 1px 0 color-mix(in srgb,var(--c) 40%,#000)}
+body.recmode .pad{outline:2px dashed rgba(255,90,90,.7);outline-offset:-6px}
+body.recmode .pad.sel{outline:3px solid var(--rec);outline-offset:2px}
+.pad .bar{position:absolute;left:0;bottom:0;height:6px;width:0;background:var(--rec)}
+.pad.recording{animation:pulse .6s infinite alternate}
+.pad.recording .nm::before{content:"● 録音中\A";color:#fff}
+@keyframes pulse{from{filter:brightness(1)}to{filter:brightness(1.5) saturate(1.5)}}
+
+aside{width:300px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+aside h2{font-size:13px;color:var(--sub);margin:0;font-weight:600}
+.namebox{width:100%;font-size:20px;font-weight:800;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;-webkit-user-select:text;user-select:text}
+.kind{font-size:13px;color:var(--sub)}
+canvas{width:100%;height:80px;background:#0d0f13;border-radius:8px;display:block}
+.row{display:flex;align-items:center;gap:8px;font-size:14px}
+.row label{width:52px;color:var(--sub)}
+.row input[type=range]{flex:1;accent-color:var(--accent);height:28px}
+.row .val{width:48px;text-align:right;font-variant-numeric:tabular-nums}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn.on{border-color:var(--accent);background:#173445}
+.keys{font-size:12px;color:var(--sub);line-height:1.6}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+
+@media (max-width:800px),(orientation:portrait){
+  html,body{overflow:auto}
+  main{flex-direction:column;height:auto}
+  .pads{width:min(100%,calc(100vh - 140px))}
+  aside{width:100%}
+  header h1{font-size:17px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎤 こえサンプラー</h1>
+  <div class="modes">
+    <button class="mode play on" id="mPlay">▶ えんそう</button>
+    <button class="mode rec" id="mRec">● ろくおん</button>
+  </div>
+  <span class="ver" id="ver"></span>
+</header>
+<main>
+  <div class="padwrap">
+    <div class="hint" id="hint"></div>
+    <div class="pads" id="pads"></div>
+  </div>
+  <aside>
+    <h2>えらんだパッド</h2>
+    <input class="namebox" id="pName" maxlength="12">
+    <div class="kind" id="pKind"></div>
+    <canvas id="wave" width="560" height="160"></canvas>
+    <div class="row"><label>ピッチ</label><input type="range" id="pPitch" min="-12" max="12" step="1"><span class="val" id="vPitch"></span></div>
+    <div class="row"><label>音量</label><input type="range" id="pVol" min="0" max="150" step="5"><span class="val" id="vVol"></span></div>
+    <div class="btns">
+      <button class="btn" id="pRev">⇆ 逆再生</button>
+      <button class="btn" id="pPlay">▶ 試聴</button>
+      <button class="btn" id="pReset">↺ 元の音に戻す</button>
+    </div>
+    <h2>全体</h2>
+    <div class="row"><label>全体</label><input type="range" id="mVol" min="0" max="100" step="5"><span class="val" id="vMVol"></span></div>
+    <div class="btns">
+      <button class="btn" id="stopAll">■ 全部止める</button>
+      <button class="btn" id="resetAll">全部はじめの状態に</button>
+    </div>
+    <div class="keys">
+      キーボードでも鳴らせる<br>
+      <b>1 2 3 4 / Q W E R / A S D F / Z X C V</b><br>
+      スペース：全部止める　Enter：えんそう⇔ろくおん
+    </div>
+  </aside>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const VER = "2026-10-05a";
+const MAX_REC = 5;           // 録音の最長秒数
+const KEYS = ["Digit1","Digit2","Digit3","Digit4","KeyQ","KeyW","KeyE","KeyR",
+              "KeyA","KeyS","KeyD","KeyF","KeyZ","KeyX","KeyC","KeyV"];
+const keyLabel = c => c.replace("Digit","").replace("Key","");
+
+/* ============ 音の合成（プリセット）============
+   音のファイルは持たない。全部ここで計算して作る。
+   どれも (sr: サンプリング周波数, rnd: 乱数) → Float32Array */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const TAU = Math.PI*2;
+const arr = (sr,sec) => new Float32Array(Math.max(1,Math.round(sr*sec)));
+function lp(x,sr,fc){ const a=1-Math.exp(-TAU*fc/sr); let y=0; for(let i=0;i<x.length;i++){ y+=a*(x[i]-y); x[i]=y; } return x; }
+function hp(x,sr,fc){ const a=1-Math.exp(-TAU*fc/sr); let y=0; for(let i=0;i<x.length;i++){ y+=a*(x[i]-y); x[i]=x[i]-y; } return x; }
+function noise(n,rnd){ const x=new Float32Array(n); for(let i=0;i<n;i++) x[i]=rnd()*2-1; return x; }
+const sq  = p => (p%1)<0.5?1:-1;       // 矩形波（p は周期の数）
+const saw = p => 2*(p%1)-1;            // のこぎり波
+
+const SYNTH = {
+  kick(sr,rnd){ const x=arr(sr,.55); let ph=0;
+    for(let i=0;i<x.length;i++){ const t=i/sr; ph+=TAU*(45+105*Math.exp(-t*25))/sr;
+      x[i]=Math.tanh(1.6*Math.sin(ph)*Math.exp(-t*6)) + (t<.004?(rnd()*2-1)*.3*(1-t/.004):0); } return x; },
+  snare(sr,rnd){ const x=arr(sr,.3), n=hp(noise(x.length,rnd),sr,1200);
+    for(let i=0;i<x.length;i++){ const t=i/sr; x[i]=Math.sin(TAU*180*t)*Math.exp(-t*30)*.5 + n[i]*Math.exp(-t*14); } return x; },
+  hatC(sr,rnd){ const x=hp(noise(arr(sr,.08).length,rnd),sr,7000);
+    for(let i=0;i<x.length;i++) x[i]*=Math.exp(-i/sr*60); return x; },
+  hatO(sr,rnd){ const x=hp(noise(arr(sr,.45).length,rnd),sr,7000);
+    for(let i=0;i<x.length;i++) x[i]*=Math.exp(-i/sr*8); return x; },
+  clap(sr,rnd){ const x=lp(hp(noise(arr(sr,.35).length,rnd),sr,800),sr,2500);
+    for(let i=0;i<x.length;i++){ const t=i/sr; let e=0;
+      for(const k of [0,.011,.022]) if(t>=k) e+=Math.exp(-(t-k)*180);
+      if(t>=.03) e+=.6*Math.exp(-(t-.03)*12); x[i]*=e; } return x; },
+  tom(sr){ const x=arr(sr,.45); let ph=0;
+    for(let i=0;i<x.length;i++){ const t=i/sr; ph+=TAU*(110+90*Math.exp(-t*12))/sr; x[i]=Math.sin(ph)*Math.exp(-t*7); } return x; },
+  cowbell(sr){ const x=arr(sr,.4);
+    for(let i=0;i<x.length;i++){ const t=i/sr; x[i]=(sq(545*t)+sq(815*t))*.5*Math.min(1,t/.002)*Math.exp(-t*9); }
+    return hp(lp(x,sr,3000),sr,400); },
+  rim(sr,rnd){ const x=arr(sr,.06);
+    for(let i=0;i<x.length;i++){ const t=i/sr; x[i]=Math.sin(TAU*1700*t)*Math.exp(-t*90)+(rnd()*2-1)*.5*Math.exp(-t*200); }
+    return hp(x,sr,500); },
+  bass(sr){ const x=arr(sr,.7);
+    for(let i=0;i<x.length;i++){ const t=i/sr;
+      x[i]=(saw(55*t)+saw(55.4*t)+Math.sin(TAU*55*t))*Math.min(1,t/.005)*Math.exp(-t*2.5); }
+    return lp(x,sr,400); },
+  chord(sr){ const x=arr(sr,.9);
+    for(let i=0;i<x.length;i++){ const t=i/sr; let v=0;
+      for(const f of [261.63,329.63,392.0]) v+=saw(f*.994*t)+saw(f*1.006*t);
+      x[i]=v*Math.min(1,t/.005)*Math.exp(-t*3); }
+    return lp(x,sr,1800); },
+  bell(sr){ const x=arr(sr,1.6);
+    for(let i=0;i<x.length;i++){ const t=i/sr;
+      x[i]=Math.sin(TAU*880*t+3*Math.exp(-t*4)*Math.sin(TAU*3080*t))*Math.min(1,t/.002)*Math.exp(-t*3); } return x; },
+  coin(sr){ const x=arr(sr,.45);
+    for(let i=0;i<x.length;i++){ const t=i/sr;
+      x[i]=sq((t<.07?988:1319)*t)*.5*(t<.07?1:Math.exp(-(t-.07)*7)); }
+    return lp(x,sr,6000); },
+  laser(sr){ const x=arr(sr,.35); let ph=0;
+    for(let i=0;i<x.length;i++){ const t=i/sr; ph+=TAU*(200+1800*Math.exp(-t*12))/sr; x[i]=Math.sin(ph)*Math.exp(-t*5); } return x; },
+  boom(sr,rnd){ const x=lp(lp(noise(arr(sr,1.4).length,rnd),sr,300),sr,200); let ph=0, pk=0;
+    for(const v of x) pk=Math.max(pk,Math.abs(v));
+    for(let i=0;i<x.length;i++){ const t=i/sr; ph+=TAU*(30+40*Math.exp(-t*6))/sr;
+      x[i]=(x[i]/pk*.7+Math.sin(ph)*.6)*Math.exp(-t*3.5); } return x; },
+  cymbal(sr,rnd){ const x=arr(sr,1.6), n=noise(x.length,rnd);
+    for(let i=0;i<x.length;i++){ const t=i/sr; let m=0;
+      for(const f of [205,304,369,522,540,800]) m+=sq(f*2.7*t);
+      x[i]=(n[i]+m*.15)*Math.exp(-t*2.8); }
+    return hp(x,sr,5000); },
+  wood(sr){ const x=arr(sr,.12);
+    for(let i=0;i<x.length;i++){ const t=i/sr;
+      x[i]=Math.sin(TAU*950*t)*Math.exp(-t*45)+Math.sin(TAU*2600*t)*Math.exp(-t*80)*.3; } return x; },
+};
+
+const PRESETS = [
+  {id:"kick",   name:"キック",       c:"#e53935"},
+  {id:"snare",  name:"スネア",       c:"#e53935"},
+  {id:"hatC",   name:"ハイハット",   c:"#e53935"},
+  {id:"hatO",   name:"オープン\nハット", c:"#e53935"},
+  {id:"clap",   name:"クラップ",     c:"#fb8c00"},
+  {id:"tom",    name:"タム",         c:"#fb8c00"},
+  {id:"cowbell",name:"カウベル",     c:"#fb8c00"},
+  {id:"rim",    name:"リム",         c:"#fb8c00"},
+  {id:"bass",   name:"ベース",       c:"#43a047"},
+  {id:"chord",  name:"和音",         c:"#43a047"},
+  {id:"bell",   name:"ベル",         c:"#43a047"},
+  {id:"wood",   name:"ウッド\nブロック", c:"#43a047"},
+  {id:"coin",   name:"コイン",       c:"#5e35b1"},
+  {id:"laser",  name:"レーザー",     c:"#5e35b1"},
+  {id:"boom",   name:"ばくはつ",     c:"#5e35b1"},
+  {id:"cymbal", name:"シンバル",     c:"#5e35b1"},
+];
+
+/* ============ 波形の加工（録音した声にも使う）============ */
+function peakOf(x){ let p=0; for(let i=0;i<x.length;i++){ const a=Math.abs(x[i]); if(a>p) p=a; } return p; }
+function normalize(x,target){ target=target||0.9; const p=peakOf(x); if(p<1e-6) return x;
+  const k=target/p; for(let i=0;i<x.length;i++) x[i]*=k; return x; }
+function fadeEdges(x,sr,inSec,outSec){ const a=Math.min(x.length,Math.round(sr*inSec)), b=Math.min(x.length,Math.round(sr*outSec));
+  for(let i=0;i<a;i++) x[i]*=i/a;
+  for(let i=0;i<b;i++) x[x.length-1-i]*=i/b; return x; }
+/* 前後の無音を切る。声の出だしが削れないよう少し手前（20ms）から残す */
+function trimSilence(x,sr,ratio){ ratio=ratio||0.06; const p=peakOf(x); if(p<1e-6) return new Float32Array(0);
+  const th=p*ratio; let a=0,b=x.length-1;
+  while(a<x.length&&Math.abs(x[a])<th) a++;
+  while(b>a&&Math.abs(x[b])<th) b--;
+  a=Math.max(0,a-Math.round(sr*.02)); b=Math.min(x.length,b+Math.round(sr*.08));
+  return fadeEdges(x.slice(a,b),sr,.005,.01); }
+function reversed(x){ const y=new Float32Array(x.length); for(let i=0;i<x.length;i++) y[i]=x[x.length-1-i]; return y; }
+const semitoneToRate = s => Math.pow(2,s/12);
+
+function renderPreset(id,sr){
+  const idx=PRESETS.findIndex(p=>p.id===id);
+  const x=SYNTH[id](sr,mulberry32(1234+idx*7919));
+  return normalize(fadeEdges(x,sr,.001,.015),.9);
+}
+
+/* ============ 状態 ============ */
+const pads = PRESETS.map((p,i)=>({i,preset:p.id,name:p.name,c:p.c,user:null,userSr:0,pitch:0,vol:100,rev:false,ab:null}));
+let sel=0, mode="play", masterVol=80;
+const $ = id => document.getElementById(id);
+
+/* ============ 音を鳴らす ============ */
+let ctx=null, master=null;
+const active=new Set();
+function ensureCtx(){
+  if(ctx){ if(ctx.state==="suspended") ctx.resume(); return ctx; }
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC){ toast("このブラウザでは音が出せません"); return null; }
+  ctx=new AC({latencyHint:"interactive"});
+  master=ctx.createGain(); master.gain.value=masterVol/100;
+  const comp=ctx.createDynamicsCompressor();   // たくさん同時に鳴らしても音が割れないように
+  master.connect(comp); comp.connect(ctx.destination);
+  return ctx;
+}
+function padData(p,sr){ return p.user ? {d:p.user,sr:p.userSr} : {d:renderPreset(p.preset,sr),sr}; }
+function bufferOf(p){
+  if(p.ab) return p.ab;
+  const {d,sr}=padData(p,ctx.sampleRate), x=p.rev?reversed(d):d;
+  const ab=ctx.createBuffer(1,x.length,sr); ab.copyToChannel(x,0);
+  return p.ab=ab;
+}
+function play(i){
+  const c=ensureCtx(); flash(i); if(!c) return;
+  const p=pads[i], src=c.createBufferSource(), g=c.createGain();
+  src.buffer=bufferOf(p); src.playbackRate.value=semitoneToRate(p.pitch); g.gain.value=p.vol/100;
+  src.connect(g); g.connect(master); src.start();
+  active.add(src); src.onended=()=>active.delete(src);
+}
+function stopAll(){ for(const s of active){ try{s.stop();}catch(e){} } active.clear(); }
+
+/* ============ 録音 ============ */
+let stream=null, recorder=null, recPad=-1, recT0=0, recTimer=0, chunks=[];
+/* マイクは「● ろくおん」を押した時点で開けておく。パッドを押してから許可の画面が出ると、
+   その間にしゃべった声が録れないため */
+async function openMic(){
+  if(stream) return true;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.MediaRecorder){ toast("このブラウザでは録音できません"); return false; }
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true,autoGainControl:true}}); return true; }
+  catch(e){ toast("マイクが使えません。アドレスバー右のマイクのマークから「許可」にしてね"); return false; }
+}
+let starting=false;
+async function startRec(i){
+  if(starting||!ensureCtx()) return;
+  starting=true; const ok=await openMic(); starting=false;
+  if(!ok||recPad>=0||mode!=="rec") return;
+  stopAll(); chunks=[]; recorder=new MediaRecorder(stream);
+  recorder.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
+  recorder.onstop=()=>finishRec(i,recorder.mimeType);
+  recorder.start(); recPad=i; recT0=performance.now();
+  recTimer=setTimeout(stopRec,MAX_REC*1000);
+  selectPad(i); renderPads(); tickBar();
+}
+function stopRec(){ clearTimeout(recTimer); if(recorder&&recorder.state==="recording") recorder.stop(); }
+function tickBar(){
+  if(recPad<0) return;
+  const el=padEls[recPad].querySelector(".bar");
+  el.style.width=Math.min(100,(performance.now()-recT0)/(MAX_REC*10))+"%";
+  requestAnimationFrame(tickBar);
+}
+async function finishRec(i,mime){
+  const el=padEls[i].querySelector(".bar"); el.style.width="0";
+  recPad=-1; renderPads();
+  try{
+    const audio=await ctx.decodeAudioData(await new Blob(chunks,{type:mime}).arrayBuffer());
+    const n=audio.length, ch=audio.numberOfChannels, mono=new Float32Array(n);
+    for(let c=0;c<ch;c++){ const d=audio.getChannelData(c); for(let k=0;k<n;k++) mono[k]+=d[k]/ch; }
+    if(peakOf(mono)<0.01){ toast("音が小さすぎて録れなかった。マイクに近づいてもう一度"); return; }
+    const x=normalize(trimSilence(mono,audio.sampleRate),.9);
+    const p=pads[i]; p.user=x; p.userSr=audio.sampleRate; p.ab=null; p.rev=false; p.pitch=0;
+    if(p.name===PRESETS[i].name) p.name="こえ "+(i+1);
+    saveUser(i); saveSettings(); renderPads(); renderPanel(); play(i);
+  }catch(e){ toast("録音の読み込みに失敗した。もう一度やってみて"); }
+}
+
+/* ============ 保存（ブラウザの中だけ。サーバーには送らない）============ */
+const LS_KEY="kyouiku-sampler-v1";
+function saveSettings(){
+  try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,pads:pads.map(p=>({name:p.name,pitch:p.pitch,vol:p.vol,rev:p.rev}))})); }catch(e){}
+}
+function loadSettings(){
+  try{ const s=JSON.parse(localStorage.getItem(LS_KEY)||"null"); if(!s) return;
+    if(typeof s.masterVol==="number") masterVol=s.masterVol;
+    (s.pads||[]).forEach((q,i)=>{ const p=pads[i]; if(!p||!q) return;
+      if(typeof q.name==="string") p.name=q.name; if(typeof q.pitch==="number") p.pitch=q.pitch;
+      if(typeof q.vol==="number") p.vol=q.vol; p.rev=!!q.rev; });
+  }catch(e){}
+}
+function db(){ return new Promise((ok,ng)=>{ try{ const r=indexedDB.open("kyouiku-sampler",1);
+  r.onupgradeneeded=()=>r.result.createObjectStore("voice"); r.onsuccess=()=>ok(r.result); r.onerror=()=>ng(r.error);
+}catch(e){ ng(e); } }); }
+async function saveUser(i){ try{ const d=await db(), p=pads[i], tx=d.transaction("voice","readwrite");
+  if(p.user) tx.objectStore("voice").put({data:p.user,sr:p.userSr},i); else tx.objectStore("voice").delete(i);
+}catch(e){} }
+async function loadUsers(){ try{ const d=await db();
+  await Promise.all(pads.map(p=>new Promise(ok=>{ const r=d.transaction("voice").objectStore("voice").get(p.i);
+    r.onsuccess=()=>{ const v=r.result; if(v&&v.data){ p.user=v.data; p.userSr=v.sr; p.ab=null; } ok(); }; r.onerror=()=>ok(); })));
+}catch(e){} renderPads(); renderPanel(); }
+
+/* ============ 画面 ============ */
+const padEls=[];
+function buildPads(){
+  const box=$("pads");
+  pads.forEach((p,i)=>{
+    const b=document.createElement("button"); b.className="pad"; b.style.setProperty("--c",p.c);
+    b.innerHTML='<span class="ky">'+keyLabel(KEYS[i])+'</span><span class="tg">声</span><span class="nm"></span><span class="bar"></span>';
+    b.addEventListener("pointerdown",e=>{ e.preventDefault(); hitPad(i); });
+    b.addEventListener("contextmenu",e=>e.preventDefault());
+    box.appendChild(b); padEls.push(b);
+  });
+}
+function hitPad(i){
+  if(mode==="rec"){
+    if(recPad>=0) stopRec(); else startRec(i);
+    return;
+  }
+  selectPad(i); play(i);
+}
+function selectPad(i){ if(sel!==i){ sel=i; renderPads(); renderPanel(); } }
+function flash(i){ const el=padEls[i]; if(!el) return; el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit");
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("hit"),110); }
+function renderPads(){
+  pads.forEach((p,i)=>{ const el=padEls[i];
+    el.querySelector(".nm").textContent=p.name;
+    el.classList.toggle("user",!!p.user); el.classList.toggle("sel",i===sel); el.classList.toggle("recording",i===recPad); });
+}
+function renderPanel(){
+  const p=pads[sel];
+  if(document.activeElement!==$("pName")) $("pName").value=p.name.replace(/\n/g,"");
+  $("pKind").textContent=(p.user?"自分の声（録音）":"はじめから入っている音")+"　キー: "+keyLabel(KEYS[sel]);
+  $("pPitch").value=p.pitch; $("vPitch").textContent=(p.pitch>0?"+":"")+p.pitch;
+  $("pVol").value=p.vol; $("vVol").textContent=p.vol+"%";
+  $("pRev").classList.toggle("on",p.rev);
+  $("pReset").disabled=!p.user&&p.pitch===0&&p.vol===100&&!p.rev&&p.name===PRESETS[sel].name;
+  $("mVol").value=masterVol; $("vMVol").textContent=masterVol+"%";
+  drawWave();
+}
+function drawWave(){
+  const cv=$("wave"), g=cv.getContext&&cv.getContext("2d"); if(!g) return;
+  const p=pads[sel], W=cv.width, H=cv.height;
+  let x=p.user||renderPreset(p.preset,22050); if(p.rev) x=reversed(x);
+  g.fillStyle="#0d0f13"; g.fillRect(0,0,W,H);
+  g.strokeStyle="#353b46"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+  g.fillStyle=p.c; const step=x.length/W;
+  for(let c=0;c<W;c++){ let mn=0,mx=0; const a=Math.floor(c*step), b=Math.max(a+1,Math.floor((c+1)*step));
+    for(let k=a;k<b&&k<x.length;k++){ if(x[k]<mn) mn=x[k]; if(x[k]>mx) mx=x[k]; }
+    g.fillRect(c,H/2-mx*H/2,1,Math.max(1,(mx-mn)*H/2)); }
+}
+function setMode(m){
+  if(recPad>=0) stopRec();
+  mode=m; document.body.classList.toggle("recmode",m==="rec");
+  if(m==="rec"&&!stream&&navigator.mediaDevices){ ensureCtx(); openMic(); }
+  $("mPlay").classList.toggle("on",m==="play"); $("mRec").classList.toggle("on",m==="rec");
+  $("hint").textContent = m==="rec"
+    ? "録音したいパッドをタップ → しゃべる → もう一度タップで止める（最長"+MAX_REC+"秒）"
+    : "パッドをタップすると鳴る。● ろくおん で自分の声を入れられる";
+}
+let toastT=0;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3500); }
+
+function bindPanel(){
+  $("mPlay").onclick=()=>setMode("play");
+  $("mRec").onclick=()=>setMode("rec");
+  $("pName").oninput=e=>{ pads[sel].name=e.target.value||PRESETS[sel].name; renderPads(); saveSettings(); };
+  $("pName").onchange=()=>renderPanel();
+  $("pPitch").oninput=e=>{ pads[sel].pitch=+e.target.value; renderPanel(); saveSettings(); };
+  $("pPitch").onchange=()=>play(sel);
+  $("pVol").oninput=e=>{ pads[sel].vol=+e.target.value; renderPanel(); saveSettings(); };
+  $("pRev").onclick=()=>{ const p=pads[sel]; p.rev=!p.rev; p.ab=null; renderPanel(); saveSettings(); play(sel); };
+  $("pPlay").onclick=()=>play(sel);
+  $("pReset").onclick=()=>{ resetPad(sel); renderPads(); renderPanel(); saveSettings(); };
+  $("mVol").oninput=e=>{ masterVol=+e.target.value; if(master) master.gain.value=masterVol/100; renderPanel(); saveSettings(); };
+  $("stopAll").onclick=stopAll;
+  $("resetAll").onclick=()=>{ if(!confirm("録音した声も全部消えます。はじめの状態に戻しますか？")) return;
+    pads.forEach((p,i)=>resetPad(i)); masterVol=80; if(master) master.gain.value=.8;
+    renderPads(); renderPanel(); saveSettings(); };
+  document.addEventListener("keydown",e=>{
+    if(e.target&&e.target.tagName==="INPUT"&&e.target.type==="text") return;
+    if(e.repeat) return;
+    const i=KEYS.indexOf(e.code);
+    if(i>=0){ e.preventDefault(); hitPad(i); return; }
+    if(e.code==="Space"){ e.preventDefault(); stopAll(); }
+    else if(e.code==="Enter"){ e.preventDefault(); setMode(mode==="play"?"rec":"play"); }
+  });
+}
+function resetPad(i){ const p=pads[i], q=PRESETS[i];
+  Object.assign(p,{name:q.name,user:null,userSr:0,pitch:0,vol:100,rev:false,ab:null}); saveUser(i); }
+
+$("ver").textContent="版 "+VER;
+loadSettings(); buildPads(); bindPanel(); setMode("play"); renderPads(); renderPanel(); loadUsers();
+
+/* 検証用の窓口（regression-sampler.js が叩く） */
+window.SAMPLER = { VER, MAX_REC, KEYS, PRESETS, SYNTH, pads, renderPreset, peakOf, normalize, trimSilence,
+  reversed, fadeEdges, semitoneToRate, hitPad, setMode, get mode(){ return mode; }, get sel(){ return sel; } };
+</script>
+</body>
+</html>
