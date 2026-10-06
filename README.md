@@ -21,6 +21,7 @@
 | 翔陽ミニマート | <https://snsdpen-luke.github.io/kyouiku/mart/> （同じく QR コード） |
 | こえサンプラー | <https://snsdpen-luke.github.io/kyouiku/sampler/> |
 | メッセージが届くまで | <https://snsdpen-luke.github.io/kyouiku/network/> （導入スライド7枚目の QR はここ） |
+| 車の制御50 | <https://snsdpen-luke.github.io/kyouiku/car/> （導入スライド最後の QR はここ） |
 
 Google Classroom にはこのリンクを貼る。ファイルは配らない
 （古い版を開いてしまう事故が起きるため）。
@@ -35,12 +36,14 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `翔陽ミニマート.html` | **翔陽ミニマートの本体。直すのはここだけ** |
 | `サンプラー.html` | **こえサンプラーの本体。直すのはここだけ** |
 | `メッセージが届くまで.html` | **メッセージが届くまでの本体。直すのはここだけ** |
+| `車の制御50.html` | **車の制御50（センサ当て）の本体。直すのはここだけ** |
 | `index.html` | GitHub Pages が配るもの（ラダー工房）。`build.py` が作る**生成物**。手で編集しない |
 | `shinro/index.html` | GitHub Pages が配るもの（進路シミュレーション）。同じく**生成物** |
 | `uma/index.html` | GitHub Pages が配るもの（翔陽ダービー）。同じく**生成物** |
 | `mart/index.html` | GitHub Pages が配るもの（翔陽ミニマート）。同じく**生成物** |
 | `sampler/index.html` | GitHub Pages が配るもの（こえサンプラー）。同じく**生成物** |
 | `network/index.html` | GitHub Pages が配るもの（メッセージが届くまで）。同じく**生成物** |
+| `car/index.html` | GitHub Pages が配るもの（車の制御50）。同じく**生成物** |
 | `ラダー工房.html` | 引き継ぎ前の現行版。授業で使ってきたもの。無傷で温存 |
 | `regression.js` | ラダー工房のリグレッション（jsdom・85項目） |
 | `regression-shinro.js` | 進路シミュレーションのリグレッション（jsdom・121項目） |
