@@ -6,6 +6,7 @@
   馬レース.html        → uma/index.html     （同上。文化祭の QR コードは /uma/ を指す）
   翔陽ミニマート.html   → mart/index.html    （同上。文化祭の QR コードは /mart/ を指す）
   サンプラー.html      → sampler/index.html （同上。こえサンプラー）
+  メッセージが届くまで.html → network/index.html（同上。TCP/IP 教材。導入スライドの QR は /network/ を指す）
 
   python3 build.py                  上の5つを作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
@@ -19,6 +20,7 @@ SRC2 = "進路シミュレーション.html"
 SRC3 = "馬レース.html"
 SRC4 = "翔陽ミニマート.html"
 SRC5 = "サンプラー.html"
+SRC6 = "メッセージが届くまで.html"
 s = io.open(SRC, encoding="utf-8").read()
 
 # 1) GitHub Pages 用。中身は本体そのまま。URL を短くするためだけの複製
@@ -44,6 +46,11 @@ print("生成: mart/index.html")
 os.makedirs("sampler", exist_ok=True)
 shutil.copyfile(SRC5, "sampler/index.html")
 print("生成: sampler/index.html")
+
+# 1f) メッセージが届くまで（TCP/IP）。コンピュータシステム技術のネットワーク単元
+os.makedirs("network", exist_ok=True)
+shutil.copyfile(SRC6, "network/index.html")
+print("生成: network/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
