@@ -463,6 +463,55 @@ E(`openProblem("r5")`);
 ok(E(`(()=>{const st=refState(P),a=simulate(st,{Sa:false}),b=simulate(st,{Sa:true});return a.load.Pl.on&&!a.load.La.on&&!b.load.Pl.on&&b.load.La.on;})()`),"スイッチ切で PL が点きランプは消える、入で PL が消えランプが点く");
 ok(cats("r5",`st=>{ const k=st.cores.find(k=>k.a==="Sa.2"&&k.b==="Pl.2"); k.a="Pl.2"; k.b="B1:2"; st.cores.forEach(c=>{ if(c.a==="B1:2"&&c.b==="Pl.2") {} }); }`).length>0,"PL を N につなぐ（常時点灯の形）→ 不合格");
 
+console.log("\n【V】記録と先生への送信");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`stats={}; queue=[]; student=null; putJSON(KEY+"stats",stats); putJSON(KEY+"queue",queue); drawWho(); drawStats();`);
+ok(/出席番号と名前を入れる/.test($("whoBar").textContent),"名前が無いときは「出席番号と名前を入れる」が出る");
+tap("#whoEdit"); $("inNo").value="12"; $("inName").value="電工 太郎"; tap("#idSave");
+ok(E("student.no")==="12" && /電工 太郎/.test($("whoBar").textContent),"出席番号と名前を保存し、上に出す");
+E(`openProblem("r1")`);
+tap("#judgeBtn");
+ok(E("stats.r1.tries")===1 && E("stats.r1.pass")===0,"判定すると挑戦回数が増える（不合格）");
+ok(E("queue.length")===1 && E("queue[0].kind")==="練習" && E("queue[0].no")==="12" && /部品/.test(E("queue[0].cats")),"先生に送る記録が1行できる（送信先が無いので端末にたまる）");
+ok(/まだ設定されていない/.test($("sendNote").textContent),"送信先が無いことを表示する");
+E(`S=refState(P); view=S; render();`); tap("#judgeBtn");
+ok(E("stats.r1.pass")===1 && E("queue[1].result")==="合格","合格すると合格回数が増える");
+tap(`[data-hit="core:0"]`); tap(`#selPens .pen[data-c="赤"]`); tap("#judgeBtn"); tap("#hintBtn"); tap("#hintBtn");
+ok(E("stats.r1.hints")===2,"ヒントを見た回数を数える");
+tap("#refBtn"); yes(); tap("#backMine");
+ok(E("stats.r1.refs")===1,"お手本を見た回数を数える");
+ok(/<td>練習1<\/td><td>3<\/td><td>1<\/td><td>2<\/td><td>1<\/td>/.test($("statsTable").innerHTML),"自分の記録に 挑戦3・合格1・ヒント2・お手本1 と出る");
+// 送信（JSONP を差し替えて確かめる）
+{ const sent=[]; let reply=true; w.jsonp=(u,dt,cb)=>{ sent.push(dt); cb(reply); };
+  E(`SHEET_URL="https://script.google.com/macros/s/TEST/exec"`); E("flush()");
+  ok(sent.length===3 && E("queue.length")===0 && /届いている/.test($("sendNote").textContent),"送信先を入れると、たまった記録を順に送り、届いたら消す");
+  reply=false; tap("#judgeBtn");
+  ok(E("queue.length")===1 && /送れなかった/.test($("sendNote").textContent),"届かなかった記録は残し、あとで送り直す");
+  reply=true; E("flush()"); ok(E("queue.length")===0,"送り直すと届く");
+  E(`SHEET_URL=""`); }
+
+console.log("\n【W】模擬試験");
+E(`try{localStorage.removeItem(KEY+"exam:k1")}catch(e){}`);
+w.Math.random=()=>0;   // No.1 が出るようにする
+tap("#examStart"); yes();
+ok(E("exam&&exam.pid")==="k1" && $("examBanner").classList.contains("show") && /残り 10:00|残り 9:5/.test($("examText").textContent),"模擬試験を始めると、問題が出て残り時間が出る");
+ok($("refBtn").disabled && $("modeBtn").disabled && $("hintBtn").disabled && $("judgeBtn").textContent==="提出する","試験中はお手本・確かめる・ヒントが押せない");
+ok([...d.querySelectorAll("#probs button")].every(b=>b.disabled),"試験中は問題を切り替えられない");
+ok(E("S.placed.length")===0,"白紙から始まる");
+E(`S=refState(P); view=S; save(); render();`);
+const q0=E("queue.length");
+tap("#examSubmit"); yes();
+ok(E("exam.done")===true && /模擬試験 合格/.test($("result").textContent) && /かかった時間/.test($("result").textContent),"提出すると、合否とかかった時間が出る");
+ok(E("queue.length")===q0+1 && E("queue[queue.length-1].kind")==="模擬試験" && E("queue[queue.length-1].sec")>=0,"模擬試験の結果が先生に送る記録になる");
+ok(!$("refBtn").disabled,"提出した後は、お手本で復習できる");
+tap("#examEnd");
+ok(E("exam")===null && !$("examBanner").classList.contains("show") && !d.querySelector("#examStart").disabled,"模擬試験を終わると、練習に戻る");
+ok(E(`localStorage.getItem(KEY+"k1")`)===null || E(`JSON.parse(localStorage.getItem(KEY+"k1")).placed.length`)===0,"模擬試験の図は、練習の図とは別に保存される");
+// 時間切れ
+tap("#examStart"); yes(); E("exam.start-=601000; tickExam();");
+ok(E("exam.done")===true && /時間切れ/.test($("result").textContent),"10分たつと自動で提出される");
+tap("#examEnd");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

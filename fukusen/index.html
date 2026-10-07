@@ -81,6 +81,19 @@
   .banner.show { display: block; }
   .banner.short { background: #fee2e2; color: var(--bad); }
   .banner.ref { background: #e0f2fe; color: #075985; }
+  .banner.exam { background: #fff7ed; color: #9a3412; font-variant-numeric: tabular-nums; }
+  .who { font-size: 12.5px; color: var(--muted); margin: 4px 0 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .who button { padding: 2px 8px; font-size: 12px; }
+  .probs button.examBtn { border-color: #c2410c; color: #c2410c; font-weight: 700; }
+  table.stats { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 4px 0; font-variant-numeric: tabular-nums; }
+  table.stats th, table.stats td { border-bottom: 1px solid var(--line); padding: 2px 4px; text-align: right; }
+  table.stats th:first-child, table.stats td:first-child { text-align: left; }
+  #idPop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 11; }
+  #idPop.show { display: flex; }
+  #idPop .box { background: #fff; border-radius: 10px; padding: 16px 18px; max-width: 360px; width: 90%; display: flex; flex-direction: column; gap: 8px; }
+  #idPop label.f { display: flex; flex-direction: column; font-size: 13px; gap: 2px; }
+  #idPop input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; }
+  #idPop .btns { display: flex; gap: 8px; justify-content: flex-end; }
   .note { font-size: 12.5px; color: var(--muted); }
   #tansen { width: 100%; display: block; background: #fcfcfa; border: 1px solid var(--line); border-radius: 6px; cursor: zoom-in; margin-top: 6px; }
   .paltabs { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
@@ -119,6 +132,7 @@
 <div class="wrap">
   <h1>複線図れんしゅう<span class="ver" id="ver"></span></h1><span class="sub">第二種電気工事士 技能試験 ― 単線図を読んで部品を置き、複線図に描き直す</span>
 
+  <div class="who" id="whoBar"></div>
   <div class="probs" id="probs"></div>
 
   <div class="main">
@@ -135,6 +149,7 @@
         <button id="clearBtn">消す</button>
       </div>
       <div class="banner short" id="shortBanner">短絡（ショート）！ 電源の線どうしが直接つながった。本物なら配線用遮断器が切れる。</div>
+      <div class="banner exam" id="examBanner"><span id="examText"></span> <button class="primary" id="examSubmit">提出する</button> <button id="examEnd">模擬試験を終わる</button></div>
       <div class="banner ref" id="refBanner">お手本を表示している。自分の図は残してある。 <button id="backMine">自分の図に戻る</button></div>
       <div class="stagewrap">
         <div class="bar selbar" id="selbar">
@@ -190,6 +205,11 @@
       </div>
       <div class="card" id="cardResult">
         <div class="result" id="result"></div>
+        <details class="how" id="statsBox">
+          <summary>自分の記録</summary>
+          <table class="stats" id="statsTable"></table>
+          <div class="note" id="sendNote"></div>
+        </details>
         <details class="how">
           <summary>描き方</summary>
           <ol>
@@ -210,11 +230,18 @@
 </div>
 
 <div id="pop"><div class="box"><div id="popMsg"></div><div class="btns" id="popBtns"></div></div></div>
+<div id="idPop"><div class="box">
+  <h2>出席番号と名前</h2>
+  <div class="note">練習と模擬試験の記録を、先生に送るときに使う。</div>
+  <label class="f">出席番号 <input id="inNo" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+  <label class="f">名前 <input id="inName" maxlength="20" autocomplete="off"></label>
+  <div class="btns"><button id="idLater">あとで</button><button class="primary" id="idSave">保存</button></div>
+</div></div>
 <div id="big"><div class="box"><svg id="tansenBig" viewBox="0 0 1000 620"></svg><div class="bar" style="justify-content:flex-end;margin:8px 0 0"><button id="bigClose">閉じる</button></div></div></div>
 
 <script>
 "use strict";
-const VER = "2026-10-07e";
+const VER = "2026-10-07f";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1735,7 +1762,7 @@ $("mvJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "move"
 $("mgJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "merge"; status("まとめる先の●（同じボックスの中）をタップ。"); render(); };
 $("delJoint").onclick = () => { if (!(sel && sel.joint)) return; const jid = sel.joint, n = S.cores.filter(k => k.a === jid || k.b === jid).length;
   ask("この接続点と、つながっている線 " + n + " 本を消す？", () => { S.cores = S.cores.filter(k => k.a !== jid && k.b !== jid); S.joints = S.joints.filter(j => j.id !== jid); sel = null; status("接続点を消した。"); changed(); }, "消す"); };
-$("modeBtn").onclick = () => { if (showingRef) return; mode = mode === "draw" ? "sim" : "draw"; sel = null; placing = null;
+$("modeBtn").onclick = () => { if (showingRef || (exam && !exam.done)) return; mode = mode === "draw" ? "sim" : "draw"; sel = null; placing = null;
   status(mode === "sim" ? "スイッチの下のボタンで入/切を切り替えて、ランプやコンセントを確かめる。" : ""); render(); };
 $("clearBtn").onclick = () => { if (showingRef) return;
   ask("何を消す？", () => { S.cores = []; S.joints = []; sel = null; changed(); status("線をすべて消した。部品はそのまま。"); }, "線だけ消す",
@@ -1762,7 +1789,10 @@ const LV1 = {
 };
 function doJudge() {
   if (showingRef) return;
+  if (exam && !exam.done) return submitExam(false);                  // 模擬試験中は「提出」
   judged = judge(S); view = S; hintStep = 0; marks = [];
+  bump(P.id, "tries"); if (!judged.length) bump(P.id, "pass");
+  record("練習", { result: judged.length ? "不合格" : "合格", cats: catText(judged) });
   const box = $("result"); let h = "";
   if (!judged.length) {
     h = `<div class="cat pass">合格！ 部品も結線も色も決まりどおり。</div>`;
@@ -1782,7 +1812,7 @@ function doHint() {
   const d = document.createElement("div"); d.className = "hint";
   d.innerHTML = "<b>" + esc(it.cat) + "</b>　" + esc(it.lv2) + (deep ? "<br>" + esc(it.lv3) : "") + (it.mark.length ? "<br><span class=\"note\">図の赤い所。</span>" : "");
   $("result").appendChild(d);
-  hintStep++;
+  hintStep++; bump(P.id, "hints");
   $("hintBtn").textContent = hintStep % 2 === 1 ? "くわしく" : "次のヒント";
   render();
 }
@@ -1790,7 +1820,8 @@ $("judgeBtn").onclick = doJudge;
 $("hintBtn").onclick = doHint;
 $("refBtn").onclick = () => {
   if (showingRef) return;
-  ask("お手本を表示する？ 自分で描いた図は消えない。", () => { showingRef = true; view = refState(P); view.flip = {}; sel = null; placing = null; mode = "draw"; marks = []; render(); status("お手本。線の色と、どの接続点に何本集まるかを見比べよう。"); }, "見る");
+  if (exam && !exam.done) return;
+  ask("お手本を表示する？ 自分で描いた図は消えない。", () => { bump(P.id, "refs"); showingRef = true; view = refState(P); view.flip = {}; sel = null; placing = null; mode = "draw"; marks = []; render(); status("お手本。線の色と、どの接続点に何本集まるかを見比べよう。"); }, "見る");
 };
 $("backMine").onclick = () => { showingRef = false; view = S; status(""); render(); };
 
@@ -1813,13 +1844,14 @@ function save() {
   const now = JSON.stringify(S);
   if (lastSaved !== null && now !== lastSaved) { hist.push(lastSaved); if (hist.length > 100) hist.shift(); }
   lastSaved = now;
-  try { localStorage.setItem(KEY + P.id, now); } catch (e) {}
+  try { localStorage.setItem(saveKey(), now); } catch (e) {}
   $("undoBtn").disabled = !hist.length;
 }
+const saveKey = () => KEY + (exam ? "exam:" : "") + P.id;           // 模擬試験の図は、練習の図とは別に保存
 function undo() {
   if (showingRef || drag || !hist.length) return;
   lastSaved = hist.pop(); S = JSON.parse(lastSaved); view = S; sel = null; placing = null;
-  try { localStorage.setItem(KEY + P.id, lastSaved); } catch (e) {}
+  try { localStorage.setItem(saveKey(), lastSaved); } catch (e) {}
   judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
   $("undoBtn").disabled = !hist.length;
   status("1つ前に戻した。"); render();
@@ -1844,11 +1876,13 @@ function drawTabs() {
   PROBLEMS.filter(p => !p.official).forEach(p => btn(p.tab, p));
   const sep = document.createElement("div"); sep.className = "sep"; sep.textContent = "候補問題"; host.appendChild(sep);
   for (let i = 1; i <= OFFICIAL_SLOTS; i++) btn("No." + i, PROBLEMS.find(p => p.official && p.no === i));
+  const ex = document.createElement("button"); ex.className = "examBtn"; ex.id = "examStart"; ex.textContent = "模擬試験"; ex.onclick = startExam; host.appendChild(ex);
+  if (exam) host.querySelectorAll("button").forEach(b => { b.disabled = true; });   // 試験中は問題を切り替えない
 }
 function openProblem(id) {
   P = prep(PROBLEMS.find(p => p.id === id));
   fitView(); setPan(false);
-  S = load(id) || newState(); S.flip = S.flip || {}; view = S; hist = []; lastSaved = JSON.stringify(S); $("undoBtn").disabled = true; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
+  S = (exam ? null : load(id)) || newState(); S.flip = S.flip || {}; view = S; hist = []; lastSaved = JSON.stringify(S); $("undoBtn").disabled = true; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
   $("condBox").hidden = !(P.cond && P.cond.length);
@@ -1858,10 +1892,131 @@ function openProblem(id) {
   $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
   penButtons($("pens"), c => { pen = c; render(); });
   penButtons($("selPens"), setCoreColor);
-  drawTansen(); status(""); drawTabs(); render();
+  drawTansen(); status(""); drawTabs(); examUI(); render();
 }
+
+/* ============================================================
+   記録と先生への送信
+   - 端末の中: 問題ごとの 挑戦・合格・ヒント・お手本 の回数（自分の記録）
+   - 先生へ: 判定・提出のたびに1行。先生の Googleスプレッドシートの Apps Script（fukusen-sheet.gs）へ送る。
+     届いたか確かめられるよう JSONP（script タグ）で送る。届かなかった行は端末にためて、あとで送り直す
+   ============================================================ */
+let SHEET_URL = "";   // 先生の Apps Script ウェブアプリの URL（https://script.google.com/macros/s/…/exec）。空なら記録は端末の中だけ
+const getJSON = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v === null ? d : v; } catch (e) { return d; } };
+const putJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+let student = getJSON(KEY + "student", null), stats = getJSON(KEY + "stats", {}), queue = getJSON(KEY + "queue", []), sending = false;
+const stat = pid => (stats[pid] = stats[pid] || { tries: 0, pass: 0, hints: 0, refs: 0 });
+function bump(pid, k) { stat(pid)[k]++; putJSON(KEY + "stats", stats); drawStats(); }
+const catText = iss => CATS.map(c => { const n = iss.filter(x => x.cat === c).length; return n ? c + n : ""; }).filter(Boolean).join(" ");
+function record(kind, extra) {
+  const st = stat(P.id);
+  queue.push(Object.assign({ t: new Date().toISOString(), no: student ? student.no : "", name: student ? student.name : "", kind, prob: P.tab,
+    tries: st.tries, pass: st.pass, hints: st.hints, refs: st.refs, ver: VER }, extra));
+  if (queue.length > 500) queue = queue.slice(-500);
+  putJSON(KEY + "queue", queue); flush();
+}
+function jsonp(url, data, cb) {                                      // 送って、返事（届いた／届かない）を受け取る
+  const name = "__fk" + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement("script"); let fin = false;
+  const end = ok => { if (fin) return; fin = true; try { delete window[name]; } catch (e) {} sc.remove(); cb(ok); };
+  window[name] = r => end(!!(r && r.ok)); sc.onerror = () => end(false); setTimeout(() => end(false), 15000);
+  sc.src = url + (url.includes("?") ? "&" : "?") + "cb=" + name + "&d=" + encodeURIComponent(JSON.stringify(data));
+  document.head.appendChild(sc);
+}
+function flush() {
+  drawSendNote();
+  if (!SHEET_URL || sending || !queue.length) return;
+  sending = true;
+  jsonp(SHEET_URL, queue[0], ok => { sending = false;
+    if (ok) { queue.shift(); putJSON(KEY + "queue", queue); flush(); } else drawSendNote(true); });
+}
+setInterval(flush, 60000);
+function drawSendNote(failed) {
+  $("sendNote").textContent = !SHEET_URL ? "先生への送信は、まだ設定されていない（記録はこの端末の中だけ）。"
+    : failed ? "先生に送れなかった記録が " + queue.length + " 件ある。あとで自動で送り直す。"
+    : queue.length ? "先生に送っている…（残り " + queue.length + " 件）" : "記録は先生に届いている。";
+}
+function drawStats() {
+  const rows = PROBLEMS.filter(p => stats[p.id]).map(p => { const s = stats[p.id];
+    return `<tr><td>${esc(p.tab)}</td><td>${s.tries}</td><td>${s.pass}</td><td>${s.hints}</td><td>${s.refs}</td></tr>`; });
+  $("statsTable").innerHTML = rows.length ? `<tr><th>問題</th><th>挑戦</th><th>合格</th><th>ヒント</th><th>お手本</th></tr>` + rows.join("") : `<tr><td>まだ記録が無い。判定すると記録される。</td></tr>`;
+}
+function drawWho() {
+  $("whoBar").innerHTML = student ? `<span>出席番号 ${esc(student.no)}　${esc(student.name)}</span> <button id="whoEdit">変更</button>` : `<button id="whoEdit">出席番号と名前を入れる</button>`;
+  $("whoEdit").onclick = openId;
+}
+function openId() { $("inNo").value = student ? student.no : ""; $("inName").value = student ? student.name : ""; $("idPop").classList.add("show"); }
+$("idLater").onclick = () => $("idPop").classList.remove("show");
+$("idSave").onclick = () => {
+  const no = $("inNo").value.trim().slice(0, 6), name = $("inName").value.trim().slice(0, 20);
+  if (!no || !name) { $("inNo").focus(); return; }
+  student = { no, name }; putJSON(KEY + "student", student); $("idPop").classList.remove("show"); drawWho();
+  queue.forEach(r => { if (!r.no) { r.no = no; r.name = name; } }); putJSON(KEY + "queue", queue); flush();
+};
+
+/* ============================================================
+   模擬試験: 13問からランダムに1問、10分。ヒント・お手本・確かめるは使えない。提出は1回（時間切れで自動提出）
+   ============================================================ */
+const EXAM_SEC = 600;
+let exam = null, examTimer = null;
+function startExam() {
+  if (exam) return;
+  ask("模擬試験を始める？ 候補問題 No.1〜13 からランダムに1問。制限時間 10 分。ヒント・お手本・「確かめる」は使えない。提出は1回だけ。", () => {
+    const ks = PROBLEMS.filter(p => p.official), pr = ks[Math.floor(Math.random() * ks.length)];
+    exam = { pid: pr.id, start: Date.now(), done: false };
+    try { localStorage.removeItem(KEY + "exam:" + pr.id); } catch (e) {}
+    openProblem(pr.id);
+    examTimer = setInterval(tickExam, 1000); tickExam();
+    status("模擬試験を始めた。描き終わったら「提出する」。");
+  }, "始める");
+}
+const examSec = () => Math.min(EXAM_SEC, Math.round((Date.now() - exam.start) / 1000));
+const mmss = n => Math.floor(n / 60) + ":" + String(n % 60).padStart(2, "0");
+function tickExam() {
+  if (!exam || exam.done) return;
+  const left = EXAM_SEC - examSec();
+  $("examText").textContent = "模擬試験　" + P.tab + "　残り " + mmss(Math.max(0, left));
+  if (left <= 0) submitExam(true);
+}
+function submitExam(auto) {
+  if (!exam || exam.done) return;
+  const go = () => {
+    clearInterval(examTimer); examTimer = null;
+    const sec = examSec(); mode = "draw"; swState = {};
+    judged = judge(S); view = S; hintStep = 0; marks = []; exam.done = true;
+    const ok = !judged.length;
+    let h = `<div class="cat ${ok ? "pass" : ""}"><b>模擬試験 ${ok ? "合格" : "不合格"}</b>　${esc(P.tab)}　かかった時間 ${mmss(sec)}${auto ? "（時間切れ）" : ""}</div>`;
+    if (!ok) CATS.forEach(c => { const n = judged.filter(x => x.cat === c).length; if (n) h += `<div class="cat"><b>${c}</b>　${esc(LV1[c](n))}</div>`; });
+    h += `<div class="note">ヒントとお手本で復習できる。</div>`;
+    $("result").innerHTML = h;
+    record("模擬試験", { result: ok ? "合格" : "不合格", cats: catText(judged), sec });
+    $("hintBtn").disabled = ok; examUI(); render();
+    status(auto ? "時間切れ。自動で提出した。" : "提出した。");
+  };
+  if (auto) go(); else ask("提出する？ 提出は1回だけ。", go, "提出する");
+}
+function endExam() {
+  const pid = exam ? exam.pid : null; clearInterval(examTimer); examTimer = null; exam = null;
+  if (pid) openProblem(pid); else examUI();
+}
+$("examSubmit").onclick = () => submitExam(false);
+$("examEnd").onclick = () => { if (exam && !exam.done) ask("模擬試験をやめる？ 提出していないので、記録は残らない。", endExam, "やめる"); else endExam(); };
+function examUI() {
+  const on = !!exam, live = on && !exam.done;
+  $("examBanner").classList.toggle("show", on);
+  $("examSubmit").hidden = !live;
+  if (on && exam.done) $("examText").textContent = "模擬試験（提出済み）　" + P.tab;
+  $("refBtn").disabled = live; $("modeBtn").disabled = live;
+  if (live) $("hintBtn").disabled = true;
+  $("judgeBtn").textContent = live ? "提出する" : "判定する";
+  $("judgeBtn").disabled = on && exam.done;
+  drawTabs();
+}
+
 drawPalette();
+drawWho(); drawStats(); drawSendNote();
 openProblem(PROBLEMS[0].id);
+if (!student) openId();
+flush();
 </script>
 </body>
 </html>

@@ -32,6 +32,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `ラダー工房.html` | 引き継ぎ前の現行版。授業で使ってきたもの。無傷で温存 |
 | `regression.js` | ラダー工房のリグレッション（jsdom・85項目） |
 | `regression-fukusen.js` | 複線図れんしゅうのリグレッション（jsdom） |
+| `fukusen-sheet.gs` | 複線図れんしゅうの記録を先生の Google スプレッドシートにためる Apps Script（使い方はファイルの先頭） |
 | `regression-shinro.js` | 進路シミュレーションのリグレッション（jsdom・121項目） |
 | `build.py` | 本体2つから配布物を作る |
 | `HANDOFF.md` | **ラダー工房の引き継ぎ書。仕様・設計判断・禁止事項の正典。作業前に必ず読む** |
