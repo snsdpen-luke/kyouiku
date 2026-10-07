@@ -213,7 +213,7 @@
 
 <script>
 "use strict";
-const VER = "2026-09-24q";
+const VER = "2026-10-07a";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -559,16 +559,16 @@ const PROBLEMS = [
              C("La", "B2"), C("Lb", "B2"), C("S4", "B2", "VVF1.6-2C×2"), C("Sb", "B2", "VVF1.6-3C")],
     expect: [{ p: "La", f: s => (s.Sa ^ s.Sb ^ s.S4) === 1, any: true }, { p: "Lb", f: s => (s.Sa ^ s.Sb ^ s.S4) === 1, any: true }],
     cond: ["3路スイッチの記号「0」の端子には電源側または負荷側の線を、記号「1」「3」の端子にはスイッチどうしを結ぶ線をつなぐ",
-           "4路スイッチは 1–2・3–4 と 1–4・3–2 が切り替わる。1・3 を一方の3路スイッチへ、2・4 をもう一方へ",
+           "4路スイッチは 2–1・4–3（平行）と 2–3・4–1（交差）が切り替わる。2・4 を一方の3路スイッチへ、1・3 をもう一方へ",
            "4路スイッチへは VVF1.6-2C を2本使う。右のボックスはアウトレットボックス"],
     ref: [["PW.L", "B1:1", "黒"], ["Sa.0", "B1:1", "黒"],
           ["PW.N", "B1:2", "白"], ["B1:2", "B2:1", "白"],
           ["Sa.1", "B1:3", "白"], ["B1:3", "B2:2", "黒"],
           ["Sa.3", "B1:4", "赤"], ["B1:4", "B2:3", "赤"],
           ["La.W", "B2:1", "白"], ["Lb.W", "B2:1", "白"],
-          ["S4.1", "B2:2", "黒"], ["S4.3", "B2:3", "白"],
-          ["S4.2", "B2:4", "黒"], ["Sb.1", "B2:4", "白"],
-          ["S4.4", "B2:5", "白"], ["Sb.3", "B2:5", "赤"],
+          ["S4.2", "B2:2", "黒"], ["S4.4", "B2:3", "白"],
+          ["S4.1", "B2:4", "黒"], ["Sb.1", "B2:4", "白"],
+          ["S4.3", "B2:5", "白"], ["Sb.3", "B2:5", "赤"],
           ["Sb.0", "B2:6", "黒"], ["La.C", "B2:6", "黒"], ["Lb.C", "B2:6", "黒"]] }),
 
   K({ no: 8, title: "リモコンリレーで3つの照明",
@@ -726,17 +726,23 @@ function placeTerms(flip) {
   });
 }
 /* 器具 p の端子を、p.side の向きに1列に並べる */
-/* 3路・4路の端子の位置（器具の中心からの、横 a・奥 b。b が負ならボックス側）。
-   3路: ボックス側に 1・3 を左右、奥のまん中に 0（0 から刃が 1 か 3 へ）。
-   4路: ボックス側に 1・3、奥に 2・4 を少し外へ広げる（ボックスからの線が手前の端子をまたがない） */
+/* 3路・4路の端子の位置（器具の中心から 横 x・縦 y）。教科書の形のとおり、向きは回さない。
+   3路: 片側に 0、反対側に 1（上）・3（下）。0 から刃が 1 か 3 へ。0 は外側（左の3路は左、右の3路は右）を向く
+   4路: 左に 2（上）・4（下）、右に 1（上）・3（下）。平行 2–1・4–3 ／ 交差 2–3・4–1 */
 const SHAPE = {
-  sw3: { "1": [-32, -26], "3": [32, -26], "0": [0, 30] },
-  sw4: { "1": [-24, -28], "3": [24, -28], "2": [-58, 30], "4": [58, 30] },
+  sw3: { "0": [-28, 10], "1": [28, -16], "3": [28, 22] },
+  sw4: { "2": [-28, -16], "4": [-28, 22], "1": [28, -16], "3": [28, 22] },
 };
+function shapeFlip(p) {                    // 3路の 0 を左に置くなら true
+  if (p.type !== "sw3") return false;
+  if (p.side === "left") return false;     // ボックスが左 → 1・3 を左に向けるので 0 は右
+  if (p.side === "right") return true;
+  return p.x < 500;                        // ボックスが上か下 → 図の左半分なら 0 を左（外側）に
+}
 function termRow(p, flipped) {
   if (SHAPE[p.type]) {
-    const out = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[p.side] || [0, -1], perp = [-out[1], out[0]], f = flipped ? -1 : 1;
-    p.terms.forEach(t => { const [a, b] = SHAPE[p.type][t.k]; t.x = p.x + perp[0] * a * f - out[0] * b; t.y = p.y + perp[1] * a * f - out[1] * b; });
+    const keep = (p.type === "sw3" ? shapeFlip(p) : true) !== !!flipped;   // SHAPE は 0 が左・2/4 が左。逆にするなら左右を入れ替える
+    p.terms.forEach(t => { const [x, y] = SHAPE[p.type][t.k]; t.x = p.x + (keep ? x : -x); t.y = p.y + y; });
     return;
   }
   const n = p.terms.length, gap = n === 2 ? 38 : 32, d = p.type === "src" ? 44 : 34;
@@ -1081,15 +1087,14 @@ function contact(p, sim) {
   let g = "";
   const seg = (A, B, solid) => { const dx = B.x - A.x, dy = B.y - A.y, l = Math.hypot(dx, dy) || 1, r = 9;   // 端子の○の縁から縁まで
     return `<line x1="${A.x + dx / l * r}" y1="${A.y + dy / l * r}" x2="${B.x - dx / l * r}" y2="${B.y - dy / l * r}" stroke="${solid ? ink : "#9ca3af"}" stroke-width="${solid ? 4 : 2}" stroke-linecap="round"${solid ? "" : ' stroke-dasharray="4 5"'}/>`; };
-  if (SHAPE[p.type]) {                                               // 器具の範囲に薄い台を敷き、1つのスイッチだと分かるように
-    const xs = p.terms.map(t => t.x), ys = p.terms.map(t => t.y), m = 16;
-    g += `<rect x="${Math.min(...xs) - m}" y="${Math.min(...ys) - m}" width="${Math.max(...xs) - Math.min(...xs) + 2 * m}" height="${Math.max(...ys) - Math.min(...ys) + 2 * m}" rx="12" fill="#eef1f4" stroke="#cbd2d9"/>`;
+  if (SHAPE[p.type]) {                                               // 教科書と同じ、四角い枠で1つのスイッチを囲む
+    g += `<rect x="${p.x - 54}" y="${p.y - 40}" width="108" height="86" fill="#fff" stroke="#2f5d8c" stroke-width="2.5"/>`;
   }
-  if (p.type === "sw3") {                                            // 0 から、1 か 3 のどちらかへ刃が倒れる
-    g += seg(tp("0"), on ? tp("3") : tp("1"), true);
-  } else if (p.type === "sw4") {                                     // 今のつながりは実線、切り替えた先は薄い点線
-    const par = [seg(tp("1"), tp("2"), !on), seg(tp("3"), tp("4"), !on)], crs = [seg(tp("1"), tp("4"), on), seg(tp("3"), tp("2"), on)];
-    g += on ? par.join("") + crs.join("") : crs.join("") + par.join("");
+  if (p.type === "sw3") {                                            // 0 から刃が 1 か 3 へ倒れる（接点の○の手前まで）
+    const A = tp("0"), B = on ? tp("3") : tp("1"), dx = B.x - A.x, dy = B.y - A.y, l = Math.hypot(dx, dy) || 1;
+    g += `<line x1="${A.x + dx / l * 8}" y1="${A.y + dy / l * 8}" x2="${B.x - dx / l * 9}" y2="${B.y - dy / l * 9}" stroke="${ink}" stroke-width="3.5" stroke-linecap="round"/>`;
+  } else if (p.type === "sw4") {                                     // 平行 2–1・4–3 ／ 交差 2–3・4–1（今のつながりだけ描く）
+    g += on ? seg(tp("2"), tp("3"), true) + seg(tp("4"), tp("1"), true) : seg(tp("2"), tp("1"), true) + seg(tp("4"), tp("3"), true);
   } else {
     g += blade(p.terms[0], p.terms[1], on);
     if (p.type === "swH") { const m = { x: (p.terms[0].x + p.terms[1].x) / 2 + inV[0] * 30, y: (p.terms[0].y + p.terms[1].y) / 2 + inV[1] * 30 };
@@ -1113,12 +1118,12 @@ function drawPart(p, sim, uid) {
     g += CONTACT[p.type] ? contact(p, sim) : sym(p.type === "swA" ? "swAbox" : p.type, x, y, 1, lit && !T.outlet);
     const below = p.side !== "bottom", vert = p.side === "left" || p.side === "right";
     const nx = vert ? (p.side === "left" ? x - 6 : x + 6) : x, na = vert ? (p.side === "left" ? "start" : "end") : "middle";   // 端子が縦に並ぶときは、札と反対側へ寄せる
-    const deep = SHAPE[p.type] ? 34 : 0;                               // 3路・4路は奥に端子があるので、名前をその先へ
+    const deep = SHAPE[p.type] ? 24 : 0;                               // 3路・4路は奥に端子があるので、名前をその先へ
     g += `<text x="${nx}" y="${below ? y + (T.sw ? 36 : 38) + deep : y - 26 - deep}" text-anchor="${na}" font-size="12" fill="#5d6763">${esc(T.name)}</text>`;
     if (sim && T.outlet && lit) g += `<text x="${x + 24}" y="${y - 16}" font-size="12" font-weight="700" fill="#0f6b4f">100V</text>`;
-    if (T.sw && mode === "sim" && P.part[p.id]) { const on = swState[p.id], by = below ? y + 44 + (SHAPE[p.type] ? 34 : 0) : y + 20;
+    if (T.sw && mode === "sim" && P.part[p.id]) { const on = swState[p.id], by = below ? y + 44 + (SHAPE[p.type] ? 24 : 0) : y + 20;
       g += `<g class="hit" data-hit="sw:${p.id}"><rect x="${x - 34}" y="${by}" width="68" height="26" rx="13" fill="${on ? "#0f6b4f" : "#fff"}" stroke="#0f6b4f"/><text x="${x}" y="${by + 18}" text-anchor="middle" font-size="13" font-weight="700" fill="${on ? "#fff" : "#0f6b4f"}">${esc(T.stateText(!!on))}</text></g>`; }
-    if (p.label) { const lx = SHAPE[p.type] ? Math.min(...p.terms.map(t => t.x)) - 30 : x - 24, ly = SHAPE[p.type] ? y + 6 : y - 16;   // 3路・4路は台の左外に
+    if (p.label) { const lx = SHAPE[p.type] ? x - 60 : x - 24, ly = SHAPE[p.type] ? y - 30 : y - 16;   // 3路・4路は枠の左外に
       g += `<text x="${lx}" y="${ly}" text-anchor="end" font-size="16" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`; }
   }
   if (T.source && p.terms.length > 1 && mode === "draw" && !showingRef && P.part[p.id]) {   // 電源の端子の並び（L と N の上下など）を入れ替える
@@ -1132,12 +1137,27 @@ function drawPart(p, sim, uid) {
 
 /* 曲げた線の真ん中（2次曲線の t=0.5）。つまみはここに出す */
 function bendMid(k, a, b) { const q = k.q || { x: 0, y: 0 }; return { x: (a.x + b.x) / 2 + q.x / 2, y: (a.y + b.y) / 2 + q.y / 2 }; }
+/* まっすぐ引くと、同じ3路・4路のほかの端子の○の上を通ってしまう線は、自動で少しふくらませてよける（見た目だけ） */
+function autoBend(k, a, b) {
+  for (const e of [k.a, k.b]) {
+    const t0 = P.term[e]; if (!t0 || !SHAPE[t0.part.type]) continue;
+    for (const t of t0.part.terms) {
+      if (t.id === e) continue;
+      const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((t.x - a.x) * dx + (t.y - a.y) * dy) / L2));
+      if (Math.hypot(a.x + u * dx - t.x, a.y + u * dy - t.y) > 13) continue;
+      const L = Math.sqrt(L2), nx = -dy / L, ny = dx / L, side = ((t.x - a.x) * nx + (t.y - a.y) * ny) > 0 ? -1 : 1;   // ○と反対側へ
+      return { x: nx * side * 70, y: ny * side * 70 };
+    }
+  }
+  return null;
+}
 function coreLine(k, i, extra) {
   const a = endPos(k.a), b = endPos(k.b);
   const col = COLORS[k.c] || "#888", selected = sel && sel.core === i;
   let d = `M${a.x} ${a.y} L${b.x} ${b.y}`;
-  if (k.q) {                                                         // 曲げた線: 両端の真ん中から k.q ずらした所を引っぱる2次曲線
-    d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 + k.q.x} ${(a.y + b.y) / 2 + k.q.y} ${b.x} ${b.y}`;
+  const q = k.q || autoBend(k, a, b);
+  if (q) {                                                           // 曲げた線: 両端の真ん中から q ずらした所を引っぱる2次曲線
+    d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 + q.x} ${(a.y + b.y) / 2 + q.y} ${b.x} ${b.y}`;
   } else if (k.a[0] !== "#" && k.b[0] !== "#" && P.term[k.a].part.place === P.term[k.b].part.place) {   // 渡り線: 端子の並ぶ側へふくらませ、ほかの端子や器具の上を通らないようにする
     const sd = P.term[k.a].part.side, v = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[sd];
     const bulge = 30 + Math.hypot(b.x - a.x, b.y - a.y) * 0.1;
@@ -1162,7 +1182,7 @@ function drawTerm(p, t, hit, mk) {
   g += `<circle cx="${t.x}" cy="${t.y}" r="8" fill="${on ? "#2563eb" : "#fff"}" stroke="${warn ? "#ef4444" : "#151a18"}" stroke-width="${warn ? 4 : 2}"/>`;
   if (t.lab) {
     let dx, dy;
-    if (SHAPE[p.type]) { const vx = t.x - p.x, vy = t.y - p.y, l = Math.hypot(vx, vy) || 1; dx = vx / l * 20; dy = vy / l * 20; }
+    if (SHAPE[p.type]) { dx = (t.x < p.x ? -1 : 1) * 17; dy = 1; }   // 番号は端子の外側の横（上から来る線とかぶらない）
     else if (isSrc(p.type)) { dx = p.side === "left" ? -24 : p.side === "right" ? 24 : 0; dy = p.side === "top" ? -22 : p.side === "bottom" ? 22 : 0; }   // 電源は箱の外側に
     else {   // 端子の並びの外側（はしの端子は並びの先、まん中の端子は外側）に置き、器具の記号にかぶらないようにする
       const i = p.terms.indexOf(t), n = p.terms.length, along = n > 1 && (i === 0 || i === n - 1) ? (i === 0 ? -1 : 1) : 0, vert = p.side === "left" || p.side === "right";

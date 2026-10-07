@@ -426,12 +426,13 @@ ok(/Q/.test([...d.querySelectorAll('#tansen path[stroke-width="4"]')].map(p=>p.g
 console.log("\n【R】3路・4路の形");
 E(`try{localStorage.clear()}catch(e){}`);
 E(`openProblem("k7"); S=refState(P); view=S; render();`);
-{ const b=E("P.box.B1.y"), t=k=>JSON.parse(E(`JSON.stringify(P.term["${k}"])`));
-  ok(Math.abs(t("Sa.1").y-t("Sa.3").y)<1 && t("Sa.0").y>t("Sa.1").y,"3路は 1・3 がボックス側に並び、0 が奥（V の字）");
-  ok(Math.abs(t("S4.1").y-t("S4.3").y)<1 && t("S4.2").y>t("S4.1").y && Math.abs(t("S4.2").x-t("S4.4").x)>Math.abs(t("S4.1").x-t("S4.3").x),"4路は 2×2（奥の 2・4 は外へ広げる）"); }
+{ const t=k=>JSON.parse(E(`JSON.stringify(P.term["${k}"])`));
+  ok(Math.abs(t("Sa.1").x-t("Sa.3").x)<1 && t("Sa.1").y<t("Sa.3").y && Math.abs(t("Sa.0").x-t("Sa.1").x)>40,"3路は 1（上）・3（下）が片側に縦に並び、0 が反対側");
+  ok(t("Sa.0").x<t("Sa.1").x && t("Sb.0").x>t("Sb.1").x,"左の3路は 0 が左、右の3路は 0 が右（外側）");
+  ok(t("S4.2").x<t("S4.1").x && t("S4.4").x<t("S4.3").x && t("S4.2").y<t("S4.4").y && t("S4.1").y<t("S4.3").y,"4路は 左に 2・4、右に 1・3"); }
 tap("#modeBtn");
-{ const n0=(($("stage").innerHTML.match(/stroke-dasharray="4 5"/g))||[]).length;
-  ok(n0===2,"4路は、切り替え先のつながりを点線で2本示す"); }
+{ const g0=$("stage").innerHTML; tap(`[data-hit="sw:S4"]`); const g1=$("stage").innerHTML;
+  ok(g0!==g1 && !/stroke-dasharray="4 5"/.test(g1),"4路を切り替えると、つながりの線が平行から交差に変わる（点線は出さない）"); }
 tap("#modeBtn");
 ok(JSON.parse(judgeRef("k7")).length===0,"形を変えても、No.7 のお手本は合格");
 
