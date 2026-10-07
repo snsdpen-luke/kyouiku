@@ -214,7 +214,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07c";
+const VER = "2026-10-07e";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -423,6 +423,31 @@ const PROBLEMS = [
           ["Sa.1", "B1:3", "白"], ["Sb.1", "B1:3", "白"],
           ["Sa.3", "B1:4", "赤"], ["Sb.3", "B1:4", "赤"],
           ["Sb.0", "B1:5", "黒"], ["La.C", "B1:5", "黒"]],
+  },
+  {
+    id: "r5", tab: "練習5", title: "練習5　異時点滅の確認表示灯",
+    note: "スイッチ イ でランプレセプタクル イ を点滅する。確認表示灯（パイロットランプ）は異時点滅：スイッチが切のとき点き、入のとき消える。",
+    potColor: { L: "黒", N: "白" },
+    cond: ["確認表示灯（パイロットランプ）は異時点滅とする（スイッチが切のとき点き、入のとき消える）",
+           "常時点灯（No.2）・同時点滅（No.10）と、PL のつなぎ方を見比べよう"],
+    parts: [
+      { id: "PW", type: "src", label: "電源", sub: "1φ2W 100V", x: 110, y: 300,
+        terms: [{ k: "L", lab: "L", pot: "L" }, { k: "N", lab: "N", pot: "N" }] },
+      { id: "La", type: "lamp", label: "イ", x: 500, y: 80 },
+      { id: "Pl", type: "pl", label: "イ", x: 610, y: 565, place: "F" },
+      { id: "Sa", type: "sw1", label: "イ", x: 500, y: 560, place: "F" },
+    ],
+    boxes: [{ id: "B1", x: 500, y: 300 }],
+    cables: [
+      { a: "PW", b: "B1", spec: "VVF1.6-2C", colors: ["黒", "白"] },
+      { a: "La", b: "B1", spec: "VVF1.6-2C", colors: ["黒", "白"] },
+      { a: "F", b: "B1", spec: "VVF1.6-2C", colors: ["黒", "白"] },
+    ],
+    expect: [{ p: "La", f: s => s.Sa }, { p: "Pl", f: s => !s.Sa }],
+    ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"],
+          ["PW.N", "B1:2", "白"], ["La.W", "B1:2", "白"],
+          ["Sa.2", "B1:3", "白"], ["La.C", "B1:3", "黒"],
+          ["Sa.1", "Pl.1", "黒"], ["Sa.2", "Pl.2", "黒"]],
   },
   /* ============================================================
      令和8年度 候補問題 No.1〜13
@@ -1144,12 +1169,13 @@ function drawPart(p, sim, uid) {
 
 /* 曲げた線の真ん中（2次曲線の t=0.5）。つまみはここに出す */
 function bendMid(k, a, b) { const q = k.q || { x: 0, y: 0 }; return { x: (a.x + b.x) / 2 + q.x / 2, y: (a.y + b.y) / 2 + q.y / 2 }; }
-/* まっすぐ引くと、同じ3路・4路のほかの端子の○の上を通ってしまう線は、自動で少しふくらませてよける（見た目だけ） */
+/* まっすぐ引くと、同じ器具や同じ枠のほかの端子の○の上を通ってしまう線は、自動で少しふくらませてよける（見た目だけ） */
 function autoBend(k, a, b) {
   for (const e of [k.a, k.b]) {
-    const t0 = P.term[e]; if (!t0 || !SHAPE[t0.part.type]) continue;
-    for (const t of t0.part.terms) {
-      if (t.id === e) continue;
+    const t0 = P.term[e]; if (!t0) continue;
+    const near = (P.place[t0.part.place] || [t0.part]).filter(p => p.shown !== false).flatMap(p => p.terms);
+    for (const t of near) {
+      if (t.id === k.a || t.id === k.b) continue;
       const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((t.x - a.x) * dx + (t.y - a.y) * dy) / L2));
       if (Math.hypot(a.x + u * dx - t.x, a.y + u * dy - t.y) > 13) continue;
       const L = Math.sqrt(L2), nx = -dy / L, ny = dx / L, side = ((t.x - a.x) * nx + (t.y - a.y) * ny) > 0 ? -1 : 1;   // ○と反対側へ

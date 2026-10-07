@@ -458,6 +458,11 @@ E(`openProblem("k7"); S=refState(P); view=S; sel=null; mode="draw"; render();`);
   tap("#unselP"); tap(`[data-hit="part:${E(`S.placed.find(i=>i.pid==="La").u`)}"]`);
   ok($("flipPart").hidden,"ランプには「左右入れ替え」を出さない"); tap("#unselP"); }
 
+console.log("\n【U】練習5 異時点滅");
+E(`openProblem("r5")`);
+ok(E(`(()=>{const st=refState(P),a=simulate(st,{Sa:false}),b=simulate(st,{Sa:true});return a.load.Pl.on&&!a.load.La.on&&!b.load.Pl.on&&b.load.La.on;})()`),"スイッチ切で PL が点きランプは消える、入で PL が消えランプが点く");
+ok(cats("r5",`st=>{ const k=st.cores.find(k=>k.a==="Sa.2"&&k.b==="Pl.2"); k.a="Pl.2"; k.b="B1:2"; st.cores.forEach(c=>{ if(c.a==="B1:2"&&c.b==="Pl.2") {} }); }`).length>0,"PL を N につなぐ（常時点灯の形）→ 不合格");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
