@@ -561,6 +561,24 @@ ok(d.querySelectorAll("#kBody .kCell img").length===13 && /JIS C 0303/.test($("k
 d.querySelector('#kBody button[data-k="3"]').click();
 ok(!$("kPop").classList.contains("show") && E("P.id")==="k3","図の下のボタンで、その問題の練習に移る");
 
+console.log("\n【Z】置いた部品を動かす");
+E(`exam=null; openProblem("k6"); S=refState(P); view=S; sel=null; mode="draw"; lastSaved=JSON.stringify(S); render();`);
+{ const it=JS(`S.placed.find(i=>i.type==="sw3")`), r=d.querySelector(`rect[data-hit="part:${it.u}"]`);
+  ok(r && +r.getAttribute("width")===108 && +r.getAttribute("height")===86,"3路スイッチは、四角の全体がつかめる");
+  const src=JS(`S.placed.find(i=>i.type==="src")`), rs=d.querySelector(`rect[data-hit="part:${src.u}"]`);
+  ok(rs && +rs.getAttribute("width")===96,"電源は、箱の全体がつかめる");
+  tap(`[data-hit="part:${it.u}"]`);
+  ok(!$("mvPart").hidden && $("partbar").classList.contains("show"),"部品をタップすると「動かす」が出る");
+  tap("#mvPart"); ok($("mvPart").classList.contains("on"),"「動かす」を押すと、行き先を待つ");
+  w.svgPoint=()=>({x:it.x+60,y:it.y-40}); tap("#stage");
+  const a=JS(`S.placed.find(i=>i.u==="${it.u}")`);
+  ok(a.x===it.x+60 && a.y===it.y-40,"行き先をタップすると、部品がそこへ動く");
+  ok(E(`JSON.parse(localStorage.getItem("fukusen:k6")).placed.find(i=>i.u==="${it.u}").x`)===it.x+60,"動かした位置は保存される");
+  ok(E(`sel && sel.item`)===it.u && !$("mvPart").classList.contains("on"),"動かしたあとも部品は選んだまま、行き先待ちは終わる");
+  ok(E("judge(S).length")===0,"動かしても線はつながったまま（判定は変わらない）");
+  tap("#undoBtn"); ok(E(`S.placed.find(i=>i.u==="${it.u}").x`)===it.x,"1つ戻すで元の位置"); }
+w.svgPoint=()=>({x:0,y:0});
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

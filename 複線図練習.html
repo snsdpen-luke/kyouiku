@@ -183,6 +183,7 @@
         <span class="lab" id="partName"></span>
         <span class="lab" id="partLabLab">記号</span>
         <span id="partLabels"></span>
+        <button id="mvPart">動かす</button>
         <button id="flipPart">⇆ 左右入れ替え</button>
         <button id="delPart">この部品を消す</button>
         <button id="unselP">選ぶのをやめる</button>
@@ -235,7 +236,7 @@
             <li>線の色を選び、端子（○）からボックス（点線の円）までドラッグ（または 端子 → ボックス とタップ）。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子からその●へ</li>
             <li>●をボックスの外まで引っぱり出すと、●から線を伸ばせる（器具の端子や、ほかのボックスへ）。ボックスの中で動かすと●が動く</li>
             <li>線をタップ → 色を変える・つなぎ先を変える・消す。線の上の＋をドラッグすると、そこで曲がる（3か所まで）。青丸はドラッグで動かす・タップで消す。●をタップ → 動かす・まとめる・消す</li>
-            <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
+            <li>部品・ボックス・●はドラッグで動かせる（部品は記号のどこをつかんでもよい）。部品をタップすると、記号を変える・動かす（行き先をタップ）・消すができる</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
             <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
             <li>図が小さいときは、図の右下の「＋」で拡大し、「✋ 移動」で見る所を動かす。「全体」で元に戻る</li>
@@ -264,7 +265,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07k";
+const VER = "2026-10-07l";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1213,7 +1214,13 @@ function drawPart(p, sim, uid) {
     g += `<g class="hit" data-hit="flip:${p.id}"><rect x="${x - 54}" y="${by}" width="108" height="28" rx="14" fill="#fff" stroke="#8b8271"/>`
        + `<text x="${x}" y="${by + 19}" text-anchor="middle" font-size="12.5" fill="#151a18">${vert ? "⇅ 上下" : "⇆ 左右"}入れ替え</text></g>`;
   }
-  if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="part:${uid}" cx="${x}" cy="${y}" r="${p.type === "src" ? 30 : 22}" fill="transparent"/>`;
+  if (!showingRef && mode === "draw") {                              // つかめる所: 記号と端子の並び全体（前は真ん中の半径22だけで、3路の四角や電源の箱のはしをつかめなかった）
+    let x0 = x - 22, x1 = x + 22, y0 = y - 22, y1 = y + 22;
+    if (p.type === "src") { x0 = x - 48; x1 = x + 48; y0 = y - 28; y1 = y + 28; }
+    else if (SHAPE[p.type]) { x0 = x - 54; x1 = x + 54; y0 = y - 40; y1 = y + 46; }   // 3路・4路は青い四角（contact の枠）の全体
+    else p.terms.forEach(t => { x0 = Math.min(x0, t.x - 10); x1 = Math.max(x1, t.x + 10); y0 = Math.min(y0, t.y - 10); y1 = Math.max(y1, t.y + 10); });
+    g += `<rect class="hit" data-hit="part:${uid}" x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" fill="transparent"/>`;   // 端子・線はこの上に描くので、そちらが先に取れる
+  }
   return g;
 }
 
@@ -1390,7 +1397,7 @@ function render() {
   const it = sel && sel.item && S.placed.find(x => x.u === sel.item);
   $("partbar").classList.toggle("show", !!it && !showingRef);
   if (it) drawPartBar(it);
-  ["reCore", "mvJoint", "mgJoint"].forEach(id => $(id).classList.toggle("on", !!(sel && sel.act && $(id).dataset.act === sel.act)));
+  ["reCore", "mvJoint", "mgJoint", "mvPart"].forEach(id => $(id).classList.toggle("on", !!(sel && sel.act && $(id).dataset.act === sel.act)));
   document.querySelectorAll("#selPens .pen").forEach(b => b.classList.toggle("on", cs && view.cores[sel.core] && view.cores[sel.core].c === b.dataset.c));
   document.querySelectorAll("#pens .pen").forEach(b => b.classList.toggle("on", b.dataset.c === pen));
   document.querySelectorAll("#palette button").forEach(b => b.classList.toggle("on", b.dataset.type === placing));
@@ -1764,6 +1771,9 @@ svg.addEventListener("click", e => {
     status(TYPES[it.type].nolabel ? TNAME(it.type) + " を置いた。" : TNAME(it.type) + " を置いた。上のボタンで記号を単線図と同じにする。");
     changed(); return;
   }
+  if (sel && sel.act === "moveItem") {                               // 部品を動かす: 置きたい場所をタップ（ドラッグが苦手なときの道）
+    const q = svgPoint(e); moveItem(sel.item, q.x, q.y); sel = { item: sel.item }; status("部品を動かした。"); save(); render(); return;
+  }
   if (sel && sel.act === "move") {                                   // 接続点を動かす: 置きたい場所をタップ
     const q = svgPoint(e);
     if (!moveJoint(sel.joint, q.x, q.y)) return status("ボックス " + (S.joints.find(j => j.id === sel.joint) || {}).box + " の中をタップする。", true);
@@ -1796,7 +1806,7 @@ svg.addEventListener("click", e => {
   if (kind === "part") {
     if (sel && sel.end) return status("線は、器具の端子（○）からつなぐ。", true);
     sel = { item: id }; const st = S.placed.find(x => x.u === id);
-    status("部品を選んだ。記号を変える・消す" + (st && (SHAPE[st.type] || st.type === "pl") ? "・左右を入れ替える" : "") + "。ドラッグで動かせる。"); render(); return;
+    status("部品を選んだ。記号を変える・動かす・消す" + (st && (SHAPE[st.type] || st.type === "pl") ? "・左右を入れ替える" : "") + "。部品はドラッグでも動かせる。"); render(); return;
   }
   if (kind === "add") return;                                         // ＋はドラッグで使う
   if (kind === "bend") {                                              // 曲げ点をタップ → その曲げ点を消す
@@ -1811,7 +1821,7 @@ svg.addEventListener("click", e => {
     sel = { end: id }; status(ENDNAME(id) + " を選んだ。つなぐ先（ボックスか、その中の●）をタップ。"); render(); return;
   }
   if (kind === "box") {
-    if (!(sel && sel.end)) { const it = itemOfBox(id); sel = it ? { item: it.u } : null; status("ボックスを選んだ。記号を変える・消す。ドラッグで動かせる。線を引くときは、先に端子（○）をタップ。"); render(); return; }
+    if (!(sel && sel.end)) { const it = itemOfBox(id); sel = it ? { item: it.u } : null; status("ボックスを選んだ。記号を変える・動かす・消す。ドラッグでも動かせる。線を引くときは、先に端子（○）をタップ。"); render(); return; }
     connectToBox(sel.end, id);
   }
 });
@@ -1844,6 +1854,9 @@ $("reCore").dataset.act = "reattach"; $("mvJoint").dataset.act = "move"; $("mgJo
 $("reCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; const k = S.cores[sel.core];
   if (k.a[0] !== "#" && k.b[0] !== "#") return status("渡り線はボックスを通らないので、消して引き直す。", true);
   sel.act = "reattach"; status("新しいつなぎ先の●をタップ。ボックスの空いた所なら新しい●を作る。"); render(); };
+$("mvPart").dataset.act = "moveItem";
+$("mvPart").onclick = () => { if (!(sel && sel.item)) return; sel.act = sel.act === "moveItem" ? undefined : "moveItem";
+  status(sel.act ? "動かす先をタップ。（部品はドラッグでも動かせる）" : ""); render(); };
 $("mvJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "move"; status("ボックスの中の、置きたい場所をタップ。"); render(); };
 $("mgJoint").onclick = () => { if (!(sel && sel.joint)) return; sel.act = "merge"; status("まとめる先の●（同じボックスの中）をタップ。"); render(); };
 $("delJoint").onclick = () => { if (!(sel && sel.joint)) return; const jid = sel.joint, n = S.cores.filter(k => k.a === jid || k.b === jid).length;
