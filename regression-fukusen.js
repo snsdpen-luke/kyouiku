@@ -407,18 +407,43 @@ const JS=x=>JSON.parse(E("JSON.stringify("+x+")"));
 E(`try{localStorage.clear()}catch(e){}`);
 E(`openProblem("r1"); S=refState(P); view=S; sel=null; mode="draw"; render();`);
 tap(`[data-hit="core:0"]`);
-ok(d.querySelector(`[data-hit="bend:0"]`)!==null,"線を選ぶと、真ん中に曲げるつまみが出る");
+ok(d.querySelector(`[data-hit="add:0:0"]`)!==null && d.querySelector(`[data-hit^="bend:0"]`)===null,"線を選ぶと、真ん中に＋（曲げ点を足すつまみ）が出る");
+const drag2=(sel,x,y)=>{ const el=d.querySelector(sel), c=el.querySelector("circle"), x0=+c.getAttribute("cx"), y0=+c.getAttribute("cy");
+  pev("pointerdown",x0,y0,el); pev("pointermove",x0+10,y0+10); pev("pointermove",x,y); pev("pointerup",x,y); tap("#stage"); };
+const near=(p,x,y)=>Math.abs(p.x-x)<=1&&Math.abs(p.y-y)<=1;
 { const a=JS(`endPos(S.cores[0].a)`), b=JS(`endPos(S.cores[0].b)`), mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
   w.svgPoint=e=>({x:e.clientX,y:e.clientY});
-  pev("pointerdown",mx,my,d.querySelector(`[data-hit="bend:0"]`)); pev("pointermove",mx+10,my+10); pev("pointermove",mx+40,my+60); pev("pointerup",mx+40,my+60); tap("#stage");
-  ok(E("S.cores[0].q")!==undefined && /Q/.test(d.querySelector(`[data-hit="core:0"]`).getAttribute("d")),"つまみをドラッグすると、線が曲がる");
-  const m=JS(`bendMid(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`);
-  ok(Math.abs(m.x-(mx+40))<=1 && Math.abs(m.y-(my+60))<=1,"曲線は、指を離した所を通る"); }
-ok(E(`JSON.parse(localStorage.getItem("fukusen:r1")).cores[0].q!==undefined`),"曲げた形は保存される");
+  drag2(`[data-hit="add:0:0"]`,mx+40,my+60);
+  ok(E("S.cores[0].pts.length")===1 && /C/.test(d.querySelector(`[data-hit="core:0"]`).getAttribute("d")),"＋をドラッグすると、曲げ点ができて線が曲がる");
+  ok(near(JS(`bendPts(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`)[0],mx+40,my+60),"線は、指を離した所を通る");
+  tap(`[data-hit="core:0"]`);
+  ok(d.querySelectorAll(`[data-hit^="add:0:"]`).length===2 && d.querySelectorAll(`[data-hit^="bend:0:"]`).length===1,"曲げ点の両側に＋が出る");
+  drag2(`[data-hit="add:0:0"]`,a.x+20,a.y+90); tap(`[data-hit="core:0"]`);
+  drag2(`[data-hit="add:0:2"]`,b.x-30,b.y-80); tap(`[data-hit="core:0"]`);
+  const bp=JS(`bendPts(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`);
+  ok(bp.length===3 && near(bp[0],a.x+20,a.y+90) && near(bp[1],mx+40,my+60) && near(bp[2],b.x-30,b.y-80),"3か所まで曲げられ、順番どおりに通る");
+  ok(d.querySelectorAll(`[data-hit^="add:0:"]`).length===0,"3つになったら＋は出ない");
+  drag2(`[data-hit="bend:0:1"]`,mx-50,my+20);
+  ok(near(JS(`bendPts(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`)[1],mx-50,my+20),"青丸をドラッグすると、その曲げ点が動く"); }
+ok(E(`JSON.parse(localStorage.getItem("fukusen:r1")).cores[0].pts.length`)===3,"曲げた形は保存される");
 ok(JSON.parse(judgeRef("r1")).length===0 && E("judge(S).length")===0,"曲げても判定は変わらない"); E("view=S");
+tap(`[data-hit="core:0"]`); tap(`[data-hit="bend:0:0"]`);
+ok(E("S.cores[0].pts.length")===2,"青丸をタップすると、その曲げ点が消える");
+tap("#undoBtn"); ok(E("S.cores[0].pts.length")===3,"1つ戻すで、消した曲げ点が戻る");
+{ const it=JS(`S.placed[0]`), before=JS(`bendPts(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`);
+  E(`moveItem(S.placed[0].u, S.placed[0].x+30, S.placed[0].y)`); E(`render()`);
+  const after=JS(`bendPts(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`), dx=after.map((p,n)=>p.x-before[n].x);
+  ok(dx.some(v=>v>1) && dx.every(v=>v>-0.5&&v<30.5) && after.every((p,n)=>Math.abs(p.y-before[n].y)<0.5),"部品を動かすと、曲げ点も線についていく（動いた端に近い点ほど大きく）");
+  E(`moveItem(S.placed[0].u, ${it.x}, ${it.y})`); E(`render()`); }
 tap(`[data-hit="core:0"]`); tap("#straightCore");
-ok(E("S.cores[0].q")===undefined,"「まっすぐに戻す」で元に戻る");
-tap("#undoBtn"); ok(E("S.cores[0].q")!==undefined,"1つ戻すで、曲げた形に戻る");
+ok(E("S.cores[0].pts")===undefined && E("S.cores[0].q")===undefined,"「まっすぐに戻す」で曲げ点がすべて消える");
+tap("#undoBtn"); ok(E("S.cores[0].pts.length")===3,"1つ戻すで、曲げた形に戻る");
+E(`S.cores[0].pts=undefined; delete S.cores[0].pts; S.cores[0].q={x:80,y:-40}; render()`);
+{ const a=JS(`endPos(S.cores[0].a)`), b=JS(`endPos(S.cores[0].b)`);
+  ok(near(JS(`bendPts(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`)[0],(a.x+b.x)/2+40,(a.y+b.y)/2-20),"前の版で曲げた線（q）も、同じ所を通る1点として読める"); }
+E(`openProblem("r3"); S=refState(P); view=S; sel={core:2}; mode="draw"; render();`);
+{ const dd=d.querySelector(`[data-hit="core:2"]`).getAttribute("d").match(/-?[\d.]+/g).map(Number), c=d.querySelector(`[data-hit="add:2:0"] circle`);
+  ok(/Q/.test(d.querySelector(`[data-hit="core:2"]`).getAttribute("d")) && Math.abs(+c.getAttribute("cx")-(dd[0]+2*dd[2]+dd[4])/4)<0.6 && Math.abs(+c.getAttribute("cy")-(dd[1]+2*dd[3]+dd[5])/4)<0.6,"ふくらんで描かれる渡り線でも、＋は線の上に出る"); }
 w.svgPoint=()=>({x:0,y:0});
 E(`openProblem("k5")`);
 ok(/Q/.test([...d.querySelectorAll('#tansen path[stroke-width="4"]')].map(p=>p.getAttribute("d")).join(" ")),"単線図の線は、角を丸く曲がる");

@@ -20,7 +20,7 @@
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
   h2 { font-size: 14.5px; margin: 0 0 4px; }
   .probs { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
-  .probs button { min-width: 56px; padding: 4px 8px; }
+  .probs button { min-width: 48px; padding: 4px 7px; }
   .probs button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
   .probs button.done::after { content: " ✓"; }
   .probs .sep { font-size: 12px; color: var(--muted); margin: 0 2px 0 8px; align-self: center; }
@@ -234,7 +234,7 @@
             <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
             <li>線の色を選び、端子（○）からボックス（点線の円）までドラッグ（または 端子 → ボックス とタップ）。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子からその●へ</li>
             <li>●をボックスの外まで引っぱり出すと、●から線を伸ばせる（器具の端子や、ほかのボックスへ）。ボックスの中で動かすと●が動く</li>
-            <li>線をタップ → 色を変える・つなぎ先を変える・消す。線の真ん中の青い丸をドラッグすると、線が曲がる。●をタップ → 動かす・まとめる・消す</li>
+            <li>線をタップ → 色を変える・つなぎ先を変える・消す。線の上の＋をドラッグすると、そこで曲がる（3か所まで）。青丸はドラッグで動かす・タップで消す。●をタップ → 動かす・まとめる・消す</li>
             <li>部品・ボックス・●はドラッグで動かせる。部品をタップすると記号を変えたり消したりできる</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
             <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
@@ -264,7 +264,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07h";
+const VER = "2026-10-07k";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1217,8 +1217,26 @@ function drawPart(p, sim, uid) {
   return g;
 }
 
-/* 曲げた線の真ん中（2次曲線の t=0.5）。つまみはここに出す */
-function bendMid(k, a, b) { const q = k.q || { x: 0, y: 0 }; return { x: (a.x + b.x) / 2 + q.x / 2, y: (a.y + b.y) / 2 + q.y / 2 }; }
+/* 線の曲げ点（最大 BEND_MAX 個）。1点は {t, x, y}: 両端を結ぶまっすぐな線の t の所から (x, y) ずらした所。
+   部品を動かしても、曲げ点は両端についていく。前の版の k.q（2次曲線の引っぱり）は、真ん中の1点として読む */
+const BEND_MAX = 3;
+function bendPts(k, a, b) {
+  const pts = k.pts || (k.q ? [{ t: 0.5, x: k.q.x / 2, y: k.q.y / 2 }] : []);
+  return pts.map(p => ({ x: a.x + (b.x - a.x) * p.t + p.x, y: a.y + (b.y - a.y) * p.t + p.y }));
+}
+function ownPts(k) { if (!k.pts) { k.pts = k.q ? [{ t: 0.5, x: Math.round(k.q.x / 2), y: Math.round(k.q.y / 2) }] : []; delete k.q; } return k.pts; }
+/* 曲げ点をすべて通るなめらかな線（Catmull-Rom を3次ベジエに直したもの）。mids は区間ごとの真ん中（＋のつまみを出す所） */
+function smoothPath(ps) {
+  let d = `M${ps[0].x} ${ps[0].y}`; const mids = [];
+  for (let i = 0; i < ps.length - 1; i++) {
+    const p0 = ps[Math.max(0, i - 1)], p1 = ps[i], p2 = ps[i + 1], p3 = ps[Math.min(ps.length - 1, i + 2)];
+    const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 }, c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+    d += ` C${r1(c1.x)} ${r1(c1.y)} ${r1(c2.x)} ${r1(c2.y)} ${p2.x} ${p2.y}`;
+    mids.push({ x: (p1.x + 3 * c1.x + 3 * c2.x + p2.x) / 8, y: (p1.y + 3 * c1.y + 3 * c2.y + p2.y) / 8 });
+  }
+  return { d, mids };
+}
+function r1(v) { return Math.round(v * 10) / 10; }
 /* まっすぐ引くと、同じ器具や同じ枠のほかの端子の○の上を通ってしまう線は、自動で少しふくらませてよける（見た目だけ） */
 function autoBend(k, a, b) {
   for (const e of [k.a, k.b]) {
@@ -1234,26 +1252,33 @@ function autoBend(k, a, b) {
   }
   return null;
 }
+let bendHandles = "";
 function coreLine(k, i, extra) {
   const a = endPos(k.a), b = endPos(k.b);
   const col = COLORS[k.c] || "#888", selected = sel && sel.core === i;
   let d = `M${a.x} ${a.y} L${b.x} ${b.y}`;
-  const q = k.q || autoBend(k, a, b);
-  if (q) {                                                           // 曲げた線: 両端の真ん中から q ずらした所を引っぱる2次曲線
+  const bp = bendPts(k, a, b), q = bp.length ? null : autoBend(k, a, b);
+  const sp = smoothPath([a, ...bp, b]);
+  if (bp.length) d = sp.d;                                           // 曲げた線: 曲げ点をすべて通る
+  else if (q) {                                                      // ほかの端子をよける: 両端の真ん中から q ずらした所を引っぱる2次曲線
     d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 + q.x} ${(a.y + b.y) / 2 + q.y} ${b.x} ${b.y}`;
+    sp.mids = [{ x: (a.x + b.x) / 2 + q.x / 2, y: (a.y + b.y) / 2 + q.y / 2 }];   // ＋は、ふくらんだ線の上に出す
   } else if (k.a[0] !== "#" && k.b[0] !== "#" && P.term[k.a].part.place === P.term[k.b].part.place) {   // 渡り線: 端子の並ぶ側へふくらませ、ほかの端子や器具の上を通らないようにする
     const sd = P.term[k.a].part.side, v = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[sd];
     const bulge = 30 + Math.hypot(b.x - a.x, b.y - a.y) * 0.1;
     d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 - v[0] * bulge} ${(a.y + b.y) / 2 - v[1] * bulge} ${b.x} ${b.y}`;
+    sp.mids = [{ x: (a.x + b.x) / 2 - v[0] * bulge / 2, y: (a.y + b.y) / 2 - v[1] * bulge / 2 }];   // ＋は、ふくらんだ渡り線の上に出す
   }
   let g = "";
   if (selected || extra) g += `<path d="${d}" fill="none" stroke="${extra || "#2563eb"}" stroke-width="11" stroke-linecap="round" opacity=".45"/>`;
   g += `<path d="${d}" fill="none" stroke="${k.c === "白" ? "#7b7b7b" : col}" stroke-width="5.5" stroke-linecap="round"/>`;
   if (k.c === "白") g += `<path d="${d}" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`;
   if (!showingRef) g += `<path class="hit" data-hit="core:${i}" d="${d}" fill="none" stroke="transparent" stroke-width="16"/>`;
-  if (selected && !showingRef && mode === "draw") {                  // 曲げるつまみ（線の真ん中）
-    const m = bendMid(k, a, b);
-    g += `<g class="hit" data-hit="bend:${i}"><circle cx="${m.x}" cy="${m.y}" r="18" fill="transparent"/><circle cx="${m.x}" cy="${m.y}" r="9" fill="#2563eb" stroke="#fff" stroke-width="2"/></g>`;
+  if (selected && !showingRef && mode === "draw") {                  // 曲げ点（青丸: ドラッグで動かす・タップで消す）と、曲げ点を足すつまみ（＋）。端子・●・ボックスより上に描く
+    if (bp.length < BEND_MAX) sp.mids.forEach((m, n) => {
+      bendHandles += `<g class="hit" data-hit="add:${i}:${n}"><circle cx="${m.x}" cy="${m.y}" r="16" fill="transparent"/><circle cx="${m.x}" cy="${m.y}" r="8.5" fill="#fff" stroke="#2563eb" stroke-width="2.5"/><path d="M${m.x - 4.5} ${m.y}h9M${m.x} ${m.y - 4.5}v9" stroke="#2563eb" stroke-width="2.5"/></g>`;
+    });
+    bp.forEach((m, n) => { bendHandles += `<g class="hit" data-hit="bend:${i}:${n}"><circle cx="${m.x}" cy="${m.y}" r="18" fill="transparent"/><circle cx="${m.x}" cy="${m.y}" r="9" fill="#2563eb" stroke="#fff" stroke-width="2"/></g>`; });
   }
   return g;
 }
@@ -1338,6 +1363,7 @@ function render() {
     const xs = ps.map(p => p.x), ys = ps.map(p => p.y);
     g += `<rect x="${Math.min(...xs) - 40}" y="${Math.min(...ys) - 48}" width="${Math.max(...xs) - Math.min(...xs) + 80}" height="${Math.max(...ys) - Math.min(...ys) + 96}" rx="8" fill="none" stroke="#a89e89" stroke-dasharray="3 4"/>`; });
   // 線
+  bendHandles = "";
   view.cores.forEach((k, i) => { if (endShown(k.a) && endShown(k.b)) g += coreLine(k, i, mk.has("core:" + i) ? "#ef4444" : null); });
   // 端子
   P.parts.forEach(p => { if (p.shown) p.terms.forEach(t => { g += drawTerm(p, t, "t:" + t.id, mk); }); });
@@ -1346,6 +1372,7 @@ function render() {
   view.joints.forEach(j => { if (!P.box[j.box].shown) return; const q = jointPos(j), on = sel && (sel.end === j.id || sel.joint === j.id), warn = mk.has(j.id);
     g += `<circle cx="${q.x}" cy="${q.y}" r="8" fill="${on ? "#2563eb" : "#151a18"}" stroke="${warn ? "#ef4444" : "#fff"}" stroke-width="${warn ? 4 : 2}"/>`;
     if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="j:${j.id}" cx="${q.x}" cy="${q.y}" r="18" fill="transparent"/>`; });
+  g += bendHandles;
   if (drag && drag.kind === "wire" && drag.moving && drag.cur) {    // 伸ばしている線と、離せばつながる所の輪
     const a = endPos(drag.id), [ok, ...r] = (drag.over || "").split(":"), oid = r.join(":");
     if ((ok === "t" && oid !== drag.id) || ok === "j") { const q = endPos(ok === "j" ? oid : oid);
@@ -1573,25 +1600,50 @@ let vbox = { x: 0, y: 0, w: 1000, h: 620 }, panMode = false;
 function applyView() { svg.setAttribute("viewBox", `${vbox.x} ${vbox.y} ${vbox.w} ${vbox.h}`); }
 /* 図の枠の縦横比。スマホの縦長の枠では、拡大したとき縦も使えるよう、見える範囲をこの比にする */
 function aspect() { const r = svg.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r.height / r.width : 0.62; }
+/* world: 図の中身が広がっている範囲（お手本の図と、いま描いてある図を合わせた範囲＋余白）。「全体」はこれがちょうど収まる大きさ。
+   前は 0〜1000×0〜620 に決め打ちで、はみ出す器具の名前やケーブルの種類が切れていた */
+let world = { x: 0, y: 0, w: 1000, h: 620 };
+function fullW() { return Math.max(world.w, world.h / aspect()); }
 function clampView() {
-  vbox.w = Math.max(250, Math.min(1000, vbox.w)); vbox.h = vbox.w * aspect();
-  vbox.x = Math.max(-vbox.w * 0.25, Math.min(1000 - vbox.w * 0.75, vbox.x));
-  if (vbox.h >= 620) vbox.y = (620 - vbox.h) / 2;            // 図の高さより広く見えているときは、上下の真ん中に
-  else vbox.y = Math.max(-vbox.h * 0.25, Math.min(620 - vbox.h * 0.75, vbox.y));
+  vbox.w = Math.max(250, Math.min(fullW(), vbox.w)); vbox.h = vbox.w * aspect();
+  for (const [p, l] of [["x", "w"], ["y", "h"]]) {
+    if (vbox[l] >= world[l]) vbox[p] = world[p] + (world[l] - vbox[l]) / 2;   // 中身より広く見えているときは真ん中に
+    else vbox[p] = Math.max(world[p] - vbox[l] * 0.25, Math.min(world[p] + world[l] - vbox[l] * 0.75, vbox[p]));
+  }
 }
-function fitView() { vbox = { x: 0, y: 0, w: 1000, h: 620 }; clampView(); applyView(); }
-window.addEventListener("resize", () => { const cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView(); });
+function measureWorld() {
+  const M = 14; let r = null;
+  const grow = bb => { if (!bb || !(bb.width > 0)) return; const q = { x0: bb.x, y0: bb.y, x1: bb.x + bb.width, y1: bb.y + bb.height };
+    r = r ? { x0: Math.min(r.x0, q.x0), y0: Math.min(r.y0, q.y0), x1: Math.max(r.x1, q.x1), y1: Math.max(r.y1, q.y1) } : q; };
+  if (typeof svg.getBBox === "function") {                           // getBBox が使えない所（テスト）では元の範囲
+    const keep = [view, showingRef, sel];
+    try { view = refState(P); showingRef = true; sel = null; render(); grow(svg.getBBox()); } catch (e) {}
+    [view, showingRef, sel] = keep; render();
+    try { grow(svg.getBBox()); } catch (e) {}
+  }
+  world = r ? { x: r.x0 - M, y: r.y0 - M, w: r.x1 - r.x0 + 2 * M, h: r.y1 - r.y0 + 2 * M } : { x: 0, y: 0, w: 1000, h: 620 };
+}
+function fitView() { if (P && view) measureWorld(); vbox = { x: world.x, y: world.y, w: fullW(), h: 0 }; clampView(); applyView(); }
+/* パソコンでは、図の枠の下の端が画面の下にちょうど来る高さにする（はみ出すと下が見切れる。Chromebook で実測） */
+function sizeStage() {
+  if (innerWidth <= 980) { svg.style.height = ""; return; }
+  const top = svg.getBoundingClientRect().top + scrollY;
+  svg.style.height = Math.max(420, innerHeight - top - 30) + "px";
+}
+window.addEventListener("resize", () => { const full = vbox.w >= fullW() - 1, cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; sizeStage();
+  if (full) { fitView(); return; }
+  clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView(); });
 function zoomBy(f) {   // 見ている所の真ん中を中心に拡大・縮小
   const cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2;
   vbox.w /= f; clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView();
-  if (vbox.w >= 1000) setPan(false);
+  if (vbox.w >= fullW() - 1) setPan(false);
 }
 function setPan(on) { panMode = on; $("panBtn").classList.toggle("on", on); svg.classList.toggle("pan", on);
   status(on ? "移動中。図を指（マウス）で動かす。もう一度「✋ 移動」を押すと、描くのに戻る。" : ""); }
 $("zoomIn").onclick = () => zoomBy(1.5);
 $("zoomOut").onclick = () => zoomBy(1 / 1.5);
 $("zoomFit").onclick = () => { fitView(); setPan(false); };
-$("panBtn").onclick = () => { if (vbox.w >= 1000) zoomBy(1.5); setPan(!panMode); };
+$("panBtn").onclick = () => { if (vbox.w >= fullW() - 1) zoomBy(1.5); setPan(!panMode); };
 /* 画面上のタップ位置を、図の座標（viewBox）に直す */
 function svgPoint(e) {
   const r = svg.getBoundingClientRect(), k = Math.min(r.width / vbox.w, r.height / vbox.h) || 1;
@@ -1631,7 +1683,7 @@ svg.addEventListener("pointerdown", e => {
   if (!h || showingRef || mode !== "draw" || placing) return;
   const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
   let what = null;
-  if (kind === "bend") what = { kind: "bend", id: +id };              // 線のつまみ → 線を曲げる
+  if (kind === "bend" || kind === "add") { const [c, n] = id.split(":").map(Number); what = { kind: "bend", id: c, n, add: kind === "add" }; }   // 曲げ点を動かす／＋から曲げ点を足す
   else if (kind === "t") what = { kind: "wire", id };                    // 端子からドラッグ → 線を伸ばす
   else if (kind === "j") { const j = S.joints.find(j => j.id === id); what = { kind: "j", id, orig: { x: j.x, y: j.y } }; }   // ●からドラッグ → ボックスの中なら●を動かす。外へ出たら線を伸ばす
   else if (kind === "part") what = { kind: "item", id };
@@ -1646,7 +1698,13 @@ svg.addEventListener("pointermove", e => {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
     drag.moving = true;
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}      // 図を描き直しても指を追い続ける
-    if (drag.kind === "bend") status("線を曲げている。好きな所で指を離す。");
+    if (drag.kind === "bend") {
+      status("線を曲げている。好きな所で指を離す。");
+      if (drag.add) {                                                // ＋を動かし始めた所で、その区間に曲げ点を1つ足す
+        const k = S.cores[drag.id], pts = ownPts(k), t0 = drag.n ? pts[drag.n - 1].t : 0, t1 = drag.n < pts.length ? pts[drag.n].t : 1;
+        pts.splice(drag.n, 0, { t: (t0 + t1) / 2, x: 0, y: 0 }); drag.add = false;
+      }
+    }
     else if (drag.kind !== "pan") status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
          : drag.kind === "j" ? "ドラッグ中。ボックスの中で指を離す。" : "ドラッグ中。置きたい所で指を離す。");
     if (drag.kind === "wire") sel = { end: drag.id };               // つなげるボックスを青くする
@@ -1664,8 +1722,8 @@ svg.addEventListener("pointermove", e => {
       status("線を伸ばしている。つなぐ先（器具の端子か、ほかのボックス）で指を離す。自分のボックスに戻って離すと取りやめ。");
     }
   }
-  if (drag.kind === "bend") { const k = S.cores[drag.id], a = endPos(k.a), b = endPos(k.b);   // つまみの所を曲線が通るように
-    k.q = { x: Math.round(2 * q.x - (a.x + b.x)), y: Math.round(2 * q.y - (a.y + b.y)) }; render(); return; }
+  if (drag.kind === "bend") { const k = S.cores[drag.id], a = endPos(k.a), b = endPos(k.b), p = ownPts(k)[drag.n];   // 曲げ点を指の所へ
+    p.x = Math.round(q.x - (a.x + (b.x - a.x) * p.t)); p.y = Math.round(q.y - (a.y + (b.y - a.y) * p.t)); render(); return; }
   if (drag.kind === "wire") { drag.cur = q; drag.over = hitAt(e); }
   else if (drag.kind === "j") moveJoint(drag.id, q.x, q.y, true); else moveItem(drag.id, q.x + drag.ox, q.y + drag.oy);
   render();
@@ -1688,7 +1746,7 @@ function endDrag(e) {
     else { status("線を引くのをやめた。つなぐ先の上で指を離す。"); render(); }
     return;
   }
-  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "bend" ? "線を曲げた。「まっすぐに戻す」で元に戻る。" : drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
+  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "bend" ? "線を曲げた。＋をドラッグすると曲げ点が増える（" + BEND_MAX + "つまで）。青丸をタップすると、その曲げ点を消す。" : drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
   drag = null;
 }
 /* 指で動かしている間は、ブラウザにスクロールの動きとして扱わせない。
@@ -1740,8 +1798,13 @@ svg.addEventListener("click", e => {
     sel = { item: id }; const st = S.placed.find(x => x.u === id);
     status("部品を選んだ。記号を変える・消す" + (st && (SHAPE[st.type] || st.type === "pl") ? "・左右を入れ替える" : "") + "。ドラッグで動かせる。"); render(); return;
   }
-  if (kind === "bend") return;                                        // つまみはドラッグで使う
-  if (kind === "core") { sel = { core: +id }; status("線を選んだ。真ん中の青い丸をドラッグすると曲がる。色を変える・つなぎ先を変える・消すもできる。"); render(); return; }
+  if (kind === "add") return;                                         // ＋はドラッグで使う
+  if (kind === "bend") {                                              // 曲げ点をタップ → その曲げ点を消す
+    const [c, n] = id.split(":").map(Number), k = S.cores[c]; if (!k) return;
+    ownPts(k).splice(n, 1); if (!k.pts.length) delete k.pts;
+    sel = { core: c }; status("曲げ点を1つ消した。"); save(); render(); return;
+  }
+  if (kind === "core") { sel = { core: +id }; status("線を選んだ。＋をドラッグすると、そこで曲がる（曲げ点は" + BEND_MAX + "つまで）。色を変える・つなぎ先を変える・消すもできる。"); render(); return; }
   if (kind === "j" && !(sel && sel.end)) { sel = { end: id, joint: id }; status("接続点を選んだ。動かす・まとめる・消す。この●から別のボックスへ線を引くこともできる。"); render(); return; }
   if (kind === "t" || kind === "j") {
     if (sel && sel.end) { addCore(sel.end, id); return; }
@@ -1768,7 +1831,7 @@ function hitAt(e) {
 $("stage").addEventListener("contextmenu", e => e.preventDefault());
 
 function setCoreColor(c) { if (!(sel && sel.core !== undefined)) return; S.cores[sel.core].c = c; pen = c; changed(); }
-$("straightCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; delete S.cores[sel.core].q; status("線をまっすぐに戻した。"); save(); render(); };
+$("straightCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; delete S.cores[sel.core].q; delete S.cores[sel.core].pts; status("線をまっすぐに戻した。"); save(); render(); };
 $("delCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; S.cores.splice(sel.core, 1); tidy(); sel = null; status("線を消した。"); changed(); };
 $("unsel").onclick = $("unselJ").onclick = $("unselP").onclick = () => { sel = null; status(""); render(); };
 $("flipPart").onclick = () => { const it = sel && sel.item && S.placed.find(x => x.u === sel.item); if (!it || !it.pid) return;
@@ -1905,7 +1968,7 @@ function drawTabs() {
 }
 function openProblem(id) {
   P = prep(PROBLEMS.find(p => p.id === id));
-  fitView(); setPan(false);
+  setPan(false);
   S = (exam ? null : load(id)) || newState(); S.flip = S.flip || {}; view = S; hist = []; lastSaved = JSON.stringify(S); $("undoBtn").disabled = true; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
@@ -1918,6 +1981,7 @@ function openProblem(id) {
   penButtons($("pens"), c => { pen = c; render(); });
   penButtons($("selPens"), setCoreColor);
   drawTansen(); status(""); drawTabs(); examUI(); render();
+  sizeStage(); fitView();
 }
 
 /* ============================================================
