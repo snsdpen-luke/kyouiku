@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""配布物を作る。本体は次の4つ。ここから機械的に生成する。
+"""配布物を作る。本体は次の8つ。ここから機械的に生成する。
 
   ラダー工房v2.html   → index.html         （GitHub Pages で配るもの）
   進路シミュレーション.html   → shinro/index.html  （同上。URL を /shinro/ で配るため）
@@ -8,8 +8,9 @@
   サンプラー.html      → sampler/index.html （同上。こえサンプラー）
   メッセージが届くまで.html → network/index.html（同上。TCP/IP 教材。導入スライドの QR は /network/ を指す）
   車の制御50.html     → car/index.html     （同上。電子計測制御・センサ当て。導入スライドの QR は /car/ を指す）
+  複線図練習.html     → fukusen/index.html （同上。URL を /fukusen/ で配る）
 
-  python3 build.py                  上の5つを作る
+  python3 build.py                  上の8つを作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
 
 本体を直したら必ず走らせること。生成物を手で編集してはいけない。
@@ -58,6 +59,11 @@ print("生成: network/index.html")
 os.makedirs("car", exist_ok=True)
 shutil.copyfile(SRC7, "car/index.html")
 print("生成: car/index.html")
+
+# 1h) 複線図れんしゅう（第二種電気工事士 技能試験の複線図）
+os.makedirs("fukusen", exist_ok=True)
+shutil.copyfile("複線図練習.html", "fukusen/index.html")
+print("生成: fukusen/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
