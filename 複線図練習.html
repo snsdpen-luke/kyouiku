@@ -20,7 +20,7 @@
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
   h2 { font-size: 14.5px; margin: 0 0 4px; }
   .probs { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
-  .probs button { min-width: 56px; padding: 4px 8px; }
+  .probs button { min-width: 48px; padding: 4px 7px; }
   .probs button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
   .probs button.done::after { content: " ✓"; }
   .probs .sep { font-size: 12px; color: var(--muted); margin: 0 2px 0 8px; align-self: center; }
@@ -264,7 +264,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07i";
+const VER = "2026-10-07j";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1598,25 +1598,50 @@ let vbox = { x: 0, y: 0, w: 1000, h: 620 }, panMode = false;
 function applyView() { svg.setAttribute("viewBox", `${vbox.x} ${vbox.y} ${vbox.w} ${vbox.h}`); }
 /* 図の枠の縦横比。スマホの縦長の枠では、拡大したとき縦も使えるよう、見える範囲をこの比にする */
 function aspect() { const r = svg.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r.height / r.width : 0.62; }
+/* world: 図の中身が広がっている範囲（お手本の図と、いま描いてある図を合わせた範囲＋余白）。「全体」はこれがちょうど収まる大きさ。
+   前は 0〜1000×0〜620 に決め打ちで、はみ出す器具の名前やケーブルの種類が切れていた */
+let world = { x: 0, y: 0, w: 1000, h: 620 };
+function fullW() { return Math.max(world.w, world.h / aspect()); }
 function clampView() {
-  vbox.w = Math.max(250, Math.min(1000, vbox.w)); vbox.h = vbox.w * aspect();
-  vbox.x = Math.max(-vbox.w * 0.25, Math.min(1000 - vbox.w * 0.75, vbox.x));
-  if (vbox.h >= 620) vbox.y = (620 - vbox.h) / 2;            // 図の高さより広く見えているときは、上下の真ん中に
-  else vbox.y = Math.max(-vbox.h * 0.25, Math.min(620 - vbox.h * 0.75, vbox.y));
+  vbox.w = Math.max(250, Math.min(fullW(), vbox.w)); vbox.h = vbox.w * aspect();
+  for (const [p, l] of [["x", "w"], ["y", "h"]]) {
+    if (vbox[l] >= world[l]) vbox[p] = world[p] + (world[l] - vbox[l]) / 2;   // 中身より広く見えているときは真ん中に
+    else vbox[p] = Math.max(world[p] - vbox[l] * 0.25, Math.min(world[p] + world[l] - vbox[l] * 0.75, vbox[p]));
+  }
 }
-function fitView() { vbox = { x: 0, y: 0, w: 1000, h: 620 }; clampView(); applyView(); }
-window.addEventListener("resize", () => { const cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView(); });
+function measureWorld() {
+  const M = 14; let r = null;
+  const grow = bb => { if (!bb || !(bb.width > 0)) return; const q = { x0: bb.x, y0: bb.y, x1: bb.x + bb.width, y1: bb.y + bb.height };
+    r = r ? { x0: Math.min(r.x0, q.x0), y0: Math.min(r.y0, q.y0), x1: Math.max(r.x1, q.x1), y1: Math.max(r.y1, q.y1) } : q; };
+  if (typeof svg.getBBox === "function") {                           // getBBox が使えない所（テスト）では元の範囲
+    const keep = [view, showingRef, sel];
+    try { view = refState(P); showingRef = true; sel = null; render(); grow(svg.getBBox()); } catch (e) {}
+    [view, showingRef, sel] = keep; render();
+    try { grow(svg.getBBox()); } catch (e) {}
+  }
+  world = r ? { x: r.x0 - M, y: r.y0 - M, w: r.x1 - r.x0 + 2 * M, h: r.y1 - r.y0 + 2 * M } : { x: 0, y: 0, w: 1000, h: 620 };
+}
+function fitView() { if (P && view) measureWorld(); vbox = { x: world.x, y: world.y, w: fullW(), h: 0 }; clampView(); applyView(); }
+/* パソコンでは、図の枠の下の端が画面の下にちょうど来る高さにする（はみ出すと下が見切れる。Chromebook で実測） */
+function sizeStage() {
+  if (innerWidth <= 980) { svg.style.height = ""; return; }
+  const top = svg.getBoundingClientRect().top + scrollY;
+  svg.style.height = Math.max(420, innerHeight - top - 30) + "px";
+}
+window.addEventListener("resize", () => { const full = vbox.w >= fullW() - 1, cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; sizeStage();
+  if (full) { fitView(); return; }
+  clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView(); });
 function zoomBy(f) {   // 見ている所の真ん中を中心に拡大・縮小
   const cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2;
   vbox.w /= f; clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView();
-  if (vbox.w >= 1000) setPan(false);
+  if (vbox.w >= fullW() - 1) setPan(false);
 }
 function setPan(on) { panMode = on; $("panBtn").classList.toggle("on", on); svg.classList.toggle("pan", on);
   status(on ? "移動中。図を指（マウス）で動かす。もう一度「✋ 移動」を押すと、描くのに戻る。" : ""); }
 $("zoomIn").onclick = () => zoomBy(1.5);
 $("zoomOut").onclick = () => zoomBy(1 / 1.5);
 $("zoomFit").onclick = () => { fitView(); setPan(false); };
-$("panBtn").onclick = () => { if (vbox.w >= 1000) zoomBy(1.5); setPan(!panMode); };
+$("panBtn").onclick = () => { if (vbox.w >= fullW() - 1) zoomBy(1.5); setPan(!panMode); };
 /* 画面上のタップ位置を、図の座標（viewBox）に直す */
 function svgPoint(e) {
   const r = svg.getBoundingClientRect(), k = Math.min(r.width / vbox.w, r.height / vbox.h) || 1;
@@ -1941,7 +1966,7 @@ function drawTabs() {
 }
 function openProblem(id) {
   P = prep(PROBLEMS.find(p => p.id === id));
-  fitView(); setPan(false);
+  setPan(false);
   S = (exam ? null : load(id)) || newState(); S.flip = S.flip || {}; view = S; hist = []; lastSaved = JSON.stringify(S); $("undoBtn").disabled = true; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
@@ -1954,6 +1979,7 @@ function openProblem(id) {
   penButtons($("pens"), c => { pen = c; render(); });
   penButtons($("selPens"), setCoreColor);
   drawTansen(); status(""); drawTabs(); examUI(); render();
+  sizeStage(); fitView();
 }
 
 /* ============================================================
