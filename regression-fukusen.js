@@ -441,6 +441,9 @@ tap("#undoBtn"); ok(E("S.cores[0].pts.length")===3,"1つ戻すで、曲げた形
 E(`S.cores[0].pts=undefined; delete S.cores[0].pts; S.cores[0].q={x:80,y:-40}; render()`);
 { const a=JS(`endPos(S.cores[0].a)`), b=JS(`endPos(S.cores[0].b)`);
   ok(near(JS(`bendPts(S.cores[0], endPos(S.cores[0].a), endPos(S.cores[0].b))`)[0],(a.x+b.x)/2+40,(a.y+b.y)/2-20),"前の版で曲げた線（q）も、同じ所を通る1点として読める"); }
+E(`openProblem("r3"); S=refState(P); view=S; sel={core:2}; mode="draw"; render();`);
+{ const dd=d.querySelector(`[data-hit="core:2"]`).getAttribute("d").match(/-?[\d.]+/g).map(Number), c=d.querySelector(`[data-hit="add:2:0"] circle`);
+  ok(/Q/.test(d.querySelector(`[data-hit="core:2"]`).getAttribute("d")) && Math.abs(+c.getAttribute("cx")-(dd[0]+2*dd[2]+dd[4])/4)<0.6 && Math.abs(+c.getAttribute("cy")-(dd[1]+2*dd[3]+dd[5])/4)<0.6,"ふくらんで描かれる渡り線でも、＋は線の上に出る"); }
 w.svgPoint=()=>({x:0,y:0});
 E(`openProblem("k5")`);
 ok(/Q/.test([...d.querySelectorAll('#tansen path[stroke-width="4"]')].map(p=>p.getAttribute("d")).join(" ")),"単線図の線は、角を丸く曲がる");

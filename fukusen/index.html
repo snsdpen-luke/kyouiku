@@ -264,7 +264,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07j";
+const VER = "2026-10-07k";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1262,10 +1262,12 @@ function coreLine(k, i, extra) {
   if (bp.length) d = sp.d;                                           // 曲げた線: 曲げ点をすべて通る
   else if (q) {                                                      // ほかの端子をよける: 両端の真ん中から q ずらした所を引っぱる2次曲線
     d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 + q.x} ${(a.y + b.y) / 2 + q.y} ${b.x} ${b.y}`;
+    sp.mids = [{ x: (a.x + b.x) / 2 + q.x / 2, y: (a.y + b.y) / 2 + q.y / 2 }];   // ＋は、ふくらんだ線の上に出す
   } else if (k.a[0] !== "#" && k.b[0] !== "#" && P.term[k.a].part.place === P.term[k.b].part.place) {   // 渡り線: 端子の並ぶ側へふくらませ、ほかの端子や器具の上を通らないようにする
     const sd = P.term[k.a].part.side, v = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] }[sd];
     const bulge = 30 + Math.hypot(b.x - a.x, b.y - a.y) * 0.1;
     d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 - v[0] * bulge} ${(a.y + b.y) / 2 - v[1] * bulge} ${b.x} ${b.y}`;
+    sp.mids = [{ x: (a.x + b.x) / 2 - v[0] * bulge / 2, y: (a.y + b.y) / 2 - v[1] * bulge / 2 }];   // ＋は、ふくらんだ渡り線の上に出す
   }
   let g = "";
   if (selected || extra) g += `<path d="${d}" fill="none" stroke="${extra || "#2563eb"}" stroke-width="11" stroke-linecap="round" opacity=".45"/>`;
