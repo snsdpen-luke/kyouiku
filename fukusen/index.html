@@ -85,6 +85,7 @@
   .who { font-size: 12.5px; color: var(--muted); margin: 4px 0 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .who button { padding: 2px 8px; font-size: 12px; }
   .probs button.examBtn { border-color: #c2410c; color: #c2410c; font-weight: 700; }
+  .h3 { font-size: 12.5px; font-weight: 700; margin: 8px 0 2px; }
   table.stats { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 4px 0; font-variant-numeric: tabular-nums; }
   table.stats th, table.stats td { border-bottom: 1px solid var(--line); padding: 2px 4px; text-align: right; }
   table.stats th:first-child, table.stats td:first-child { text-align: left; }
@@ -209,6 +210,10 @@
           <summary>自分の記録</summary>
           <table class="stats" id="statsTable"></table>
           <div class="note" id="sendNote"></div>
+          <div class="h3">最近の記録</div>
+          <table class="stats" id="logTable"></table>
+          <div class="bar" style="margin-top:6px"><button id="copyLog">記録をコピー</button><button id="csvLog">CSVで保存</button></div>
+          <div class="note" id="logNote"></div>
         </details>
         <details class="how">
           <summary>描き方</summary>
@@ -241,7 +246,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07f";
+const VER = "2026-10-07g";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1905,6 +1910,8 @@ let SHEET_URL = "";   // 先生の Apps Script ウェブアプリの URL（https
 const getJSON = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v === null ? d : v; } catch (e) { return d; } };
 const putJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 let student = getJSON(KEY + "student", null), stats = getJSON(KEY + "stats", {}), queue = getJSON(KEY + "queue", []), sending = false;
+let logRows = getJSON(KEY + "log", []);                               // 送る・送らないに関係なく、すべての記録（端末の中。最大2000件）
+const LOG_MAX = 2000;
 const stat = pid => (stats[pid] = stats[pid] || { tries: 0, pass: 0, hints: 0, refs: 0 });
 function bump(pid, k) { stat(pid)[k]++; putJSON(KEY + "stats", stats); drawStats(); }
 const catText = iss => CATS.map(c => { const n = iss.filter(x => x.cat === c).length; return n ? c + n : ""; }).filter(Boolean).join(" ");
@@ -1912,8 +1919,9 @@ function record(kind, extra) {
   const st = stat(P.id);
   queue.push(Object.assign({ t: new Date().toISOString(), no: student ? student.no : "", name: student ? student.name : "", kind, prob: P.tab,
     tries: st.tries, pass: st.pass, hints: st.hints, refs: st.refs, ver: VER }, extra));
-  if (queue.length > 500) queue = queue.slice(-500);
-  putJSON(KEY + "queue", queue); flush();
+  if (queue.length > LOG_MAX) queue = queue.slice(-LOG_MAX);
+  logRows.push(queue[queue.length - 1]); if (logRows.length > LOG_MAX) logRows = logRows.slice(-LOG_MAX);
+  putJSON(KEY + "queue", queue); putJSON(KEY + "log", logRows); drawLog(); flush();
 }
 function jsonp(url, data, cb) {                                      // 送って、返事（届いた／届かない）を受け取る
   const name = "__fk" + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement("script"); let fin = false;
@@ -1940,6 +1948,33 @@ function drawStats() {
     return `<tr><td>${esc(p.tab)}</td><td>${s.tries}</td><td>${s.pass}</td><td>${s.hints}</td><td>${s.refs}</td></tr>`; });
   $("statsTable").innerHTML = rows.length ? `<tr><th>問題</th><th>挑戦</th><th>合格</th><th>ヒント</th><th>お手本</th></tr>` + rows.join("") : `<tr><td>まだ記録が無い。判定すると記録される。</td></tr>`;
 }
+/* 最近の記録と書き出し（シートができる前でも、Classroom などで集められるように） */
+const LOG_COLS = [["t", "記録日時"], ["no", "出席番号"], ["name", "名前"], ["kind", "種類"], ["prob", "問題"], ["result", "結果"], ["cats", "間違いの分類"],
+  ["sec", "かかった時間(秒)"], ["tries", "挑戦回数"], ["pass", "合格回数"], ["hints", "ヒント回数"], ["refs", "お手本回数"], ["ver", "アプリの版"]];
+const localTime = t => { const d = new Date(t); return isNaN(d) ? String(t || "") : d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); };
+function logTable(sep) {
+  const cell = v => { v = v === undefined || v === null ? "" : String(v); return sep === "," && /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v.replace(/[\t\n]/g, " "); };
+  return [LOG_COLS.map(c => c[1]).join(sep)].concat(logRows.map(r => LOG_COLS.map(([k]) => cell(k === "t" ? localTime(r.t) : r[k])).join(sep))).join("\n");
+}
+function drawLog() {
+  const last = logRows.slice(-8).reverse();
+  $("logTable").innerHTML = last.length ? `<tr><th>日時</th><th>問題</th><th>種類</th><th>結果</th></tr>` + last.map(r =>
+    `<tr><td>${esc(localTime(r.t))}</td><td>${esc(r.prob)}</td><td>${esc(r.kind)}</td><td>${esc(r.result)}${r.sec !== undefined ? "（" + mmss(r.sec) + "）" : ""}</td></tr>`).join("") : "";
+  $("logNote").textContent = logRows.length ? "この端末に " + logRows.length + " 件の記録がある。" : "";
+}
+$("copyLog").onclick = () => {
+  const t = logTable("\t");
+  const done = () => { $("logNote").textContent = "記録をコピーした（表計算ソフトにそのまま貼れる）。"; };
+  try { navigator.clipboard.writeText(t).then(done, () => { fallbackCopy(t); done(); }); } catch (e) { fallbackCopy(t); done(); }
+};
+function fallbackCopy(t) { const a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand("copy"); } catch (e) {} a.remove(); }
+$("csvLog").onclick = () => {
+  const blob = new Blob(["\ufeff" + logTable(",")], { type: "text/csv" }), a = document.createElement("a");   // 先頭の BOM で Excel でも文字化けしない
+  a.href = URL.createObjectURL(blob); const dt = new Date(), ymd = dt.getFullYear() + String(dt.getMonth() + 1).padStart(2, "0") + String(dt.getDate()).padStart(2, "0");
+  a.download = "fukusen_kiroku" + (student ? "_" + String(student.no).replace(/[^\w-]/g, "") : "") + "_" + ymd + ".csv";   // 日本語のファイル名は落とされることがある（実測）
+  document.body.appendChild(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(a.href); }, 2000);   // すぐ消すとファイル名の指定が効かない
+  $("logNote").textContent = "CSV を保存した。";
+};
 function drawWho() {
   $("whoBar").innerHTML = student ? `<span>出席番号 ${esc(student.no)}　${esc(student.name)}</span> <button id="whoEdit">変更</button>` : `<button id="whoEdit">出席番号と名前を入れる</button>`;
   $("whoEdit").onclick = openId;
@@ -2013,7 +2048,7 @@ function examUI() {
 }
 
 drawPalette();
-drawWho(); drawStats(); drawSendNote();
+drawWho(); drawStats(); drawLog(); drawSendNote();
 openProblem(PROBLEMS[0].id);
 if (!student) openId();
 flush();

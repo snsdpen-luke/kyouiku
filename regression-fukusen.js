@@ -512,6 +512,16 @@ tap("#examStart"); yes(); E("exam.start-=601000; tickExam();");
 ok(E("exam.done")===true && /時間切れ/.test($("result").textContent),"10分たつと自動で提出される");
 tap("#examEnd");
 
+console.log("\n【X】記録の履歴と書き出し");
+{ const n0=E("logRows.length");
+  ok(n0>=6,"送ったかどうかに関係なく、記録が履歴に残っている（"+n0+"件）");
+  ok(d.querySelectorAll("#logTable tr").length>=2 && /模擬試験/.test($("logTable").textContent),"最近の記録が表に出る");
+  const tsv=E(`logTable("\\t")`);
+  ok(tsv.split("\n").length===n0+1 && tsv.split("\n")[0].split("\t")[0]==="記録日時" && /電工 太郎/.test(tsv),"「記録をコピー」用の表（見出し＋全件）を作る");
+  const csv=E(`logTable(",")`); ok(csv.split("\n")[0].split(",").length===13,"CSV は13列");
+  E(`openProblem("r1")`); tap("#judgeBtn"); ok(E("logRows.length")===n0+1,"判定するたびに履歴が自動で増える");
+  ok(E(`JSON.parse(localStorage.getItem(KEY+"log")).length`)===n0+1,"履歴は端末に自動で保存される"); }
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
