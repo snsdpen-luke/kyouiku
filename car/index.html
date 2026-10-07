@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>車の制御50 センサ当て</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: service-manual plate — top-view car densely dotted with 50 controls; question / list / tally panel beside (stacks on narrow) */
+:root{
+  color-scheme:light;
+  --paper:#eef0ee; --sheet:#fbfbf8; --ink:#1d2b3a; --mute:#5d6b78; --line:#c5ccd1;
+  --body:#dfe5e8; --glass:#c9dbe6; --seat:#b9c3ca; --tire:#2a333c;
+  --amber:#c96a00; --amber-soft:#fbe7cf; --teal:#1f7a6d; --teal-soft:#d5ece7;
+  --good:#1f7a4d; --good-soft:#d9efe2; --bad:#b3261e; --bad-soft:#f7dcd9; --maybe:#7a5d00; --maybe-soft:#f3ecd2;
+  --f-disp:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.7;padding-inline:16px;padding-block:16px}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.wrap{max-width:1300px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-disp);font-weight:900;font-size:clamp(1.4rem,3vw,2rem);line-height:1.2;margin:0;text-wrap:balance}
+.sub{margin:4px 0 0;color:var(--mute);font-size:.95rem}
+.score{display:flex;gap:18px;font-variant-numeric:tabular-nums}
+.score div{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2}
+.score b{font-family:var(--f-mono);font-size:1.6rem}
+.score span{font-size:.75rem;color:var(--mute)}
+.main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (min-width:901px){.plate{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
+@media (max-width:900px){.main{grid-template-columns:1fr}}
+.plate{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.plate-head{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:.72rem;color:var(--mute);letter-spacing:.06em;padding:0 4px 6px;border-bottom:1px dashed var(--line)}
+.stage{position:relative;width:100%;aspect-ratio:1000/480;max-width:100%}
+.stage svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.dot{position:absolute;width:32px;height:32px;margin:-16px 0 0 -16px;border:0;background:transparent;padding:0;display:grid;place-items:center;border-radius:50%}
+.dot i{font-style:normal;font-family:var(--f-mono);font-size:clamp(.55rem,1.1vw,.72rem);font-weight:500;min-width:24px;height:19px;padding:0 3px;border-radius:3px;background:var(--sheet);color:var(--ink);border:1.5px solid var(--ink);display:grid;place-items:center;line-height:1;transition:transform .15s}
+.dot.perfect i{background:var(--good);border-color:var(--good);color:var(--sheet)}
+.dot.partial i{background:var(--maybe-soft);border-color:var(--maybe);color:var(--maybe)}
+.dot.on i{transform:scale(1.35);background:var(--amber);border-color:var(--amber);color:var(--sheet)}
+.plate-foot{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.78rem;color:var(--mute);padding:0 4px;align-items:center}
+.plate-foot i{display:inline-block;width:16px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1.5px solid var(--ink)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tbtn{border:1.5px solid var(--ink);background:var(--sheet);border-radius:999px;padding:8px 16px;font-weight:700;font-size:.9rem;min-height:44px}
+.tbtn[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+aside{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;color:var(--amber);margin:0}
+aside h2{font-family:var(--f-disp);font-weight:900;font-size:1.45rem;line-height:1.3;margin:0;text-wrap:balance}
+.what{margin:0}
+.ask{margin:0;font-weight:700;border-left:4px solid var(--amber);padding-left:10px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.grp h3{margin:0;font-size:.75rem;color:var(--mute);letter-spacing:.06em;font-weight:700}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
+.chip.none{grid-column:1/-1}
+.chip{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:5px 9px;font-size:.9rem;line-height:1.3;text-align:left;min-height:40px;display:flex;flex-direction:column;justify-content:center}
+.chip small{font-size:.7rem;color:var(--mute)}
+.chip[aria-pressed="true"]{border-color:var(--amber);background:var(--amber-soft)}
+.chip.none{border-style:dashed}
+.chip.ok{border-color:var(--good);background:var(--good-soft)}
+.chip.ng{border-color:var(--bad);background:var(--bad-soft)}
+.chip.miss{border-color:var(--good);border-style:dashed;background:transparent}
+.chip.maybe{border-color:var(--maybe);border-style:dashed;background:var(--maybe-soft)}
+.chip .mk{font-family:var(--f-mono);font-size:.72rem;font-weight:500}
+.chip.ok .mk{color:var(--good)} .chip.ng .mk{color:var(--bad)} .chip.miss .mk{color:var(--good)} .chip.maybe .mk{color:var(--maybe)}
+.chips.done .chip{cursor:default}
+.cname{display:flex;flex-direction:column;gap:2px}
+.clab{font-size:.75rem;font-weight:700;color:var(--mute);letter-spacing:.08em}
+.nscards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.nscard{background:var(--paper);border:1.5px dashed var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;font-size:.9rem}
+.nscard b{font-size:1.05rem}
+label.ask{display:block}
+.exta,.exin{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;line-height:1.6}
+.exta:focus,.exin:focus{outline:none;border-color:var(--amber)}
+.exta{resize:vertical;min-height:4.5em}
+.exhr{border:0;border-top:2px solid var(--line);width:100%;margin:6px 0}
+.exitems{display:flex;flex-direction:column;gap:12px}
+.exitem{border:1.5px solid var(--ink);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.exhead{display:flex;justify-content:space-between;align-items:center}
+.exno{font-family:var(--f-mono);font-size:.8rem;border:1.5px solid var(--ink);border-radius:3px;padding:1px 6px}
+.exdel{border:0;background:transparent;color:var(--mute);text-decoration:underline;font-size:.8rem;min-height:36px}
+.exdel.armed{color:var(--bad);font-weight:700}
+.exl{margin:4px 0 0;font-size:.78rem;font-weight:700;color:var(--mute)}
+.exchips{display:flex;flex-wrap:wrap;gap:5px}
+.exchip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 10px;font-size:.82rem;min-height:34px}
+.exchip.none{border-style:dashed}
+.exchip[aria-pressed="true"]{border-color:var(--amber);background:var(--amber-soft);font-weight:700}
+@media (max-width:520px){.nscards{grid-template-columns:1fr}}
+.step{margin:0;font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;color:var(--mute)}
+.nrows{display:flex;flex-direction:column;gap:12px}
+.nrow{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.nq{margin:0}
+.nopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.nopt{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:8px 10px;min-height:44px;text-align:left;font-weight:700}
+.nopt:not(:disabled):hover{border-color:var(--amber)}
+.nopt:disabled{cursor:default}
+.nopt.ok{border-color:var(--good);background:var(--good-soft);color:var(--good)}
+.nopt.ng{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.peek summary{cursor:pointer;color:var(--mute);font-size:.85rem;padding:6px 0}
+.peek .chips{margin-top:6px}
+.chip small{font-weight:700;color:var(--ink)}
+
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.go{border:0;background:var(--ink);color:var(--sheet);border-radius:6px;padding:10px 18px;font-weight:700;min-height:44px}
+.go.sub2{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.go:disabled{opacity:.4;cursor:not-allowed}
+.verdict{border-radius:6px;padding:10px 12px;margin:0;font-weight:700}
+.verdict.good{background:var(--good-soft);color:var(--good)}
+.verdict.part{background:var(--maybe-soft);color:var(--maybe)}
+.why{margin:0;font-size:.95rem;background:var(--paper);border-radius:6px;padding:10px 12px}
+.legend2{font-size:.75rem;color:var(--mute);margin:0}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.list button{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:6px 8px;text-align:left;font-size:.86rem;line-height:1.35;min-height:44px;display:flex;gap:6px;align-items:center}
+.list button i{flex:none;width:12px;height:10px;border-radius:2px;border:1.5px solid var(--ink);background:var(--sheet)}
+.list button.perfect i{background:var(--good);border-color:var(--good)}
+.list button.partial i{background:var(--maybe-soft);border-color:var(--maybe)}
+.bars{display:flex;flex-direction:column;gap:5px}
+.bar{display:grid;grid-template-columns:minmax(0,11em) 1fr 2em;gap:8px;align-items:center;font-size:.85rem}
+.bar .t{height:14px;background:var(--paper);border-radius:3px;overflow:hidden}
+.bar .t b{display:block;height:100%;background:var(--teal);border-radius:3px}
+.bar .n{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.bar.z{color:var(--mute)}
+.cap{font-size:.78rem;color:var(--mute);margin:0}
+.reset{align-self:flex-start;border:0;background:transparent;color:var(--mute);text-decoration:underline;font-size:.8rem;padding:4px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <div>
+      <h1>車の制御 50</h1>
+      <p class="sub">この図には、車の制御を50個集めました。実際の車には、もっとたくさんあります。</p>
+    </div>
+    <div class="score">
+      <div><b id="sDone">0</b><span>解いた / 50</span></div>
+      <div><b id="sPerf">0</b><span>全部正解</span></div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="plate">
+      <div class="plate-head"><span>上から見た図 ／ 前 →</span><span>右ハンドル</span></div>
+      <div class="stage">
+        <svg viewBox="0 0 1000 480" aria-hidden="true">
+          <rect x="150" y="48" width="110" height="36" rx="8" fill="var(--tire)"/>
+          <rect x="150" y="396" width="110" height="36" rx="8" fill="var(--tire)"/>
+          <rect x="730" y="48" width="110" height="36" rx="8" fill="var(--tire)"/>
+          <rect x="730" y="396" width="110" height="36" rx="8" fill="var(--tire)"/>
+          <rect x="645" y="52" width="22" height="22" rx="5" fill="var(--body)" stroke="var(--ink)" stroke-width="2"/>
+          <rect x="645" y="406" width="22" height="22" rx="5" fill="var(--body)" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M150 70 H820 C900 70 935 120 935 180 V300 C935 360 900 410 820 410 H150 C100 410 70 380 70 330 V150 C70 100 100 70 150 70 Z" fill="var(--body)" stroke="var(--ink)" stroke-width="3"/>
+          <rect x="250" y="96" width="450" height="288" rx="30" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".5"/>
+          <path d="M640 104 L700 92 V388 L640 376 Z" fill="var(--glass)" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M255 112 L300 120 V360 L255 368 Z" fill="var(--glass)" stroke="var(--ink)" stroke-width="2"/>
+          <rect x="320" y="112" width="110" height="256" rx="18" fill="var(--seat)"/>
+          <rect x="500" y="112" width="100" height="98" rx="18" fill="var(--seat)"/>
+          <rect x="500" y="270" width="100" height="98" rx="18" fill="var(--seat)"/>
+          <rect x="604" y="104" width="32" height="272" rx="6" fill="var(--seat)" opacity=".7"/>
+          <ellipse cx="620" cy="320" rx="9" ry="42" fill="none" stroke="var(--ink)" stroke-width="4"/>
+          <path d="M470 70 V96 M640 70 V96 M470 384 V410 M640 384 V410" stroke="var(--ink)" stroke-width="2"/>
+          <rect x="750" y="172" width="118" height="136" rx="10" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <rect x="892" y="95" width="26" height="54" rx="8" fill="var(--sheet)" stroke="var(--ink)" stroke-width="2"/>
+          <rect x="892" y="331" width="26" height="54" rx="8" fill="var(--sheet)" stroke="var(--ink)" stroke-width="2"/>
+          <rect x="916" y="196" width="12" height="88" rx="4" fill="var(--ink)" opacity=".6"/>
+          <rect x="72" y="100" width="14" height="40" rx="4" fill="var(--amber)" opacity=".5"/>
+          <rect x="72" y="340" width="14" height="40" rx="4" fill="var(--amber)" opacity=".5"/>
+        </svg>
+        <div id="hot"></div>
+      </div>
+      <div class="plate-foot">
+        <span><i style="background:var(--sheet)"></i>まだ</span>
+        <span><i style="background:var(--good);border-color:var(--good)"></i>全部正解</span>
+        <span><i style="background:var(--maybe-soft);border-color:var(--maybe)"></i>おしい</span>
+      </div>
+      <div class="tabs">
+        <button class="tbtn" id="tList" aria-pressed="false">一覧で選ぶ</button>
+        <button class="tbtn" id="tStats" aria-pressed="false">センサの出番を見る</button>
+        <button class="tbtn" id="tExp" aria-pressed="false">まとめ・探究</button>
+      </div>
+    </div>
+    <aside id="panel" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+const SENSORS=[
+ {id:"spd",g:"車の動き",n:"車輪速センサ",d:"タイヤの回転の速さ（車の速さもわかる）"},
+ {id:"g",g:"車の動き",n:"加速度センサ",d:"車の加速・かたむき・衝撃"},
+ {id:"yaw",g:"車の動き",n:"ヨーレートセンサ",d:"車の向きが回る速さ"},
+ {id:"tpms",g:"車の動き",n:"タイヤ空気圧センサ",d:"タイヤの中の空気の圧力"},
+ {id:"acc",g:"運転の操作",n:"アクセルペダルセンサ",d:"アクセルを踏んだ量"},
+ {id:"brk",g:"運転の操作",n:"ブレーキペダルセンサ",d:"ブレーキを踏んだか・踏んだ量"},
+ {id:"str",g:"運転の操作",n:"ハンドル角センサ",d:"ハンドルを切った角度"},
+ {id:"trq",g:"運転の操作",n:"トルクセンサ",d:"ハンドルを回す力"},
+ {id:"shift",g:"運転の操作",n:"シフト位置センサ",d:"P・R・N・D のどれか"},
+ {id:"cam",g:"まわりを見る",n:"カメラ",d:"前やまわり、運転する人の映像"},
+ {id:"rad",g:"まわりを見る",n:"ミリ波レーダー",d:"電波で物までの距離と速さ"},
+ {id:"son",g:"まわりを見る",n:"超音波センサ",d:"音で近くの物までの距離"},
+ {id:"lux",g:"まわりを見る",n:"照度センサ",d:"まわりの明るさ"},
+ {id:"rain",g:"まわりを見る",n:"雨滴センサ",d:"ガラスについた雨"},
+ {id:"sun",g:"まわりを見る",n:"日射センサ",d:"日差しの強さ"},
+ {id:"temp",g:"エンジン・電気",n:"温度センサ",d:"気温・室温・エンジンの水温など"},
+ {id:"air",g:"エンジン・電気",n:"エアフローセンサ",d:"エンジンに入る空気の量"},
+ {id:"crk",g:"エンジン・電気",n:"クランク角センサ",d:"エンジンの回転の速さと位置"},
+ {id:"o2",g:"エンジン・電気",n:"O2センサ",d:"排気ガスの中の酸素"},
+ {id:"fuel",g:"エンジン・電気",n:"燃料残量センサ",d:"タンクの燃料の量"},
+ {id:"bat",g:"エンジン・電気",n:"バッテリーセンサ",d:"バッテリーの電圧・残り"},
+ {id:"mot",g:"エンジン・電気",n:"モーター電流センサ",d:"モーターにかかる重さ"},
+ {id:"door",g:"車内・人",n:"ドアスイッチ",d:"ドアが開いているか"},
+ {id:"seat",g:"車内・人",n:"着座センサ",d:"座席に人が座っているか"},
+ {id:"buck",g:"車内・人",n:"バックルスイッチ",d:"シートベルトを締めたか"},
+ {id:"key",g:"車内・人",n:"キー検知アンテナ",d:"スマートキーがどこにあるか"},
+ {id:"none",g:"",n:"センサは使わない",d:"スイッチとタイマーだけで動く"}
+];
+const SN={}; SENSORS.forEach(s=>SN[s.id]=s);
+// n:name d:what r:required o:optional(ok either way) w:why x,y:anchor
+const C=[
+ ["室内灯（ドア連動）","ドアを開けると室内灯がつき、閉めるとしばらくして消えます。",["door"],[],"ドアスイッチで開いたか閉じたかを見ています。消えるまでの時間はタイマーです。",470,240],
+ ["シートベルト警告","座っているのにベルトを締めていないと、ランプとブザーで知らせます。",["seat","buck"],["spd"],"座っているか（着座センサ）と、締めたか（バックルスイッチ）の2つを見ます。走り出してから鳴らす車は、車の速さも使います。",550,320],
+ ["オートライト","まわりが暗くなると、ヘッドライトを自動でつけます。",["lux"],[],"照度センサで明るさを測っています。",905,112],
+ ["オートハイビーム","前に車がいないときはハイビーム、対向車や前の車がいるとロービームに切りかえます。",["cam"],["lux","spd"],"カメラで相手の車のライトや街灯を見つけます。暗さや速さも条件にする車があります。",672,200],
+ ["間欠ワイパー","小雨のとき、ワイパーが「動く・止まる」をくり返します。",["none"],["spd"],"レバーで選んだ間隔で、タイマーが動かしているだけです。車の速さに合わせて間隔を変える車もあります。",668,130],
+ ["オートワイパー","雨の量に合わせて、ワイパーの速さを自動で変えます。",["rain"],["spd"],"ガラスの内側にある雨滴センサが、ガラスについた雨を見ています。",690,165],
+ ["キーの閉じ込み防止","スマートキーを車内に置いたままロックしようとすると、ロックせずに知らせます。",["key","door"],[],"アンテナでキーが車の中にあるかを探し、ドアスイッチで閉まったかを見ます。",560,402],
+ ["スマートエントリー","キーを持って近づき、ドアハンドルにふれるとカギが開きます。",["key"],["door"],"アンテナがキーの電波を探しています。ハンドルにふれたことは、ハンドルの中のセンサで見ます。",500,402],
+ ["車速感応オートドアロック","走り出すと、自動でドアのカギがかかります。",["spd"],["shift"],"車の速さが一定をこえたらロックします。シフトを P から動かしたときにロックする車もあります。",430,402],
+ ["窓の挟み込み防止","窓を閉める途中で手などをはさむと、止まって少し下がります。",["mot"],[],"窓のモーターが急に重くなったこと（電流や回転の変化）で、はさまったと判断します。",560,78],
+ ["自動防眩ルームミラー","後ろの車のライトがまぶしいと、ミラーを自動で暗くします。",["lux"],[],"前向きと後ろ向きの2つの照度センサで、明るさを比べています。",655,240],
+ ["オートエアコン","設定した温度になるように、風の強さや温度を調整し続けます。",["temp","sun"],[],"車内と外の温度、日差しの強さを見て、風の量や温度を決めます。",622,238],
+ ["エンジン冷却ファン","エンジンを冷やす水が熱くなると、ファンを回して冷やします。",["temp"],[],"水温（温度センサ）が決めた値をこえるとファンを回します。",870,290],
+ ["クルーズコントロール","決めた速さで、アクセルを踏まなくても走り続けます。",["spd"],[],"設定した速さと今の速さを比べて、エンジンの力を調整します。",622,300],
+ ["ACC（車間距離制御）","前の車との距離を保ちながら、ついて走ります。",["rad","spd"],["cam"],"レーダーで前の車までの距離と速さを測ります。カメラを組み合わせる車も多いです。",925,250],
+ ["ABS","急ブレーキでタイヤが止まってすべるのを防ぎ、ハンドルがきく状態を保ちます。",["spd"],["brk"],"4つのタイヤの回転を比べて、止まりかけたタイヤのブレーキをゆるめます。",785,402],
+ ["横滑り防止（ESC）","カーブで車が横にすべりそうになると、タイヤごとにブレーキをかけて向きを立て直します。",["spd","str","yaw"],["g"],"ハンドルの角度（行きたい向き）と、ヨーレート（実際に回っている速さ）を比べます。",205,402],
+ ["トラクションコントロール","発進のとき、タイヤが空回りしたらエンジンの力をしぼります。",["spd"],["acc"],"エンジンの力がかかるタイヤだけが速く回っていたら、空回りと判断します。",785,78],
+ ["ヒルスタートアシスト","坂道発進で、ブレーキから足をはなしても少しの間ずり下がりません。",["g","brk"],["spd"],"加速度センサで坂のかたむきを知り、ブレーキをはなした瞬間を見ています。",520,240],
+ ["オートブレーキホールド","信号待ちで止まると、ブレーキから足をはなしても止まったままにします。",["spd","brk"],["acc"],"止まったこととブレーキを踏んだことを見て保持し、アクセルを踏むと解除します。",570,250],
+ ["エアバッグ","強くぶつかったときだけ、袋を一気にふくらませます。",["g"],["seat"],"衝撃を加速度センサで測ります。助手席に人がいるかを見て、ふくらませるか決める車もあります。",600,150],
+ ["シートベルトの巻き取り（プリテンショナー）","ぶつかった瞬間に、シートベルトを巻き取って体を固定します。",["g"],["buck"],"エアバッグと同じく、衝撃を加速度センサで見ています。",520,360],
+ ["衝突被害軽減ブレーキ","ぶつかりそうになると警告し、それでも危ないと自動でブレーキをかけます。",["cam","spd"],["rad"],"カメラで前の車や人を見つけ、自分の速さから「何秒後にぶつかるか」を計算します。レーダーを使う車もあります。",925,195],
+ ["ペダル踏み間違い加速抑制","壁が近いのにアクセルを強く踏むと、加速をおさえます。",["son","acc"],["cam","shift","spd"],"超音波センサで近くの壁を見つけ、アクセルの踏み方とあわせて判断します。",915,300],
+ ["車線はみ出し警報","白線からはみ出しそうになると知らせます。",["cam"],["spd","str"],"カメラで白線を見ています。ウインカーを出していると鳴らないのは、わざと動いていると判断するからです。",690,265],
+ ["車線維持支援","車線の真ん中を走るように、ハンドル操作を手伝います。",["cam","str"],["spd","trq"],"カメラで白線を見て、ハンドルの角度を調整します。",672,300],
+ ["標識認識","速度制限などの標識を読み取って、メーターに表示します。",["cam"],[],"カメラの映像から標識の形と数字を読み取ります。",690,335],
+ ["ドライバー異常検知","居眠りやよそ見を見つけて注意します。",["cam"],["str","trq"],"運転する人の顔をカメラで見ます。ハンドル操作のくせから判断する車もあります。",640,275],
+ ["後側方警戒","ミラーで見えにくい斜め後ろの車を知らせます。",["rad"],[],"車の後ろの角にあるレーダーで、近づく車を見ています。",110,130],
+ ["後退時車両検知","バックで出るとき、横から来る車を知らせます。",["rad"],["shift"],"後側方警戒と同じレーダーを、バックのときに横向きで使います。",110,350],
+ ["パーキングセンサ","駐車のとき、近くの壁や物までの距離を音で知らせます。",["son"],["shift"],"バンパーの超音波センサで距離を測ります。",85,240],
+ ["バックカメラ自動表示","R に入れると、画面に後ろの映像を出します。",["shift","cam"],[],"シフトが R になったことを見て、後ろのカメラの映像に切りかえます。",110,195],
+ ["自動駐車","駐車枠を見つけて、ハンドル操作などを車が行います。",["son","cam","str","spd"],["brk"],"まわりを見るセンサと、自分の動きを測るセンサを両方使います。",130,290],
+ ["電動パワーステアリング","ハンドルを回す力をモーターで手助けします。ゆっくりのときは軽く、速いときは重めにします。",["trq","spd"],["str"],"ハンドルを回す力（トルクセンサ）に合わせてモーターで助けます。速さで助ける量を変えます。",622,355],
+ ["タイヤ空気圧警報","タイヤの空気が減ると知らせます。",["tpms"],["spd"],"タイヤの中のセンサで直接測る方式と、空気が減ったタイヤは少し速く回ることを車輪速センサで見つける方式があります。",205,78],
+ ["燃料噴射","エンジンに入る空気に合わせて、ちょうどよい量のガソリンをふきこみます。",["air","crk","o2"],["temp","acc"],"空気の量と回転から量を決め、排気ガスの酸素を見て、多すぎ少なすぎを直します。",780,190],
+ ["点火時期","ガソリンに火をつけるタイミングを決めます。",["crk"],["air","temp"],"クランク角センサでピストンの位置を知り、ちょうどよい瞬間に火花を飛ばします。",840,190],
+ ["電子スロットル","アクセルを踏んだ量に合わせて、エンジンに入る空気の弁を開きます。",["acc"],[],"アクセルとエンジンはワイヤーでつながっていません。踏んだ量をセンサで測り、モーターで弁を動かします。",780,245],
+ ["アイドリングストップ","信号待ちでエンジンを止め、ブレーキをはなすとまたかけます。",["spd","brk","bat","temp"],[],"止まっているか、ブレーキを踏んでいるか、バッテリーとエンジンの温度は大丈夫か、全部そろったときだけ止めます。",840,245],
+ ["オートマチックの変速","速さや踏み方に合わせて、ギアを自動で切りかえます。",["spd","acc","shift"],["crk"],"今の速さとアクセルの踏み方から、ちょうどよいギアを選びます。",740,300],
+ ["燃料残量警告","燃料が少なくなると、ランプで知らせます。",["fuel"],[],"タンクの中の燃料の量を測っています。",240,300],
+ ["回生ブレーキ（ハイブリッド）","ブレーキのとき、モーターを発電機にして電気をためます。",["brk","spd"],["bat"],"ブレーキの踏み方と速さから、モーターでためる分と、ふつうのブレーキの分を分けます。",720,340],
+ ["イモビライザー（盗難防止）","登録したキーでないと、エンジンがかかりません。",["key"],[],"キーの中の番号を、アンテナで読み取って照らし合わせます。",612,200],
+ ["曲がる方向を照らすライト","ハンドルを切った方向をライトで照らします。",["str","spd"],[],"ハンドルの角度と速さから、ライトを向ける角度を決めます。",900,345],
+ ["ワンタッチウインカー","レバーを軽く倒すだけで、ウインカーが3回点滅します。",["none"],[],"レバーのスイッチとタイマーだけで動きます。センサは使いません。",612,370],
+ ["ライト消し忘れ防止","ライトをつけたまま降りても、自動で消えます。",["door"],["key"],"ドアを開けたことで「降りた」と判断します。",480,78],
+ ["半ドア警告","ドアがきちんと閉まっていないと知らせます。",["door"],["spd"],"ドアスイッチで、閉まりきっていないことを見つけます。",410,78],
+ ["下り坂の速度制御","急な下り坂で、ブレーキを自動でかけて低い速さを保ちます。",["spd"],["g"],"タイヤの回転から速さを測り、決めた速さをこえないようにブレーキをかけます。",540,200],
+ ["ブレーキアシスト","ブレーキを急に踏むと、緊急と判断してブレーキを強めます。",["brk"],[],"ブレーキを踏む量が変わる速さを見て、「急に踏んだか」を判断します。",650,380],
+ ["後席リマインダー","乗る前に後ろのドアを開けていたら、降りるときに後ろの席の確認を知らせます。",["door"],[],"後ろのドアを開けたことをドアスイッチで覚えておきます。",380,240]
+].map((a,i)=>({i,n:a[0],d:a[1],r:a[2],o:a[3],w:a[4],ax:a[5],ay:a[6],x:a[5],y:a[6]}));
+
+// spread dots so they don't overlap
+(function relax(){
+  const MIN=48;
+  for(let it=0;it<300;it++){
+    for(let a=0;a<C.length;a++)for(let b=a+1;b<C.length;b++){
+      const p=C[a],q=C[b];let dx=q.x-p.x,dy=q.y-p.y;let d=Math.hypot(dx,dy);
+      if(d<MIN){ if(d<0.01){dx=1;dy=0.3;d=1.04;} const m=(MIN-d)/2/d; p.x-=dx*m;p.y-=dy*m;q.x+=dx*m;q.y+=dy*m; }
+    }
+    C.forEach(p=>{p.x+=(p.ax-p.x)*0.02;p.y+=(p.ay-p.y)*0.02;p.x=Math.max(92,Math.min(912,p.x));p.y=Math.max(90,Math.min(390,p.y));});
+  }
+})();
+
+const KEY="car-sensor-quiz-v2";
+let res={}; try{res=JSON.parse(localStorage.getItem(KEY)||"{}")||{};}catch(e){res={};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(res));}catch(e){}}
+let mode="intro", cur=null, sel=new Set();
+const $=s=>document.querySelector(s);
+const panel=$("#panel"), hot=$("#hot");
+
+C.forEach(c=>{
+  const b=document.createElement("button");
+  b.className="dot"; b.id="d"+c.i; b.setAttribute("aria-label",c.n);
+  b.style.left=(c.x/10)+"%"; b.style.top=(c.y/4.8)+"%";
+  b.innerHTML=`<i>${c.i+1}</i>`; b.addEventListener("click",()=>openQ(c.i)); hot.appendChild(b);
+});
+
+function reqIds(c){return c.r.filter(id=>id!=="none");}
+function complete(i){const r=res[i]; if(!r) return false; return reqIds(C[i]).every(id=>r.names&&r.names[id]);}
+function state(i){if(!complete(i)) return ""; return res[i].p?"perfect":"partial";}
+function judge(c,s){
+  const R=new Set(c.r),O=new Set(c.o); const out={};
+  SENSORS.forEach(x=>{
+    const on=s.has(x.id);
+    if(on&&(R.has(x.id)||O.has(x.id))) out[x.id]="ok";
+    else if(on) out[x.id]="ng";
+    else if(R.has(x.id)) out[x.id]="miss";
+    else if(O.has(x.id)) out[x.id]="maybe";
+  });
+  const perfect=!Object.values(out).some(v=>v==="ng"||v==="miss");
+  return {out,perfect};
+}
+const MK={ok:"○ 正解",ng:"× 必要ない",miss:"見落とし",maybe:"△ 車種によっては測る"};
+
+// one fixed shuffled order (same for every student and every question), "none" kept last
+const ORDER=(function(){
+  const a=SENSORS.filter(s=>s.id!=="none"); let seed=20261007;
+  const rnd=()=>{seed=(seed*1103515245+12345)%2147483648;return seed/2147483648;};
+  for(let i=a.length-1;i>0;i--){const k=Math.floor(rnd()*(i+1));[a[i],a[k]]=[a[k],a[i]];}
+  return a.concat(SENSORS.filter(s=>s.id==="none"));
+})();
+// role chips. showName: reveal the sensor name under the role (only after the whole question is done)
+function chipsHTML(c,locked,showName){
+  const j=locked?judge(c,new Set(res[c.i].sel)):null;
+  const sset=locked?new Set(res[c.i].sel):sel;
+  return `<div class="chips ${locked?"done":""}">${ORDER.map(s=>{
+    const st=j?j.out[s.id]||"":"";
+    const main=s.id==="none"?"何も測らない（スイッチとタイマーだけ）":s.d;
+    const sub=showName&&s.id!=="none"?`<small>${s.n}</small>`:"";
+    return `<button class="chip ${s.id==="none"?"none":""} ${st}" data-s="${s.id}" aria-pressed="${sset.has(s.id)}" ${locked?"disabled":""}>${st?`<span class="mk">${MK[st]}</span>`:""}<span>${main}</span>${sub}</button>`;
+  }).join("")}</div>`;
+}
+// 4 name choices per required sensor, fixed per question
+function nameOpts(c,id,k){
+  let seed=(c.i+1)*7919+(k+1)*104729;
+  const rnd=()=>{seed=(seed*1103515245+12345)%2147483648;return seed/2147483648;};
+  const pool=SENSORS.filter(s=>s.id!=="none"&&s.id!==id).map(s=>s.id);
+  for(let i=pool.length-1;i>0;i--){const m=Math.floor(rnd()*(i+1));[pool[i],pool[m]]=[pool[m],pool[i]];}
+  const o=[id,...pool.slice(0,3)];
+  for(let i=o.length-1;i>0;i--){const m=Math.floor(rnd()*(i+1));[o[i],o[m]]=[o[m],o[i]];}
+  return o;
+}
+function namesHTML(c,interactive){
+  const r=res[c.i]; const names=(r&&r.names)||{};
+  return `<div class="nrows">${reqIds(c).map((id,k)=>{
+    const picked=names[id];
+    return `<div class="nrow"><p class="nq"><b>${SN[id].d}</b> を測るセンサ</p><div class="nopts">${nameOpts(c,id,k).map(o=>{
+      let cls=""; let mk="";
+      if(picked){ if(o===id){cls="ok";mk="○ ";} else if(o===picked){cls="ng";mk="× ";} }
+      return `<button class="nopt ${cls}" data-id="${id}" data-o="${o}" ${picked||!interactive?"disabled":""}>${mk}${SN[o].n}</button>`;
+    }).join("")}</div></div>`;
+  }).join("")}</div>`;
+}
+
+function render(){
+  const doneIds=C.filter(c=>complete(c.i));
+  $("#sDone").textContent=doneIds.length; $("#sPerf").textContent=doneIds.filter(c=>res[c.i].p).length;
+  C.forEach(c=>{const d=$("#d"+c.i); d.className="dot "+state(c.i)+(cur===c.i&&mode==="q"?" on":"");});
+  $("#tList").setAttribute("aria-pressed",mode==="list"); $("#tStats").setAttribute("aria-pressed",mode==="stats"); $("#tExp").setAttribute("aria-pressed",mode==="explore");
+  if(mode==="explore"){renderExplore();return;}
+
+  if(mode==="intro"){
+    panel.innerHTML=`<p class="eyebrow">センサ当て</p><h2>この制御をするために、どんなセンサが必要？</h2>
+      <p class="what">図の点は、どれも車の制御です。点をタップすると問題が出ます。</p>
+      <p class="what">① その制御をするために、どんなセンサが必要かを、すべて選びます。<br>② 次に、それを測るセンサの名前を選びます。</p>
+      <p class="what">どの点から解いてもかまいません。全部解かなくてもかまいません。</p>
+      <p class="cap">点が小さくて押しにくいときは「一覧で選ぶ」を使ってください。</p>`;
+  }
+  else if(mode==="list"){
+    panel.innerHTML=`<p class="eyebrow">一覧</p><h2>50個の制御</h2><div class="list">${C.map(c=>`<button class="${state(c.i)}" data-q="${c.i}"><i></i><span>${c.i+1}. ${c.n}</span></button>`).join("")}</div>`;
+    panel.querySelectorAll("[data-q]").forEach(b=>b.addEventListener("click",()=>openQ(+b.dataset.q)));
+  }
+  else if(mode==="stats"){
+    const cnt={}; SENSORS.forEach(s=>cnt[s.id]=0);
+    doneIds.forEach(c=>c.r.forEach(id=>cnt[id]++));
+    const rows=SENSORS.slice().sort((a,b)=>cnt[b.id]-cnt[a.id]);
+    const max=Math.max(1,...Object.values(cnt));
+    panel.innerHTML=`<p class="eyebrow">集計</p><h2>センサの出番</h2>
+      <p class="what">あなたが解いた <b>${doneIds.length}</b> 個の制御で、それぞれのセンサが必要だった回数です。解くほど増えていきます。</p>
+      ${doneIds.length?`<div class="bars">${rows.map(s=>`<div class="bar ${cnt[s.id]?"":"z"}"><span>${s.n}</span><span class="t"><b style="width:${cnt[s.id]/max*100}%"></b></span><span class="n">${cnt[s.id]}</span></div>`).join("")}</div>`:`<p class="cap">まだ1問も解いていません。図の点をタップして始めてください。</p>`}
+      <p class="cap">「△ 車種によっては測る」センサは数えていません。</p>
+      <button class="reset" id="rst">解いた記録を消して最初から</button><div id="rstc"></div>`;
+    $("#rst").addEventListener("click",()=>{
+      $("#rstc").innerHTML=`<div class="row"><button class="go" id="rsty">消す</button><button class="go sub2" id="rstn">やめる</button></div>`;
+      $("#rsty").addEventListener("click",()=>{res={};save();mode="intro";render();});
+      $("#rstn").addEventListener("click",()=>{$("#rstc").innerHTML="";});
+    });
+  }
+  else if(mode==="q"){
+    const c=C[cur]; const r=res[c.i];
+    const top=`<p class="eyebrow">${String(c.i+1).padStart(2,"0")} / 50</p><div class="cname"><span class="clab">制御名</span><h2>${c.n}</h2></div><p class="what">${c.d}</p>`;
+    if(!r){
+      panel.innerHTML=top+`<p class="step">① 必要なセンサ</p><p class="ask">この制御をするために、どんなセンサが必要ですか。すべて選んでください。</p>
+        ${chipsHTML(c,false,false)}<div class="row"><button class="go" id="chk" ${sel.size?"":"disabled"}>答え合わせ</button></div>`;
+      panel.querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{
+        const id=b.dataset.s;
+        if(id==="none"){ if(sel.has("none")) sel.delete("none"); else {sel.clear(); sel.add("none");} }
+        else { sel.delete("none"); sel.has(id)?sel.delete(id):sel.add(id); }
+        panel.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",sel.has(x.dataset.s)));
+        $("#chk").disabled=!sel.size;
+      }));
+      $("#chk").addEventListener("click",()=>{
+        const j=judge(c,sel); res[c.i]={sel:[...sel],p1:j.perfect,names:{}};
+        if(!reqIds(c).length) res[c.i].p=j.perfect;
+        save(); render(); panel.scrollIntoView({behavior:"smooth",block:"start"});
+      });
+    }
+    else if(!complete(c.i)){
+      panel.innerHTML=top+`<p class="verdict ${r.p1?"good":"part"}">① 必要なセンサ：${r.p1?"全部正解です。":"おしい。点線の「見落とし」と「×」を確かめましょう。"}</p>
+        <p class="step">② センサの名前</p><p class="ask">では、それを測るセンサの名前は？</p>
+        ${namesHTML(c,true)}
+        <details class="peek"><summary>①の答えを見る</summary>${chipsHTML(c,true,false)}</details>`;
+      panel.querySelectorAll(".nopt").forEach(b=>b.addEventListener("click",()=>{
+        r.names[b.dataset.id]=b.dataset.o;
+        if(complete(c.i)) r.p=r.p1&&reqIds(c).every(id=>r.names[id]===id);
+        save(); render();
+      }));
+    }
+    else {
+      const nOk=reqIds(c).every(id=>r.names[id]===id);
+      const msg=r.p?"全部正解です。":`おしい。${r.p1?"":"①の必要なセンサ"}${!r.p1&&!nOk?"と":""}${nOk?"":"②のセンサの名前"}を確かめましょう。`;
+      panel.innerHTML=top+`<p class="verdict ${r.p?"good":"part"}">${msg}</p><p class="why">${c.w}</p>
+        ${reqIds(c).length?`<p class="step">② センサの名前</p>${namesHTML(c,false)}`:""}
+        <p class="step">① 必要なセンサ（下の小さい字がセンサの名前）</p>${chipsHTML(c,true,true)}
+        <p class="legend2">○ 正解 ／ × この制御には必要ない ／ 見落とし＝必要だったもの ／ △ 車種によっては測る（選んでも選ばなくても正解）</p>
+        <div class="row"><button class="go" id="next">次の問題へ</button><button class="go sub2" id="redo">もう一度解く</button></div>`;
+      $("#next").addEventListener("click",()=>{
+        const rest=C.filter(x=>!complete(x.i)); if(!rest.length){mode="explore";cur=null;render();return;}
+        const nx=rest.find(x=>x.i>c.i)||rest[0]; openQ(nx.i);
+      });
+      $("#redo").addEventListener("click",()=>{delete res[c.i];save();sel=new Set();render();});
+    }
+  }
+}
+// ---------- 探究（まとめ） ----------
+const EKEY="car-sensor-explore-v1";
+let ex={why:"",diff:"",items:[]};
+try{const v=JSON.parse(localStorage.getItem(EKEY)||"null"); if(v&&Array.isArray(v.items)) ex=v;}catch(e){}
+function exSave(){try{localStorage.setItem(EKEY,JSON.stringify(ex));}catch(e){}}
+const esc=t=>String(t).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const NOSENSE=C.filter(c=>c.r.length===1&&c.r[0]==="none");
+function itemHTML(it,k){
+  return `<div class="exitem" data-k="${k}">
+    <div class="exhead"><span class="exno">${51+k}</span><button class="exdel" data-del="${k}">けす</button></div>
+    <label class="exl" for="exn${k}">制御名</label>
+    <input class="exin" id="exn${k}" data-f="name" data-k="${k}" value="${esc(it.name)}" placeholder="例：〇〇の自動〇〇">
+    <label class="exl" for="exw${k}">どんな制御？（何をきっかけに、何を動かす？）</label>
+    <textarea class="exta" id="exw${k}" data-f="what" data-k="${k}" rows="2">${esc(it.what)}</textarea>
+    <p class="exl">必要なセンサ</p>
+    <div class="exchips">${ORDER.map(s=>`<button class="exchip ${s.id==="none"?"none":""}" data-k="${k}" data-s="${s.id}" aria-pressed="${it.sens.includes(s.id)}">${s.id==="none"?"センサは使わない":s.n}</button>`).join("")}</div>
+    <label class="exl" for="exo${k}">この中にないセンサ・しくみ（あれば）</label>
+    <input class="exin" id="exo${k}" data-f="other" data-k="${k}" value="${esc(it.other)}">
+  </div>`;
+}
+function renderExplore(){
+  panel.innerHTML=`<p class="eyebrow">探究</p><h2>センサを使わない制御</h2>
+    <p class="what">50個の中に、センサを1つも使わない制御が ${NOSENSE.length} つありました。</p>
+    <div class="nscards">${NOSENSE.map(c=>`<div class="nscard"><span class="clab">制御名</span><b>${c.n}</b><span>${c.d}</span></div>`).join("")}</div>
+    <label class="ask" for="exwhy">この2つは何も測っていません。では、何をきっかけに動き、何をきっかけに止まっていますか。</label>
+    <textarea class="exta" id="exwhy" data-g="why" rows="3">${esc(ex.why)}</textarea>
+    <label class="ask" for="exdiff">センサを使う制御と、使わない制御。どこがちがいますか。</label>
+    <textarea class="exta" id="exdiff" data-g="diff" rows="3">${esc(ex.diff)}</textarea>
+    <hr class="exhr">
+    <h2>51個目をさがそう</h2>
+    <p class="what">車には、この50個にない制御がまだあります。家の車、乗ったことのある車、ニュースで見た車を思い出してみましょう。センサを使わない制御も見つかるかもしれません。</p>
+    <div id="exitems" class="exitems">${ex.items.map(itemHTML).join("")}</div>
+    <button class="go" id="exadd">＋ 制御を追加</button>
+    <p class="cap">書いた内容は、このタブレットの中だけに残ります。</p>`;
+  panel.querySelectorAll("[data-g]").forEach(t=>t.addEventListener("input",()=>{ex[t.dataset.g]=t.value;exSave();}));
+  wireItems();
+  $("#exadd").addEventListener("click",()=>{
+    ex.items.push({name:"",what:"",sens:[],other:""}); exSave();
+    const k=ex.items.length-1; const box=$("#exitems");
+    box.insertAdjacentHTML("beforeend",itemHTML(ex.items[k],k)); wireItems(box.lastElementChild);
+    $("#exn"+k).focus();
+  });
+}
+function wireItems(root){
+  const scope=root||panel;
+  scope.querySelectorAll(".exin,.exitem .exta").forEach(t=>t.addEventListener("input",()=>{ex.items[+t.dataset.k][t.dataset.f]=t.value;exSave();}));
+  scope.querySelectorAll(".exchip").forEach(b=>b.addEventListener("click",()=>{
+    const it=ex.items[+b.dataset.k], id=b.dataset.s;
+    if(id==="none") it.sens=it.sens.includes("none")?[]:["none"];
+    else { it.sens=it.sens.filter(x=>x!=="none"); it.sens=it.sens.includes(id)?it.sens.filter(x=>x!==id):[...it.sens,id]; }
+    exSave();
+    b.closest(".exitem").querySelectorAll(".exchip").forEach(x=>x.setAttribute("aria-pressed",it.sens.includes(x.dataset.s)));
+  }));
+  scope.querySelectorAll(".exdel").forEach(b=>b.addEventListener("click",()=>{
+    if(b.dataset.armed){ ex.items.splice(+b.dataset.del,1); exSave(); renderExplore(); return; }
+    b.dataset.armed="1"; b.textContent="本当にけす"; b.classList.add("armed");
+  }));
+}
+
+function openQ(i){cur=i;mode="q";sel=new Set();render(); if(window.innerWidth<=900) panel.scrollIntoView({behavior:"smooth",block:"start"});}
+$("#tList").addEventListener("click",()=>{mode=mode==="list"?"intro":"list";render();});
+$("#tStats").addEventListener("click",()=>{mode=mode==="stats"?"intro":"stats";render();});
+$("#tExp").addEventListener("click",()=>{mode=mode==="explore"?"intro":"explore";cur=null;render();});
+render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1b2a4a">
+<title>翔陽ダービー 〜校舎を走れ〜</title>
+<style>
+  /* 翔陽ダービー — 文化祭の来校者向け、スマホ縦持ちの馬レース。
+     単一HTML・ビルド不要・通信なし。絵は全部コードで描く（画像ファイルなし）。 */
+  :root { color-scheme: light; }   /* パソコンの設定がダークモードでも色を変えない */
+  html, body { margin: 0; padding: 0; height: 100%; background: #1b2a4a; overflow: hidden;
+               overscroll-behavior: none; }
+  body { font: 14px/1.5 "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif;
+         -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+         -webkit-tap-highlight-color: transparent; }
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; touch-action: none; background: #1b2a4a; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+<script>
+"use strict";
+const VER = "2026-10-05a";
+
+/* =====================================================================
+   1. 定数（調整はここ）
+   ===================================================================== */
+const W = 360, H = 640;                 // 論理画面。実画面に等倍縮尺で合わせる（余白は紺）
+const COURSE_LEN = 14000;               // ゴールまでの距離（世界座標px）
+const CAM_X = 100;                      // 画面上で自分の馬を置く位置
+const PLAYER_LANE = 1;                  // 自分は手前から2番目のレーン
+const V_MIN = 70;                       // 何もしなくてもこの速さで小走り（止まって詰まない）
+const V_MAX = 430;                      // 上限
+const TAP_GAIN = 45;                    // 左右交互タップ1回ぶんの加速
+const TAP_GAIN_RHYTHM = 62;             // リズムが合っているときの加速
+const RHYTHM_MIN = 130, RHYTHM_MAX = 520; // 「良いリズム」とみなすタップ間隔(ms)。2回/秒のゆっくりでも良いに入れる
+const TAP_SPAM_MS = 70;                 // これより速い連打は無視（指の震え・多重発火）
+const DECAY = 0.55;                     // 減速係数 dv/dt = -DECAY*v
+const JUMP_V = 600, GRAVITY = 1400;     // ジャンプ初速と重力。滞空 0.86 秒、最高 128px
+const HIT_SLOW = 0.45;                  // 障害物にぶつかったときの速度の残り
+const TEACHER_STOP = 2.0;               // 先生にぶつかると説教で止まる秒数
+const FALL_STOP = 1.5;                  // 中庭に落ちたときの秒数
+const TIME_CAP = 90;                    // ここで強制終了（文化祭の列を止めない）
+
+const SECTIONS = [                      // コースの区間。順に並び、隙間なし
+  { id: "hall1",  name: "1階 廊下",       from: 0,     to: 3200 },
+  { id: "stairs", name: "階段 かけ上がれ", from: 3200,  to: 4400 },
+  { id: "class",  name: "2階 教室",       from: 4400,  to: 7600 },
+  { id: "roof",   name: "屋上",           from: 7600,  to: 9800 },
+  { id: "sky",    name: "中庭へ 大ジャンプ", from: 9800, to: 10600 },
+  { id: "gym",    name: "体育館 ステージ", from: 10600, to: COURSE_LEN },
+];
+
+/* 障害物。x は世界座標、w 幅、h 高さ（これより高く跳べば越える）。
+   type: desk 机 / wagon 購買のパンのワゴン / robot ロボット掃除機 / teacher 先生 / gap 中庭の穴 */
+const OBSTACLES = [
+  { x: 900,  type: "wagon",   w: 60, h: 55 },
+  { x: 1500, type: "robot",   w: 40, h: 30 },
+  { x: 2100, type: "teacher", w: 34, h: 58 },
+  { x: 2700, type: "robot",   w: 40, h: 30 },
+  { x: 4800, type: "desk",    w: 50, h: 40 },
+  { x: 5200, type: "desk",    w: 50, h: 40 },
+  { x: 5700, type: "teacher", w: 34, h: 58 },
+  { x: 6300, type: "desk",    w: 50, h: 40 },
+  { x: 6900, type: "wagon",   w: 60, h: 55 },
+  { x: 7300, type: "robot",   w: 40, h: 30 },
+  { x: 8200, type: "wagon",   w: 60, h: 55 },
+  { x: 8900, type: "robot",   w: 40, h: 30 },
+  { x: 9400, type: "teacher", w: 34, h: 58 },
+  { x: 10050, type: "gap",    w: 110, h: 0 },
+  { x: 11300, type: "desk",   w: 50, h: 40 },
+  { x: 12000, type: "robot",  w: 40, h: 30 },
+  { x: 12700, type: "teacher", w: 34, h: 58 },
+];
+
+/* 馬。先頭が自分。CPU の pace は「序盤・中盤・終盤」の目標速度(px/s)。 */
+const HORSES = [                        // 並び＝レーン（奥→手前）。PLAYER_LANE 番目が自分
+  { name: "アソザンフレア",     short: "阿蘇", color: "#2a2a2e", mane: "#111",    cpu: true, pace: [360, 300, 250] },
+  { name: "ショウヨウダッシュ", short: "翔陽", color: "#8b4a1f", mane: "#3b1f0a", cpu: false },
+  { name: "タイピエンボンバー", short: "太平燕", color: "#9aa3ad", mane: "#dfe3e8", cpu: true, pace: [280, 280, 280] },
+  { name: "イキナリダンゴ",     short: "団子", color: "#d9a85a", mane: "#f3e4c4", cpu: true, pace: [220, 240, 360] },
+];
+const CPU_PACE_T = [15, 40];            // 序盤→中盤 15秒、中盤→終盤 40秒
+
+/* =====================================================================
+   2. ゲームの計算（描画と分けてある。regression-uma.js はここを叩く）
+   ===================================================================== */
+function mulberry32(seed) {             // 乱数は種で再現できるようにする（検証のため）
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function sectionAt(x) {
+  for (const s of SECTIONS) if (x >= s.from && x < s.to) return s;
+  return SECTIONS[SECTIONS.length - 1];
+}
+
+function newRace(seed) {
+  const rnd = mulberry32(seed == null ? (Date.now() & 0xffffffff) : seed);
+  const horses = HORSES.map((h, i) => ({
+    i, name: h.name, short: h.short, color: h.color, mane: h.mane, cpu: h.cpu, pace: h.pace,
+    x: 0, v: h.cpu ? 0 : V_MIN, y: 0, vy: 0,            // y は地面からの高さ（上が正）
+    stop: 0, stopWhy: "",                                // 止まっている残り秒数と理由
+    finish: null,                                        // ゴールタイム（秒）
+    noise: 0, stumbleAt: -1,                             // CPU 用
+    hits: 0, falls: 0,
+    stride: 0,                                           // 足の動きの位相（距離で進む）
+  }));
+  return {
+    t: 0, horses, player: horses[PLAYER_LANE], rnd,
+    lastTap: { side: null, at: -1e9 }, rhythm: 0,        // rhythm: 0..1 の「リズム良さ」表示用
+    taps: 0, goodTaps: 0, wrongSide: 0,
+    hitObs: new Set(), passedObs: new Set(),
+    over: false, result: null, msg: null,                // msg: 画面に出す短い吹き出し {text, until}
+    sectionShown: null, sectionUntil: 0,
+  };
+}
+
+/* 左右交互タップ。side は "L" か "R"。nowMs はタップ時刻(ms)。 */
+function applyTap(g, side, nowMs) {
+  if (g.over) return "over";
+  const p = g.player;
+  if (p.stop > 0) return "stopped";
+  const dt = nowMs - g.lastTap.at;
+  if (dt < TAP_SPAM_MS) return "spam";
+  g.taps++;
+  if (g.lastTap.side === side) {                      // 同じ側を2回：足がもつれる。加速なし
+    g.wrongSide++;
+    g.lastTap = { side, at: nowMs };
+    g.rhythm = Math.max(0, g.rhythm - 0.3);
+    return "same";
+  }
+  const good = g.lastTap.side !== null && dt >= RHYTHM_MIN && dt <= RHYTHM_MAX;
+  p.v = Math.min(V_MAX, p.v + (good ? TAP_GAIN_RHYTHM : TAP_GAIN));
+  if (good) { g.goodTaps++; g.rhythm = Math.min(1, g.rhythm + 0.25); }
+  else g.rhythm = Math.max(0, g.rhythm - 0.1);
+  g.lastTap = { side, at: nowMs };
+  return good ? "good" : "ok";
+}
+
+function applyJump(g) {
+  if (g.over) return false;
+  const p = g.player;
+  if (p.stop > 0 || p.y > 0 || p.vy > 0) return false; // 空中では二段ジャンプしない
+  p.vy = JUMP_V; p.y = 0.01;
+  return true;
+}
+
+function cpuTarget(h, t) {
+  const [a, b, c] = h.pace;
+  if (t < CPU_PACE_T[0]) return a;
+  if (t < CPU_PACE_T[1]) return b;
+  return c;
+}
+
+function stepPhysics(h, dt) {           // 共通：ジャンプの放物線と前進
+  if (h.y > 0 || h.vy > 0) {
+    h.vy -= GRAVITY * dt;
+    h.y += h.vy * dt;
+    if (h.y <= 0) { h.y = 0; h.vy = 0; }
+  }
+  if (h.stop > 0) { h.stop -= dt; if (h.stop <= 0) { h.stop = 0; h.stopWhy = ""; } return; }
+  h.x += h.v * dt;
+  h.stride += h.v * dt / 28;
+}
+
+function collide(g, h, dt) {            // 自分の馬だけ障害物に当たる。CPU は見かけだけ跳ぶ
+  for (let k = 0; k < OBSTACLES.length; k++) {
+    const o = OBSTACLES[k];
+    if (g.passedObs.has(k)) continue;
+    if (h.x > o.x + o.w + 10) { g.passedObs.add(k); continue; }
+    if (o.type === "gap") {
+      if (h.x > o.x + 12 && h.x < o.x + o.w - 12 && h.y <= 0.01) {
+        g.passedObs.add(k); g.hitObs.add(k);
+        h.falls++; h.stop = FALL_STOP; h.stopWhy = "fall"; h.v = V_MIN;
+        h.x = o.x + o.w + 12;                             // 這い上がって向こう岸へ
+        return "fall";
+      }
+      continue;
+    }
+    // 馬の中心で判定。上昇中（vy>0）はぶつからない＝触れる直前に跳んでも助かる。落ちてきて乗ったら当たり
+    if (h.x > o.x + 4 && h.x < o.x + o.w - 4 && h.y < o.h && h.vy <= 0) {
+      g.passedObs.add(k); g.hitObs.add(k); h.hits++;
+      if (o.type === "teacher") { h.stop = TEACHER_STOP; h.stopWhy = "teacher"; h.v = V_MIN; return "teacher"; }
+      h.v = Math.max(V_MIN, h.v * HIT_SLOW);
+      return o.type;
+    }
+  }
+  return null;
+}
+
+function stepCpu(g, h, dt) {
+  const target = cpuTarget(h, g.t);
+  if (g.t >= h.stumbleAt && h.stumbleAt >= 0) {          // 予約していたつまずき
+    h.stumbleAt = -1; h.v *= 0.6;
+  }
+  h.noise += (g.rnd() - 0.5) * 400 * dt;                 // ふらつき（レースごとに違う展開にする）
+  h.noise *= Math.pow(0.5, dt / 2);
+  h.v += ((target + h.noise) - h.v) * Math.min(1, 1.6 * dt);
+  // 障害物の手前で跳ぶ（見かけ）。たまにつまずく。
+  for (const o of OBSTACLES) {
+    const d = o.x - h.x;
+    if (d > 30 && d < 70 && h.y <= 0 && h.vy <= 0) {
+      if (g.rnd() < 0.015) { h.stumbleAt = g.t + 0.3; }   // 1レース数回、どこかでつまずく
+      h.vy = JUMP_V * (o.type === "gap" ? 1 : 0.8); h.y = 0.01;
+    }
+  }
+  stepPhysics(h, dt);
+  if (h.x >= COURSE_LEN && h.finish == null) h.finish = g.t;
+}
+
+function stepPlayer(g, dt) {
+  const p = g.player;
+  if (p.stop <= 0) {
+    p.v = Math.max(V_MIN, p.v - DECAY * p.v * dt);
+  }
+  stepPhysics(p, dt);
+  const hit = collide(g, p, dt);
+  if (hit) {
+    g.rhythm = 0; g.lastTap = { side: null, at: -1e9 };
+    g.msg = { text: MSG[hit] || "ぶつかった！", until: g.t + 1.6, kind: hit };
+  }
+  if (p.x >= COURSE_LEN && p.finish == null) p.finish = g.t;
+}
+
+const MSG = {
+  teacher: "「廊下は走らない！」", fall: "中庭に落ちた！", desk: "机にドカン！",
+  wagon: "パンが飛んだ！", robot: "掃除機に乗った！",
+};
+
+function step(g, dt) {
+  if (g.over) return;
+  dt = Math.min(dt, 0.05);                              // タブ切替等の大きな dt を抑える
+  g.t += dt;
+  stepPlayer(g, dt);
+  for (const h of g.horses) if (h.cpu) stepCpu(g, h, dt);
+  const s = sectionAt(g.player.x);
+  if (g.sectionShown !== s.id) { g.sectionShown = s.id; g.sectionUntil = g.t + 1.8; }
+  if (g.player.finish != null || g.t >= TIME_CAP) finishRace(g);
+}
+
+/* 自分がゴールしたら、まだ走っている CPU の着順を先回りで計算する（最大 TIME_CAP 秒まで）。 */
+function finishRace(g) {
+  g.over = true;
+  const p = g.player;
+  let guard = 0;
+  while (g.horses.some(h => h.cpu && h.finish == null) && g.t < TIME_CAP && guard++ < 20000) {
+    g.t += 1 / 60;
+    for (const h of g.horses) if (h.cpu) stepCpu(g, h, 1 / 60);
+  }
+  const order = g.horses.slice().sort((a, b) => {
+    const fa = a.finish == null ? Infinity : a.finish, fb = b.finish == null ? Infinity : b.finish;
+    if (fa !== fb) return fa - fb;
+    return b.x - a.x;                                     // 未完走どうしは距離順
+  });
+  const rank = order.indexOf(p) + 1;
+  const time = p.finish;
+  g.result = { rank, time, order, hits: p.hits, falls: p.falls, title: titleFor(rank, time, p.hits + p.falls),
+               taps: g.taps, goodTaps: g.goodTaps };
+  return g.result;
+}
+
+function titleFor(rank, time, mistakes) {
+  if (rank === 1 && time != null && time < 50) return "翔陽の韋駄天";
+  if (rank === 1) return "校舎の風";
+  if (rank === 2) return "惜しい！ハナ差";
+  if (rank === 3) return "廊下の名手";
+  if (time == null) return "マイペースな馬";
+  return "完走！それが大事";
+}
+
+function fmtTime(t) {
+  if (t == null) return "--:--.--";
+  const m = Math.floor(t / 60), s = t - m * 60;
+  return m + ":" + (s < 10 ? "0" : "") + s.toFixed(2);
+}
+
+/* 自己ベスト。端末内だけ。失敗しても死なない（プライベートモード等） */
+function loadBest() { try { const v = localStorage.getItem("uma-best"); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function saveBest(b) { try { localStorage.setItem("uma-best", JSON.stringify(b)); } catch (e) {} }
+
+/* =====================================================================
+   3. 画面（Canvas）
+   ===================================================================== */
+const cv = document.getElementById("cv");
+const ctx = cv.getContext && cv.getContext("2d");
+let scale = 1, offX = 0, offY = 0;
+function resize() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  scale = Math.min(vw / W, vh / H);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.style.width = Math.floor(W * scale) + "px"; cv.style.height = Math.floor(H * scale) + "px";
+  cv.width = Math.floor(W * scale * dpr); cv.height = Math.floor(H * scale * dpr);
+  if (ctx) ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  const r = cv.getBoundingClientRect(); offX = r.left; offY = r.top;
+}
+window.addEventListener("resize", resize);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", resize);
+
+const LANE_Y = [392, 428, 464, 500];                     // 各レーンの地面（奥→手前）
+const LANE_S = [0.82, 0.88, 0.94, 1.0];                   // 奥は小さく
+const GROUND_TOP = 372;                                   // 床の帯の上端
+
+let mode = "title";                                       // title / howto / race / result
+let g = null, best = loadBest(), rafPrev = 0, countdown = 0, flashL = 0, flashR = 0, jumpFlash = 0;
+
+function rr(x, y, w, h, r) {                              // 角丸矩形パス
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function text(s, x, y, size, color, align, weight) {
+  ctx.font = (weight || 700) + " " + size + "px 'Hiragino Sans','Yu Gothic','Noto Sans JP',system-ui,sans-serif";
+  ctx.fillStyle = color; ctx.textAlign = align || "left"; ctx.textBaseline = "middle"; ctx.fillText(s, x, y);
+}
+function worldToScreen(wx, camX) { return CAM_X + (wx - camX); }
+
+/* --- 背景：区間ごとに描く。世界 x でタイル状に置くので無限に続けられる --- */
+function drawBackground(camX) {
+  const sec = sectionAt(g ? g.player.x : 0);
+  // 空か天井
+  if (sec.id === "roof" || sec.id === "sky") {
+    const sky = ctx.createLinearGradient(0, 0, 0, GROUND_TOP); sky.addColorStop(0, "#7ec8ff"); sky.addColorStop(1, "#dff3ff");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, GROUND_TOP);
+    ctx.fillStyle = "#fff"; for (let i = 0; i < 4; i++) { const cx = ((i * 230 - camX * 0.15) % (W + 200) + W + 200) % (W + 200) - 100; ctx.beginPath(); ctx.ellipse(cx, 90 + i * 45, 46, 16, 0, 0, 7); ctx.fill(); }
+  } else if (sec.id === "gym") {
+    ctx.fillStyle = "#2b2f4a"; ctx.fillRect(0, 0, W, GROUND_TOP);
+    ctx.fillStyle = "#3b4066"; for (let i = 0; i < 7; i++) ctx.fillRect(0, 20 + i * 48, W, 6);   // 天井の梁
+  } else {
+    ctx.fillStyle = sec.id === "class" ? "#f7efdc" : "#eef1f4"; ctx.fillRect(0, 0, W, GROUND_TOP);  // 壁
+    ctx.fillStyle = "#f8fafb"; ctx.fillRect(0, 0, W, 60);                                           // 天井
+    ctx.fillStyle = "#cfd6dc"; ctx.fillRect(0, 58, W, 4);
+    ctx.fillStyle = "#dfe3e6"; for (let i = 0; i < 3; i++) { const lx = ((i * 140 - camX * 0.6) % 420 + 420) % 420 - 30; ctx.fillRect(lx, 20, 60, 10); } // 蛍光灯
+  }
+  // 区間ごとの壁の飾り（世界座標 300px 周期）
+  const period = 300;
+  const start = Math.floor((camX - CAM_X) / period) * period - period;
+  for (let wx = start; wx < camX + W + period; wx += period) {
+    const sx = worldToScreen(wx, camX);
+    const s2 = sectionAt(wx + 1);
+    if (s2.id === "hall1") drawHallDeco(sx, wx);
+    else if (s2.id === "stairs") drawStairsDeco(sx, wx);
+    else if (s2.id === "class") drawClassDeco(sx, wx);
+    else if (s2.id === "roof") drawRoofDeco(sx, wx);
+    else if (s2.id === "sky") drawSkyDeco(sx, wx);
+    else drawGymDeco(sx, wx);
+  }
+  // 床
+  if (sec.id === "sky") {
+    ctx.fillStyle = "#6fb66b"; ctx.fillRect(0, GROUND_TOP, W, H - GROUND_TOP);        // 中庭の芝
+    ctx.fillStyle = "#4f8f4b"; for (let i = 0; i < 20; i++) ctx.fillRect(((i * 53 - camX) % 400 + 400) % 400 - 20, GROUND_TOP + 30 + (i * 37) % 180, 3, 8);
+  } else if (sec.id === "roof") {
+    ctx.fillStyle = "#9aa7a0"; ctx.fillRect(0, GROUND_TOP, W, H - GROUND_TOP);
+  } else if (sec.id === "gym") {
+    ctx.fillStyle = "#d9b27a"; ctx.fillRect(0, GROUND_TOP, W, H - GROUND_TOP);
+    ctx.strokeStyle = "#b98f58"; ctx.lineWidth = 1;
+    for (let i = 0; i < 20; i++) { const lx = ((i * 60 - camX) % 600 + 600) % 600 - 60; ctx.beginPath(); ctx.moveTo(lx, GROUND_TOP); ctx.lineTo(lx, H); ctx.stroke(); }
+    ctx.strokeStyle = "#e8524a"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, 440); ctx.lineTo(W, 440); ctx.stroke();  // コートのライン
+  } else {
+    ctx.fillStyle = "#e9e2d4"; ctx.fillRect(0, GROUND_TOP, W, H - GROUND_TOP);
+    ctx.strokeStyle = "#d4cbb9"; ctx.lineWidth = 1;
+    for (let i = 0; i < 20; i++) { const lx = ((i * 48 - camX) % 480 + 480) % 480 - 48; ctx.beginPath(); ctx.moveTo(lx, GROUND_TOP); ctx.lineTo(lx - 30, H); ctx.stroke(); }
+    for (let yy = GROUND_TOP + 36; yy < H; yy += 48) { ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(W, yy); ctx.stroke(); }
+  }
+  // 床と壁の境目
+  ctx.fillStyle = "rgba(0,0,0,.12)"; ctx.fillRect(0, GROUND_TOP, W, 6);
+}
+function drawHallDeco(sx, wx) {
+  const k = Math.floor(wx / 300) % 4;
+  if (k === 0) {                                         // 教室のドアと札
+    ctx.fillStyle = "#b9c6d2"; ctx.fillRect(sx + 40, 130, 70, GROUND_TOP - 130);
+    ctx.fillStyle = "#e9f2f8"; ctx.fillRect(sx + 50, 150, 50, 60);
+    ctx.fillStyle = "#fff"; ctx.fillRect(sx + 115, 120, 60, 22); ctx.strokeStyle = "#8c99a6"; ctx.strokeRect(sx + 115, 120, 60, 22);
+    text(["校長室", "保健室", "職員室", "進路室", "購買"][Math.floor(wx / 1200) % 5], sx + 145, 131, 11, "#334", "center");
+  } else if (k === 1) {                                  // ロッカー列
+    for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? "#9fb4c6" : "#aec2d3"; ctx.fillRect(sx + 30 + i * 36, 180, 34, GROUND_TOP - 180); ctx.fillStyle = "#6f8599"; ctx.fillRect(sx + 56 + i * 36, 260, 4, 14); }
+  } else if (k === 2) {                                  // 窓と「廊下は走らない」の張り紙
+    ctx.fillStyle = "#bfe3ff"; ctx.fillRect(sx + 40, 100, 200, 110); ctx.strokeStyle = "#8ea7bb"; ctx.lineWidth = 3; ctx.strokeRect(sx + 40, 100, 200, 110); ctx.beginPath(); ctx.moveTo(sx + 140, 100); ctx.lineTo(sx + 140, 210); ctx.stroke();
+    ctx.fillStyle = "#fff6b0"; ctx.fillRect(sx + 20, 240, 80, 60); text("廊下は", sx + 60, 258, 12, "#c0392b", "center"); text("走らない", sx + 60, 280, 12, "#c0392b", "center");
+  } else {                                               // 文化祭ポスター
+    ctx.fillStyle = "#ffd166"; ctx.fillRect(sx + 80, 120, 110, 150); text("文化祭", sx + 135, 160, 20, "#1b2a4a", "center"); text("馬術部", sx + 135, 200, 16, "#8b4a1f", "center"); text("ダービー開催", sx + 135, 232, 12, "#1b2a4a", "center");
+  }
+}
+function drawStairsDeco(sx, wx) {                        // 奥に階段が上っていく（ぶっとび設定：馬が階段を駆け上がる）
+  ctx.fillStyle = "#c9ced4";
+  for (let i = 0; i < 10; i++) ctx.fillRect(sx + i * 30, GROUND_TOP - 20 - i * 18, 30, 20 + i * 18);
+  ctx.fillStyle = "#8f98a3"; for (let i = 0; i < 10; i++) ctx.fillRect(sx + i * 30, GROUND_TOP - 20 - i * 18, 30, 3);
+  ctx.fillStyle = "#4a5a6a"; ctx.fillRect(sx, 100, 300, 6);                     // 手すり
+  text("2F →", sx + 150, 85, 14, "#334", "center");
+}
+function drawClassDeco(sx, wx) {
+  const k = Math.floor(wx / 300) % 3;
+  if (k === 0) {                                         // 黒板
+    ctx.fillStyle = "#2f5d50"; ctx.fillRect(sx + 30, 90, 240, 120); ctx.strokeStyle = "#8b6b3e"; ctx.lineWidth = 6; ctx.strokeRect(sx + 30, 90, 240, 120);
+    text("本日の目標", sx + 150, 120, 15, "#f6f1dc", "center"); text("馬は廊下を走ってよい", sx + 150, 150, 13, "#ffe29a", "center"); text("（文化祭限定）", sx + 150, 178, 12, "#cfe6db", "center");
+  } else if (k === 1) {                                  // 窓
+    for (let i = 0; i < 2; i++) { ctx.fillStyle = "#cdeaff"; ctx.fillRect(sx + 30 + i * 140, 100, 110, 100); ctx.strokeStyle = "#8ea7bb"; ctx.lineWidth = 3; ctx.strokeRect(sx + 30 + i * 140, 100, 110, 100); }
+  } else {                                               // 時間割と掲示
+    ctx.fillStyle = "#fff"; ctx.fillRect(sx + 60, 110, 90, 70); ctx.strokeStyle = "#999"; ctx.lineWidth = 1; ctx.strokeRect(sx + 60, 110, 90, 70);
+    text("時間割", sx + 105, 125, 11, "#333", "center"); text("1 馬  2 馬", sx + 105, 145, 10, "#333", "center"); text("3 馬  4 給食", sx + 105, 162, 10, "#333", "center");
+    ctx.fillStyle = "#ffe0e0"; ctx.fillRect(sx + 170, 110, 100, 60); text("蹄鉄は", sx + 220, 130, 11, "#b22", "center"); text("ぬいでください", sx + 220, 150, 11, "#b22", "center");
+  }
+}
+function drawRoofDeco(sx, wx) {                          // 屋上。フェンスと給水タンク、遠くの山
+  ctx.fillStyle = "#7f9e6e"; ctx.beginPath(); ctx.moveTo(sx - 50, 300); ctx.lineTo(sx + 100, 230); ctx.lineTo(sx + 250, 300); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "#7c8a94"; ctx.lineWidth = 2;
+  for (let i = 0; i < 12; i++) { ctx.beginPath(); ctx.moveTo(sx + i * 25, 290); ctx.lineTo(sx + i * 25, GROUND_TOP); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(sx, 290); ctx.lineTo(sx + 300, 290); ctx.stroke();
+  if (Math.floor(wx / 300) % 3 === 1) { ctx.fillStyle = "#c8cfd4"; ctx.fillRect(sx + 120, 200, 80, 90); ctx.fillStyle = "#9aa4ab"; ctx.fillRect(sx + 120, 196, 80, 8); text("翔陽", sx + 160, 245, 16, "#1b2a4a", "center"); }
+}
+function drawSkyDeco(sx, wx) {                           // 中庭を見下ろす。鳥
+  ctx.strokeStyle = "#333"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(sx + 60, 150); ctx.lineTo(sx + 72, 142); ctx.lineTo(sx + 84, 150); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx + 200, 120); ctx.lineTo(sx + 212, 112); ctx.lineTo(sx + 224, 120); ctx.stroke();
+}
+function drawGymDeco(sx, wx) {
+  const k = Math.floor(wx / 300) % 3;
+  if (k === 0) { ctx.fillStyle = "#b33b3b"; ctx.fillRect(sx + 20, 80, 260, 50); text("翔陽高校 文化祭", sx + 150, 105, 18, "#fff", "center"); }
+  else if (k === 1) {                                    // 観客（丸い頭がたくさん）
+    for (let i = 0; i < 12; i++) { ctx.fillStyle = ["#f4c2a0", "#e3a98a", "#d49374"][i % 3]; ctx.beginPath(); ctx.arc(sx + 20 + i * 24, 290 + (i % 2) * 10, 9, 0, 7); ctx.fill(); ctx.fillStyle = ["#3b82f6", "#e85d75", "#22a06b", "#f59e0b"][i % 4]; ctx.fillRect(sx + 11 + i * 24, 300 + (i % 2) * 10, 18, 26); }
+  } else { ctx.fillStyle = "#4a3b8b"; ctx.fillRect(sx + 40, 140, 220, 150); text("ステージ", sx + 150, 215, 20, "#fff", "center"); }
+}
+
+/* --- 障害物 --- */
+function drawObstacles(camX) {
+  for (let k = 0; k < OBSTACLES.length; k++) {
+    const o = OBSTACLES[k];
+    const sx = worldToScreen(o.x, camX);
+    if (sx < -120 || sx > W + 40) continue;
+    const hit = g.hitObs.has(k);
+    const gy = LANE_Y[PLAYER_LANE];                      // 自分のレーンの地面に置く（当たり判定と一致させる）
+    if (o.type === "gap") {
+      ctx.fillStyle = "#1e2d1e"; ctx.fillRect(sx, GROUND_TOP, o.w, H - GROUND_TOP);
+      ctx.fillStyle = "#2f4a2f"; ctx.fillRect(sx + 8, GROUND_TOP + 60, o.w - 16, H - GROUND_TOP - 60);
+      text("中庭", sx + o.w / 2, GROUND_TOP + 130, 14, "#9fd8b8", "center");
+      continue;
+    }
+    ctx.save(); ctx.translate(sx, gy); if (hit) ctx.globalAlpha = 0.5;
+    if (o.type === "desk") {
+      ctx.fillStyle = "#c89b5a"; ctx.fillRect(0, -o.h, o.w, 8); ctx.fillStyle = "#6f7f8c";
+      ctx.fillRect(4, -o.h + 8, 4, o.h - 8); ctx.fillRect(o.w - 8, -o.h + 8, 4, o.h - 8);
+      ctx.fillStyle = "#fff"; ctx.fillRect(10, -o.h - 3, 16, 3);
+    } else if (o.type === "wagon") {
+      ctx.fillStyle = "#9ab"; ctx.fillRect(0, -o.h, o.w, o.h - 10);
+      ctx.fillStyle = "#333"; ctx.beginPath(); ctx.arc(12, -5, 6, 0, 7); ctx.arc(o.w - 12, -5, 6, 0, 7); ctx.fill();
+      for (let i = 0; i < 4; i++) { ctx.fillStyle = "#e0a858"; ctx.beginPath(); ctx.ellipse(10 + i * 14, -o.h - 4, 7, 5, 0, 0, 7); ctx.fill(); }
+      text("購買", o.w / 2, -o.h / 2, 11, "#1b2a4a", "center");
+    } else if (o.type === "robot") {
+      ctx.fillStyle = "#1d4ed8"; rr(0, -o.h, o.w, o.h - 4, 10); ctx.fill();
+      ctx.fillStyle = "#93c5fd"; ctx.fillRect(8, -o.h + 6, 24, 5);
+      ctx.fillStyle = "#333"; ctx.fillRect(4, -4, o.w - 8, 4);
+    } else if (o.type === "teacher") {
+      ctx.fillStyle = "#394867"; ctx.fillRect(4, -o.h + 22, o.w - 8, o.h - 22);        // スーツ
+      ctx.fillStyle = "#f4c2a0"; ctx.beginPath(); ctx.arc(o.w / 2, -o.h + 12, 11, 0, 7); ctx.fill();   // 頭
+      ctx.fillStyle = "#222"; ctx.fillRect(o.w / 2 - 11, -o.h + 1, 22, 6);                                // 髪
+      ctx.fillStyle = "#394867"; ctx.fillRect(-4, -o.h + 30, o.w + 8, 10);                                  // 腕組み
+      ctx.fillStyle = "#fff"; ctx.fillRect(o.w / 2 - 3, -o.h + 24, 6, 10);                                 // ネクタイの白
+    }
+    ctx.restore();
+  }
+}
+
+/* --- 馬 --- */
+function drawHorse(h, sx, gy, s, isPlayer) {
+  ctx.save(); ctx.translate(sx, gy - h.y * s); ctx.scale(s, s);
+  const ph = h.stride;                                   // 足の位相
+  const running = h.stop <= 0;
+  const legSwing = running ? Math.sin(ph) * 14 : 0, legSwing2 = running ? Math.sin(ph + Math.PI) * 14 : 0;
+  // 影
+  ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(10, h.y * s + 2, 34, 6, 0, 0, 7); ctx.fill();
+  // 脚
+  ctx.strokeStyle = h.color; ctx.lineWidth = 6; ctx.lineCap = "round";
+  const leg = (x0, y0, dx) => { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx * 0.4, y0 + 16); ctx.lineTo(x0 + dx, y0 + 30); ctx.stroke(); };
+  leg(-14, -30, legSwing);   leg(-6, -30, legSwing2);    // 後脚
+  leg(22, -30, legSwing2);   leg(30, -30, legSwing);     // 前脚
+  // 胴体
+  ctx.fillStyle = h.color; ctx.beginPath(); ctx.ellipse(8, -36, 30, 15, 0, 0, 7); ctx.fill();
+  // 首と頭
+  ctx.beginPath(); ctx.moveTo(26, -44); ctx.lineTo(44, -66); ctx.lineTo(54, -62); ctx.lineTo(38, -36); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(54, -64, 12, 7, -0.3, 0, 7); ctx.fill();
+  ctx.fillStyle = h.mane; ctx.beginPath(); ctx.moveTo(26, -48); ctx.lineTo(46, -70); ctx.lineTo(50, -64); ctx.lineTo(34, -46); ctx.closePath(); ctx.fill();
+  // 耳と目
+  ctx.fillStyle = h.color; ctx.beginPath(); ctx.moveTo(48, -70); ctx.lineTo(51, -78); ctx.lineTo(54, -70); ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(58, -66, 2.2, 0, 7); ctx.fill(); ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(58.6, -66, 1.2, 0, 7); ctx.fill();
+  // 尾
+  ctx.strokeStyle = h.mane; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-20, -40); ctx.quadraticCurveTo(-34, -36 + (running ? Math.sin(ph) * 4 : 0), -36, -24); ctx.stroke();
+  // 騎手（小さい人）
+  ctx.fillStyle = isPlayer ? "#e63946" : "#3b82f6"; ctx.fillRect(2, -64, 12, 16); ctx.fillStyle = "#f4c2a0"; ctx.beginPath(); ctx.arc(8, -70, 5, 0, 7); ctx.fill();
+  ctx.fillStyle = isPlayer ? "#e63946" : "#3b82f6"; ctx.fillRect(2, -78, 12, 6);   // ヘルメット
+  // 説教・落下のときの顔
+  if (h.stop > 0 && isPlayer) { text(h.stopWhy === "fall" ? "💦" : "😨", 30, -108, 18, "#000", "center"); }
+  ctx.restore();
+}
+
+function drawHUD() {
+  const p = g.player;
+  // 上：タイマーと順位
+  ctx.fillStyle = "rgba(27,42,74,.9)"; ctx.fillRect(0, 0, W, 48);
+  text(fmtTime(g.t), 10, 24, 17, "#fff", "left");
+  const order = g.horses.slice().sort((a, b) => b.x - a.x);
+  const rank = order.indexOf(p) + 1;
+  text(rank + "位", W - 10, 24, 20, rank === 1 ? "#ffd166" : "#fff", "right");
+  text("/ 4", W - 50, 26, 12, "#9fb0c8", "right");
+  // 進行バー
+  const bx = 96, bw = W - 170, by = 24;
+  ctx.fillStyle = "#334a73"; rr(bx, by - 4, bw, 8, 4); ctx.fill();
+  for (const s of SECTIONS) { ctx.fillStyle = "#1b2a4a"; ctx.fillRect(bx + bw * s.from / COURSE_LEN, by - 4, 1, 8); }
+  for (const h of g.horses) { const px = bx + bw * Math.min(1, h.x / COURSE_LEN); ctx.fillStyle = h.color; ctx.beginPath(); ctx.arc(px, by + (h === p ? 0 : (h.i % 2 ? -7 : 7)), h === p ? 6 : 4, 0, 7); ctx.fill(); if (h === p) { ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 2; ctx.stroke(); } }
+  // 下：操作面（左右）とリズム計
+  const by2 = 530;
+  ctx.fillStyle = "rgba(0,0,0,.08)"; ctx.fillRect(0, by2, W, H - by2);
+  ctx.fillStyle = flashL > 0 ? "rgba(230,57,70,.55)" : "rgba(230,57,70,.18)"; ctx.fillRect(0, by2, W / 2 - 2, H - by2);
+  ctx.fillStyle = flashR > 0 ? "rgba(59,130,246,.55)" : "rgba(59,130,246,.18)"; ctx.fillRect(W / 2 + 2, by2, W / 2 - 2, H - by2);
+  text("左", W / 4, by2 + 42, 30, "rgba(255,255,255,.9)", "center");
+  text("右", W * 3 / 4, by2 + 42, 30, "rgba(255,255,255,.9)", "center");
+  text("交互にタップ", W / 2, by2 + 90, 12, "rgba(255,255,255,.8)", "center");
+  // リズム計と速度
+  ctx.fillStyle = "rgba(27,42,74,.85)"; rr(W / 2 - 80, by2 - 30, 160, 24, 12); ctx.fill();
+  ctx.fillStyle = "#334a73"; rr(W / 2 - 72, by2 - 24, 144, 12, 6); ctx.fill();
+  const sp = (p.v - V_MIN) / (V_MAX - V_MIN);
+  ctx.fillStyle = g.rhythm > 0.6 ? "#ffd166" : "#6ee7a8"; rr(W / 2 - 72, by2 - 24, Math.max(6, 144 * sp), 12, 6); ctx.fill();
+  if (g.rhythm > 0.6) text("リズム良し！", W / 2, by2 - 44, 12, "#ffd166", "center");
+  // 上スワイプのヒント
+  if (jumpFlash > 0) text("ジャンプ！", W / 2, 185, 22, "#fff", "center");
+  else if (g.t < 8) text("↑ 上にスワイプでジャンプ", W / 2, 185, 13, "rgba(27,42,74,.8)", "center");
+  // 区間名
+  if (g.t < g.sectionUntil) {
+    const a = Math.min(1, (g.sectionUntil - g.t) / 0.5);
+    ctx.globalAlpha = a; ctx.fillStyle = "rgba(27,42,74,.85)"; rr(W / 2 - 110, 70, 220, 40, 10); ctx.fill();
+    text(sectionAt(p.x).name, W / 2, 90, 18, "#fff", "center"); ctx.globalAlpha = 1;
+  }
+  // 吹き出しメッセージ
+  if (g.msg && g.t < g.msg.until) {
+    ctx.fillStyle = "#fff"; rr(W / 2 - 100, 120, 200, 36, 10); ctx.fill(); ctx.strokeStyle = "#e63946"; ctx.lineWidth = 2; ctx.stroke();
+    text(g.msg.text, W / 2, 138, 15, "#c0392b", "center");
+  }
+}
+
+function drawRace() {
+  const camX = g.player.x;
+  drawBackground(camX);
+  drawObstacles(camX);
+  // 奥のレーンから描く
+  for (let lane = 0; lane < 4; lane++) {
+    const h = g.horses[lane];
+    const sx = worldToScreen(h.x, camX);
+    if (sx < -80 || sx > W + 80) continue;
+    drawHorse(h, sx, LANE_Y[lane], LANE_S[lane], lane === PLAYER_LANE);
+    text(h.short, sx + 8, LANE_Y[lane] - (92 + h.y) * LANE_S[lane], 10, lane === PLAYER_LANE ? "#e63946" : "#1b2a4a", "center");
+  }
+  // ゴールテープ
+  const gx = worldToScreen(COURSE_LEN, camX);
+  if (gx > -40 && gx < W + 40) {
+    ctx.fillStyle = "#fff"; ctx.fillRect(gx - 3, 240, 6, GROUND_TOP + 140 - 240);
+    for (let i = 0; i < 8; i++) { ctx.fillStyle = i % 2 ? "#000" : "#fff"; ctx.fillRect(gx - 20, 240 + i * 14, 40, 14); }
+    text("GOAL", gx, 225, 14, "#fff", "center");
+  }
+  drawHUD();
+}
+
+function drawTitle() {
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#1b2a4a"); sky.addColorStop(1, "#3b5a8a");
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  text("翔陽高校 文化祭", W / 2, 110, 16, "#9fb0c8", "center");
+  text("翔陽ダービー", W / 2, 160, 40, "#ffd166", "center", 900);
+  text("〜 校舎を走れ 〜", W / 2, 200, 18, "#fff", "center");
+  // 看板の馬
+  const demo = { color: "#8b4a1f", mane: "#3b1f0a", stride: performance.now() / 90, y: 0, stop: 0, stopWhy: "" };
+  drawHorse(demo, W / 2 - 20, 330, 1.4, true);
+  ctx.fillStyle = "#ffd166"; rr(W / 2 - 110, 400, 220, 56, 14); ctx.fill();
+  text("タップしてスタート", W / 2, 428, 20, "#1b2a4a", "center");
+  text("1階廊下 → 階段 → 教室 → 屋上 → 中庭へ大ジャンプ → 体育館", W / 2, 480, 11, "#cfe0ff", "center", 400);
+  if (best) text("自己ベスト " + fmtTime(best.time) + "  " + best.rank + "位", W / 2, 510, 13, "#ffd166", "center");
+  text("馬術部のある翔陽高校だから、馬のレース。校舎を走るのは文化祭だけです。", W / 2, 560, 10, "#9fb0c8", "center", 400);
+  text("版 " + VER, W - 8, H - 12, 10, "#7f90a8", "right", 400);
+}
+
+function drawHowto() {
+  drawBackground(0);
+  ctx.fillStyle = "rgba(27,42,74,.92)"; ctx.fillRect(0, 0, W, H);
+  text("あそびかた", W / 2, 70, 26, "#ffd166", "center");
+  // 左右
+  ctx.fillStyle = "rgba(230,57,70,.5)"; rr(30, 110, 140, 90, 12); ctx.fill();
+  ctx.fillStyle = "rgba(59,130,246,.5)"; rr(190, 110, 140, 90, 12); ctx.fill();
+  text("左", 100, 155, 34, "#fff", "center"); text("右", 260, 155, 34, "#fff", "center");
+  text("左・右・左・右 と交互にタップ ＝ 走る", W / 2, 225, 14, "#fff", "center");
+  text("リズムよく叩くと速い。同じ側を2回は足がもつれる", W / 2, 248, 11, "#cfe0ff", "center", 400);
+  // ジャンプ
+  text("↑", W / 2, 300, 40, "#fff", "center");
+  text("上にスワイプ ＝ ジャンプ", W / 2, 345, 14, "#fff", "center");
+  text("机・購買のワゴン・掃除機・腕組みの先生を跳び越える", W / 2, 368, 11, "#cfe0ff", "center", 400);
+  text("先生にぶつかると「廊下は走らない！」で2秒止まる", W / 2, 388, 11, "#ffb4b4", "center", 400);
+  text("パソコンなら F と J を交互、スペースでジャンプ", W / 2, 420, 10, "#9fb0c8", "center", 400);
+  if (countdown > 0) {
+    const n = Math.ceil(countdown);
+    text(n > 0 ? String(n) : "GO!", W / 2, 510, 80, "#ffd166", "center", 900);
+  } else {
+    ctx.fillStyle = "#ffd166"; rr(W / 2 - 100, 480, 200, 56, 14); ctx.fill();
+    text("タップで3秒後スタート", W / 2, 508, 16, "#1b2a4a", "center");
+  }
+}
+
+function drawResult() {
+  drawRace();
+  const r = g.result;
+  ctx.fillStyle = "rgba(27,42,74,.93)"; ctx.fillRect(0, 0, W, H);
+  text("ゴール！", W / 2, 60, 20, "#9fb0c8", "center");
+  text(r.rank + "位", W / 2, 120, 64, r.rank === 1 ? "#ffd166" : "#fff", "center", 900);
+  text(r.title, W / 2, 175, 22, "#ffd166", "center");
+  text("タイム " + fmtTime(r.time), W / 2, 215, 18, "#fff", "center");
+  if (best && best.time != null && r.time != null && r.time <= best.time && r.isNewBest) text("自己ベスト更新！", W / 2, 240, 13, "#6ee7a8", "center");
+  // 着順表
+  let y = 285;
+  for (let i = 0; i < r.order.length; i++) {
+    const h = r.order[i];
+    ctx.fillStyle = h === g.player ? "rgba(255,209,102,.18)" : "rgba(255,255,255,.06)"; rr(30, y - 16, W - 60, 32, 8); ctx.fill();
+    ctx.fillStyle = h.color; ctx.beginPath(); ctx.arc(52, y, 9, 0, 7); ctx.fill();
+    text((i + 1) + "着", 80, y, 14, "#fff", "left");
+    text(h.name, 115, y, 13, h === g.player ? "#ffd166" : "#fff", "left");
+    text(fmtTime(h.finish), W - 42, y, 12, "#cfe0ff", "right", 400);
+    y += 38;
+  }
+  text("ぶつかった " + r.hits + "回　落ちた " + r.falls + "回　良いリズム " + r.goodTaps + "/" + r.taps, W / 2, y + 8, 11, "#9fb0c8", "center", 400);
+  ctx.fillStyle = "#ffd166"; rr(W / 2 - 100, 500, 200, 56, 14); ctx.fill();
+  text("もう一回", W / 2, 528, 20, "#1b2a4a", "center");
+  text("スクリーンショットで持ち帰ろう", W / 2, 585, 11, "#9fb0c8", "center", 400);
+}
+
+/* =====================================================================
+   4. 進行とループ
+   ===================================================================== */
+function startHowto() { mode = "howto"; countdown = 0; }
+function startCountdown() { if (countdown <= 0) countdown = 3; }
+function startRace() {
+  g = newRace(); mode = "race";
+}
+function endToResult() {
+  const r = g.result;
+  r.isNewBest = r.time != null && (!best || best.time == null || r.time < best.time);
+  if (r.isNewBest) { best = { time: r.time, rank: r.rank }; saveBest(best); }
+  mode = "result";
+}
+
+function frame(now) {
+  const dt = rafPrev ? (now - rafPrev) / 1000 : 0; rafPrev = now;
+  if (mode === "howto" && countdown > 0) {
+    countdown -= dt;
+    if (countdown <= 0) { startRace(); }
+  }
+  if (mode === "race") {
+    step(g, dt);
+    if (g.over) endToResult();
+  }
+  flashL = Math.max(0, flashL - dt); flashR = Math.max(0, flashR - dt); jumpFlash = Math.max(0, jumpFlash - dt);
+  if (ctx) {
+    ctx.clearRect(0, 0, W, H);
+    if (mode === "title") drawTitle();
+    else if (mode === "howto") drawHowto();
+    else if (mode === "race") drawRace();
+    else drawResult();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* --- 入力。指ごとに pointer イベントで受ける。タップは押した瞬間に数える（反応の速さ優先）。
+       押したあと上に 40px 動いたらジャンプ。スワイプの先頭のタップも走りに数える（損はさせない）。 --- */
+const pointers = new Map();
+function onDown(e) {
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  e.preventDefault();
+  const lx = (e.clientX - offX) / scale;                 // 論理座標
+  const ly = (e.clientY - offY) / scale;
+  pointers.set(e.pointerId, { x: lx, y: ly, t: performance.now(), jumped: false });
+  handlePress(lx < W / 2 ? "L" : "R", ly);
+}
+function onMove(e) {
+  const p = pointers.get(e.pointerId); if (!p || p.jumped) return;
+  const ly = (e.clientY - offY) / scale;
+  if (p.y - ly > 40 && performance.now() - p.t < 400) { p.jumped = true; if (mode === "race" && applyJump(g)) jumpFlash = 0.4; }
+}
+function onUp(e) { pointers.delete(e.pointerId); }
+function handlePress(side, ly) {
+  if (mode === "title") { startHowto(); return; }
+  if (mode === "howto") { startCountdown(); return; }
+  if (mode === "result") { mode = "title"; return; }
+  if (mode === "race") {
+    if (ly < 48) return;                                 // HUD の上は何もしない
+    const r = applyTap(g, side, performance.now());
+    if (side === "L") flashL = 0.12; else flashR = 0.12;
+    if (r === "good" && navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
+  }
+}
+cv.addEventListener("pointerdown", onDown);
+cv.addEventListener("pointermove", onMove);
+cv.addEventListener("pointerup", onUp);
+cv.addEventListener("pointercancel", onUp);
+cv.addEventListener("contextmenu", e => e.preventDefault());
+window.addEventListener("keydown", e => {
+  if (e.repeat) return;
+  if (e.key === "f" || e.key === "F" || e.key === "ArrowLeft") { handlePress("L", 300); e.preventDefault(); }
+  else if (e.key === "j" || e.key === "J" || e.key === "ArrowRight") { handlePress("R", 300); e.preventDefault(); }
+  else if (e.key === " " || e.key === "ArrowUp") { if (mode === "race") { if (applyJump(g)) jumpFlash = 0.4; } else handlePress("L", 300); e.preventDefault(); }
+});
+
+resize();
+requestAnimationFrame(frame);
+
+/* 検証用の窓口（regression-uma.js が使う）。画面とは独立に計算だけ回せる。 */
+window.UMA = { VER, W, H, COURSE_LEN, V_MIN, V_MAX, TIME_CAP, SECTIONS, OBSTACLES, HORSES, PLAYER_LANE,
+  newRace, step, applyTap, applyJump, finishRace, sectionAt, titleFor, fmtTime, cpuTarget, mulberry32,
+  getMode: () => mode, setMode: m => { mode = m; }, getGame: () => g, startRace, startHowto };
+</script>
+</body>
+</html>
