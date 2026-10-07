@@ -522,6 +522,20 @@ console.log("\n【X】記録の履歴と書き出し");
   E(`openProblem("r1")`); tap("#judgeBtn"); ok(E("logRows.length")===n0+1,"判定するたびに履歴が自動で増える");
   ok(E(`JSON.parse(localStorage.getItem(KEY+"log")).length`)===n0+1,"履歴は端末に自動で保存される"); }
 
+console.log("\n【Y】公表問題");
+E(`exam=null; openProblem("r1")`);
+ok($("kOne").hidden,"練習問題では「公表問題の図を見る」を出さない");
+E(`openProblem("k7")`);
+ok(!$("kOne").hidden,"候補問題では「公表問題の図を見る」を出す");
+tap("#kOne");
+ok($("kPop").classList.contains("show") && /No\.7/.test($("kTitle").textContent) && d.querySelector("#kBody img").getAttribute("src").startsWith("data:image/png;base64,"),"押すと、その問題の公表問題の図が出る");
+ok(/電気技術者試験センター/.test($("kPop").textContent) && /K_R08K\.pdf/.test($("kPop").innerHTML),"出典と公式 PDF へのリンクを添える");
+tap("#kClose"); ok(!$("kPop").classList.contains("show"),"閉じられる");
+tap("#kAll");
+ok(d.querySelectorAll("#kBody .kCell img").length===13 && /JIS C 0303/.test($("kBody").textContent),"「公表問題」で、注記と13問の図が並ぶ");
+d.querySelector('#kBody button[data-k="3"]').click();
+ok(!$("kPop").classList.contains("show") && E("P.id")==="k3","図の下のボタンで、その問題の練習に移る");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
