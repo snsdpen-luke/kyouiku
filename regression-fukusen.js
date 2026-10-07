@@ -436,6 +436,28 @@ tap("#modeBtn");
 tap("#modeBtn");
 ok(JSON.parse(judgeRef("k7")).length===0,"形を変えても、No.7 のお手本は合格");
 
+console.log("\n【S】パイロットランプは PL の四角");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("k10"); S=refState(P); view=S; mode="draw"; render();`);
+{ const t=k=>JSON.parse(E(`JSON.stringify(P.term["${k}"])`)), c=JSON.parse(E(`JSON.stringify({x:P.part.Pl.x,y:P.part.Pl.y})`));
+  ok(t("Pl.1").y===c.y && t("Pl.2").y===c.y && t("Pl.1").x<c.x && t("Pl.2").x>c.x,"パイロットランプの端子は、四角の左右");
+  ok(/>PL<\/text>/.test($("stage").innerHTML),"複線図では「PL」と書いた四角で描く"); }
+ok(d.querySelector(`#palette button[data-type="pl"] svg circle`)!==null,"部品図のパイロットランプは公表問題の ○ のまま");
+ok(JSON.parse(judgeRef("k10")).length===0 && JSON.parse(judgeRef("k2")).length===0,"形を変えても、No.2・No.10 のお手本は合格");
+
+console.log("\n【T】3路の左右入れ替え");
+E(`try{localStorage.clear()}catch(e){}`);
+E(`openProblem("k7"); S=refState(P); view=S; sel=null; mode="draw"; render();`);
+{ const x0=k=>E(`P.term["${k}"].x`), before=[x0("Sa.0"),x0("Sa.1")];
+  tap(`[data-hit="part:${E(`S.placed.find(i=>i.pid==="Sa").u`)}"]`);
+  ok(!$("flipPart").hidden,"3路を選ぶと「左右入れ替え」が出る");
+  tap("#flipPart");
+  ok(x0("Sa.0")>x0("Sa.1") && before[0]<before[1],"押すと 0 と 1・3 の左右が入れ替わる");
+  ok(E("judge(S).length")===0,"入れ替えても判定は変わらない（線はつながったまま）"); E("view=S");
+  tap("#flipPart"); ok(x0("Sa.0")<x0("Sa.1"),"もう一度押すと元に戻る");
+  tap("#unselP"); tap(`[data-hit="part:${E(`S.placed.find(i=>i.pid==="La").u`)}"]`);
+  ok($("flipPart").hidden,"ランプには「左右入れ替え」を出さない"); tap("#unselP"); }
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

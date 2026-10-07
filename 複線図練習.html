@@ -156,6 +156,7 @@
         <span class="lab" id="partName"></span>
         <span class="lab" id="partLabLab">記号</span>
         <span id="partLabels"></span>
+        <button id="flipPart">⇆ 左右入れ替え</button>
         <button id="delPart">この部品を消す</button>
         <button id="unselP">選ぶのをやめる</button>
         </div>
@@ -213,7 +214,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07a";
+const VER = "2026-10-07c";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -450,7 +451,7 @@ const PROBLEMS = [
   K({ no: 2, title: "常時点灯の確認表示灯と2口コンセント",
     note: "スイッチ イ はランプレセプタクル イ（2つ）を点滅する。確認表示灯（パイロットランプ）は常時点灯。",
     parts: [SRC("PW", 90, 300), PT("La", "lamp", "イ", 330, 80),
-            PT("Sa", "sw1", "イ", 660, 80, "F"), PT("Pl", "pl", "", 580, 80, "F"),   // 単線図ではボックスに近い順に積む
+            PT("Sa", "sw1", "イ", 620, 130, "F"), PT("Pl", "pl", "", 620, 45, "F"),   // 単線図ではボックスに近い順に積む
             Object.assign(PT("Lb", "lamp", "イ", 900, 300), { omit: true }),
             PT("O2", "outlet2", "", 620, 560), PT("O1", "outlet", "", 330, 560)],
     boxes: [{ id: "B1", x: 330, y: 300 }, { id: "B2", x: 620, y: 300 }],
@@ -608,7 +609,7 @@ const PROBLEMS = [
   K({ no: 10, title: "同時点滅の確認表示灯",
     note: "スイッチ イ は引掛シーリング イ とランプレセプタクル イ を点滅する。確認表示灯（パイロットランプ）は同時点滅。",
     parts: [SRC("PW", 110, 300, "brkB", "1φ2W 100V"), PT("Ca", "ceilK", "イ", 450, 80), PT("La", "lamp", "イ", 820, 300),
-            PT("Pl", "pl", "イ", 370, 560, "F"), PT("Sa", "sw1", "イ", 450, 560, "F"), PT("O", "outlet", "", 530, 560, "F")],
+            PT("Pl", "pl", "イ", 450, 450, "F"), PT("Sa", "sw1", "イ", 450, 560, "F"), PT("O", "outlet", "", 560, 560, "F")],
     boxes: [{ id: "B1", x: 450, y: 300 }],
     cables: [C("PW", "B1", "VVF2.0-2C"), C("Ca", "B1"), C("La", "B1"), C("F", "B1", "VVF1.6-3C")],
     expect: [{ p: "Ca", f: s => s.Sa }, { p: "La", f: s => s.Sa }, { p: "Pl", f: s => s.Sa }, { p: "O", f: s => true }],
@@ -740,6 +741,11 @@ function shapeFlip(p) {                    // 3路の 0 を左に置くなら tr
   return p.x < 500;                        // ボックスが上か下 → 図の左半分なら 0 を左（外側）に
 }
 function termRow(p, flipped) {
+  if (p.type === "pl") {                   // パイロットランプは「PL」の四角の左右に端子（教科書の形。向きは回さない）
+    const f = flipped ? -1 : 1;
+    p.terms[0].x = p.x - 36 * f; p.terms[0].y = p.y; p.terms[1].x = p.x + 36 * f; p.terms[1].y = p.y;
+    return;
+  }
   if (SHAPE[p.type]) {
     const keep = (p.type === "sw3" ? shapeFlip(p) : true) !== !!flipped;   // SHAPE は 0 が左・2/4 が左。逆にするなら左右を入れ替える
     p.terms.forEach(t => { const [x, y] = SHAPE[p.type][t.k]; t.x = p.x + (keep ? x : -x); t.y = p.y + y; });
@@ -1020,6 +1026,7 @@ function sym(type, x, y, k, lit) {
     case "swH": return dot("H");
     case "swA": return dot("A(3A)");
     case "swAbox": return box(34 * k, 24 * k) + txt("A", 13 * k);
+    case "plbox": return box(46 * k, 26 * k, lamp) + txt("PL", 13 * k);   // 複線図のパイロットランプ
     case "ts": return box(30 * k, 24 * k) + txt("TS", 12 * k);
     case "rly": return `<rect x="${x - 7 * k}" y="${y - 11 * k}" width="${14 * k}" height="${22 * k}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/><path d="M${x - 6 * k} ${y - 9 * k}L${x + 6 * k} ${y}L${x - 6 * k} ${y + 9 * k}Z" fill="${ink}"/>`;
     /* コンセント */
@@ -1115,7 +1122,7 @@ function drawPart(p, sim, uid) {
     g += `<text x="${x}" y="${y - 6}" text-anchor="middle" font-size="15" font-weight="700">電源</text>`;
     g += `<text x="${x}" y="${y + 14}" text-anchor="middle" font-size="12" fill="#5d6763">${esc(p.sub || "")}</text>`;
   } else {
-    g += CONTACT[p.type] ? contact(p, sim) : sym(p.type === "swA" ? "swAbox" : p.type, x, y, 1, lit && !T.outlet);
+    g += CONTACT[p.type] ? contact(p, sim) : sym(p.type === "swA" ? "swAbox" : p.type === "pl" ? "plbox" : p.type, x, y, 1, lit && !T.outlet);
     const below = p.side !== "bottom", vert = p.side === "left" || p.side === "right";
     const nx = vert ? (p.side === "left" ? x - 6 : x + 6) : x, na = vert ? (p.side === "left" ? "start" : "end") : "middle";   // 端子が縦に並ぶときは、札と反対側へ寄せる
     const deep = SHAPE[p.type] ? 24 : 0;                               // 3路・4路は奥に端子があるので、名前をその先へ
@@ -1123,7 +1130,7 @@ function drawPart(p, sim, uid) {
     if (sim && T.outlet && lit) g += `<text x="${x + 24}" y="${y - 16}" font-size="12" font-weight="700" fill="#0f6b4f">100V</text>`;
     if (T.sw && mode === "sim" && P.part[p.id]) { const on = swState[p.id], by = below ? y + 44 + (SHAPE[p.type] ? 24 : 0) : y + 20;
       g += `<g class="hit" data-hit="sw:${p.id}"><rect x="${x - 34}" y="${by}" width="68" height="26" rx="13" fill="${on ? "#0f6b4f" : "#fff"}" stroke="#0f6b4f"/><text x="${x}" y="${by + 18}" text-anchor="middle" font-size="13" font-weight="700" fill="${on ? "#fff" : "#0f6b4f"}">${esc(T.stateText(!!on))}</text></g>`; }
-    if (p.label) { const lx = SHAPE[p.type] ? x - 60 : x - 24, ly = SHAPE[p.type] ? y - 30 : y - 16;   // 3路・4路は枠の左外に
+    if (p.label) { const lx = SHAPE[p.type] ? x - 60 : p.type === "pl" ? x - 28 : x - 24, ly = SHAPE[p.type] ? y - 30 : p.type === "pl" ? y - 20 : y - 16;   // 3路・4路は枠の左外に
       g += `<text x="${lx}" y="${ly}" text-anchor="end" font-size="16" font-weight="700" fill="#0f6b4f">${esc(p.label)}</text>`; }
   }
   if (T.source && p.terms.length > 1 && mode === "draw" && !showingRef && P.part[p.id]) {   // 電源の端子の並び（L と N の上下など）を入れ替える
@@ -1407,6 +1414,7 @@ function showTab() {
 /* ---------- 選んだ部品の操作（記号・消す） ---------- */
 function drawPartBar(it) {
   $("partName").textContent = TNAME(it.type) + " を";
+  $("flipPart").hidden = !(it.pid && (SHAPE[it.type] || it.type === "pl"));   // 3路（0 と 1・3）・4路・パイロットランプの左右
   const host = $("partLabels"); host.innerHTML = "";
   $("partLabLab").style.display = TYPES[it.type].nolabel ? "none" : "";
   if (TYPES[it.type].nolabel) return;
@@ -1653,7 +1661,8 @@ svg.addEventListener("click", e => {
   }
   if (kind === "part") {
     if (sel && sel.end) return status("線は、器具の端子（○）からつなぐ。", true);
-    sel = { item: id }; status("部品を選んだ。記号を変える・消す。ドラッグで動かせる。"); render(); return;
+    sel = { item: id }; const st = S.placed.find(x => x.u === id);
+    status("部品を選んだ。記号を変える・消す" + (st && (SHAPE[st.type] || st.type === "pl") ? "・左右を入れ替える" : "") + "。ドラッグで動かせる。"); render(); return;
   }
   if (kind === "bend") return;                                        // つまみはドラッグで使う
   if (kind === "core") { sel = { core: +id }; status("線を選んだ。真ん中の青い丸をドラッグすると曲がる。色を変える・つなぎ先を変える・消すもできる。"); render(); return; }
@@ -1686,6 +1695,8 @@ function setCoreColor(c) { if (!(sel && sel.core !== undefined)) return; S.cores
 $("straightCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; delete S.cores[sel.core].q; status("線をまっすぐに戻した。"); save(); render(); };
 $("delCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; S.cores.splice(sel.core, 1); tidy(); sel = null; status("線を消した。"); changed(); };
 $("unsel").onclick = $("unselJ").onclick = $("unselP").onclick = () => { sel = null; status(""); render(); };
+$("flipPart").onclick = () => { const it = sel && sel.item && S.placed.find(x => x.u === sel.item); if (!it || !it.pid) return;
+  S.flip = S.flip || {}; S.flip[it.pid] = !S.flip[it.pid]; status("左右を入れ替えた。つないだ線はそのまま。"); save(); render(); };
 $("delPart").onclick = () => { if (!(sel && sel.item)) return; const u = sel.item, it = S.placed.find(x => x.u === u); if (!it) return;
   const n = it.pid ? S.cores.filter(k => isBox(it.type) ? S.joints.some(j => j.box === it.pid && (k.a === j.id || k.b === j.id)) : (k.a.startsWith(it.pid + ".") || k.b.startsWith(it.pid + "."))).length : 0;
   if (!n) return removeItem(u);
