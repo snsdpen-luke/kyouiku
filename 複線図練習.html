@@ -100,6 +100,7 @@
   #kPop .kOne img { max-width: 760px; margin: 0 auto; }
   #kPop .kSrc { margin-top: 8px; word-break: break-all; }
   #kOne { margin-top: 6px; width: 100%; }
+  #partbar.termMode > :not(#mvTerm):not(#rsTerm) { display: none; }   /* 端子を動かしている間は、帯を小さくして器具を隠さない */
   #idPop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 11; }
   #idPop.show { display: flex; }
   #idPop .box { background: #fff; border-radius: 10px; padding: 16px 18px; max-width: 360px; width: 90%; display: flex; flex-direction: column; gap: 8px; }
@@ -184,6 +185,8 @@
         <span class="lab" id="partLabLab">記号</span>
         <span id="partLabels"></span>
         <button id="mvPart">動かす</button>
+        <button id="mvTerm">端子を動かす</button>
+        <button id="rsTerm">端子を元の位置に</button>
         <button id="flipPart">⇆ 左右入れ替え</button>
         <button id="delPart">この部品を消す</button>
         <button id="unselP">選ぶのをやめる</button>
@@ -237,6 +240,7 @@
             <li>●をボックスの外まで引っぱり出すと、●から線を伸ばせる（器具の端子や、ほかのボックスへ）。ボックスの中で動かすと●が動く</li>
             <li>線をタップ → 色を変える・つなぎ先を変える・消す。線の上の＋をドラッグすると、そこで曲がる（3か所まで）。青丸はドラッグで動かす・タップで消す。●をタップ → 動かす・まとめる・消す</li>
             <li>部品・ボックス・●はドラッグで動かせる（部品は記号のどこをつかんでもよい）。部品をタップすると、記号を変える・動かす（行き先をタップ）・消すができる</li>
+            <li>器具の端子（W・B など）の位置は変えられる: 器具をタップ →「端子を動かす」→ 端子を好きな所へドラッグ（タップ → 行き先タップ でもよい）。「端子を元の位置に」で戻る</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
             <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
             <li>図が小さいときは、図の右下の「＋」で拡大し、「✋ 移動」で見る所を動かす。「全体」で元に戻る</li>
@@ -265,7 +269,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07l";
+const VER = "2026-10-07m";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -792,13 +796,14 @@ function applyLayout(st) {
     }
     p.side = side || "top";
   });
-  placeTerms(st.flip || {});
+  placeTerms(st.flip || {}, st.tpos || {});
 }
 /* 端子の位置。flip[器具ID] が true なら端子の並びを逆にする（電源の L と N の上下など） */
-function placeTerms(flip) {
+function placeTerms(flip, tpos) {
   P.parts.forEach(p => {
     if (!p.shown) return;
     termRow(p, !!flip[p.id]);
+    p.terms.forEach(t => { const o = tpos && tpos[t.id]; t.moved = !!o; if (o) { t.x = p.x + o.x; t.y = p.y + o.y; } });   // 生徒が動かした端子（器具の中心からのずれ）
     p.terms.forEach(t => { P.term[t.id].x = t.x; P.term[t.id].y = t.y; });
   });
 }
@@ -1293,11 +1298,13 @@ function coreLine(k, i, extra) {
 /* 端子1つ（○と W/B の札）。hit はタップしたときの名前 */
 function drawTerm(p, t, hit, mk) {
   let g = "";
-  const on = sel && sel.end === t.id, warn = mk.has(t.id);
+  const on = sel && (sel.end === t.id || sel.term === t.id), warn = mk.has(t.id);
+  if (sel && sel.act === "moveTerm" && P.part[p.id] && termsOfSel().includes(t.id)) g += `<circle cx="${t.x}" cy="${t.y}" r="15" fill="none" stroke="#2563eb" stroke-width="3" stroke-dasharray="4 3"/>`;   // 動かせる端子
   g += `<circle cx="${t.x}" cy="${t.y}" r="8" fill="${on ? "#2563eb" : "#fff"}" stroke="${warn ? "#ef4444" : "#151a18"}" stroke-width="${warn ? 4 : 2}"/>`;
   if (t.lab) {
     let dx, dy;
-    if (SHAPE[p.type]) { dx = (t.x < p.x ? -1 : 1) * 17; dy = 1; }   // 番号は端子の外側の横（上から来る線とかぶらない）
+    if (t.moved) { const L = Math.hypot(t.x - p.x, t.y - p.y) || 1; dx = (t.x - p.x) / L * 22; dy = (t.y - p.y) / L * 20; }   // 動かした端子: 器具の中心から見て外側に
+    else if (SHAPE[p.type]) { dx = (t.x < p.x ? -1 : 1) * 17; dy = 1; }   // 番号は端子の外側の横（上から来る線とかぶらない）
     else if (isSrc(p.type)) { dx = p.side === "left" ? -24 : p.side === "right" ? 24 : 0; dy = p.side === "top" ? -22 : p.side === "bottom" ? 22 : 0; }   // 電源は箱の外側に
     else {   // 端子の並びの外側（はしの端子は並びの先、まん中の端子は外側）に置き、器具の記号にかぶらないようにする
       const i = p.terms.indexOf(t), n = p.terms.length, along = n > 1 && (i === 0 || i === n - 1) ? (i === 0 ? -1 : 1) : 0, vert = p.side === "left" || p.side === "right";
@@ -1397,7 +1404,7 @@ function render() {
   const it = sel && sel.item && S.placed.find(x => x.u === sel.item);
   $("partbar").classList.toggle("show", !!it && !showingRef);
   if (it) drawPartBar(it);
-  ["reCore", "mvJoint", "mgJoint", "mvPart"].forEach(id => $(id).classList.toggle("on", !!(sel && sel.act && $(id).dataset.act === sel.act)));
+  ["reCore", "mvJoint", "mgJoint", "mvPart", "mvTerm"].forEach(id => $(id).classList.toggle("on", !!(sel && sel.act && $(id).dataset.act === sel.act)));
   document.querySelectorAll("#selPens .pen").forEach(b => b.classList.toggle("on", cs && view.cores[sel.core] && view.cores[sel.core].c === b.dataset.c));
   document.querySelectorAll("#pens .pen").forEach(b => b.classList.toggle("on", b.dataset.c === pen));
   document.querySelectorAll("#palette button").forEach(b => b.classList.toggle("on", b.dataset.type === placing));
@@ -1524,6 +1531,10 @@ function showTab() {
 /* ---------- 選んだ部品の操作（記号・消す） ---------- */
 function drawPartBar(it) {
   $("partName").textContent = TNAME(it.type) + " を";
+  const pp = it.pid && !isBox(it.type) && P.part[it.pid];
+  const tm = !!(pp && sel.act === "moveTerm");
+  $("mvTerm").hidden = !pp; $("rsTerm").hidden = !(pp && pp.terms.some(t => S.tpos && S.tpos[t.id]));
+  $("partbar").classList.toggle("termMode", tm); $("mvTerm").textContent = tm ? "端子を動かすのを終える" : "端子を動かす";
   $("flipPart").hidden = !(it.pid && (SHAPE[it.type] || it.type === "pl"));   // 3路（0 と 1・3）・4路・パイロットランプの左右
   const host = $("partLabels"); host.innerHTML = "";
   $("partLabLab").style.display = TYPES[it.type].nolabel ? "none" : "";
@@ -1575,8 +1586,16 @@ function setLabel(u, l) {
 }
 function removeItem(u) {
   const it = S.placed.find(x => x.u === u); if (!it) return;
+  if (it.pid && S.tpos && P.part[it.pid]) P.part[it.pid].terms.forEach(t => { delete S.tpos[t.id]; });   // 動かした端子の位置も消す
   purge(it.pid, isBox(it.type)); S.placed = S.placed.filter(x => x !== it); assignFree(); sel = null;
   status("部品を消した。"); changed();
+}
+/* 端子を動かす。位置は器具の中心からのずれで持つ（部品ごと動かしても崩れない）。中心から 110 までに収める */
+function termsOfSel() { const it = sel && sel.item && S.placed.find(x => x.u === sel.item), p = it && it.pid && !isBox(it.type) && P.part[it.pid]; return p ? p.terms.map(t => t.id) : []; }
+function setTermPos(id, x, y) {
+  const p = P.term[id].part; let dx = x - p.x, dy = y - p.y; const L = Math.hypot(dx, dy);
+  if (L > 110) { dx *= 110 / L; dy *= 110 / L; }
+  S.tpos = S.tpos || {}; S.tpos[id] = { x: Math.round(dx), y: Math.round(dy) };
 }
 function moveItem(u, x, y) {
   const it = S.placed.find(i => i.u === u); if (!it) return;
@@ -1691,6 +1710,7 @@ svg.addEventListener("pointerdown", e => {
   const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
   let what = null;
   if (kind === "bend" || kind === "add") { const [c, n] = id.split(":").map(Number); what = { kind: "bend", id: c, n, add: kind === "add" }; }   // 曲げ点を動かす／＋から曲げ点を足す
+  else if (kind === "t" && sel && sel.act === "moveTerm" && termsOfSel().includes(id)) what = { kind: "term", id };   // 端子を動かすモード → 端子を動かす
   else if (kind === "t") what = { kind: "wire", id };                    // 端子からドラッグ → 線を伸ばす
   else if (kind === "j") { const j = S.joints.find(j => j.id === id); what = { kind: "j", id, orig: { x: j.x, y: j.y } }; }   // ●からドラッグ → ボックスの中なら●を動かす。外へ出たら線を伸ばす
   else if (kind === "part") what = { kind: "item", id };
@@ -1705,6 +1725,7 @@ svg.addEventListener("pointermove", e => {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
     drag.moving = true;
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}      // 図を描き直しても指を追い続ける
+    if (drag.kind === "term") status("端子を動かしている。好きな所で指を離す。");
     if (drag.kind === "bend") {
       status("線を曲げている。好きな所で指を離す。");
       if (drag.add) {                                                // ＋を動かし始めた所で、その区間に曲げ点を1つ足す
@@ -1729,6 +1750,7 @@ svg.addEventListener("pointermove", e => {
       status("線を伸ばしている。つなぐ先（器具の端子か、ほかのボックス）で指を離す。自分のボックスに戻って離すと取りやめ。");
     }
   }
+  if (drag.kind === "term") { setTermPos(drag.id, q.x, q.y); render(); return; }
   if (drag.kind === "bend") { const k = S.cores[drag.id], a = endPos(k.a), b = endPos(k.b), p = ownPts(k)[drag.n];   // 曲げ点を指の所へ
     p.x = Math.round(q.x - (a.x + (b.x - a.x) * p.t)); p.y = Math.round(q.y - (a.y + (b.y - a.y) * p.t)); render(); return; }
   if (drag.kind === "wire") { drag.cur = q; drag.over = hitAt(e); }
@@ -1753,7 +1775,7 @@ function endDrag(e) {
     else { status("線を引くのをやめた。つなぐ先の上で指を離す。"); render(); }
     return;
   }
-  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "bend" ? "線を曲げた。＋をドラッグすると曲げ点が増える（" + BEND_MAX + "つまで）。青丸をタップすると、その曲げ点を消す。" : drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
+  if (drag.moving) { dragEnded = true; if (sel && sel.act === "move") sel = null; status(drag.kind === "term" ? "端子を動かした。ほかの端子も動かせる。終わったら「端子を動かすのを終える」。" : drag.kind === "bend" ? "線を曲げた。＋をドラッグすると曲げ点が増える（" + BEND_MAX + "つまで）。青丸をタップすると、その曲げ点を消す。" : drag.kind === "j" ? "接続点を動かした。" : "部品を動かした。"); save(); render(); }
   drag = null;
 }
 /* 指で動かしている間は、ブラウザにスクロールの動きとして扱わせない。
@@ -1770,6 +1792,13 @@ svg.addEventListener("click", e => {
     const q = svgPoint(e), it = placeItem(placing, q.x, q.y); placing = null; sel = { item: it.u };
     status(TYPES[it.type].nolabel ? TNAME(it.type) + " を置いた。" : TNAME(it.type) + " を置いた。上のボタンで記号を単線図と同じにする。");
     changed(); return;
+  }
+  if (sel && sel.act === "moveTerm") {                               // 端子を動かす: 端子をタップ → 行き先をタップ
+    const h0 = e.target.closest("[data-hit]"), [k0, ...r0] = h0 ? h0.dataset.hit.split(":") : [""], id0 = r0.join(":");
+    if (k0 === "t" && termsOfSel().includes(id0)) { sel.term = id0; status(ENDNAME(id0) + " を選んだ。行き先をタップ。"); render(); return; }
+    if (sel.term) { const q = svgPoint(e); setTermPos(sel.term, q.x, q.y); delete sel.term; status("端子を動かした。終わったら「端子を動かすのを終える」。"); save(); render(); return; }
+    if (!h0) { sel = null; status(""); render(); return; }            // 何も無い所をタップ → 端子を動かすのを終える
+    return status("青い点線の輪の端子をドラッグするか、タップしてから行き先をタップ。終わったら「端子を動かすのを終える」。", true);
   }
   if (sel && sel.act === "moveItem") {                               // 部品を動かす: 置きたい場所をタップ（ドラッグが苦手なときの道）
     const q = svgPoint(e); moveItem(sel.item, q.x, q.y); sel = { item: sel.item }; status("部品を動かした。"); save(); render(); return;
@@ -1806,7 +1835,7 @@ svg.addEventListener("click", e => {
   if (kind === "part") {
     if (sel && sel.end) return status("線は、器具の端子（○）からつなぐ。", true);
     sel = { item: id }; const st = S.placed.find(x => x.u === id);
-    status("部品を選んだ。記号を変える・動かす・消す" + (st && (SHAPE[st.type] || st.type === "pl") ? "・左右を入れ替える" : "") + "。部品はドラッグでも動かせる。"); render(); return;
+    status("部品を選んだ。記号を変える・動かす・端子を動かす・消す" + (st && (SHAPE[st.type] || st.type === "pl") ? "・左右を入れ替える" : "") + "。部品はドラッグでも動かせる。"); render(); return;
   }
   if (kind === "add") return;                                         // ＋はドラッグで使う
   if (kind === "bend") {                                              // 曲げ点をタップ → その曲げ点を消す
@@ -1854,6 +1883,11 @@ $("reCore").dataset.act = "reattach"; $("mvJoint").dataset.act = "move"; $("mgJo
 $("reCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; const k = S.cores[sel.core];
   if (k.a[0] !== "#" && k.b[0] !== "#") return status("渡り線はボックスを通らないので、消して引き直す。", true);
   sel.act = "reattach"; status("新しいつなぎ先の●をタップ。ボックスの空いた所なら新しい●を作る。"); render(); };
+$("mvTerm").dataset.act = "moveTerm";
+$("mvTerm").onclick = () => { if (!(sel && sel.item)) return; const on = sel.act !== "moveTerm"; sel = { item: sel.item }; if (on) sel.act = "moveTerm";
+  status(on ? "青い点線の輪の端子を、好きな所へドラッグ（端子をタップ → 行き先をタップ でもよい）。終わったら「端子を動かすのを終える」。" : ""); render(); };
+$("rsTerm").onclick = () => { const ids = termsOfSel(); if (!ids.length || !S.tpos) return; ids.forEach(id => { delete S.tpos[id]; });
+  sel = { item: sel.item }; status("端子を元の位置に戻した。つないだ線はそのまま。"); save(); render(); };
 $("mvPart").dataset.act = "moveItem";
 $("mvPart").onclick = () => { if (!(sel && sel.item)) return; sel.act = sel.act === "moveItem" ? undefined : "moveItem";
   status(sel.act ? "動かす先をタップ。（部品はドラッグでも動かせる）" : ""); render(); };

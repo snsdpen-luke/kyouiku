@@ -579,6 +579,37 @@ E(`exam=null; openProblem("k6"); S=refState(P); view=S; sel=null; mode="draw"; l
   tap("#undoBtn"); ok(E(`S.placed.find(i=>i.u==="${it.u}").x`)===it.x,"1つ戻すで元の位置"); }
 w.svgPoint=()=>({x:0,y:0});
 
+console.log("\n【AA】端子を好きな位置へ動かす");
+E(`exam=null; openProblem("r1"); S=refState(P); view=S; sel=null; mode="draw"; lastSaved=JSON.stringify(S); hist=[]; render();`);
+{ const lamp=JS(`S.placed.find(i=>i.type==="lamp")`), pid=lamp.pid, [tw,tb]=JS(`P.part["${pid}"].terms.map(t=>t.id)`);
+  const t0=JS(`({x:P.term["${tw}"].x,y:P.term["${tw}"].y})`);
+  tap(`[data-hit="part:${lamp.u}"]`);
+  ok(!$("mvTerm").hidden && $("rsTerm").hidden,"器具をタップすると「端子を動かす」が出る（まだ動かしていないので「元の位置に」は出ない）");
+  tap("#mvTerm"); ok(E(`sel.act`)==="moveTerm" && d.querySelectorAll('circle[stroke-dasharray="4 3"]').length===2,"「端子を動かす」で、その器具の端子に青い輪が出る");
+  w.svgPoint=e=>({x:e.clientX,y:e.clientY});
+  pev("pointerdown",t0.x,t0.y,d.querySelector(`[data-hit="t:${tw}"]`)); pev("pointermove",t0.x+8,t0.y+8); pev("pointermove",lamp.x-50,lamp.y-30); pev("pointerup",lamp.x-50,lamp.y-30); tap("#stage");
+  const t1=JS(`({x:P.term["${tw}"].x,y:P.term["${tw}"].y})`);
+  ok(t1.x===lamp.x-50 && t1.y===lamp.y-30,"端子をドラッグすると、好きな所へ動く");
+  ok(E("S.cores.length")===JS(`refState(P).cores.length`) && E("judge(S).length")===0,"動かしても線はつながったまま・判定も変わらない");
+  ok(E(`sel && sel.act`)==="moveTerm","ドラッグのあとも、端子を動かすモードのまま");
+  w.svgPoint=()=>({x:0,y:0});
+  tap(`[data-hit="t:${tb}"]`); ok(E("sel.term")===tb,"端子をタップで選べる");
+  w.svgPoint=()=>({x:lamp.x+40,y:lamp.y+60}); tap("#stage");
+  ok(E(`P.term["${tb}"].x`)===lamp.x+40 && E(`P.term["${tb}"].y`)===lamp.y+60,"行き先をタップしても動く");
+  w.svgPoint=()=>({x:lamp.x+500,y:lamp.y}); tap(`[data-hit="t:${tb}"]`); tap("#stage");
+  ok(Math.round(Math.hypot(E(`P.term["${tb}"].x`)-lamp.x,E(`P.term["${tb}"].y`)-lamp.y))<=110,"器具から離れすぎない（110まで）");
+  ok(E(`JSON.parse(localStorage.getItem("fukusen:r1")).tpos["${tw}"].x`)===-50,"動かした位置は保存される");
+  E(`moveItem("${lamp.u}", ${lamp.x+30}, ${lamp.y+20}); render();`);
+  ok(E(`P.term["${tw}"].x`)===lamp.x+30-50 && E(`P.term["${tw}"].y`)===lamp.y+20-30,"部品ごと動かしても、端子はついていく");
+  E(`moveItem("${lamp.u}", ${lamp.x}, ${lamp.y}); render();`);
+  tap("#undoBtn"); ok(E(`P.term["${tb}"].y`)===lamp.y+60,"1つ戻すで、1つ前の端子の位置");
+  E(`sel={item:"${lamp.u}"}; render();`);
+  ok(!$("rsTerm").hidden,"動かしたら「端子を元の位置に」が出る");
+  tap("#rsTerm"); ok(JSON.stringify(JS(`({x:P.term["${tw}"].x,y:P.term["${tw}"].y})`))===JSON.stringify(t0),"「端子を元の位置に」で元の並びに戻る");
+  E(`sel={item:"${lamp.u}", act:"moveTerm"}; render();`); tap("#stage");
+  ok(E("sel")===null,"何も無い所をタップすると、端子を動かすのを終える");
+  pev("pointerdown",t0.x,t0.y,d.querySelector(`[data-hit="t:${tw}"]`)); ok(E("drag && drag.kind")==="wire","ふだんは、端子からドラッグすると線が伸びる（そのまま）"); pev("pointerup",t0.x,t0.y); }
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
