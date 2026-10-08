@@ -40,8 +40,8 @@
     .main { display: flex; flex-direction: column; gap: 8px; }
     .main > .left, .main > .side { display: contents; }
     #cardTansen { order: 1; } #cardPalette { order: 2; } .toolbar { order: 3; margin: 0; }
-    .banner { order: 4; } .stagewrap { order: 5; } .status { order: 6; } #cardResult { order: 7; }
-    #tansen { max-height: 34vh; }
+    .banner { order: 4; } .stagewrap { order: 5; } .status { order: 6; }
+    .spanel { height: 34vh; }
     #stage { height: 58vh; min-height: 300px; }
   }
   @media (max-width: 600px) {
@@ -106,7 +106,7 @@
   #kPop .kCell img, #kPop .kOne img { width: 100%; height: auto; display: block; }
   #kPop .kOne img { max-width: 760px; margin: 0 auto; }
   #kPop .kSrc { margin-top: 8px; word-break: break-all; }
-  #kOne { margin-top: 6px; width: 100%; }
+  #kOne { font-size: 12.5px; padding: 3px 9px; flex: 0 0 auto; }
   #partbar.termMode > :not(#mvTerm):not(#rsTerm) { display: none; }   /* 端子を動かしている間は、帯を小さくして器具を隠さない */
   #idPop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 11; }
   #idPop.show { display: flex; }
@@ -115,7 +115,34 @@
   #idPop input { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; }
   #idPop .btns { display: flex; gap: 8px; justify-content: flex-end; }
   .note { font-size: 12.5px; color: var(--muted); }
-  #tansen { width: 100%; display: block; background: #fcfcfa; border: 1px solid var(--line); border-radius: 6px; cursor: zoom-in; margin-top: 6px; }
+  #tansen { width: 100%; display: block; background: #fcfcfa; border: 1px solid var(--line); border-radius: 6px; cursor: zoom-in; flex: 1 1 auto; min-height: 0; }
+  /* 右の列: 問題の箱（タブで 単線図・施工条件・判定 を切り替え）と部品図。タブなので、何を開いても部品図の場所は動かない */
+  .phead { display: flex; align-items: flex-start; gap: 6px; }
+  .phead h2 { flex: 1; margin: 0; }
+  .pbtns { display: flex; gap: 4px; flex: 0 0 auto; }
+  .pbtns button { font-size: 12px; padding: 2px 8px; }
+  .pnote { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; margin-top: 2px; }
+  .pnote.open { display: block; }
+  .stabs { display: flex; gap: 2px; margin-top: 6px; border-bottom: 2px solid var(--line); }
+  .stabs button { border: 1px solid var(--line); border-bottom: none; border-radius: 6px 6px 0 0; padding: 4px 10px; font-size: 13px; background: #f3f5f4; margin-bottom: -2px; }
+  .stabs button.on { background: var(--card); font-weight: 700; border-color: var(--line); border-bottom: 2px solid var(--card); color: var(--ink); }
+  .stabs button.ng { color: var(--bad); } .stabs button.ok { color: var(--accent); }
+  .spanel { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; overflow: auto; }
+  .spanel[hidden] { display: none; }
+  .tfoot { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+  .tfoot .note { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #cardTansen { display: flex; flex-direction: column; min-height: 0; }
+  @media (min-width: 981px) {
+    #cardTansen { flex: 1 1 0; }                                     /* 右の列の空きを、問題の箱が埋める */
+    #cardPalette { flex: 0 0 auto; }
+    .spanel { flex: 1 1 0; min-height: 0; }
+  }
+  #infoPop { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 12; }
+  #infoPop.show { display: flex; }
+  #infoPop .box { background: #fff; border-radius: 10px; padding: 12px 14px; width: min(720px, 94vw); max-height: 90vh; overflow: auto; }
+  #infoPop .kHead { display: flex; justify-content: flex-end; }
+  #infoPop .how h2 { margin: 0 0 6px; }
+  #infoPop .how[hidden] { display: none; }
   .paltabs { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
   .paltabs button { padding: 3px 8px; font-size: 12.5px; }
   .palette { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
@@ -126,14 +153,11 @@
   .result .cat { border-left: 4px solid var(--bad); background: #fef2f2; border-radius: 4px; padding: 5px 8px; margin: 5px 0; font-size: 13.5px; }
   .result .cat.pass { border-color: var(--accent); background: #ecfdf5; color: var(--accent); font-weight: 700; }
   .result .hint { border-left: 4px solid var(--sel); background: #eff6ff; border-radius: 4px; padding: 6px 8px; margin: 6px 0; font-size: 13.5px; }
-  details.cond { margin-top: 6px; border-top: 1px solid var(--line); padding-top: 6px; }
-  details.cond summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
-  details.cond ol { margin: 4px 0 4px; padding-left: 1.3em; font-size: 12.5px; }
-  details.cond li { margin-bottom: 3px; }
+  .cond ol { margin: 2px 0 4px; padding-left: 1.3em; font-size: 13px; }
+  .cond li { margin-bottom: 3px; }
   .tag { font-size: 11px; font-weight: 700; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
-  details.how summary { cursor: pointer; font-weight: 700; font-size: 13.5px; }
-  details.how ol { margin: 4px 0 2px; padding-left: 1.3em; font-size: 12.5px; }
-  details.how li { margin-bottom: 2px; }
+  .how ol { margin: 4px 0 2px; padding-left: 1.3em; font-size: 13px; }
+  .how li { margin-bottom: 3px; }
   .stagewrap { position: relative; }
   .selbar { display: none; position: absolute; top: 6px; left: 6px; right: 6px; z-index: 2; margin: 0;
             background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
@@ -212,35 +236,47 @@
 
     <div class="side">
       <div class="card" id="cardTansen">
-        <h2 id="ptitle"></h2>
-        <div class="note" id="pnote"></div>
-        <svg id="tansen" viewBox="0 0 1000 620" aria-label="単線図"></svg>
-        <div class="note">単線図（タップで大きく）</div>
-        <button id="kOne" hidden>公表問題の図を見る</button>
-        <details class="cond" id="condBox" hidden>
-          <summary>施工条件 <span class="tag" id="condTag"></span></summary>
-          <ol id="condList"></ol>
-          <div class="note" id="condNote"></div>
-        </details>
+        <div class="phead"><h2 id="ptitle"></h2><span class="pbtns"><button id="statsBtn" title="自分の記録">記録</button><button id="howBtn" title="描き方">描き方</button></span></div>
+        <div class="note pnote" id="pnote"></div>
+        <div class="stabs" id="sideTabs" role="tablist">
+          <button data-tab="tansen" role="tab">単線図</button>
+          <button data-tab="cond" id="condTab" role="tab">施工条件<span class="tag" id="condTag"></span></button>
+          <button data-tab="result" id="resTab" role="tab">判定</button>
+        </div>
+        <div class="spanel" id="panTansen">
+          <svg id="tansen" viewBox="0 0 1000 620" aria-label="単線図"></svg>
+          <div class="tfoot"><span class="note">単線図（タップで大きく）</span><button id="kOne" hidden>公表問題の図</button></div>
+        </div>
+        <div class="spanel" id="panCond" hidden>
+          <div class="cond" id="condBox"><ol id="condList"></ol><div class="note" id="condNote"></div></div>
+        </div>
+        <div class="spanel" id="panResult" hidden>
+          <div class="result" id="result"></div>
+          <div class="note" id="resEmpty">まだ判定していない。「判定する」を押すと、ここに結果が出る。</div>
+        </div>
       </div>
       <div class="card" id="cardPalette">
         <h2>部品図 <span class="note">タップして、図の置きたい所をタップ</span></h2>
         <div class="paltabs" id="palTabs"></div>
         <div class="palette" id="palette"></div>
       </div>
-      <div class="card" id="cardResult">
-        <div class="result" id="result"></div>
-        <details class="how" id="statsBox">
-          <summary>自分の記録</summary>
+    </div>
+  </div>
+</div>
+
+<div id="infoPop"><div class="box">
+  <div class="kHead"><span></span><button id="infoClose">閉じる</button></div>
+        <div class="how" id="statsBox">
+          <h2>自分の記録</h2>
           <table class="stats" id="statsTable"></table>
           <div class="note" id="sendNote"></div>
           <div class="h3">最近の記録</div>
           <table class="stats" id="logTable"></table>
           <div class="bar" style="margin-top:6px"><button id="copyLog">記録をコピー</button><button id="csvLog">CSVで保存</button></div>
           <div class="note" id="logNote"></div>
-        </details>
-        <details class="how">
-          <summary>描き方</summary>
+        </div>
+        <div class="how" id="howBox">
+          <h2>描き方</h2>
           <ol>
             <li>単線図を見て、要る部品を部品図から選び、図の置きたい所をタップ。記号（イ・ロ…、ボックスは B1・B2…）を単線図と同じにする</li>
             <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
@@ -252,14 +288,9 @@
             <li>器具の端子（W・B など）の位置は変えられる: 器具をタップ →「端子を動かす」→ 端子を好きな所へドラッグ（タップ → 行き先タップ でもよい）。「端子を元の位置に」で戻る</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
             <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
-            <li>図が小さいときは、図の右下の「＋」で拡大し、「✋ 移動」で見る所を動かす。「全体」で元に戻る</li>
-          </ol>
-        </details>
-      </div>
-    </div>
-  </div>
-</div>
-
+                      </ol>
+        </div>
+</div></div>
 <div id="pop"><div class="box"><div id="popMsg"></div><div class="btns" id="popBtns"></div></div></div>
 <div id="kPop"><div class="box">
   <div class="kHead"><h2 id="kTitle">公表問題</h2><button id="kClose">閉じる</button></div>
@@ -278,7 +309,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-08a";
+const VER = "2026-10-08b";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1558,7 +1589,7 @@ function drawPartBar(it) {
    操作（タップだけで描ける。ドラッグは近道）
    ============================================================ */
 function status(msg, err) { const s = $("status"); s.textContent = msg || ""; s.className = "status" + (err ? " err" : ""); }
-function changed() { judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント"; save(); render(); }
+function changed() { judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; resTabMark(); $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント"; save(); render(); }
 
 /* 置いた部品を、問題の器具（ボックス）に対応させる。種類と記号が同じで、まだ誰も対応していないもの。
    同じ種類・記号が複数あるときは、お手本の配置で一番近いもの */
@@ -1669,9 +1700,14 @@ function fitView() { if (P && view) measureWorld(); const w = fitW(), h = w * as
   vbox = { x: world.x + (world.w - w) / 2, y: world.y + (world.h - h) / 2, w, h }; clampView(); applyView(); }
 /* パソコンでは、図の枠の下の端が画面の下にちょうど来る高さにする（はみ出すと下が見切れる。Chromebook で実測） */
 function sizeStage() {
-  if (innerWidth <= 980) { svg.style.height = ""; return; }
+  const side = document.querySelector(".side");
+  if (innerWidth <= 980) { svg.style.height = ""; side.style.height = ""; return; }
   const top = svg.getBoundingClientRect().top + scrollY;
   svg.style.height = Math.max(420, innerHeight - top - 30) + "px";
+  const st = side.getBoundingClientRect().top + scrollY;            // 右の列も画面の下までに収める（問題の箱が伸び縮みし、部品図はいつも見える）
+  side.style.height = Math.max(540, innerHeight - st - 8) + "px";
+  const over = document.documentElement.scrollHeight - innerHeight;  // 下の余白・状態の行で、まだはみ出す分を詰める
+  if (over > 0) { svg.style.height = Math.max(420, parseFloat(svg.style.height) - over) + "px"; side.style.height = Math.max(540, parseFloat(side.style.height) - over) + "px"; }
 }
 window.addEventListener("resize", () => { const full = Math.abs(vbox.w - fitW()) < 1, cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; sizeStage();
   if (full) { fitView(); return; }
@@ -1993,6 +2029,28 @@ const LV1 = {
   "接地側": n => "接地側につなぐ決まりの端子に、別の線が来ている所が " + n + " か所ある。",
   "色": n => "電線の色の決まりに合わない所が " + n + " か所ある。",
 };
+/* 右の列のタブ: tansen 単線図 / cond 施工条件 / result 判定 */
+let sideTab = "tansen";
+function setSideTab(t) {
+  if (t === "cond" && $("condTab").hidden) t = "tansen";
+  sideTab = t;
+  document.querySelectorAll("#sideTabs button").forEach(b => { b.classList.toggle("on", b.dataset.tab === t); b.setAttribute("aria-selected", b.dataset.tab === t); });
+  $("panTansen").hidden = t !== "tansen"; $("panCond").hidden = t !== "cond"; $("panResult").hidden = t !== "result";
+  if (t === "tansen") drawTansen();
+}
+function resTabMark() {                                              // 判定タブに ✓ / ✗
+  const has = $("result").innerHTML.trim() !== "", ok = has && !!$("result").querySelector(".cat.pass") && !$("result").querySelector(".cat:not(.pass)");
+  $("resTab").textContent = "判定" + (has ? (ok ? " ✓" : " ✗") : "");
+  $("resTab").classList.toggle("ok", has && ok); $("resTab").classList.toggle("ng", has && !ok);
+  $("resEmpty").hidden = has;
+}
+document.querySelectorAll("#sideTabs button").forEach(b => { b.onclick = () => setSideTab(b.dataset.tab); });
+$("pnote").onclick = () => $("pnote").classList.toggle("open");
+function openInfo(which) { $("statsBox").hidden = which !== "stats"; $("howBox").hidden = which !== "how"; $("infoPop").classList.add("show"); }
+$("statsBtn").onclick = () => openInfo("stats");
+$("howBtn").onclick = () => openInfo("how");
+$("infoClose").onclick = () => $("infoPop").classList.remove("show");
+$("infoPop").addEventListener("click", e => { if (e.target === $("infoPop")) $("infoPop").classList.remove("show"); });
 function doJudge() {
   if (showingRef) return;
   if (exam && !exam.done) return submitExam(false);                  // 模擬試験中は「提出」
@@ -2006,7 +2064,7 @@ function doJudge() {
     h += `<div class="note">${esc(cnt)}。</div>`;
     markDone(P.id);
   } else CATS.forEach(c => { const n = judged.filter(x => x.cat === c).length; if (n) h += `<div class="cat"><b>${c}</b>　${esc(LV1[c](n))}</div>`; });
-  box.innerHTML = h;
+  box.innerHTML = h; resTabMark(); setSideTab("result");
   $("hintBtn").disabled = !judged.length; $("hintBtn").textContent = "ヒント";
   render();
 }
@@ -2017,7 +2075,7 @@ function doHint() {
   const old = $("result").querySelector(".hint"); if (old) old.remove();
   const d = document.createElement("div"); d.className = "hint";
   d.innerHTML = "<b>" + esc(it.cat) + "</b>　" + esc(it.lv2) + (deep ? "<br>" + esc(it.lv3) : "") + (it.mark.length ? "<br><span class=\"note\">図の赤い所。</span>" : "");
-  $("result").appendChild(d);
+  $("result").appendChild(d); setSideTab("result");
   hintStep++; bump(P.id, "hints");
   $("hintBtn").textContent = hintStep % 2 === 1 ? "くわしく" : "次のヒント";
   render();
@@ -2058,7 +2116,7 @@ function undo() {
   if (showingRef || drag || !hist.length) return;
   lastSaved = hist.pop(); S = JSON.parse(lastSaved); view = S; sel = null; placing = null;
   try { localStorage.setItem(saveKey(), lastSaved); } catch (e) {}
-  judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
+  judged = null; hintStep = 0; marks = []; $("result").innerHTML = ""; resTabMark(); $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
   $("undoBtn").disabled = !hist.length;
   status("1つ前に戻した。"); render();
 }
@@ -2092,16 +2150,16 @@ function openProblem(id) {
   S = (exam ? null : load(id)) || newState(); S.flip = S.flip || {}; view = S; hist = []; lastSaved = JSON.stringify(S); $("undoBtn").disabled = true; sel = null; mode = "draw"; swState = {}; showingRef = false; placing = null;
   judged = null; hintStep = 0; marks = [];
   $("ptitle").textContent = P.title; $("pnote").textContent = P.note || "";
-  $("condBox").hidden = !(P.cond && P.cond.length);
+  $("condTab").hidden = !(P.cond && P.cond.length); $("pnote").classList.remove("open");
   $("kOne").hidden = !(P.official && KOUHYOU[P.no]);
   $("condList").innerHTML = (P.cond || []).map(c => "<li>" + esc(c) + "</li>").join("");
   $("condTag").textContent = P.condTag || ""; $("condTag").hidden = !P.condTag;
   $("condNote").textContent = P.condNote || "";
-  $("result").innerHTML = ""; $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
+  $("result").innerHTML = ""; resTabMark(); $("hintBtn").disabled = true; $("hintBtn").textContent = "ヒント";
   penButtons($("pens"), c => { pen = c; render(); });
   penButtons($("selPens"), setCoreColor);
   drawTansen(); status(""); drawTabs(); examUI(); render();
-  sizeStage(); fitView();
+  setSideTab("tansen"); sizeStage(); fitView();
 }
 
 /* ============================================================
@@ -2268,7 +2326,7 @@ function submitExam(auto) {
     let h = `<div class="cat ${ok ? "pass" : ""}"><b>模擬試験 ${ok ? "合格" : "不合格"}</b>　${esc(P.tab)}　かかった時間 ${mmss(sec)}${auto ? "（時間切れ）" : ""}</div>`;
     if (!ok) CATS.forEach(c => { const n = judged.filter(x => x.cat === c).length; if (n) h += `<div class="cat"><b>${c}</b>　${esc(LV1[c](n))}</div>`; });
     h += `<div class="note">ヒントとお手本で復習できる。</div>`;
-    $("result").innerHTML = h;
+    $("result").innerHTML = h; resTabMark(); setSideTab("result");
     record("模擬試験", { result: ok ? "合格" : "不合格", cats: catText(judged), sec });
     $("hintBtn").disabled = ok; examUI(); render();
     status(auto ? "時間切れ。自動で提出した。" : "提出した。");
