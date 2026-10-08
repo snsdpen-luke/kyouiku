@@ -136,11 +136,21 @@ const S=[
   naru:"太さを 1000Mbps にしても、ping が 300ms なら相手には <b>0.15秒遅れて</b>見える。ラグの正体は <b>距離と経由地の数</b>。前回の tracert で見たあれ。",
   memo:"表示は ping を4倍に引き延ばしている（見えるように）。ゲーマーは ping を見る、速度は見ない。" },
 
-{ eyebrow:"余談⑥", title:"夜9時に遅いのは、みんなが動画を見るから",
-  sim:()=>`<div class="row"><label class="f">同じ回線を使っている人数 <input type="range" id="sh" min="1" max="50" value="1"> <span class="v" id="shv"></span></label></div><div class="grid"><div class="tile"><div class="k">看板の速さ</div><div class="big">1000 Mbps</div></div><div class="tile" id="sht"><div class="k">1人あたり</div><div class="big" id="sh1"></div></div><div class="tile"><div class="k">1080p の動画（8Mbps）</div><div class="big" id="sh2"></div></div></div>`,
-  wire:()=>{ const r=document.getElementById('sh'); const d=()=>{const n=+r.value; const per=1000/n; document.getElementById('shv').textContent=n+'人'; document.getElementById('sh1').textContent=fmt(per)+' Mbps'; document.getElementById('sh2').textContent=per>=8?'見られる':'止まる'; document.getElementById('sht').className='tile '+(per>=8?'ok':'bad');}; r.addEventListener('input',d); d(); },
-  naru:"「光回線 1Gbps」は<b>上限</b>で、みんなで分け合う。測ると 300Mbps くらいなのはそのせい。Wi-Fi も同じ：家族全員が動画を見ると遅くなる。",
-  memo:"ここで教室で実測。各自スマホの速度測定（Wi-Fi とモバイルの両方）。バラつきを板書して「同じ教室で、なぜ違う？」" },
+{ eyebrow:"余談⑥", title:"夜9時に遅いのは、みんなで分け合っているから",
+  sim:()=>`<div class="row"><label class="f">住まい <select id="hm"><option value="0">戸建て・光</option><option value="1">マンション・光配線</option><option value="2" selected>マンション・VDSL（古い配線）</option></select></label><label class="f">家の中で同時に使う人 <input type="range" id="hn" min="1" max="6" value="3"> <span class="v" id="hnv"></span></label><label class="f">時間帯 <select id="ht"><option value="0.15">昼（使っている人が少ない）</option><option value="0.6" selected>夜9時（みんな動画）</option></select></label></div>
+  <div class="grid" id="stages"></div>
+  <div class="grid"><div class="tile" id="rt"><div class="k">結果：家の1人あたり</div><div class="big" id="r1"></div><div class="k" id="r2"></div></div></div>
+  <div class="hint">優先順位は<b>ない</b>。先に使った人が速いわけでもない。同じ線を使う人で<b>だいたい均等に</b>分ける。だから一番細いところ（ボトルネック）を、そのとき使っている人数で割った速さになる。</div>`,
+  wire:()=>{ const HOMES=[ {name:"戸建て・光",link:1000,bld:null,share:32}, {name:"マンション・光配線",link:1000,bld:1000,share:32}, {name:"マンション・VDSL",link:100,bld:100,share:32} ];
+    const d=()=>{ const h=HOMES[+document.getElementById('hm').value], n=+document.getElementById('hn').value, act=+document.getElementById('ht').value; document.getElementById('hnv').textContent=n+'人';
+      const bldUsers=Math.max(1,Math.round(30*act)); const areaUsers=Math.max(1,Math.round(h.share*act));
+      const st=[ {k:"① 家のWi-Fiルーター",cap:h.link>=1000?300:100,users:n,note:"家族で分ける。Wi-Fiは壁や距離でさらに落ちる"}, h.bld?{k:"② マンションの共用回線",cap:h.bld,users:bldUsers,note:`棟内 約${bldUsers}世帯が使っている`}:null, {k:h.bld?"③ 電話局までの光ファイバー":"② 電話局までの光ファイバー",cap:1000,users:areaUsers,note:`1本の光を近所 最大${h.share}軒で分ける（今 約${areaUsers}軒）`}, {k:"④ プロバイダ〜相手のサーバー",cap:10000,users:areaUsers*20,note:"もっと大勢で分ける。夜はここも混む"} ].filter(Boolean);
+      let min=1e9,minK=''; const per=st.map(x=>{const p=x.cap/x.users; if(p<min){min=p;minK=x.k;} return p;});
+      document.getElementById('stages').innerHTML=st.map((x,i)=>`<div class="tile ${x.k===minK?'bad':''}"><div class="k">${x.k}</div><div class="big">${fmt(per[i])} Mbps</div><div class="k">上限 ${x.cap>=1000?x.cap/1000+' Gbps':x.cap+' Mbps'} ÷ ${x.users}${x.users===n?'人':'世帯'}　${x.note}</div></div>`).join('');
+      const perHome=min; const perPerson=Math.min(perHome, st[0].cap/n); document.getElementById('r1').textContent=fmt(perPerson)+' Mbps'; document.getElementById('r2').textContent=`一番細いのは「${minK}」。1080p（8Mbps）は ${perPerson>=8?'見られる':'止まる'}。4K（25Mbps）は ${perPerson>=25?'見られる':'止まる'}`; document.getElementById('rt').className='tile '+(perPerson>=8?'ok':'bad'); };
+    ['hm','hn','ht'].forEach(id=>document.getElementById(id).addEventListener('input',d)); d(); },
+  naru:"「光回線 1Gbps」は<b>上限</b>。家の中で家族と、マンションなら棟の中で、電話局まででは近所と、プロバイダでは地域と、<b>4段階で分け合う</b>。一番細い段が、その家の速さを決める。",
+  memo:"数字は模式。光ファイバー1本を最大32軒で分けるのは一般的な方式（分岐数）。VDSLはマンションの電話線を使う古い方式で上限100Mbps。『優先順位はない、均等』は基本。回線によっては通信量の多い人を一時的に遅くする仕組み（制限）がある、は補足程度に。" },
 
 { eyebrow:"まとめ", title:"ギガを減らさない・動画を軽くする",
   sim:()=>`<div class="hint">やっていること／やりそうなことを押す。右にだいたいの節約量が出る</div><div class="chips" id="save">${[["動画の画質を 1080p → 480p にする",80,"同じ時間見ても通信量が約1/5"],["家や学校では Wi-Fi につなぐ",100,"モバイルのギガは減らない"],["動画は Wi-Fi で先にダウンロードしておく",100,"外で見るぶんはゼロ"],["自動再生をオフにする",15,"見てない動画が流れない"],["音楽は「音だけ」にする",90,"映像ぶんが要らない"],["アプリの更新は Wi-Fi のときだけ",30,"数百MBの更新が外で走らない"],["動画を撮るとき、カメラを固定する",40,"変わる部分が減るので軽い（送る側）"],["動画を送るとき、解像度を落として送る",60,"1080p→720p で約半分（送る側）"]].map((s,i)=>`<span class="chip" data-i="${i}" data-p="${s[1]}" title="${s[2]}">${s[0]}</span>`).join('')}</div><div class="grid"><div class="tile ok"><div class="k">選んだ対策の効果（1080p を1日2時間見る人、20GB契約）</div><div class="big" id="sv"></div></div></div>`,
