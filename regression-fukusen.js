@@ -636,6 +636,22 @@ tap("#focusBtn");
 ok(d.body.classList.contains("focus") && $("focusBtn").classList.contains("on"),"「広く描く」で上の段を隠す");
 tap("#focusBtn"); ok(!d.body.classList.contains("focus"),"もう一度押すと元に戻る");
 
+console.log("\n【AC】右の列はタブ（部品図が押し出されない）");
+E(`exam=null; openProblem("k8"); sel=null; mode="draw"; render();`);
+const onTab=()=>d.querySelector("#sideTabs button.on").dataset.tab;
+ok(onTab()==="tansen" && !$("panTansen").hidden && $("panCond").hidden && $("panResult").hidden,"問題を開くと、単線図のタブ");
+tap("#condTab"); ok(onTab()==="cond" && !$("panCond").hidden && $("panTansen").hidden && d.querySelectorAll("#condList li").length>0,"施工条件のタブで、施工条件だけが見える");
+ok($("cardPalette").previousElementSibling===$("cardTansen") && !d.querySelector("#cardTansen details"),"施工条件は開き閉じ（details）ではなくタブなので、部品図を下へ押し出さない");
+ok(!$("resEmpty").hidden && /判定$/.test($("resTab").textContent.trim()),"まだ判定していないときの判定タブ");
+tap("#judgeBtn"); ok(onTab()==="result" && /✗/.test($("resTab").textContent) && $("resEmpty").hidden,"判定すると、判定のタブに切り替わり ✗ が付く");
+tap("#hintBtn"); ok(onTab()==="result" && d.querySelector("#panResult .hint"),"ヒントも判定のタブに出る");
+tap('#sideTabs [data-tab="tansen"]'); ok(onTab()==="tansen","単線図のタブに戻れる");
+E(`openProblem("r1")`);
+ok(onTab()==="tansen" && !/✗|✓/.test($("resTab").textContent),"問題を変えると、単線図のタブに戻り、判定の印も消える");
+tap("#statsBtn"); ok($("infoPop").classList.contains("show") && !$("statsBox").hidden && $("howBox").hidden,"「記録」で自分の記録の窓");
+tap("#infoClose"); tap("#howBtn"); ok($("infoPop").classList.contains("show") && !$("howBox").hidden && $("statsBox").hidden,"「描き方」で描き方の窓");
+tap("#infoClose"); ok(!$("infoPop").classList.contains("show"),"窓を閉じられる");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
