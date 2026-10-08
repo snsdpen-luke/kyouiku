@@ -7,8 +7,12 @@
   翔陽ミニマート.html   → mart/index.html    （同上。文化祭の QR コードは /mart/ を指す）
   サンプラー.html      → sampler/index.html （同上。こえサンプラー）
   メッセージが届くまで.html → network/index.html（同上。TCP/IP 教材。導入スライドの QR は /network/ を指す）
+<<<<<<< HEAD
   車の制御50.html     → car/index.html     （同上。電子計測制御・センサ当て。導入スライドの QR は /car/ を指す）
   複線図練習.html     → fukusen/index.html （同上。URL を /fukusen/ で配る）
+=======
+  速い遅いの正体.html   → speed/index.html  （同上。通信速度・画質・ギガの余談スライド）
+>>>>>>> 33c3e2e (速い・遅いの正体（通信速度・画質・ギガの余談スライド）を追加、/speed/ で配布)
 
   python3 build.py                  上の8つを作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
@@ -23,7 +27,11 @@ SRC3 = "馬レース.html"
 SRC4 = "翔陽ミニマート.html"
 SRC5 = "サンプラー.html"
 SRC6 = "メッセージが届くまで.html"
+<<<<<<< HEAD
 SRC7 = "車の制御50.html"
+=======
+SRC7 = "速い遅いの正体.html"
+>>>>>>> 33c3e2e (速い・遅いの正体（通信速度・画質・ギガの余談スライド）を追加、/speed/ で配布)
 s = io.open(SRC, encoding="utf-8").read()
 
 # 1) GitHub Pages 用。中身は本体そのまま。URL を短くするためだけの複製
@@ -55,6 +63,7 @@ os.makedirs("network", exist_ok=True)
 shutil.copyfile(SRC6, "network/index.html")
 print("生成: network/index.html")
 
+<<<<<<< HEAD
 # 1g) 車の制御50（センサ当て）。電子計測制御の自動車で学ぶ制御
 os.makedirs("car", exist_ok=True)
 shutil.copyfile(SRC7, "car/index.html")
@@ -64,6 +73,12 @@ print("生成: car/index.html")
 os.makedirs("fukusen", exist_ok=True)
 shutil.copyfile("複線図練習.html", "fukusen/index.html")
 print("生成: fukusen/index.html")
+=======
+# 1g) 速い・遅いの正体（通信速度・画質・ギガ）。余談形式のスライド兼シミュレータ
+os.makedirs("speed", exist_ok=True)
+shutil.copyfile(SRC7, "speed/index.html")
+print("生成: speed/index.html")
+>>>>>>> 33c3e2e (速い・遅いの正体（通信速度・画質・ギガの余談スライド）を追加、/speed/ で配布)
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:

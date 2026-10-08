@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>速い・遅いの正体</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* 1画面＝1ネタ。←→キーかボタンで進む。各ネタに触れる仕掛けが1つ。先生用メモは N キーで出す。 */
+:root{
+  --bg:#f6f7f4; --card:#ffffff; --fg:#1f2a2e; --mute:#64737a; --line:#d9ded8;
+  --accent:#0f8a7a; --accent-ink:#ffffff; --soft:#e3f2ee; --warn:#c7641b; --bad:#b63a3a; --bar:#8ee0a3;
+  --sans:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.6}
+.wrap{max-width:1100px;margin:0 auto;padding-block:18px;padding-inline:16px;min-height:100%;display:flex;flex-direction:column;gap:14px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:1.2rem}
+h1 span{color:var(--mute);font-weight:400;font-size:.85rem;margin-left:.5em}
+.dots{display:flex;gap:4px}
+.dots i{display:block;width:18px;height:6px;border-radius:3px;background:var(--line)}
+.dots i.cur{background:var(--warn)}.dots i.done{background:var(--accent)}
+.slide{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px 32px;flex:1;display:flex;flex-direction:column;gap:18px;min-width:0}
+.eyebrow{font-size:.8rem;color:var(--accent);letter-spacing:.1em}
+h2{margin:0;font-size:2rem;line-height:1.25;text-wrap:balance}
+.big{font-size:2.6rem;font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.sim{border:1px dashed var(--line);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--mute)}
+input[type=range]{accent-color:var(--accent);width:260px;max-width:100%}
+select,button,input[type=number]{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:8px 12px}
+button{cursor:pointer}button:hover{border-color:var(--accent)}button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button.sel{border-color:var(--accent);background:var(--soft)}
+button[disabled]{opacity:.4;cursor:default}
+.v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.naru{background:var(--soft);border-radius:8px;padding:12px 16px;font-size:1.05rem}
+.naru b{color:var(--accent)}
+.bar{height:22px;background:var(--line);border-radius:11px;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;background:var(--bar);width:0%;transition:width .1s linear}
+.bar span{position:absolute;left:10px;top:0;line-height:22px;font-size:.8rem;font-family:var(--mono)}
+table.t{border-collapse:collapse;font-size:.95rem}
+table.t td,table.t th{border:1px solid var(--line);padding:6px 12px;text-align:left}
+table.t th{color:var(--mute);font-weight:500}
+table.t td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.tile .k{font-size:.8rem;color:var(--mute)}
+.tile .big{font-size:1.9rem}
+.tile.bad .big{color:var(--bad)}.tile.ok .big{color:var(--accent)}
+.frames{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+canvas{border:1px solid var(--line);border-radius:6px;max-width:100%;height:auto;background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:20px;padding:6px 14px;cursor:pointer;font-size:.95rem;user-select:none}
+.chip.on{background:var(--soft);border-color:var(--accent)}
+.nav{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.memo{display:none;background:#fff8e6;border:1px solid #e2c879;border-radius:8px;padding:10px 14px;font-size:.9rem;color:#5a4a1a}
+.memo.show{display:block}
+.hint{font-size:.8rem;color:var(--mute)}
+.lag{position:relative;height:120px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fafbf9}
+.lag .me,.lag .you{position:absolute;top:30px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff}
+.lag .me{background:var(--accent);left:10px}.lag .you{background:var(--warn);left:10px;top:74px}
+.lag .lbl{position:absolute;right:10px;font-size:.78rem;color:var(--mute)}
+@media (max-width:600px){.slide{padding:20px 18px}h2{font-size:1.5rem}.big{font-size:2rem}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header><h1>速い・遅いの正体 <span>通信速度・画質・ギガ</span></h1><div class="dots" id="dots"></div></header>
+<section class="slide" id="slide"></section>
+<div class="nav"><button id="prev">← 前</button><span class="hint">← → キーでも進む。N で先生用メモ</span><button id="next" class="pri">次 →</button></div>
+</div>
+
+<script>
+const fmt=n=>n.toLocaleString('ja-JP',{maximumFractionDigits:1});
+function dur(sec){ if(sec<1)return '1秒未満'; if(sec<60)return Math.round(sec)+'秒'; if(sec<3600)return (sec/60).toFixed(sec<600?1:0)+'分'; if(sec<86400)return (sec/3600).toFixed(1)+'時間'; return (sec/86400).toFixed(1)+'日'; }
+const SPEEDS=[["速度制限中",0.128],["4G（弱い）",10],["4G（ふつう）",50],["家のWi-Fi",100],["5G",300],["光回線（上限）",1000]];
+const FILES=[["文字メッセージ",0.00003],["写真1枚",3],["曲1つ",5],["LINEのアプリ",250],["動画10分（1080p）",400],["ゲーム1本",10000]];
+const YT=[["360p",0.3],["480p",0.5],["720p",1.0],["1080p",2.5],["4K",7]];
+const PLANS=[["3GB",3],["7GB",7],["20GB",20],["50GB",50]];
+
+const S=[
+{ eyebrow:"背骨は1本", title:"速さの単位は bps。バイトにするには ÷8",
+  sim:()=>`<div class="row"><label class="f">回線の速さ <input type="range" id="sp" min="0" max="5" value="3" step="1"></label><div class="col"><div class="big" id="spv"></div><div class="hint" id="spb"></div></div></div><div class="row" id="pics"></div>`,
+  wire:()=>{ const r=document.getElementById('sp'); const d=()=>{const [n,m]=SPEEDS[+r.value]; const MBs=m/8; document.getElementById('spv').textContent=`${n}　${m>=1?m+' Mbps':Math.round(m*1000)+' kbps'}`; document.getElementById('spb').textContent=`1秒に ${fmt(MBs)} MB　＝　写真 ${fmt(MBs/3)} 枚分／秒`; const k=Math.min(40,Math.round(MBs/3)); document.getElementById('pics').innerHTML=(k?'📷'.repeat(k):'📷の 1/'+Math.round(3/MBs)+' 枚')+(MBs/3>40?' …':'');}; r.addEventListener('input',d); d(); },
+  naru:"<b>b</b>（ビット）と <b>B</b>（バイト）は別もの。回線の宣伝は小さい b、ファイルの大きさは大きい B。だから ÷8。",
+  memo:"板書はこれだけ：bps ＝ 1秒に何ビット。1バイト＝8ビット。100Mbps ＝ 12.5MB/秒。写真1枚≒3MB、で「写真4枚/秒」。" },
+
+{ eyebrow:"計算ゲーム", title:"ゲーム1本、ダウンロードに何分？",
+  sim:()=>`<div class="row"><label class="f">落とすもの <select id="fl">${FILES.map((f,i)=>`<option value="${i}" ${i===5?'selected':''}>${f[0]}（${f[1]>=1000?f[1]/1000+' GB':f[1]>=1?f[1]+' MB':f[1]*1000000+' バイト'}）</option>`).join('')}</select></label><label class="f">回線 <select id="fs">${SPEEDS.map((s,i)=>`<option value="${i}" ${i===3?'selected':''}>${s[0]}（${s[1]>=1?s[1]+' Mbps':Math.round(s[1]*1000)+' kbps'}）</option>`).join('')}</select></label><button class="pri" id="go">ダウンロード開始</button></div><div class="bar"><i id="bi"></i><span id="bt">0%</span></div><div class="row"><div class="big" id="ft">—</div></div>`,
+  wire:()=>{ let t=null; const calc=()=>{const f=FILES[+document.getElementById('fl').value][1], s=SPEEDS[+document.getElementById('fs').value][1]; return f*8/s;}; const show=()=>{document.getElementById('ft').textContent='かかる時間：'+dur(calc());}; document.getElementById('fl').addEventListener('change',show); document.getElementById('fs').addEventListener('change',show); show();
+    document.getElementById('go').addEventListener('click',()=>{ clearInterval(t); const sec=calc(); const bi=document.getElementById('bi'), bt=document.getElementById('bt'); const dispSec=Math.min(sec,6); const t0=performance.now(); t=setInterval(()=>{const p=Math.min(1,(performance.now()-t0)/1000/dispSec); bi.style.width=(p*100)+'%'; bt.textContent=Math.round(p*100)+'%'+(sec>6?`（実際は ${dur(sec)}。${(6/sec*100).toFixed(sec>600?2:0)}倍速で表示）`:''); if(p>=1)clearInterval(t);},50); }); },
+  naru:"10GB のゲーム：光回線なら <b>約13分</b>、速度制限中なら <b>約7日</b>。式は　大きさ(バイト)×8 ÷ 速さ(bps)。",
+  memo:"ここだけ生徒に電卓で出させる。10GB＝10,000MB。×8＝80,000Mb。÷100Mbps＝800秒≒13分。÷0.128＝625,000秒≒7.2日。" },
+
+{ eyebrow:"余談①", title:"画質を上げると、何が減る？",
+  sim:()=>`<div class="row"><label class="f">画質 <select id="yq">${YT.map((y,i)=>`<option value="${i}" ${i===3?'selected':''}>${y[0]}</option>`).join('')}</select></label><label class="f">1日に見る時間 <input type="range" id="yh" min="0.5" max="6" step="0.5" value="2"> <span class="v" id="yhv">2時間</span></label><label class="f">契約 <select id="yp">${PLANS.map((p,i)=>`<option value="${i}" ${i===2?'selected':''}>${p[0]}</option>`).join('')}</select></label></div><div class="grid"><div class="tile"><div class="k">1時間あたり</div><div class="big" id="y1"></div></div><div class="tile"><div class="k">1日あたり</div><div class="big" id="y2"></div></div><div class="tile" id="y3t"><div class="k">契約のギガが消えるまで</div><div class="big" id="y3"></div></div></div><table class="t"><tr><th>画質</th><th>1時間あたり（だいたい）</th></tr>${YT.map(y=>`<tr><td>${y[0]}</td><td class="n">${y[1]} GB</td></tr>`).join('')}</table>`,
+  wire:()=>{ const d=()=>{const q=YT[+document.getElementById('yq').value][1], h=+document.getElementById('yh').value, p=PLANS[+document.getElementById('yp').value][1]; document.getElementById('yhv').textContent=h+'時間'; document.getElementById('y1').textContent=q+' GB'; document.getElementById('y2').textContent=fmt(q*h)+' GB'; const days=p/(q*h); document.getElementById('y3').textContent=days>=30?'1か月もつ':fmt(days)+' 日'; document.getElementById('y3t').className='tile '+(days>=30?'ok':days>=10?'':'bad');}; ['yq','yh','yp'].forEach(id=>document.getElementById(id).addEventListener('input',d)); d(); },
+  naru:"4K を 1日2時間、20GB 契約 → <b>1.4日で消える</b>。360p なら 1か月もつ。画質1段で通信量は <b>2倍ちかく</b>変わる。",
+  memo:"数字は「だいたい」。動画の中身と端末で2倍くらい動く。桁が合っていればいい。スマホの画面で4Kと1080pの差はほぼ分からない、も言ってよい。" },
+
+{ eyebrow:"余談②", title:"動画は、変わったところだけ送っている",
+  sim:()=>`<div class="chips"><span class="chip on" data-s="talk">しゃべってるだけ</span><span class="chip" data-s="game">ゲーム実況</span><span class="chip" data-s="fire">花火</span></div><div class="frames"><div class="col"><div class="hint">前のコマ</div><canvas id="c1" width="240" height="160"></canvas></div><div class="col"><div class="hint">次のコマ</div><canvas id="c2" width="240" height="160"></canvas></div><div class="col"><div class="hint">変わったところ（送るのはここだけ）</div><canvas id="c3" width="240" height="160"></canvas></div></div><div class="row"><div class="big" id="df"></div></div>`,
+  wire:()=>{ const draw=(mode)=>{ const c1=document.getElementById('c1'),c2=document.getElementById('c2'),c3=document.getElementById('c3'); const g1=c1.getContext('2d'),g2=c2.getContext('2d'),g3=c3.getContext('2d'); const N=24,M=16,w=10,h=10; const rnd=(s)=>{let x=s;return()=>{x=(x*1103515245+12345)&0x7fffffff;return x/0x7fffffff;};}; const r1=rnd(7),r2=rnd(7),r3=rnd(99); let changed=0;
+      for(let y=0;y<M;y++)for(let x=0;x<N;x++){ const base=`hsl(${200+Math.floor(r1()*30)},30%,${60+Math.floor(r1()*20)}%)`; let next=base; const cx=Math.abs(x-N/2),cy=Math.abs(y-M/2);
+        if(mode==='talk'){ if(cx<3&&cy<2&&r3()<0.5) next=`hsl(20,50%,${55+Math.floor(r3()*20)}%)`; else if(cx<5&&cy<5) {const v=`hsl(25,45%,${62+((x+y)%3)*4}%)`; next=v; g1.fillStyle=v;g1.fillRect(x*w,y*h,w,h); g2.fillStyle=v;g2.fillRect(x*w,y*h,w,h); continue;} }
+        if(mode==='game'){ if(r3()<0.45) next=`hsl(${Math.floor(r3()*360)},60%,55%)`; }
+        if(mode==='fire'){ const b=`hsl(230,30%,12%)`; g1.fillStyle=b;g1.fillRect(x*w,y*h,w,h); next=r3()<0.6?`hsl(${Math.floor(r3()*60)},90%,${50+Math.floor(r3()*40)}%)`:b; g2.fillStyle=next;g2.fillRect(x*w,y*h,w,h); const ch=next!==b; g3.fillStyle=ch?'#c7641b':'#f1f1ee'; g3.fillRect(x*w,y*h,w,h); if(ch)changed++; continue; }
+        g1.fillStyle=base;g1.fillRect(x*w,y*h,w,h); g2.fillStyle=next;g2.fillRect(x*w,y*h,w,h); const ch=next!==base; g3.fillStyle=ch?'#c7641b':'#f1f1ee'; g3.fillRect(x*w,y*h,w,h); if(ch)changed++; }
+      const pct=changed/(N*M); document.getElementById('df').textContent=`送るのは全体の ${Math.round(pct*100)}%`; };
+    document.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));ch.classList.add('on');draw(ch.dataset.s);})); draw('talk'); },
+  naru:"1秒30コマを全部送ると 1080p で <b>1秒に数百MB</b>。実際は数MB。前のコマと<b>違うところだけ</b>送るから。しゃべる動画は軽く、花火やゲーム実況は重い。",
+  memo:"「だから軽い動画を作りたければ、カメラを固定して、背景を動かさない」。生徒が動画を作る場面につながる。" },
+
+{ eyebrow:"余談③", title:"「自動」画質は、諦めてるんじゃなく調整してる",
+  sim:()=>`<div class="row"><label class="f">今の回線の速さ <input type="range" id="aq" min="0.3" max="40" step="0.1" value="8"> <span class="v" id="aqv"></span></label></div><div class="grid"><div class="tile"><div class="k">選ばれる画質</div><div class="big" id="aq1"></div></div><div class="tile"><div class="k">理由</div><div id="aq2" style="font-size:.95rem"></div></div></div><div class="hint">画質ごとに必要な速さ（だいたい）：360p 1Mbps／480p 2Mbps／720p 4Mbps／1080p 8Mbps／4K 25Mbps</div>`,
+  wire:()=>{ const need=[["360p",1],["480p",2],["720p",4],["1080p",8],["4K",25]]; const r=document.getElementById('aq'); const d=()=>{const m=+r.value; document.getElementById('aqv').textContent=m+' Mbps'; let pick=need[0]; for(const n of need) if(m>=n[1]*1.2) pick=n; const stop=m<need[0][1]; document.getElementById('aq1').textContent=stop?'止まる（ぐるぐる）':pick[0]; document.getElementById('aq2').textContent=stop?'360p にも足りない。先に数秒ぶん貯めてから再生する':`${pick[1]} Mbps 必要なところに ${m} Mbps ある。1段上げると足りなくなるので、ここで止める`;}; r.addEventListener('input',d); d(); },
+  naru:"回線を測りながら、<b>止まるより画質を下げる</b>を選んでいる。トンネルで画質が落ちるのはそれ。",
+  memo:"数秒ぶん先に貯める＝バッファ。「ぐるぐる」はバッファが空になった合図。" },
+
+{ eyebrow:"余談④", title:"速度制限の 128kbps で、何ができる？",
+  sim:()=>`<table class="t"><tr><th>やること</th><th>大きさ</th><th>128kbps でかかる時間</th><th>できる？</th></tr>${[["文字メッセージ",0.00003],["スタンプ1個",0.05],["写真1枚",3],["Webページ1枚",2],["曲1つ",5],["動画1分（360p）",5],["動画1分（1080p）",40]].map(([n,mb])=>{const s=mb*8/0.128; return `<tr><td>${n}</td><td class="n">${mb>=1?mb+' MB':Math.round(mb*1000)+' KB'}</td><td class="n">${dur(s)}</td><td>${s<3?'余裕':s<30?'待てば':s<180?'つらい':'無理'}</td></tr>`;}).join('')}</table>`,
+  wire:()=>{},
+  naru:"制限中でも<b>文字だけは届く</b>理由。文字は30バイト、写真はその10万倍。",
+  memo:"前回の「文字メッセージは箱1つ」の復習がここで効く。" },
+
+{ eyebrow:"余談⑤", title:"対戦ゲームは、速さより ping",
+  sim:()=>`<div class="row"><label class="f">回線の太さ <input type="range" id="lb" min="1" max="1000" step="1" value="100"> <span class="v" id="lbv"></span></label><label class="f">ping（往復時間） <input type="range" id="lp" min="5" max="300" step="5" value="30"> <span class="v" id="lpv"></span></label></div><div class="lag"><div class="me">自分</div><div class="you">相手に見える自分</div><div class="lbl" style="top:40px">ボタンを押した瞬間</div><div class="lbl" style="top:84px" id="lagt"></div></div><button class="pri" id="lgo">ジャンプ！</button>`,
+  wire:()=>{ const lb=document.getElementById('lb'),lp=document.getElementById('lp'); const d=()=>{document.getElementById('lbv').textContent=lb.value+' Mbps'; document.getElementById('lpv').textContent=lp.value+' ms'; document.getElementById('lagt').textContent=`${lp.value/2} ms 遅れて見える（片道）`;}; lb.addEventListener('input',d); lp.addEventListener('input',d); d();
+    document.getElementById('lgo').addEventListener('click',()=>{ const me=document.querySelector('.lag .me'), you=document.querySelector('.lag .you'); me.animate([{left:'10px'},{left:'calc(100% - 46px)'}],{duration:600,fill:'forwards',easing:'ease-out'}); setTimeout(()=>you.animate([{left:'10px'},{left:'calc(100% - 46px)'}],{duration:600,fill:'forwards',easing:'ease-out'}), +lp.value*4); }); },
+  naru:"太さを 1000Mbps にしても、ping が 300ms なら相手には <b>0.15秒遅れて</b>見える。ラグの正体は <b>距離と経由地の数</b>。前回の tracert で見たあれ。",
+  memo:"表示は ping を4倍に引き延ばしている（見えるように）。ゲーマーは ping を見る、速度は見ない。" },
+
+{ eyebrow:"余談⑥", title:"夜9時に遅いのは、みんなが動画を見るから",
+  sim:()=>`<div class="row"><label class="f">同じ回線を使っている人数 <input type="range" id="sh" min="1" max="50" value="1"> <span class="v" id="shv"></span></label></div><div class="grid"><div class="tile"><div class="k">看板の速さ</div><div class="big">1000 Mbps</div></div><div class="tile" id="sht"><div class="k">1人あたり</div><div class="big" id="sh1"></div></div><div class="tile"><div class="k">1080p の動画（8Mbps）</div><div class="big" id="sh2"></div></div></div>`,
+  wire:()=>{ const r=document.getElementById('sh'); const d=()=>{const n=+r.value; const per=1000/n; document.getElementById('shv').textContent=n+'人'; document.getElementById('sh1').textContent=fmt(per)+' Mbps'; document.getElementById('sh2').textContent=per>=8?'見られる':'止まる'; document.getElementById('sht').className='tile '+(per>=8?'ok':'bad');}; r.addEventListener('input',d); d(); },
+  naru:"「光回線 1Gbps」は<b>上限</b>で、みんなで分け合う。測ると 300Mbps くらいなのはそのせい。Wi-Fi も同じ：家族全員が動画を見ると遅くなる。",
+  memo:"ここで教室で実測。各自スマホの速度測定（Wi-Fi とモバイルの両方）。バラつきを板書して「同じ教室で、なぜ違う？」" },
+
+{ eyebrow:"まとめ", title:"ギガを減らさない・動画を軽くする",
+  sim:()=>`<div class="hint">やっていること／やりそうなことを押す。右にだいたいの節約量が出る</div><div class="chips" id="save">${[["動画の画質を 1080p → 480p にする",80,"同じ時間見ても通信量が約1/5"],["家や学校では Wi-Fi につなぐ",100,"モバイルのギガは減らない"],["動画は Wi-Fi で先にダウンロードしておく",100,"外で見るぶんはゼロ"],["自動再生をオフにする",15,"見てない動画が流れない"],["音楽は「音だけ」にする",90,"映像ぶんが要らない"],["アプリの更新は Wi-Fi のときだけ",30,"数百MBの更新が外で走らない"],["動画を撮るとき、カメラを固定する",40,"変わる部分が減るので軽い（送る側）"],["動画を送るとき、解像度を落として送る",60,"1080p→720p で約半分（送る側）"]].map((s,i)=>`<span class="chip" data-i="${i}" data-p="${s[1]}" title="${s[2]}">${s[0]}</span>`).join('')}</div><div class="grid"><div class="tile ok"><div class="k">選んだ対策の効果（1080p を1日2時間見る人、20GB契約）</div><div class="big" id="sv"></div></div></div>`,
+  wire:()=>{ const chips=[...document.querySelectorAll('#save .chip')]; const d=()=>{ let rem=1; chips.filter(c=>c.classList.contains('on')).forEach(c=>{rem*= (1-(+c.dataset.p)/100);}); const base=2.5*2*30; const now=base*rem; document.getElementById('sv').textContent=chips.some(c=>c.classList.contains('on'))?`月 ${fmt(base)} GB → ${fmt(now)} GB（${now<=20?'20GBに収まる':'まだ超える'}）`:'まだ何も選んでいない'; }; chips.forEach(c=>c.addEventListener('click',()=>{c.classList.toggle('on');d();})); d(); },
+  naru:"いちばん効くのは <b>画質を落とす</b> と <b>Wi-Fi で先に落とす</b>。設定を2つ変えるだけで、月の通信量は 1/5 になる。",
+  memo:"効果の数字は重ね掛けの概算。「だいたい」と言う。生徒自身のスマホの設定画面（YouTube の画質設定・アプリの自動更新）を開かせると定着する。" },
+];
+
+let i=0; const slide=document.getElementById('slide');
+function render(){ const s=S[i]; slide.innerHTML=`<div class="eyebrow">${s.eyebrow}　${i+1} / ${S.length}</div><h2>${s.title}</h2><div class="sim">${s.sim()}</div><div class="naru">${s.naru}</div><div class="memo" id="memo">先生用メモ：${s.memo}</div>`; s.wire(); document.getElementById('dots').innerHTML=S.map((_,k)=>`<i class="${k<i?'done':k===i?'cur':''}"></i>`).join(''); document.getElementById('prev').disabled=i===0; document.getElementById('next').disabled=i===S.length-1; if(memoOn)document.getElementById('memo').classList.add('show'); window.scrollTo({top:0}); }
+let memoOn=false;
+document.getElementById('prev').addEventListener('click',()=>{if(i>0){i--;render();}});
+document.getElementById('next').addEventListener('click',()=>{if(i<S.length-1){i++;render();}});
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return; if(e.key==='ArrowRight'&&i<S.length-1){i++;render();} if(e.key==='ArrowLeft'&&i>0){i--;render();} if(e.key==='n'||e.key==='N'){memoOn=!memoOn;document.getElementById('memo').classList.toggle('show',memoOn);} });
+render();
+</script>
+
+</body>
+</html>
