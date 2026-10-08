@@ -385,8 +385,9 @@ tap("#panBtn"); ok(E("panMode")===true && $("panBtn").classList.contains("on"),"
   ok(E("vbox.x")!==x0 && E("S.placed.length")===0,"移動モードでは、ドラッグで図が動き、何も描かれない"); }
 tap("#panBtn"); ok(E("panMode")===false,"もう一度押すと、描くのに戻る");
 tap("#zoomFit"); ok($("stage").getAttribute("viewBox")==="0 0 1000 620","全体で元に戻る");
-for(let i=0;i<8;i++) tap("#zoomIn"); ok(E("vbox.w")>=250,"拡大しすぎない");
-for(let i=0;i<8;i++) tap("#zoomOut"); ok(E("vbox.w")===1000,"縮小しすぎない");
+for(let i=0;i<8;i++) tap("#zoomIn"); ok(E("vbox.w")>=200,"拡大しすぎない");
+for(let i=0;i<8;i++) tap("#zoomOut"); ok(Math.abs(E("vbox.w")-E("fullW()"))<0.01 && E("vbox.w")>=E("SHEET.w"),"縮小は、紙の全体が見えるまで");
+tap("#zoomFit");
 tap("#zoomIn"); E(`openProblem("r2")`); ok(E("vbox.w")===1000,"問題を切り替えると全体表示に戻る");
 
 console.log("\n【P】複線図のスイッチは接点の記号");
@@ -609,6 +610,31 @@ E(`exam=null; openProblem("r1"); S=refState(P); view=S; sel=null; mode="draw"; l
   E(`sel={item:"${lamp.u}", act:"moveTerm"}; render();`); tap("#stage");
   ok(E("sel")===null,"何も無い所をタップすると、端子を動かすのを終える");
   pev("pointerdown",t0.x,t0.y,d.querySelector(`[data-hit="t:${tw}"]`)); ok(E("drag && drag.kind")==="wire","ふだんは、端子からドラッグすると線が伸びる（そのまま）"); pev("pointerup",t0.x,t0.y); }
+
+console.log("\n【AB】広い紙・簡単な拡大縮小・広く描く");
+E(`exam=null; try{localStorage.removeItem("fukusen:r1")}catch(e){} openProblem("r1"); sel=null; mode="draw"; render();`);
+ok(d.querySelector(`#stage > rect[stroke-dasharray="10 8"]`)!==null && d.querySelector("#stage > g#cnt")!==null,"紙のふちを薄い点線で見せる（中身は別のまとまり）");
+put("sw1",500,900,"イ");
+ok(E(`S.placed[S.placed.length-1].y`)===900,"前の紙（y=570まで）より下にも部品を置ける");
+E(`moveItem(S.placed[S.placed.length-1].u, 1080, 1100)`);
+ok(E(`S.placed[S.placed.length-1].x`)===E("SHEET.x+SHEET.w-40") && E(`S.placed[S.placed.length-1].y`)===E("SHEET.y+SHEET.h-40"),"紙の外へは出ない");
+E(`fitView()`);
+{ const x0=E("vbox.x"), y0=E("vbox.y"); E("zoomBy(2)"); const x1=E("vbox.x");
+  w.svgPoint=e=>({x:e.clientX,y:e.clientY});
+  pev("pointerdown",300,300,$("stage")); pev("pointermove",290,300); pev("pointermove",200,300); pev("pointerup",200,300); tap("#stage");
+  ok(E("vbox.x")!==x1 && E("panMode")===false,"何も無い所をドラッグすると、移動ボタンを押さなくても図が動く");
+  ok(E("S.placed.length")===1,"そのとき、部品は置かれない・選んだものも変わらない"); w.svgPoint=()=>({x:0,y:0}); }
+{ const w0=E("vbox.w"); $("stage").dispatchEvent(new w.WheelEvent("wheel",{deltaY:-100,deltaMode:0,bubbles:true,cancelable:true}));
+  ok(E("vbox.w")<w0,"マウスのホイールを回すと拡大する");
+  const w1=E("vbox.w"), x1=E("vbox.x"); $("stage").dispatchEvent(new w.WheelEvent("wheel",{deltaX:30,deltaY:0.5,deltaMode:0,bubbles:true,cancelable:true}));
+  ok(E("vbox.w")===w1 && E("vbox.x")!==x1,"タッチパッドの2本指スクロールでは、図が動く（大きさは変わらない）"); }
+{ const w0=E("vbox.w"); d.dispatchEvent(new w.KeyboardEvent("keydown",{key:"-",bubbles:true})); ok(E("vbox.w")>w0,"−キーで縮小");
+  d.dispatchEvent(new w.KeyboardEvent("keydown",{key:"+",bubbles:true})); d.dispatchEvent(new w.KeyboardEvent("keydown",{key:"+",bubbles:true})); ok(E("vbox.w")<w0,"＋キーで拡大");
+  d.dispatchEvent(new w.KeyboardEvent("keydown",{key:"0",bubbles:true})); ok(Math.abs(E("vbox.w")-E("fitW()"))<0.01,"0キーで全体表示"); }
+ok(/全体表示/.test($("zoomFit").textContent) && /拡大/.test($("zoomIn").textContent) && /縮小/.test($("zoomOut").textContent),"ボタンに 縮小・拡大・全体表示 の名前");
+tap("#focusBtn");
+ok(d.body.classList.contains("focus") && $("focusBtn").classList.contains("on"),"「広く描く」で上の段を隠す");
+tap("#focusBtn"); ok(!d.body.classList.contains("focus"),"もう一度押すと元に戻る");
 
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));

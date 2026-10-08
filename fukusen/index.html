@@ -27,7 +27,12 @@
   .main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; align-items: start; }
   /* 拡大・移動のボタン（図の右下） */
   .zoom { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 4px; z-index: 1; }
-  .zoom button { background: rgba(255,255,255,.94); min-width: 40px; height: 36px; padding: 0 10px; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .zoom button { background: rgba(255,255,255,.94); min-width: 40px; height: 38px; padding: 0 10px; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .zoom button .k { font-size: 18px; margin-right: 2px; }
+  /* 広く描く: 上の題名・名前・問題ボタンを隠して、図の枠を縦に伸ばす */
+  body.focus h1, body.focus .sub, body.focus #whoBar, body.focus #probs { display: none; }
+  body.focus .wrap { padding-top: 6px; }
+  #focusBtn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
   #stage.pan { cursor: grab; }
 
   /* タブレット縦・スマホ: 1列に並べ、単線図 → 部品図 → 操作 → 図 → 結果 の順にする */
@@ -55,7 +60,9 @@
     .palette button { font-size: 10px; min-height: 56px; }
     .selbar { top: 4px; left: 4px; right: 4px; padding: 4px 6px; gap: 4px; }
     .selbar button { padding: 4px 8px; font-size: 13px; }
-    .zoom button { min-width: 38px; height: 34px; padding: 0 8px; }
+    .zoom button { min-width: 38px; height: 36px; padding: 0 8px; }
+    .zoom button .t { display: none; }                               /* スマホでは記号だけ */
+    body.focus #stage { height: calc(100vh - 150px); }
     #stage { height: 60vh; }
   }
   .side { display: flex; flex-direction: column; gap: 8px; }
@@ -73,7 +80,7 @@
   .pen.c緑 { background: #1a7f3a; color: #fff; }
   .pen.on { outline: 3px solid var(--sel); outline-offset: 2px; }
   #stage { width: 100%; height: calc(100vh - 175px); min-height: 440px; display: block; background: #fff; border: 1px solid var(--line); border-radius: 8px;
-           touch-action: pinch-zoom; user-select: none; -webkit-user-select: none; }   /* 指で部品や●をドラッグしても画面がスクロールしない */
+           touch-action: none; user-select: none; -webkit-user-select: none; }   /* 指で部品や●をドラッグしても画面がスクロールしない */
   #stage.placing { cursor: crosshair; outline: 3px solid var(--sel); outline-offset: -3px; }
   .status { font-size: 13.5px; min-height: 1.5em; margin: 4px 2px 0; color: var(--muted); }
   .status.err { color: var(--bad); font-weight: 600; }
@@ -193,10 +200,11 @@
         </div>
         <svg id="stage" viewBox="0 0 1000 620"></svg>
         <div class="zoom" id="zoomBar">
-          <button id="zoomOut" aria-label="縮小">−</button>
-          <button id="zoomIn" aria-label="拡大">＋</button>
-          <button id="panBtn" aria-label="図を動かす">✋ 移動</button>
-          <button id="zoomFit">全体</button>
+          <button id="zoomOut" aria-label="縮小" title="縮小（−キー・ホイール・2本指でつまむ）"><span class="k">−</span><span class="t">縮小</span></button>
+          <button id="zoomIn" aria-label="拡大" title="拡大（＋キー・ホイール・2本指で広げる）"><span class="k">＋</span><span class="t">拡大</span></button>
+          <button id="zoomFit" aria-label="全体表示" title="全体表示（0キー）"><span class="k">⤢</span><span class="t">全体表示</span></button>
+          <button id="panBtn" aria-label="図を動かす" title="図を動かす（何も無い所をドラッグしても動く）">✋<span class="t"> 移動</span></button>
+          <button id="focusBtn" aria-label="広く描く" title="上の段を隠して、図を広く描く">⛶<span class="t"> 広く描く</span></button>
         </div>
       </div>
       <div class="status" id="status"></div>
@@ -239,6 +247,7 @@
             <li>線の色を選び、端子（○）からボックス（点線の円）までドラッグ（または 端子 → ボックス とタップ）。ボックスの中に接続点（●）ができる。同じ●につなぐ線は、端子からその●へ</li>
             <li>●をボックスの外まで引っぱり出すと、●から線を伸ばせる（器具の端子や、ほかのボックスへ）。ボックスの中で動かすと●が動く</li>
             <li>線をタップ → 色を変える・つなぎ先を変える・消す。線の上の＋をドラッグすると、そこで曲がる（3か所まで）。青丸はドラッグで動かす・タップで消す。●をタップ → 動かす・まとめる・消す</li>
+            <li>図の大きさ: ホイール・2本指でつまむ・＋/−キーで拡大縮小、「全体表示」か 0キーで全体。何も無い所をドラッグ（2本指でも）すると図が動く。「⛶ 広く描く」で上の段を隠して広く描ける</li>
             <li>部品・ボックス・●はドラッグで動かせる（部品は記号のどこをつかんでもよい）。部品をタップすると、記号を変える・動かす（行き先をタップ）・消すができる</li>
             <li>器具の端子（W・B など）の位置は変えられる: 器具をタップ →「端子を動かす」→ 端子を好きな所へドラッグ（タップ → 行き先タップ でもよい）。「端子を元の位置に」で戻る</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
@@ -269,7 +278,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-07m";
+const VER = "2026-10-08a";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1395,7 +1404,7 @@ function render() {
     g += `<line x1="${a.x}" y1="${a.y}" x2="${drag.cur.x}" y2="${drag.cur.y}" stroke="${pen === "白" ? "#7b7b7b" : col}" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="10 6" pointer-events="none"/>`;
     if (pen === "白") g += `<line x1="${a.x}" y1="${a.y}" x2="${drag.cur.x}" y2="${drag.cur.y}" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 6" pointer-events="none"/>`;
   }
-  svg.innerHTML = g;
+  svg.innerHTML = `<rect x="${SHEET.x}" y="${SHEET.y}" width="${SHEET.w}" height="${SHEET.h}" fill="none" stroke="#cfd6d2" stroke-width="2" stroke-dasharray="10 8" pointer-events="none"/><g id="cnt">${g}</g>`;
   svg.classList.toggle("placing", !!placing);
   // 選んだものの操作
   const cs = sel && sel.core !== undefined;
@@ -1571,7 +1580,7 @@ function purge(pid, isBox) {
   tidy();
 }
 function placeItem(type, x, y) {
-  x = Math.max(50, Math.min(950, Math.round(x))); y = Math.max(50, Math.min(570, Math.round(y)));
+  x = Math.max(SHEET.x + 50, Math.min(SHEET.x + SHEET.w - 50, Math.round(x))); y = Math.max(SHEET.y + 50, Math.min(SHEET.y + SHEET.h - 50, Math.round(y)));
   let label = "";
   if (isBox(type)) { const used = new Set(S.placed.filter(i => isBox(i.type)).map(i => i.label)); label = BOXLABELS.find(l => !used.has(l)) || ""; }
   const it = { u: "u" + (seq++), type, label, x, y, pid: null };
@@ -1599,7 +1608,7 @@ function setTermPos(id, x, y) {
 }
 function moveItem(u, x, y) {
   const it = S.placed.find(i => i.u === u); if (!it) return;
-  x = Math.max(40, Math.min(960, Math.round(x))); y = Math.max(40, Math.min(580, Math.round(y)));
+  x = Math.max(SHEET.x + 40, Math.min(SHEET.x + SHEET.w - 40, Math.round(x))); y = Math.max(SHEET.y + 40, Math.min(SHEET.y + SHEET.h - 40, Math.round(y)));
   if (isBox(it.type) && it.pid) S.joints.forEach(j => { if (j.box === it.pid && j.x !== undefined) { j.x += x - it.x; j.y += y - it.y; } });
   it.x = x; it.y = y;
 }
@@ -1629,12 +1638,18 @@ function aspect() { const r = svg.getBoundingClientRect(); return r.width > 0 &&
 /* world: 図の中身が広がっている範囲（お手本の図と、いま描いてある図を合わせた範囲＋余白）。「全体」はこれがちょうど収まる大きさ。
    前は 0〜1000×0〜620 に決め打ちで、はみ出す器具の名前やケーブルの種類が切れていた */
 let world = { x: 0, y: 0, w: 1000, h: 620 };
-function fullW() { return Math.max(world.w, world.h / aspect()); }
+/* SHEET: 部品を置ける紙の広さ。前は 0〜1000×0〜620（置けるのは y=570 まで）で、縦が狭かった。薄い点線で見せる */
+const SHEET = { x: -100, y: -100, w: 1200, h: 1100 };
+function roam() { const x0 = Math.min(SHEET.x, world.x), y0 = Math.min(SHEET.y, world.y);   // 動かして見られる範囲（紙と中身）
+  return { x: x0, y: y0, w: Math.max(SHEET.x + SHEET.w, world.x + world.w) - x0, h: Math.max(SHEET.y + SHEET.h, world.y + world.h) - y0 }; }
+function fitW() { return Math.max(world.w, world.h / aspect()); }        // 「全体表示」の幅
+function fullW() { const r = roam(); return Math.max(r.w, r.h / aspect()); }   // いちばん縮小した幅（紙の全体）
 function clampView() {
-  vbox.w = Math.max(250, Math.min(fullW(), vbox.w)); vbox.h = vbox.w * aspect();
+  const R = roam();
+  vbox.w = Math.max(200, Math.min(fullW(), vbox.w)); vbox.h = vbox.w * aspect();
   for (const [p, l] of [["x", "w"], ["y", "h"]]) {
-    if (vbox[l] >= world[l]) vbox[p] = world[p] + (world[l] - vbox[l]) / 2;   // 中身より広く見えているときは真ん中に
-    else vbox[p] = Math.max(world[p] - vbox[l] * 0.25, Math.min(world[p] + world[l] - vbox[l] * 0.75, vbox[p]));
+    if (vbox[l] >= R[l]) vbox[p] = R[p] + (R[l] - vbox[l]) / 2;     // 紙より広く見えているときは真ん中に
+    else vbox[p] = Math.max(R[p] - vbox[l] * 0.25, Math.min(R[p] + R[l] - vbox[l] * 0.75, vbox[p]));
   }
 }
 function measureWorld() {
@@ -1643,20 +1658,22 @@ function measureWorld() {
     r = r ? { x0: Math.min(r.x0, q.x0), y0: Math.min(r.y0, q.y0), x1: Math.max(r.x1, q.x1), y1: Math.max(r.y1, q.y1) } : q; };
   if (typeof svg.getBBox === "function") {                           // getBBox が使えない所（テスト）では元の範囲
     const keep = [view, showingRef, sel];
-    try { view = refState(P); showingRef = true; sel = null; render(); grow(svg.getBBox()); } catch (e) {}
+    const cnt = () => $("cnt").getBBox();                              // 紙の点線を除いた中身
+    try { view = refState(P); showingRef = true; sel = null; render(); grow(cnt()); } catch (e) {}
     [view, showingRef, sel] = keep; render();
-    try { grow(svg.getBBox()); } catch (e) {}
+    try { grow(cnt()); } catch (e) {}
   }
   world = r ? { x: r.x0 - M, y: r.y0 - M, w: r.x1 - r.x0 + 2 * M, h: r.y1 - r.y0 + 2 * M } : { x: 0, y: 0, w: 1000, h: 620 };
 }
-function fitView() { if (P && view) measureWorld(); vbox = { x: world.x, y: world.y, w: fullW(), h: 0 }; clampView(); applyView(); }
+function fitView() { if (P && view) measureWorld(); const w = fitW(), h = w * aspect();
+  vbox = { x: world.x + (world.w - w) / 2, y: world.y + (world.h - h) / 2, w, h }; clampView(); applyView(); }
 /* パソコンでは、図の枠の下の端が画面の下にちょうど来る高さにする（はみ出すと下が見切れる。Chromebook で実測） */
 function sizeStage() {
   if (innerWidth <= 980) { svg.style.height = ""; return; }
   const top = svg.getBoundingClientRect().top + scrollY;
   svg.style.height = Math.max(420, innerHeight - top - 30) + "px";
 }
-window.addEventListener("resize", () => { const full = vbox.w >= fullW() - 1, cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; sizeStage();
+window.addEventListener("resize", () => { const full = Math.abs(vbox.w - fitW()) < 1, cx = vbox.x + vbox.w / 2, cy = vbox.y + vbox.h / 2; sizeStage();
   if (full) { fitView(); return; }
   clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView(); });
 function zoomBy(f) {   // 見ている所の真ん中を中心に拡大・縮小
@@ -1664,6 +1681,40 @@ function zoomBy(f) {   // 見ている所の真ん中を中心に拡大・縮小
   vbox.w /= f; clampView(); vbox.x = cx - vbox.w / 2; vbox.y = cy - vbox.h / 2; clampView(); applyView();
   if (vbox.w >= fullW() - 1) setPan(false);
 }
+/* 画面の (sx, sy) の所を動かさずに拡大・縮小（ホイール・2本指） */
+function zoomAt(f, sx, sy, base) {
+  const r = svg.getBoundingClientRect(), b = base || vbox; if (!r.width) return zoomBy(f);
+  const k0 = r.width / b.w, wx = b.x + (sx - r.left) / k0, wy = b.y + (sy - r.top) / k0;
+  vbox.w = b.w / f; clampView(); const k = r.width / vbox.w;
+  vbox.x = wx - (sx - r.left) / k; vbox.y = wy - (sy - r.top) / k; clampView(); applyView();
+}
+/* ホイール: マウスのホイール・タッチパッドのつまむ動き → 拡大・縮小。タッチパッドの2本指スクロール → 図を動かす */
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  const mouse = e.deltaMode === 1 || (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 50);
+  if (e.ctrlKey || mouse) { zoomAt(Math.exp(-Math.max(-300, Math.min(300, e.deltaY * (e.deltaMode === 1 ? 33 : 1))) * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX, e.clientY); return; }
+  const r = svg.getBoundingClientRect(), k = r.width / vbox.w || 1;
+  vbox.x += e.deltaX / k; vbox.y += e.deltaY / k; clampView(); applyView();
+}, { passive: false });
+/* キー: ＋ 拡大・− 縮小・0 全体表示（文字を打つ欄では効かない） */
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || "")) return;
+  if (e.key === "+" || e.key === "=" || e.key === ";") { zoomBy(1.25); e.preventDefault(); }
+  else if (e.key === "-" || e.key === "_") { zoomBy(1 / 1.25); e.preventDefault(); }
+  else if (e.key === "0") { fitView(); setPan(false); e.preventDefault(); }
+});
+/* 広く描く: 上の段を隠し、できればブラウザも全画面にする。もう一度押すか Esc で戻る */
+let focusFs = false;
+function setFocus(on) {
+  document.body.classList.toggle("focus", on); $("focusBtn").classList.toggle("on", on);
+  if (on && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+    try { const pr = document.documentElement.requestFullscreen(); focusFs = true; if (pr && pr.catch) pr.catch(() => { focusFs = false; }); } catch (e) { focusFs = false; }
+  } else if (!on && focusFs && document.fullscreenElement && document.exitFullscreen) { try { document.exitFullscreen(); } catch (e) {} focusFs = false; }
+  setTimeout(() => { sizeStage(); fitView(); if (innerWidth <= 980) svg.scrollIntoView({ block: "center" }); }, 60);
+  status(on ? "広く描く。戻すときは、もう一度「⛶」を押す。" : "");
+}
+$("focusBtn").onclick = () => setFocus(!document.body.classList.contains("focus"));
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && focusFs) { focusFs = false; setFocus(false); } else setTimeout(() => { sizeStage(); fitView(); }, 60); });
 function setPan(on) { panMode = on; $("panBtn").classList.toggle("on", on); svg.classList.toggle("pan", on);
   status(on ? "移動中。図を指（マウス）で動かす。もう一度「✋ 移動」を押すと、描くのに戻る。" : ""); }
 $("zoomIn").onclick = () => zoomBy(1.5);
@@ -1702,11 +1753,23 @@ function reattach(i, target) {
 
 /* ドラッグ: 部品・ボックス・●。少し動かすまではタップとして扱う（選ぶ操作と取り違えないため） */
 let drag = null, dragEnded = false;
+const fingers = new Map();                                           // 触れている指（2本指で拡大・縮小・移動）
+function pinchInfo() { const [a, b] = [...fingers.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
 svg.addEventListener("pointerdown", e => {
   dragEnded = false;
-  if (panMode) { drag = { kind: "pan", x: e.clientX, y: e.clientY, vx: vbox.x, vy: vbox.y, moving: false, pid: e.pointerId }; return; }
+  if (e.pointerType === "touch") {
+    fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (fingers.size === 2) {                                        // 2本目の指 → それまでの操作はやめて、つまむ・動かす
+      if (drag && drag.kind === "wire") sel = null;
+      drag = Object.assign({ kind: "pinch", moving: true, base: Object.assign({}, vbox) }, { p0: pinchInfo() }); dragEnded = true; render(); return;
+    }
+    if (fingers.size > 2) return;
+  }
+  const pan = () => { drag = { kind: "pan", x: e.clientX, y: e.clientY, vx: vbox.x, vy: vbox.y, moving: false, pid: e.pointerId }; };
+  if (panMode) return pan();
   const h = e.target.closest && e.target.closest("[data-hit]");
-  if (!h || showingRef || mode !== "draw" || placing) return;
+  if (!h || showingRef || mode !== "draw") return pan();            // 何も無い所（やお手本・確かめる中）をドラッグ → 図を動かす。動かさなければ今までどおりタップ
+  if (placing) return;
   const [kind, ...rest] = h.dataset.hit.split(":"), id = rest.join(":");
   let what = null;
   if (kind === "bend" || kind === "add") { const [c, n] = id.split(":").map(Number); what = { kind: "bend", id: c, n, add: kind === "add" }; }   // 曲げ点を動かす／＋から曲げ点を足す
@@ -1715,11 +1778,19 @@ svg.addEventListener("pointerdown", e => {
   else if (kind === "j") { const j = S.joints.find(j => j.id === id); what = { kind: "j", id, orig: { x: j.x, y: j.y } }; }   // ●からドラッグ → ボックスの中なら●を動かす。外へ出たら線を伸ばす
   else if (kind === "part") what = { kind: "item", id };
   else if (kind === "box") { const it = itemOfBox(id); if (it) what = { kind: "item", id: it.u }; }
-  if (!what) return;
+  if (!what) return pan();
   drag = Object.assign(what, { x: e.clientX, y: e.clientY, moving: false, pid: e.pointerId });
   if (what.kind === "item") { const it = S.placed.find(i => i.u === what.id), q = svgPoint(e); drag.ox = it.x - q.x; drag.oy = it.y - q.y; }
 });
 svg.addEventListener("pointermove", e => {
+  if (fingers.has(e.pointerId)) fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (drag && drag.kind === "pinch") {
+    if (fingers.size < 2) return;
+    const p1 = pinchInfo(), b = drag.base, r = svg.getBoundingClientRect(), k0 = r.width / b.w;
+    const wx = b.x + (drag.p0.x - r.left) / k0, wy = b.y + (drag.p0.y - r.top) / k0;   // つまみ始めた所の図の座標を、いまの2本の真ん中に
+    vbox.w = b.w / (p1.d / drag.p0.d); clampView(); const k = r.width / vbox.w;
+    vbox.x = wx - (p1.x - r.left) / k; vbox.y = wy - (p1.y - r.top) / k; clampView(); applyView(); return;
+  }
   if (!drag || e.pointerId !== drag.pid) return;
   if (!drag.moving) {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
@@ -1733,7 +1804,7 @@ svg.addEventListener("pointermove", e => {
         pts.splice(drag.n, 0, { t: (t0 + t1) / 2, x: 0, y: 0 }); drag.add = false;
       }
     }
-    else if (drag.kind !== "pan") status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
+    else if (drag.kind !== "pan" && drag.kind !== "term") status(drag.kind === "wire" ? "線を伸ばしている。つなぐ先（ボックスか、その中の●、渡り線なら同じ枠の端子）で指を離す。"
          : drag.kind === "j" ? "ドラッグ中。ボックスの中で指を離す。" : "ドラッグ中。置きたい所で指を離す。");
     if (drag.kind === "wire") sel = { end: drag.id };               // つなげるボックスを青くする
   }
@@ -1758,6 +1829,8 @@ svg.addEventListener("pointermove", e => {
   render();
 });
 function endDrag(e) {
+  if (e) fingers.delete(e.pointerId);
+  if (drag && drag.kind === "pinch") { if (!fingers.size) { drag = null; dragEnded = true; } return; }
   if (!drag || (e && e.pointerId !== drag.pid)) return;
   if (drag.kind === "pan") { if (drag.moving) dragEnded = true; drag = null; return; }
   if (drag.moving && drag.kind === "wire") {                         // 離した所へつなぐ
