@@ -73,9 +73,9 @@ ok(d.querySelectorAll("#palette button").length>=9,"部品図が並んでいる"
 const put=(type,x,y,lab)=>{ tap(`#palette button[data-type="${type}"]`); w.svgPoint=()=>({x,y}); tap("#stage");
   if(lab!==undefined){ const b=[...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab===lab); b.click(); } };
 put("src",120,300); put("box",480,300);
-ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===1,"電源とボックスを置くと、その間のケーブルだけ出る");
+ok(d.querySelectorAll(`#stage path.band`).length===1,"電源とボックスを置くと、その間のケーブルだけ出る");
 put("lamp",480,90);
-ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===1,"記号なしのランプは単線図と合わないので、ケーブルは出ない");
+ok(d.querySelectorAll(`#stage path.band`).length===1,"記号なしのランプは単線図と合わないので、ケーブルは出ない");
 ok($("partbar").classList.contains("show"),"置いた部品を選んだ状態になり、記号のボタンが出る");
 { const u=E("S.placed[S.placed.length-1].u"), hs=[...d.querySelectorAll(`[data-hit="tx:${u}"]`)];
   ok(hs.length===2,"記号がまだでも、置いた時からランプの端子（○）が2つ出る");
@@ -84,7 +84,7 @@ ok($("partbar").classList.contains("show"),"置いた部品を選んだ状態に
   hs[0].dispatchEvent(new w.MouseEvent("click",{bubbles:true}));
   ok($("status").classList.contains("err")&&/記号/.test($("status").textContent),"記号が合うまでは線を引けないと伝える"); }
 [...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="イ").click();
-ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===2,"記号をイにすると単線図と合い、ケーブルが出る");
+ok(d.querySelectorAll(`#stage path.band`).length===2,"記号をイにすると単線図と合い、ケーブルが出る");
 tap(`#palette button[data-type="sw1"]`); w.svgPoint=()=>({x:480,y:540}); tap("#stage");
 ok(d.querySelectorAll(`[data-hit="tx:${E("S.placed[S.placed.length-1].u")}"]`).length===2,"スイッチも置いた時から端子（点）が2つ出る");
 [...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="ロ").click();
@@ -92,7 +92,7 @@ tap("#judgeBtn");
 ok(/部品/.test($("result").textContent),"記号ちがいのスイッチ → 判定で「部品」の指摘");
 tap(`[data-hit="part:${E("S.placed[S.placed.length-1].u")}"]`);
 [...d.querySelectorAll("#partLabels button")].find(b=>b.dataset.lab==="イ").click();
-ok(d.querySelectorAll(`#stage line[stroke-width="30"]`).length===3,"記号を直すとケーブルが出る");
+ok(d.querySelectorAll(`#stage path.band`).length===3,"記号を直すとケーブルが出る");
 tap("#unselP");
 const pen=c=>tap(`#pens .pen[data-c="${c}"]`);
 const line=(a,b)=>{ tap(`[data-hit="t:${a}"]`); tap(b.startsWith("box:")?`[data-hit="${b}"]`:`[data-hit="${b}"]`); };
@@ -667,6 +667,21 @@ for (const id of ["r3","k1","k8"]) {
   tap("#undoBtn"); ok(E("S.cores[0].pts&&S.cores[0].pts.length")===1,id+": 「1つ戻す」で整える前に戻る");
 }
 E(`openProblem("r1"); S=newState(); view=S; render();`); tap("#tidyBtn"); ok(/まだ線が無い/.test($("status").textContent),"線が無いときは、そう言う");
+
+console.log("\n【AE】お手本は整えて出す・線はケーブルの道にそって平行に");
+for (const id of ["r1","k1","k5"]) {
+  E(`exam=null; openProblem("${id}"); S=newState(); view=S; render();`);
+  const raw=E(`(()=>{const k=S,v=view; S=refState(P); view=S; const c=lineCost(); S=k; view=v; render(); return c.n+c.near;})()`);
+  tap("#refBtn"); const yes=[...d.querySelectorAll("#popBtns button")].find(b=>/見る/.test(b.textContent)); if (yes) yes.click();
+  ok(E("showingRef")===true && E("view.joints.every(j=>j.x!==undefined)"),id+": お手本を出すと、●の位置が整えてある");
+  const tidy=E(`(()=>{const k=S; S=view; const c=lineCost(); S=k; return c.n+c.near;})()`);
+  ok(tidy<=raw,id+": お手本の交差・点の上を通る線は、整える前より増えない（"+raw+" → "+tidy+"）");
+  ok(E("judge(view).length")===0,id+": 整えたお手本も合格の図");
+  tap("#backMine");
+}
+E(`openProblem("k1"); S=refState(P); view=S; render();`);
+ok([...d.querySelectorAll('#stage path[stroke-width="5.5"]')].filter(p=>/Q/.test(p.getAttribute("d"))).length>=8,"線は、ケーブルの道にそって角を丸く曲がる（斜めの直線ではない）");
+ok(d.querySelectorAll("#stage path.band").length===E("P.cables.filter(cableShown).length"),"ケーブルの帯も道の形で描く");
 
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
