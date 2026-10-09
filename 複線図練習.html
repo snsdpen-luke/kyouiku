@@ -311,7 +311,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-09a";
+const VER = "2026-10-09b";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1271,6 +1271,103 @@ function drawPart(p, sim, uid) {
   return g;
 }
 
+/* ============================================================
+   ケーブルの道と車線（複線図）。単線図と同じく、ボックス（か電源）から横に出て、角で曲がり、縦に器具へ入る。
+   ほぼ縦か横に並ぶものはまっすぐ。同じケーブルの線は、道にそって少しずつずらした車線を平行に走る（教科書の複線図の形）。
+   見た目だけで、判定には関係しない
+   ============================================================ */
+const isHub = id => !!P.box[id] || (P.place[id] || []).some(p => isSrc(p.type));
+function cableRoute(c) {                                             // c.a の側から c.b の側への折れ線
+  let s = anchorOf(c.a), e = anchorOf(c.b); if (!s || !e) return null;
+  let rev = false;
+  if ((!isHub(c.a) && isHub(c.b)) || (isHub(c.a) === isHub(c.b) && e.y < s.y)) { [s, e] = [e, s]; rev = true; }
+  const dx = e.x - s.x, dy = e.y - s.y;
+  let pts;
+  const bxE = P.box[rev ? c.a : c.b], bxS = P.box[rev ? c.b : c.a];
+  if (Math.abs(dy) < 45 && bxE && Math.abs(dy) < bxE.r - 20) pts = [{ x: s.x, y: s.y }, { x: e.x, y: s.y }];          // ずれが小さいときは角を作らず、ボックスの中まで水平に
+  else if (Math.abs(dy) < 45 && bxS && Math.abs(dy) < bxS.r - 20) pts = [{ x: s.x, y: e.y }, { x: e.x, y: e.y }];
+  else if (Math.abs(dx) < 45 && bxE && Math.abs(dx) < bxE.r - 20) pts = [{ x: s.x, y: s.y }, { x: s.x, y: e.y }];     // 垂直も同じ
+  else if (Math.abs(dx) < 45 && bxS && Math.abs(dx) < bxS.r - 20) pts = [{ x: e.x, y: s.y }, { x: e.x, y: e.y }];
+  else if (Math.abs(dx) < 30 || Math.abs(dy) < 30) pts = [{ x: s.x, y: s.y }, { x: e.x, y: e.y }];
+  else pts = [{ x: s.x, y: s.y }, { x: e.x, y: s.y }, { x: e.x, y: e.y }];
+  return rev ? pts.reverse() : pts;
+}
+function roundPath(ps, r) {                                          // 角を丸めた折れ線
+  const f = v => Math.round(v * 10) / 10;
+  let d = `M${f(ps[0].x)} ${f(ps[0].y)}`;
+  for (let i = 1; i < ps.length - 1; i++) {
+    const a = ps[i - 1], c = ps[i], b = ps[i + 1], la = Math.hypot(c.x - a.x, c.y - a.y) || 1, lb = Math.hypot(b.x - c.x, b.y - c.y) || 1;
+    const ra = Math.min(r, la / 2), rb = Math.min(r, lb / 2);
+    d += ` L${f(c.x - (c.x - a.x) / la * ra)} ${f(c.y - (c.y - a.y) / la * ra)} Q${f(c.x)} ${f(c.y)} ${f(c.x + (b.x - c.x) / lb * rb)} ${f(c.y + (b.y - c.y) / lb * rb)}`;
+  }
+  const z = ps[ps.length - 1]; return d + ` L${f(z.x)} ${f(z.y)}`;
+}
+function polyMid(ps) {                                               // 折れ線の長さの真ん中
+  const L = []; let tot = 0; for (let i = 1; i < ps.length; i++) { const l = Math.hypot(ps[i].x - ps[i - 1].x, ps[i].y - ps[i - 1].y); L.push(l); tot += l; }
+  let h = tot / 2; for (let i = 1; i < ps.length; i++) { if (h <= L[i - 1]) { const q = h / (L[i - 1] || 1); return { x: ps[i - 1].x + (ps[i].x - ps[i - 1].x) * q, y: ps[i - 1].y + (ps[i].y - ps[i - 1].y) * q }; } h -= L[i - 1]; }
+  return ps[ps.length - 1];
+}
+/* 曲げていない線それぞれの折れ線（k.a から k.b へ）。Map: 線 → 点の並び */
+function laneRoutes(st) {
+  const out = new Map();
+  P.cables.forEach(c => {
+    const R = cableRoute(c); if (!R) return;
+    const ks = st.cores.filter(k => !k.pts && !k.q && endShown(k.a) && endShown(k.b) && routeOf(k.a, k.b) === c);
+    if (!ks.length) return;
+    const unit = (p, q) => { const dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1; return { x: dx / l, y: dy / l }; };
+    const legs = []; for (let i = 1; i < R.length; i++) legs.push(unit(R[i - 1], R[i]));
+    const nrm = u => ({ x: -u.y, y: u.x }), m = R.length - 1;
+    const items = ks.map(k => { const atA = placeOf(k.a) === c.a; return { k, flip: !atA, pa: endPos(atA ? k.a : k.b), pb: endPos(atA ? k.b : k.a) }; });
+    // 車線の並び: 器具の側（ボックスでない方）の端子の並びに合わせる → 器具の手前で線が交差しない
+    const useB = !!P.box[c.a] && !P.box[c.b];
+    const nA = nrm(legs[0]), nB = nrm(legs[m - 1]);
+    const key = it => useB ? (it.pb.x - R[m].x) * nB.x + (it.pb.y - R[m].y) * nB.y : (it.pa.x - R[0].x) * nA.x + (it.pa.y - R[0].y) * nA.y;
+    items.sort((p, q) => key(p) - key(q));
+    const n = items.length, gap = n > 1 ? Math.min(10, 24 / (n - 1)) : 0;
+    items.forEach((it, i) => { it.off = (i - (n - 1) / 2) * gap; });
+    const u0 = legs[0], uL = legs[m - 1];
+    // 端の入り方。器具の端子へは、車線から横へ出て端子の真上（真横）から入る（階段）。外側の端子へ行く線ほど、手前で先に曲がる
+    const ends = [
+      { at: R[0], u: u0, nv: nA, pt: it => it.pa, id: it => it.flip ? it.k.b : it.k.a, set: (it, v) => { it.A = v; } },
+      { at: R[m], u: { x: -uL.x, y: -uL.y }, nv: nB, pt: it => it.pb, id: it => it.flip ? it.k.a : it.k.b, set: (it, v) => { it.B = v; } },
+    ];
+    ends.forEach(E => {
+      const lat = it => { const p = E.pt(it); return (p.x - E.at.x) * E.nv.x + (p.y - E.at.y) * E.nv.y; };
+      const along = it => { const p = E.pt(it); return (p.x - E.at.x) * E.u.x + (p.y - E.at.y) * E.u.y; };
+      const L = items.filter(it => E.id(it)[0] !== "#" && lat(it) - it.off < -5).sort((p, q) => lat(p) - lat(q));   // 片側へ曲がる線（外側から）
+      const Rt = items.filter(it => E.id(it)[0] !== "#" && lat(it) - it.off > 5).sort((p, q) => lat(q) - lat(p));
+      items.forEach(it => {
+        const p = E.pt(it), t = along(it);
+        if (E.id(it)[0] === "#") { E.set(it, { t: t + 16, pts: [p] }); return; }   // ボックスの●へは、車線の端から まっすぐ
+        const side = L.includes(it) ? L : Rt.includes(it) ? Rt : null;
+        if (!side) { E.set(it, { t: t + 14, pts: [p] }); return; }   // 車線の正面の端子へは、そのまま入る
+        const lv = t + 18 + (side.length - 1 - side.indexOf(it)) * 9;
+        const K = { x: E.at.x + E.u.x * lv + E.nv.x * lat(it), y: E.at.y + E.u.y * lv + E.nv.y * lat(it) };
+        E.set(it, { t: lv, pts: [p, K] });
+      });
+    });
+    items.forEach(it => {
+      const off = it.off;
+      const Q = R.map((p, j) => {                                    // 車線（道を off だけずらした折れ線）
+        if (j === 0 || j === m) { const v = nrm(legs[j === 0 ? 0 : m - 1]); return { x: p.x + v.x * off, y: p.y + v.y * off }; }
+        const v1 = nrm(legs[j - 1]), v2 = nrm(legs[j]), d = 1 + v1.x * v2.x + v1.y * v2.y || 1;
+        return { x: p.x + (v1.x + v2.x) * off / d, y: p.y + (v1.y + v2.y) * off / d };
+      });
+      const len0 = Math.hypot(Q[1].x - Q[0].x, Q[1].y - Q[0].y), lenL = Math.hypot(Q[m].x - Q[m - 1].x, Q[m].y - Q[m - 1].y);
+      const tA = it.A.t, tB = it.B.t;
+      let poly;
+      if (m === 1 ? tA + tB < len0 - 4 : (tA < len0 - 4 && tB < lenL - 4)) {
+        const E0 = { x: Q[0].x + u0.x * Math.max(0, tA), y: Q[0].y + u0.y * Math.max(0, tA) };
+        const E1 = { x: Q[m].x - uL.x * Math.max(0, tB), y: Q[m].y - uL.y * Math.max(0, tB) };
+        poly = [...it.A.pts, E0, ...Q.slice(1, m), E1, ...it.B.pts.slice().reverse()];
+      } else poly = [it.pa, it.pb];
+      out.set(it.k, it.flip ? poly.slice().reverse() : poly);
+    });
+  });
+  return out;
+}
+let lanes = new Map();
+
 /* 線の曲げ点（最大 BEND_MAX 個）。1点は {t, x, y}: 両端を結ぶまっすぐな線の t の所から (x, y) ずらした所。
    部品を動かしても、曲げ点は両端についていく。前の版の k.q（2次曲線の引っぱり）は、真ん中の1点として読む */
 const BEND_MAX = 3;
@@ -1311,9 +1408,10 @@ function coreLine(k, i, extra) {
   const a = endPos(k.a), b = endPos(k.b);
   const col = COLORS[k.c] || "#888", selected = sel && sel.core === i;
   let d = `M${a.x} ${a.y} L${b.x} ${b.y}`;
-  const bp = bendPts(k, a, b), q = bp.length ? null : autoBend(k, a, b);
+  const bp = bendPts(k, a, b), lane = !bp.length && lanes.get(k), q = bp.length || (lane && lane.length > 2) ? null : autoBend(k, a, b);
   const sp = smoothPath([a, ...bp, b]);
   if (bp.length) d = sp.d;                                           // 曲げた線: 曲げ点をすべて通る
+  else if (lane && lane.length > 2) { d = roundPath(lane, 12); sp.mids = [polyMid(lane)]; }   // ケーブルの車線にそって平行に
   else if (q) {                                                      // ほかの端子をよける: 両端の真ん中から q ずらした所を引っぱる2次曲線
     d = `M${a.x} ${a.y} Q${(a.x + b.x) / 2 + q.x} ${(a.y + b.y) / 2 + q.y} ${b.x} ${b.y}`;
     sp.mids = [{ x: (a.x + b.x) / 2 + q.x / 2, y: (a.y + b.y) / 2 + q.y / 2 }];   // ＋は、ふくらんだ線の上に出す
@@ -1375,13 +1473,15 @@ function render() {
   const uidOf = {}; (view.placed || []).forEach(it => { if (it.pid) uidOf[it.pid] = it.u; });
   let g = "";
   if (!(view.placed || []).length) g += `<text x="500" y="300" text-anchor="middle" font-size="18" fill="#9ca3af">単線図を見て、部品図から要る部品を選び、ここに置く</text>`;
-  // ケーブル（単線図のとおりに置けた所だけ、薄く出す）
+  // ケーブル（単線図のとおりに置けた所だけ、薄く出す）。道は縦横に折れる
+  lanes = laneRoutes(view);
   P.cables.forEach(c => {
     if (!cableShown(c)) return;
-    const a = anchorOf(c.a), b = anchorOf(c.b);
+    const R = cableRoute(c);
     const n = view.cores.filter(k => routeOf(k.a, k.b) === c).length;
-    g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${mk.has("cab:" + c.id) ? "#fca5a5" : "#e9e3d6"}" stroke-opacity="${mk.has("cab:" + c.id) ? 0.8 : 0.45}" stroke-width="30" stroke-linecap="round"/>`;
-    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, ok = n === c.colors.length;
+    g += `<path class="band" d="${roundPath(R, 40)}" fill="none" stroke="${mk.has("cab:" + c.id) ? "#fca5a5" : "#e9e3d6"}" stroke-opacity="${mk.has("cab:" + c.id) ? 0.8 : 0.45}" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>`;
+    let li = 1; for (let i = 2; i < R.length; i++) if (Math.hypot(R[i].x - R[i - 1].x, R[i].y - R[i - 1].y) > Math.hypot(R[li].x - R[li - 1].x, R[li].y - R[li - 1].y)) li = i;
+    const mx = (R[li - 1].x + R[li].x) / 2, my = (R[li - 1].y + R[li].y) / 2, ok = n === c.colors.length;
     const lw = (c.spec.length + 5) * 7 + 12;
     g += `<g opacity=".8"><rect x="${mx - lw / 2}" y="${my - 11}" width="${lw}" height="22" rx="4" fill="#fff" fill-opacity=".7"/>`
        + `<text x="${mx}" y="${my + 5}" text-anchor="middle" font-size="12" fill="#a39a8a">${esc(c.spec)}　<tspan fill="${ok ? "#5fa58c" : "#a39a8a"}" font-weight="700">${n}/${c.colors.length}本</tspan></text></g>`;
@@ -1692,7 +1792,7 @@ function measureWorld() {
   if (typeof svg.getBBox === "function") {                           // getBBox が使えない所（テスト）では元の範囲
     const keep = [view, showingRef, sel];
     const cnt = () => $("cnt").getBBox();                              // 紙の点線を除いた中身
-    try { view = refState(P); showingRef = true; sel = null; render(); grow(cnt()); } catch (e) {}
+    try { view = refView(); showingRef = true; sel = null; render(); grow(cnt()); } catch (e) {}
     [view, showingRef, sel] = keep; render();
     try { grow(cnt()); } catch (e) {}
   }
@@ -1777,8 +1877,10 @@ function moveJoint(jid, x, y, drag) {
    つながり方は変えないので、判定には関係しない
    ============================================================ */
 function lineCost() {
-  applyLayout(S); layoutJoints();
-  const segs = S.cores.filter(k => endShown(k.a) && endShown(k.b)).map(k => ({ k, a: endPos(k.a), b: endPos(k.b) }));
+  applyLayout(S); layoutJoints(); const ln = laneRoutes(S);
+  const segs = [];                                                   // 描いた形（車線の折れ線）で数える
+  S.cores.filter(k => endShown(k.a) && endShown(k.b)).forEach(k => { const ps = ln.get(k) || [endPos(k.a), endPos(k.b)];
+    for (let i = 1; i < ps.length; i++) segs.push({ k, a: ps[i - 1], b: ps[i] }); });
   const pts = [...S.joints.filter(j => P.box[j.box].shown).map(j => ({ id: j.id, p: jointPos(j) })),
                ...P.parts.filter(p => p.shown).flatMap(p => p.terms.map(t => ({ id: t.id, p: { x: t.x, y: t.y } })))];
   const cross = (p, q, r, t) => { const d = (a, b, c) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
@@ -1786,7 +1888,7 @@ function lineCost() {
   let n = 0, near = 0, len = 0;
   segs.forEach((s1, i) => {
     len += Math.hypot(s1.b.x - s1.a.x, s1.b.y - s1.a.y);
-    for (let j = i + 1; j < segs.length; j++) { const s2 = segs[j]; if ([s1.k.a, s1.k.b].some(e => e === s2.k.a || e === s2.k.b)) continue; if (cross(s1.a, s1.b, s2.a, s2.b)) n++; }
+    for (let j = i + 1; j < segs.length; j++) { const s2 = segs[j]; if (s2.k === s1.k || [s1.k.a, s1.k.b].some(e => e === s2.k.a || e === s2.k.b)) continue; if (cross(s1.a, s1.b, s2.a, s2.b)) n++; }
     pts.forEach(o => { if (o.id === s1.k.a || o.id === s1.k.b) return;   // 線が、関係ない●や端子の上を通る（つながって見える）
       const dx = s1.b.x - s1.a.x, dy = s1.b.y - s1.a.y, L2 = dx * dx + dy * dy || 1, u = ((o.p.x - s1.a.x) * dx + (o.p.y - s1.a.y) * dy) / L2;
       if (u > 0.02 && u < 0.98 && Math.hypot(s1.a.x + u * dx - o.p.x, s1.a.y + u * dy - o.p.y) < 11) near++; });
@@ -1856,6 +1958,16 @@ function tidyLines() {
   Object.keys(S.flip).forEach(k => { if (!S.flip[k]) delete S.flip[k]; });
   const after = lineCost();
   return { before, after };
+}
+/* お手本の図: refState に「線を整える」をかけたもの（問題ごとに1回だけ計算して、とっておく） */
+const refCache = {};
+function refView() {
+  if (refCache[P.id]) return JSON.parse(refCache[P.id]);
+  const keepS = S, keepV = view, r = refState(P); r.flip = {};
+  S = r; view = r;
+  try { tidyLines(); } catch (e) {}
+  S = keepS; view = keepV;
+  refCache[P.id] = JSON.stringify(r); return r;
 }
 $("tidyBtn").onclick = () => {
   if (showingRef || mode !== "draw") return;
@@ -2180,7 +2292,7 @@ $("hintBtn").onclick = doHint;
 $("refBtn").onclick = () => {
   if (showingRef) return;
   if (exam && !exam.done) return;
-  ask("お手本を表示する？ 自分で描いた図は消えない。", () => { bump(P.id, "refs"); showingRef = true; view = refState(P); view.flip = {}; sel = null; placing = null; mode = "draw"; marks = []; render(); status("お手本。線の色と、どの接続点に何本集まるかを見比べよう。"); }, "見る");
+  ask("お手本を表示する？ 自分で描いた図は消えない。", () => { bump(P.id, "refs"); showingRef = true; view = refView(); sel = null; placing = null; mode = "draw"; marks = []; render(); status("お手本。線の色と、どの接続点に何本集まるかを見比べよう。"); }, "見る");
 };
 $("backMine").onclick = () => { showingRef = false; view = S; status(""); render(); };
 
