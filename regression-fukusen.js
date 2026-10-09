@@ -683,6 +683,17 @@ E(`openProblem("k1"); S=refState(P); view=S; render();`);
 ok([...d.querySelectorAll('#stage path[stroke-width="5.5"]')].filter(p=>/Q/.test(p.getAttribute("d"))).length>=8,"線は、ケーブルの道にそって角を丸く曲がる（斜めの直線ではない）");
 ok(d.querySelectorAll("#stage path.band").length===E("P.cables.filter(cableShown).length"),"ケーブルの帯も道の形で描く");
 
+console.log("\n【AF】お手本: 道の角を通り、線が重ならない");
+{ const bad=[], ov=[];
+  for (const id of E("PROBLEMS.map(p=>p.id)")) {
+    E(`exam=null; openProblem("${id}"); showingRef=true; view=refView(); render();`);
+    E(`view.cores.filter(k=>{const c=routeOf(k.a,k.b); if(!c) return false; const R=cableRoute(c), ln=lanes.get(k); return R.length>2&&(!ln||ln.length<=2);}).length`)>0 && bad.push(id);
+    E(`(()=>{const k=S; S=view; const c=lineCost(); S=k; return c.over;})()`)>0 && ov.push(id);
+    E(`showingRef=false; view=S`);
+  }
+  ok(!bad.length,"全問題のお手本で、道が曲がる所の線はまっすぐ（斜め）にならない"+(bad.length?" "+bad:""));
+  ok(!ov.length,"全問題のお手本で、線どうしが重ならない"+(ov.length?" "+ov:"")); }
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));

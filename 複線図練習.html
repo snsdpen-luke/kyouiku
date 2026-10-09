@@ -311,7 +311,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-09b";
+const VER = "2026-10-10a";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1309,10 +1309,29 @@ function polyMid(ps) {                                               // 折れ�
 }
 /* 曲げていない線それぞれの折れ線（k.a から k.b へ）。Map: 線 → 点の並び */
 function laneRoutes(st) {
-  const out = new Map();
+  const out = new Map(), base = new Map();
+  const wiresOf = c => st.cores.filter(k => !k.pts && !k.q && endShown(k.a) && endShown(k.b) && routeOf(k.a, k.b) === c);
+  /* 同じボックスから同じ向きに出るケーブルは、横に並べて離す（重ならないように）。先に曲がる方を、曲がる側の外に置く */
+  const groups = {};
+  P.cables.forEach(c => {
+    const R = cableRoute(c); if (!R || !wiresOf(c).length) return;
+    const atA = !!P.box[c.a], bid = atA ? c.a : P.box[c.b] ? c.b : null; if (!bid) return;
+    const pts = atA ? R : R.slice().reverse(), sg = atA ? 1 : -1;           // pts はボックスから外へ
+    const ux = pts[1].x - pts[0].x, uy = pts[1].y - pts[0].y, l = Math.hypot(ux, uy) || 1, u = { x: ux / l, y: uy / l }, nv = { x: -u.y, y: u.x };
+    let turn = 0; if (pts.length > 2) { const vx = pts[2].x - pts[1].x, vy = pts[2].y - pts[1].y, lv = Math.hypot(vx, vy) || 1; turn = Math.sign(Math.round((vx * nv.x + vy * nv.y) / lv)); }
+    const key = bid + ":" + Math.round(u.x) + "," + Math.round(u.y);
+    (groups[key] = groups[key] || []).push({ c, n: wiresOf(c).length, sg, sort: turn * (100000 - l) });
+  });
+  Object.values(groups).forEach(gs => {
+    if (gs.length < 2) return;
+    gs.sort((p, q) => p.sort - q.sort);
+    const w = g => (g.n > 1 ? Math.min(10, 24 / (g.n - 1)) * (g.n - 1) : 0);
+    const total = gs.reduce((t, g) => t + w(g), 0) + (gs.length - 1) * 12;
+    let x = -total / 2; gs.forEach(g => { base.set(g.c, (x + w(g) / 2) * g.sg); x += w(g) + 12; });
+  });
   P.cables.forEach(c => {
     const R = cableRoute(c); if (!R) return;
-    const ks = st.cores.filter(k => !k.pts && !k.q && endShown(k.a) && endShown(k.b) && routeOf(k.a, k.b) === c);
+    const ks = wiresOf(c);
     if (!ks.length) return;
     const unit = (p, q) => { const dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1; return { x: dx / l, y: dy / l }; };
     const legs = []; for (let i = 1; i < R.length; i++) legs.push(unit(R[i - 1], R[i]));
@@ -1324,7 +1343,8 @@ function laneRoutes(st) {
     const key = it => useB ? (it.pb.x - R[m].x) * nB.x + (it.pb.y - R[m].y) * nB.y : (it.pa.x - R[0].x) * nA.x + (it.pa.y - R[0].y) * nA.y;
     items.sort((p, q) => key(p) - key(q));
     const n = items.length, gap = n > 1 ? Math.min(10, 24 / (n - 1)) : 0;
-    items.forEach((it, i) => { it.off = (i - (n - 1) / 2) * gap; });
+    const b0 = base.get(c) || 0;
+    items.forEach((it, i) => { it.off = b0 + (i - (n - 1) / 2) * gap; });
     const u0 = legs[0], uL = legs[m - 1];
     // 端の入り方。器具の端子へは、車線から横へ出て端子の真上（真横）から入る（階段）。外側の端子へ行く線ほど、手前で先に曲がる
     const ends = [
@@ -1341,7 +1361,7 @@ function laneRoutes(st) {
         if (E.id(it)[0] === "#") { E.set(it, { t: t + 16, pts: [p] }); return; }   // ボックスの●へは、車線の端から まっすぐ
         const side = L.includes(it) ? L : Rt.includes(it) ? Rt : null;
         if (!side) { E.set(it, { t: t + 14, pts: [p] }); return; }   // 車線の正面の端子へは、そのまま入る
-        const lv = t + 18 + (side.length - 1 - side.indexOf(it)) * 9;
+        const lv = t + 18 + (side.length - 1 - side.indexOf(it)) * 9 + (side === Rt ? L.length * 9 : 0);   // 左へ曲がる組と右へ曲がる組は、段の高さを分ける
         const K = { x: E.at.x + E.u.x * lv + E.nv.x * lat(it), y: E.at.y + E.u.y * lv + E.nv.y * lat(it) };
         E.set(it, { t: lv, pts: [p, K] });
       });
@@ -1360,7 +1380,7 @@ function laneRoutes(st) {
         const E0 = { x: Q[0].x + u0.x * Math.max(0, tA), y: Q[0].y + u0.y * Math.max(0, tA) };
         const E1 = { x: Q[m].x - uL.x * Math.max(0, tB), y: Q[m].y - uL.y * Math.max(0, tB) };
         poly = [...it.A.pts, E0, ...Q.slice(1, m), E1, ...it.B.pts.slice().reverse()];
-      } else poly = [it.pa, it.pb];
+      } else poly = m > 1 ? [it.pa, ...Q.slice(1, m), it.pb] : [it.pa, it.pb];   // 車線を引く長さが足りなくても、道の角は通る（斜めの直線にしない）
       out.set(it.k, it.flip ? poly.slice().reverse() : poly);
     });
   });
@@ -1893,7 +1913,16 @@ function lineCost() {
       const dx = s1.b.x - s1.a.x, dy = s1.b.y - s1.a.y, L2 = dx * dx + dy * dy || 1, u = ((o.p.x - s1.a.x) * dx + (o.p.y - s1.a.y) * dy) / L2;
       if (u > 0.02 && u < 0.98 && Math.hypot(s1.a.x + u * dx - o.p.x, s1.a.y + u * dy - o.p.y) < 11) near++; });
   });
-  return { n, near, cost: (n + near) * 1000 + len };
+  let over = 0;                                                      // 重なり: ほぼ平行で 4 以内、10 以上いっしょに走る
+  for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
+    const s1 = segs[i], s2 = segs[j]; if (s1.k === s2.k) continue;
+    const dx = s1.b.x - s1.a.x, dy = s1.b.y - s1.a.y, L = Math.hypot(dx, dy), ex = s2.b.x - s2.a.x, ey = s2.b.y - s2.a.y, M = Math.hypot(ex, ey);
+    if (L < 5 || M < 5) continue; const ux = dx / L, uy = dy / L;
+    if (Math.abs(ux * ey - uy * ex) / M > 0.05 || Math.abs((s2.a.x - s1.a.x) * uy - (s2.a.y - s1.a.y) * ux) > 4) continue;
+    const p0 = (s2.a.x - s1.a.x) * ux + (s2.a.y - s1.a.y) * uy, p1 = (s2.b.x - s1.a.x) * ux + (s2.b.y - s1.a.y) * uy;
+    if (Math.min(L, Math.max(p0, p1)) - Math.max(0, Math.min(p0, p1)) > 10) over++;
+  }
+  return { n, near, over, cost: (n + near + over) * 1000 + len };
 }
 function tidyLines() {
   S.cores.forEach(k => { delete k.pts; delete k.q; });
