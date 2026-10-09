@@ -190,6 +190,7 @@
         <button id="hintBtn" disabled>ヒント</button>
         <button id="refBtn">お手本</button>
         <button id="undoBtn" title="1つ前に戻す（Ctrl+Z）" disabled>↶ 1つ戻す</button>
+        <button id="tidyBtn" title="接続点の位置を整えて、線の交差を減らす">✨ 線を整える</button>
         <button id="clearBtn">消す</button>
       </div>
       <div class="banner short" id="shortBanner">短絡（ショート）！ 電源の線どうしが直接つながった。本物なら配線用遮断器が切れる。</div>
@@ -287,6 +288,7 @@
             <li>部品・ボックス・●はドラッグで動かせる（部品は記号のどこをつかんでもよい）。部品をタップすると、記号を変える・動かす（行き先をタップ）・消すができる</li>
             <li>器具の端子（W・B など）の位置は変えられる: 器具をタップ →「端子を動かす」→ 端子を好きな所へドラッグ（タップ → 行き先タップ でもよい）。「端子を元の位置に」で戻る</li>
             <li>W と N は白い線、B と L は黒い線をつなぐ端子</li>
+            <li>「✨ 線を整える」で、ボックスの中の●の位置と端子の並びを自動で整え、線の交差を減らす（つながり方は変わらない。曲げ点はまっすぐに戻る）</li>
             <li>間違えたら「↶ 1つ戻す」（Ctrl+Z）で、1つ前の図に戻る</li>
                       </ol>
         </div>
@@ -309,7 +311,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-08b";
+const VER = "2026-10-09a";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -1769,6 +1771,99 @@ function moveJoint(jid, x, y, drag) {
   j.x = Math.round(b.x + dx * f); j.y = Math.round(b.y + dy * f);
   return true;
 }
+/* ============================================================
+   線を整える: ボックスの中の接続点（●）を、つながる先の向きに置き直し、交差が少ない並びを探す。
+   真上・真下（真横）の器具へ1本だけ行く●は、その端子と一直線にそろえる。曲げ点は消してまっすぐに戻す。
+   つながり方は変えないので、判定には関係しない
+   ============================================================ */
+function lineCost() {
+  applyLayout(S); layoutJoints();
+  const segs = S.cores.filter(k => endShown(k.a) && endShown(k.b)).map(k => ({ k, a: endPos(k.a), b: endPos(k.b) }));
+  const pts = [...S.joints.filter(j => P.box[j.box].shown).map(j => ({ id: j.id, p: jointPos(j) })),
+               ...P.parts.filter(p => p.shown).flatMap(p => p.terms.map(t => ({ id: t.id, p: { x: t.x, y: t.y } })))];
+  const cross = (p, q, r, t) => { const d = (a, b, c) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    const d1 = d(p, q, r), d2 = d(p, q, t), d3 = d(r, t, p), d4 = d(r, t, q); return d1 * d2 < 0 && d3 * d4 < 0; };
+  let n = 0, near = 0, len = 0;
+  segs.forEach((s1, i) => {
+    len += Math.hypot(s1.b.x - s1.a.x, s1.b.y - s1.a.y);
+    for (let j = i + 1; j < segs.length; j++) { const s2 = segs[j]; if ([s1.k.a, s1.k.b].some(e => e === s2.k.a || e === s2.k.b)) continue; if (cross(s1.a, s1.b, s2.a, s2.b)) n++; }
+    pts.forEach(o => { if (o.id === s1.k.a || o.id === s1.k.b) return;   // 線が、関係ない●や端子の上を通る（つながって見える）
+      const dx = s1.b.x - s1.a.x, dy = s1.b.y - s1.a.y, L2 = dx * dx + dy * dy || 1, u = ((o.p.x - s1.a.x) * dx + (o.p.y - s1.a.y) * dy) / L2;
+      if (u > 0.02 && u < 0.98 && Math.hypot(s1.a.x + u * dx - o.p.x, s1.a.y + u * dy - o.p.y) < 11) near++; });
+  });
+  return { n, near, cost: (n + near) * 1000 + len };
+}
+function tidyLines() {
+  S.cores.forEach(k => { delete k.pts; delete k.q; });
+  const before = lineCost();
+  const boxes = P.boxes.filter(b => b.shown && S.joints.some(j => j.box === b.id));
+  const farOf = (j, b) => S.cores.filter(k => k.a === j.id || k.b === j.id).map(k => k.a === j.id ? k.b : k.a)
+    .filter(e => endShown(e) && !(e[0] === "#" && placeOf(e) === b.id));
+  S.flip = S.flip || {};
+  const flippable = P.parts.filter(p => p.shown && ((TYPES[p.type].source && p.terms.length > 1) || SHAPE[p.type] || p.type === "pl")
+    && !p.terms.some(t => S.tpos && S.tpos[t.id]));                  // 端子の並びを入れ替えられる器具（生徒が端子を動かしたものは触らない）
+  const snap = () => ({ j: S.joints.map(j => [j.x, j.y]), f: Object.assign({}, S.flip) });
+  const restore = sn => { S.joints.forEach((j, i) => { if (sn.j[i][0] === undefined) { delete j.x; delete j.y; } else { j.x = sn.j[i][0]; j.y = sn.j[i][1]; } }); S.flip = Object.assign({}, sn.f); };
+  // 「行きたい所」: つながる先の向き。真上・真下（真横）の相手1つだけなら一直線に。重なりは離す
+  const wantOf = b => {
+    const js = S.joints.filter(j => j.box === b.id), lim = b.r - 14;
+    const want = js.map(j => { const fs = farOf(j, b).map(endPos); if (!fs.length) return { x: b.x, y: b.y };
+      let vx = 0, vy = 0; fs.forEach(f => { const dx = f.x - b.x, dy = f.y - b.y, L = Math.hypot(dx, dy) || 1; vx += dx / L; vy += dy / L; });
+      const L = Math.hypot(vx, vy), R = b.r * 0.5; let x = b.x, y = b.y;
+      if (L > 0.2) { x = b.x + vx / L * R; y = b.y + vy / L * R; }
+      if (fs.length === 1) { const f = fs[0];
+        if (Math.abs(f.x - b.x) < lim && Math.abs(f.y - b.y) > b.r) x = f.x;
+        else if (Math.abs(f.y - b.y) < lim && Math.abs(f.x - b.x) > b.r) y = f.y; }
+      return { x, y }; });
+    for (let it = 0; it < 40; it++) {
+      for (let i = 0; i < want.length; i++) for (let k = i + 1; k < want.length; k++) {
+        const p = want[i], q = want[k]; let dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
+        if (d >= 26) continue; if (d < 0.01) { dx = 1; dy = (i % 2 ? 1 : -1); d = Math.hypot(dx, dy); }
+        const m = (26 - d) / 2; p.x -= dx / d * m; p.y -= dy / d * m; q.x += dx / d * m; q.y += dy / d * m; }
+      want.forEach(p => { const dx = p.x - b.x, dy = p.y - b.y, m = Math.hypot(dx, dy); if (m > lim) { p.x = b.x + dx / m * lim; p.y = b.y + dy / m * lim; } });
+    }
+    return want;
+  };
+  // ボックスごとに、●を候補の所へ1つずつ動かす・2つを入れ替える。良くなるときだけ採る
+  const search = () => {
+    let cur = lineCost().cost;
+    for (let round = 0; round < 4; round++) { let any = false;
+      boxes.forEach(b => {
+        const js = S.joints.filter(j => j.box === b.id);
+        layoutJoints(); js.forEach(j => { if (j.x === undefined) { const q = jointPos(j); j.x = Math.round(q.x); j.y = Math.round(q.y); } });
+        const cand = [{ x: b.x, y: b.y }, ...wantOf(b)];
+        for (let a = 0; a < 12; a++) for (const f of [0.3, 0.55]) cand.push({ x: b.x + b.r * f * Math.cos(a * Math.PI / 6), y: b.y + b.r * f * Math.sin(a * Math.PI / 6) });
+        js.forEach(j => cand.forEach(c => {
+          if (js.some(o => o !== j && Math.hypot(o.x - c.x, o.y - c.y) < 24)) return;
+          const ox = j.x, oy = j.y; j.x = Math.round(c.x); j.y = Math.round(c.y);
+          const v = lineCost().cost; if (v + 0.5 < cur) { cur = v; any = true; } else { j.x = ox; j.y = oy; } }));
+        for (let i = 0; i < js.length; i++) for (let k = i + 1; k < js.length; k++) {
+          const A = js[i], B = js[k]; [A.x, B.x] = [B.x, A.x]; [A.y, B.y] = [B.y, A.y];
+          const v = lineCost().cost; if (v + 0.5 < cur) { cur = v; any = true; } else { [A.x, B.x] = [B.x, A.x]; [A.y, B.y] = [B.y, A.y]; } }
+      });
+      flippable.forEach(p => { S.flip[p.id] = !S.flip[p.id]; const v = lineCost().cost;   // 端子の並びを入れ替えると良くなるか
+        if (v + 0.5 < cur) { cur = v; any = true; } else S.flip[p.id] = !S.flip[p.id]; });
+      if (!any) break; }
+    return cur;
+  };
+  // 出発点を3つ（いまの並び・自動の並び・行きたい所）試して、いちばん良いものを採る
+  const start = snap(), results = [];
+  const tryFrom = prep => { restore(start); prep(); const c = search(); results.push({ c, sn: snap() }); };
+  tryFrom(() => {});
+  tryFrom(() => S.joints.forEach(j => { delete j.x; delete j.y; }));
+  tryFrom(() => boxes.forEach(b => { const w = wantOf(b); S.joints.filter(j => j.box === b.id).forEach((j, i) => { j.x = Math.round(w[i].x); j.y = Math.round(w[i].y); }); }));
+  results.sort((p, q) => p.c - q.c); restore(results[0].sn);
+  Object.keys(S.flip).forEach(k => { if (!S.flip[k]) delete S.flip[k]; });
+  const after = lineCost();
+  return { before, after };
+}
+$("tidyBtn").onclick = () => {
+  if (showingRef || mode !== "draw") return;
+  if (!S.joints.length && !S.cores.length) return status("まだ線が無い。線を引いてから整える。", true);
+  const r = tidyLines(); sel = null; save(); render();
+  status("線を整えた。交差 " + r.before.n + " → " + r.after.n + " か所" + (r.after.near ? "、ほかの点の上を通る線 " + r.after.near + " 本" : "") + "。曲げ点はまっすぐに戻した。元に戻すときは「↶ 1つ戻す」。");
+};
+
 /* 接続点 from を to にまとめる。from の線は全部 to につなぎ替える */
 function mergeJoints(from, to) {
   S.cores.forEach(k => { if (k.a === from) k.a = to; if (k.b === from) k.b = to; });

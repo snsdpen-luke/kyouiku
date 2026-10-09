@@ -652,6 +652,22 @@ tap("#statsBtn"); ok($("infoPop").classList.contains("show") && !$("statsBox").h
 tap("#infoClose"); tap("#howBtn"); ok($("infoPop").classList.contains("show") && !$("howBox").hidden && $("statsBox").hidden,"「描き方」で描き方の窓");
 tap("#infoClose"); ok(!$("infoPop").classList.contains("show"),"窓を閉じられる");
 
+console.log("\n【AD】線を整える");
+for (const id of ["r3","k1","k8"]) {
+  E(`exam=null; openProblem("${id}"); S=refState(P); view=S; sel=null; mode="draw"; lastSaved=JSON.stringify(S); hist=[]; render();`);
+  E(`S.joints.forEach((j,i)=>{const b=P.box[j.box]; j.x=b.x+((i*37)%40)-20; j.y=b.y+((i*53)%40)-20;}); S.cores[0].pts=[{t:.5,x:40,y:30}]; save(); render();`);
+  const b0=E("lineCost().cost"), conn=E(`JSON.stringify(S.cores.map(k=>[k.a,k.b,k.c]))`);
+  tap("#tidyBtn");
+  ok(E("lineCost().cost")<=b0 && /交差 \d+ → \d+/.test($("status").textContent),id+": 整えると、交差と点の上を通る線が増えない（状態の行に交差の数）");
+  ok(E(`JSON.stringify(S.cores.map(k=>[k.a,k.b,k.c]))`)===conn && E("judge(S).length")===0,id+": つながり方・色は変わらず、判定も合格のまま");
+  ok(E("S.cores.every(k=>!k.pts&&!k.q)"),id+": 曲げ点はまっすぐに戻る");
+  ok(E(`S.joints.every(j=>{const b=P.box[j.box]; return Math.hypot(j.x-b.x,j.y-b.y)<=b.r-13;})`),id+": ●はボックスの中");
+  ok(E(`S.joints.every((j,i)=>S.joints.every((o,k)=>k<=i||o.box!==j.box||Math.hypot(o.x-j.x,o.y-j.y)>=20))`),id+": ●どうしは重ならない");
+  ok(E(`Object.keys(S.flip||{}).every(k=>{const p=P.part[k]; return p&&((TYPES[p.type].source&&p.terms.length>1)||SHAPE[p.type]||p.type==="pl");})`),id+": 端子の並びを入れ替えるのは、入れ替えボタンのある器具だけ");
+  tap("#undoBtn"); ok(E("S.cores[0].pts&&S.cores[0].pts.length")===1,id+": 「1つ戻す」で整える前に戻る");
+}
+E(`openProblem("r1"); S=newState(); view=S; render();`); tap("#tidyBtn"); ok(/まだ線が無い/.test($("status").textContent),"線が無いときは、そう言う");
+
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));
 ok(errs.length===0,"スクリプトエラーなし"+(errs.length?" → "+errs.join(" / "):""));
