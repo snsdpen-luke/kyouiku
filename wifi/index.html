@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>電波はどこまで届くか</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* 1画面＝1ネタ。導入 → 説明（小さな仕掛け） → 本体シミュレータ（間取り） → 小テスト → まとめ。右に用語欄。N で先生用メモ。 */
+:root{
+  --bg:#f6f7f4; --card:#ffffff; --fg:#1f2a2e; --mute:#64737a; --line:#d9ded8;
+  --accent:#0f8a7a; --accent-ink:#ffffff; --soft:#e3f2ee; --warn:#c7641b; --bad:#b63a3a; --good:#2f9e5b;
+  --sans:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.6}
+.wrap{max-width:1240px;margin:0 auto;padding-block:18px;padding-inline:16px;min-height:100%;display:flex;flex-direction:column;gap:14px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:1.2rem}h1 span{color:var(--mute);font-weight:400;font-size:.85rem;margin-left:.5em}
+.dots{display:flex;gap:4px;flex-wrap:wrap}.dots i{display:block;width:16px;height:6px;border-radius:3px;background:var(--line)}
+.dots i.cur{background:var(--warn)}.dots i.done{background:var(--accent)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;flex:1}
+@media (max-width:900px){.main{grid-template-columns:1fr}}
+.slide{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:26px 30px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.gloss{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;align-self:start}
+.gloss h3{margin:0;font-size:.85rem;color:var(--mute);letter-spacing:.08em}.gloss .g b{display:block;font-size:.95rem}.gloss .g small{color:var(--mute);font-size:.85rem;line-height:1.5}.gloss .empty{color:var(--mute);font-size:.85rem}
+.eyebrow{font-size:.8rem;color:var(--accent);letter-spacing:.1em}
+h2{margin:0;font-size:1.9rem;line-height:1.25;text-wrap:balance}
+.lead{margin:0;max-width:44em}
+.sim{border:1px dashed var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--mute)}
+input[type=range]{accent-color:var(--accent);width:240px;max-width:100%}
+select,button,input[type=number],textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:8px 12px}
+textarea{width:100%;min-height:80px}
+button{cursor:pointer}button:hover{border-color:var(--accent)}button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button.sel{border-color:var(--accent);background:var(--soft)}button[disabled]{opacity:.4;cursor:default}
+.big{font-size:2.2rem;font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.naru{background:var(--soft);border-radius:8px;padding:12px 16px;font-size:1.02rem}.naru b{color:var(--accent)}
+.hint{font-size:.82rem;color:var(--mute)}
+.memo{display:none;background:#fff8e6;border:1px solid #e2c879;border-radius:8px;padding:10px 14px;font-size:.9rem;color:#5a4a1a}.memo.show{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}.tile .k{font-size:.8rem;color:var(--mute)}.tile .big{font-size:1.6rem}
+.tile.ok .big{color:var(--good)}.tile.bad .big{color:var(--bad)}
+table.t{border-collapse:collapse;font-size:.95rem}table.t td,table.t th{border:1px solid var(--line);padding:6px 12px;text-align:left}table.t th{color:var(--mute);font-weight:500}table.t td.n{font-family:var(--mono);text-align:right}
+canvas{max-width:100%;height:auto;display:block;border-radius:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{border:1px solid var(--line);border-radius:20px;padding:6px 14px;cursor:pointer;font-size:.95rem;user-select:none}.chip.on{background:var(--soft);border-color:var(--accent)}
+.opts{display:flex;flex-direction:column;gap:6px}.opts label.ck{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:7px;padding:8px 12px;cursor:pointer}
+.nav{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.floors{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.floor{display:flex;flex-direction:column;gap:6px}.floor .t{display:flex;justify-content:space-between;align-items:baseline}.floor .t b{font-size:1rem}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.8rem;color:var(--mute)}.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+.rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.room{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.85rem;display:flex;flex-direction:column;gap:2px}.room b{font-size:.95rem}.room .v{font-size:1rem}
+.room.ok{border-color:var(--good)}.room.ng{border-color:var(--bad)}
+.mission{border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;flex-direction:column;gap:6px}.mission.done{border-color:var(--good);background:#eaf7ee}
+.fb{min-height:1.5em;font-size:.95rem}.fb.ok{color:var(--good);font-weight:600}.fb.ng{color:var(--bad)}
+@media (max-width:600px){.slide{padding:20px 16px}h2{font-size:1.45rem}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header><h1>電波はどこまで届くか <span>Wi-Fi・家の間取り・ルーターの置き方</span></h1><div class="dots" id="dots"></div></header>
+<div class="main"><section class="slide" id="slide"></section><aside class="gloss"><h3>用語の説明</h3><div id="gloss"></div></aside></div>
+<div class="nav"><button id="prev">← 前</button><span class="hint">← → キーでも進めます。N で先生用メモ</span><button id="next" class="pri">次 →</button></div>
+</div>
+
+<script>
+const fmt=n=>n.toLocaleString('ja-JP',{maximumFractionDigits:1});
+const G={
+ wave:['電波','空間を伝わる電気の波。Wi-Fi・スマホ・テレビ・ラジオはすべて電波で通信しています'],
+ freq:['周波数（Hz）','1秒に波が何回ふれるか。Wi-Fi の 2.4GHz は1秒に24億回です'],
+ lambda:['波長','波1つぶんの長さ。周波数が高いほど短くなります。波長＝光の速さ÷周波数'],
+ db:['dB（デシベル）','強さの比を表す単位。−3dB で半分、−10dB で 1/10、−20dB で 1/100 です'],
+ dbm:['dBm','電波の強さの単位。スマホが受け取る Wi-Fi は −30（とても強い）〜 −90dBm（ほぼ圏外）の範囲です'],
+ atten:['減衰','電波が進むうちに弱くなること。距離・壁・床・水などで減ります'],
+ band:['2.4GHz帯 / 5GHz帯','Wi-Fi が使う2つの周波数のグループ。2.4 は遠くまで届くが遅くて混む、5 は速いが壁に弱い'],
+ router:['Wi-Fiルーター','家の機器をまとめてインターネットにつなぐ機械。電波を出す本体です'],
+ repeater:['中継器（メッシュ）','ルーターの電波を受け取って、別の場所から出し直す機械。届かない部屋をつなぎます'],
+ interf:['干渉','同じ周波数の電波がぶつかって、通信が乱れること。電子レンジや隣の家の Wi-Fi が原因になります'],
+ micro:['電子レンジ','2.45GHz の電波で水を温める機械。Wi-Fi の 2.4GHz帯と同じ周波数なので、少し漏れると干渉します'],
+ rssi:['電波強度','受け取っている電波の強さ。スマホの扇マークの本数はこれを表しています'],
+ ch:['チャンネル','同じ周波数帯の中の、さらに細かい区切り。隣の家と同じチャンネルだと順番待ちになります'],
+ mbps:['Mbps','通信の速さ。1秒に送れる百万ビット。動画（1080p）には約 8Mbps 必要です'],
+};
+// ---------- physics ----------
+const WALL={wood:{n:'木・石膏',l:[4,6],c:'#8a7a5a',w:3},ext:{n:'外壁',l:[8,12],c:'#3b3b3b',w:5},conc:{n:'コンクリート',l:[12,18],c:'#555',w:6},glass:{n:'窓ガラス',l:[2,3],c:'#6fb4d6',w:3},tile:{n:'タイル（風呂）',l:[6,9],c:'#5b8a9a',w:4}};
+const FLOORLOSS={wood:[12,16],rc:[20,26]};
+// walls: [floor, x1,y1,x2,y2, type]  (meters; 12 x 8 per floor)
+const WALLS=[
+ // 1F exterior
+ [0,0,0,12,0,'ext'],[0,0,8,12,8,'ext'],[0,0,0,0,8,'ext'],[0,12,0,12,8,'ext'],
+ [0,4,0,7,0,'glass'],[0,9.5,8,11.5,8,'glass'],
+ // 1F interior
+ [0,3,0,3,2,'wood'],[0,3,3,3,5,'wood'],[0,9,0,9,4,'wood'],
+ [0,0,5,2,5,'wood'],[0,3,5,8,5,'wood'],[0,9,5,12,5,'wood'],
+ [0,5,5,5,8,'wood'],[0,9,5,9,8,'tile'],[0,9,5,12,5,'tile'],
+ // 2F exterior
+ [1,0,0,12,0,'ext'],[1,0,8,12,8,'ext'],[1,0,0,0,8,'ext'],[1,12,0,12,8,'ext'],
+ [1,1.5,0,4.5,0,'glass'],[1,7.5,0,10.5,0,'glass'],[1,1.5,8,4.5,8,'glass'],[1,7.5,8,10.5,8,'glass'],
+ // 2F interior
+ [1,6,0,6,4,'wood'],[1,6,5.5,6,8,'wood'],[1,0,4,2,4,'wood'],[1,3,4,9,4,'wood'],[1,10,4,12,4,'wood'],[1,0,5.5,2,5.5,'wood'],[1,3,5.5,9,5.5,'wood'],[1,10,5.5,12,5.5,'wood'],
+];
+const ROOMS=[
+ {f:0,n:'玄関',x:1.5,y:2.5},{f:0,n:'リビング',x:6,y:2.5},{f:0,n:'キッチン',x:10.5,y:2.5},{f:0,n:'和室',x:2.5,y:6.5},{f:0,n:'洗面',x:7,y:6.5},{f:0,n:'風呂',x:10.5,y:6.5},
+ {f:1,n:'寝室',x:3,y:2},{f:1,n:'子ども部屋A',x:9,y:2},{f:1,n:'廊下',x:6,y:4.75},{f:1,n:'子ども部屋B',x:3,y:6.8},{f:1,n:'書斎',x:9,y:6.8},
+];
+const MICRO={f:0,x:11.2,y:0.8};
+const ST={router:{f:0,x:1.2,y:1.2},rep:null,band:1,house:'wood',micro:false,mode:'router'};
+function segX(ax,ay,bx,by,cx,cy,dx,dy){ const d=(bx-ax)*(dy-cy)-(by-ay)*(dx-cx); if(Math.abs(d)<1e-9)return false; const t=((cx-ax)*(dy-cy)-(cy-ay)*(dx-cx))/d, u=((cx-ax)*(by-ay)-(cy-ay)*(bx-ax))/d; return t>0&&t<1&&u>0&&u<1; }
+function rssiFrom(src,ptx,f,x,y){ const b=ST.band; const dx=x-src.x, dy=y-src.y, dz=(f-src.f)*3; const d=Math.max(0.5,Math.hypot(dx,dy,dz)); let p=ptx-10*2.8*Math.log10(d)-(b?8:0); for(const w of WALLS){ if(w[0]!==src.f&&w[0]!==f)continue; if(w[0]===src.f&&src.f===f){ if(segX(src.x,src.y,x,y,w[1],w[2],w[3],w[4])) p-=WALL[w[5]].l[b]; } else { // different floors: count walls on both floors along projected path (half weight)
+   if(segX(src.x,src.y,x,y,w[1],w[2],w[3],w[4])) p-=WALL[w[5]].l[b]*0.7; } }
+  if(f!==src.f) p-=FLOORLOSS[ST.house][b]*Math.abs(f-src.f);
+  if(ST.micro&&!b&&f===MICRO.f){ const dm=Math.hypot(x-MICRO.x,y-MICRO.y); if(dm<4.5) p-=12*(1-dm/4.5); }
+  return p; }
+function rssiAt(f,x,y){ let p=rssiFrom(ST.router,-30,f,x,y); if(ST.rep){ const pr=rssiFrom(ST.router,-30,ST.rep.f,ST.rep.x,ST.rep.y); if(pr>=-78){ p=Math.max(p,rssiFrom(ST.rep,-33,f,x,y)); } } return p; }
+function mbps(r){ const b=ST.band; const T=b?[[-50,500],[-60,300],[-67,150],[-75,40],[-82,8],[-90,1],[-100,0]]:[[-50,150],[-60,100],[-67,50],[-75,20],[-82,5],[-90,1],[-100,0]]; if(r>=T[0][0])return T[0][1]; for(let i=0;i<T.length-1;i++){ if(r<=T[i][0]&&r>=T[i+1][0]){ const t=(r-T[i+1][0])/(T[i][0]-T[i+1][0]); return T[i+1][1]+t*(T[i][1]-T[i+1][1]); } } return 0; }
+function color(r){ const t=Math.max(0,Math.min(1,(r+90)/50)); // 0 weak .. 1 strong
+  const h=t*120; return `hsl(${h},70%,${55-t*5}%)`; }
+function bars(r){ return r>=-60?'▂▄▆█':r>=-70?'▂▄▆':r>=-80?'▂▄':r>=-88?'▂':'—'; }
+
+// ---------- floor drawing ----------
+const PX=36; // px per meter
+function drawFloor(cv,f){ const g=cv.getContext('2d'); const W=12,H=8; cv.width=W*PX; cv.height=H*PX; const res=0.5;
+  for(let y=0;y<H;y+=res)for(let x=0;x<W;x+=res){ const r=rssiAt(f,x+res/2,y+res/2); g.fillStyle=r<-92?'#e9e9e6':color(r); g.fillRect(x*PX,y*PX,res*PX+0.5,res*PX+0.5); }
+  for(const w of WALLS){ if(w[0]!==f)continue; const m=WALL[w[5]]; g.strokeStyle=m.c; g.lineWidth=m.w; g.beginPath(); g.moveTo(w[1]*PX,w[2]*PX); g.lineTo(w[3]*PX,w[4]*PX); g.stroke(); }
+  g.font='13px "Noto Sans JP",sans-serif'; g.textAlign='center'; for(const r of ROOMS){ if(r.f!==f)continue; const v=rssiAt(f,r.x,r.y); g.fillStyle='rgba(255,255,255,.75)'; g.fillRect(r.x*PX-34,r.y*PX-22,68,34); g.fillStyle='#1f2a2e'; g.fillText(r.n,r.x*PX,r.y*PX-8); g.font='bold 12px "IBM Plex Mono",monospace'; g.fillText(bars(v)+' '+Math.round(v),r.x*PX,r.y*PX+8); g.font='13px "Noto Sans JP",sans-serif'; }
+  if(MICRO.f===f){ g.fillStyle=ST.micro?'#c7641b':'#999'; g.fillRect(MICRO.x*PX-10,MICRO.y*PX-8,20,16); g.fillStyle='#fff'; g.font='10px sans-serif'; g.fillText('レンジ',MICRO.x*PX,MICRO.y*PX+4); }
+  const icon=(p,label,col)=>{ if(!p||p.f!==f)return; g.beginPath(); g.arc(p.x*PX,p.y*PX,11,0,Math.PI*2); g.fillStyle=col; g.fill(); g.strokeStyle='#fff'; g.lineWidth=2; g.stroke(); g.fillStyle='#fff'; g.font='bold 11px sans-serif'; g.fillText(label,p.x*PX,p.y*PX+4); };
+  icon(ST.router,'R','#1f2a2e'); if(ST.rep){ const ok=rssiFrom(ST.router,-30,ST.rep.f,ST.rep.x,ST.rep.y)>=-75; icon(ST.rep,'中',ok?'#0f8a7a':'#b63a3a'); }
+}
+function roomStats(){ return ROOMS.filter(r=>r.n!=='廊下').map(r=>{const v=rssiAt(r.f,r.x,r.y); return {n:r.n,f:r.f,r:v,m:mbps(v)};}); }
+
+// ---------- screens ----------
+const S=[
+{ eyebrow:"導入", title:"家の中で、Wi-Fi がいちばん弱いのはどこですか", terms:["wave","rssi"],
+  sim:()=>`<div class="chips" id="q1">${["2階の自分の部屋","風呂","ベランダ","キッチン","玄関","どこでも同じ"].map(x=>`<span class="chip">${x}</span>`).join('')}</div><div class="hint">1つ選んでください。あとでシミュレータで確かめます</div>`,
+  wire:()=>{ document.querySelectorAll('#q1 .chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('#q1 .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');})); },
+  naru:"スマホの扇マークの本数は、受け取っている<b>電波の強さ</b>です。今日は、その強さが家のどこでどう変わるかを、自分で確かめます。",
+  memo:"挙手で集計して板書。正解は言わない。最後のシミュレータで各自確かめる。風呂・2階が多いはず。" },
+
+{ eyebrow:"導入", title:"電子レンジを使うと、動画が止まることがあります", terms:["micro","interf","freq"],
+  sim:()=>`<div class="grid"><div class="tile"><div class="k">電子レンジ</div><div class="big">2.45 GHz</div><div class="k">水を温める電波</div></div><div class="tile"><div class="k">Wi-Fi（2.4GHz帯）</div><div class="big">2.40〜2.48 GHz</div><div class="k">スマホが通信に使う電波</div></div></div>`,
+  wire:()=>{},
+  naru:"<b>同じ周波数</b>です。レンジは電波を外に漏らさない作りですが、少しだけ漏れます。それが Wi-Fi の電波とぶつかって乱れます。これを<b>干渉</b>といいます。",
+  memo:"「なぜ水を温める電波と通信の電波が同じ？」は、2.4GHz が水に吸われやすい周波数で、かつ無免許で使える帯域だから。人間は水でできているので、満員電車で Wi-Fi が落ちる話につなげられる。" },
+
+{ eyebrow:"説明①", title:"電波は波です。周波数が高いほど、波長は短くなります", terms:["wave","freq","lambda"],
+  sim:()=>`<div class="row"><label class="f">周波数 <input type="range" id="fq" min="0" max="3" step="1" value="1"></label><div class="col"><div class="big" id="fqv"></div><div class="hint" id="fqw"></div></div></div><canvas id="wave" width="720" height="120"></canvas>`,
+  wire:()=>{ const F=[["4G（700MHz）",0.7],["Wi-Fi 2.4GHz",2.4],["Wi-Fi 5GHz",5],["5G ミリ波（28GHz）",28]]; const r=document.getElementById('fq'); const d=()=>{const [n,g]=F[+r.value]; const lam=300/(g*1000)*100; document.getElementById('fqv').textContent=n; document.getElementById('fqw').textContent=`波長 ＝ 30万km/s ÷ ${g}GHz ＝ 約 ${lam>=1?fmt(lam)+' cm':fmt(lam*10)+' mm'}`; const cv=document.getElementById('wave'),ctx=cv.getContext('2d'); if(!ctx)return; ctx.clearRect(0,0,720,120); ctx.strokeStyle='#0f8a7a'; ctx.lineWidth=2; ctx.beginPath(); const k=[1,3.4,7,40][+r.value]; for(let x=0;x<720;x++){const y=60-40*Math.sin(x/720*Math.PI*2*k); x?ctx.lineTo(x,y):ctx.moveTo(x,y);} ctx.stroke(); ctx.fillStyle='#64737a'; ctx.font='12px sans-serif'; ctx.fillText('同じ長さの空間に入る波の数',10,112);}; r.addEventListener('input',d); d(); },
+  naru:"波長が<b>長い</b>電波は、壁や角を回り込みやすく、遠くまで届きます。波長が<b>短い</b>電波は、たくさんの情報を乗せられますが、障害物に弱くなります。",
+  memo:"λ=c/f。2.4GHz で 12.5cm、5GHz で 6cm、28GHz で 1cm。電気回路の周波数の話がそのまま使える。「手のひらで遮れる波長」がミリ波。" },
+
+{ eyebrow:"説明②", title:"距離が2倍になると、電波は 1/4 になります", terms:["atten","db","dbm"],
+  sim:()=>`<div class="row"><label class="f">ルーターからの距離 <input type="range" id="ds" min="1" max="30" value="5"> <span class="v" id="dsv"></span></label></div><div class="grid"><div class="tile"><div class="k">電波の強さ（2.4GHz・壁なし）</div><div class="big" id="dsr"></div></div><div class="tile"><div class="k">1m のときと比べて</div><div class="big" id="dsx"></div></div><div class="tile"><div class="k">スマホの扇マーク</div><div class="big" id="dsb"></div></div></div><table class="t"><tr><th>dB</th><th>何倍</th></tr><tr><td class="n">−3 dB</td><td>半分</td></tr><tr><td class="n">−10 dB</td><td>1/10</td></tr><tr><td class="n">−20 dB</td><td>1/100</td></tr><tr><td class="n">−30 dB</td><td>1/1000</td></tr></table>`,
+  wire:()=>{ const r=document.getElementById('ds'); const d=()=>{const m=+r.value; const p=-30-28*Math.log10(m); document.getElementById('dsv').textContent=m+' m'; document.getElementById('dsr').textContent=Math.round(p)+' dBm'; const ratio=Math.pow(10,(p+30)/10); document.getElementById('dsx').textContent=ratio>=0.01?'1/'+Math.round(1/ratio):'1/'+Math.round(1/ratio).toLocaleString(); document.getElementById('dsb').textContent=bars(p);}; r.addEventListener('input',d); d(); },
+  naru:"電波は四方八方に広がるので、距離が2倍になると面積は4倍、強さは <b>1/4（−6dB）</b> になります。dB は「何倍か」を足し算で扱える便利な単位です。",
+  memo:"逆二乗則。電気回路の dB と同じ。実際の家の中は反射があるので、きれいに逆二乗にはならない（指数 2.2〜3）。「だいたい」でよい。" },
+
+{ eyebrow:"説明③", title:"壁1枚で、どれくらい減るでしょうか", terms:["atten","db","band"],
+  sim:()=>`<div class="chips" id="wm">${Object.entries(WALL).map(([k,w],i)=>`<span class="chip ${i===0?'on':''}" data-k="${k}">${w.n}</span>`).join('')}</div><div class="grid"><div class="tile"><div class="k">2.4GHz で減る量</div><div class="big" id="w24"></div><div class="k" id="w24x"></div></div><div class="tile"><div class="k">5GHz で減る量</div><div class="big" id="w5"></div><div class="k" id="w5x"></div></div></div><div class="hint">数字は材質と厚さで大きく変わります。目安です</div>`,
+  wire:()=>{ const d=k=>{const w=WALL[k]; const f=v=>v>=10?'1/'+Math.round(Math.pow(10,v/10)):'約 '+fmt(1/Math.pow(10,v/10))+' 倍'; document.getElementById('w24').textContent='−'+w.l[0]+' dB'; document.getElementById('w24x').textContent=f(w.l[0]); document.getElementById('w5').textContent='−'+w.l[1]+' dB'; document.getElementById('w5x').textContent=f(w.l[1]);}; document.querySelectorAll('#wm .chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('#wm .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');d(c.dataset.k);})); d('wood'); },
+  naru:"コンクリートの壁1枚で <b>1/10 以下</b>になります。同じ壁でも <b>5GHz のほうが多く減ります</b>。床は壁より厚いので、1階と2階の間ではさらに減ります。",
+  memo:"鉄筋コンクリートの床は −20dB 以上。木造住宅と RC マンションで Wi-Fi の届き方がまるで違う理由。" },
+
+{ eyebrow:"説明④", title:"2.4GHz と 5GHz、どちらにつなぐとよいでしょうか", terms:["band","ch","interf"],
+  sim:()=>`<table class="t"><tr><th></th><th>2.4GHz帯</th><th>5GHz帯</th></tr><tr><td>波長</td><td class="n">約 12 cm</td><td class="n">約 6 cm</td></tr><tr><td>届く距離・壁の回り込み</td><td>強い</td><td>弱い</td></tr><tr><td>速さ（上限の目安）</td><td class="n">〜150 Mbps</td><td class="n">〜500 Mbps 以上</td></tr><tr><td>混みやすさ</td><td>混む（電子レンジ・Bluetooth・隣の家と同じ帯）</td><td>空いている</td></tr><tr><td>向いている場所</td><td>遠い部屋・別の階</td><td>ルーターと同じ部屋</td></tr></table>`,
+  wire:()=>{},
+  naru:"ルーターの名前に <b>-A / -G</b> や <b>5G / 2G</b> が付いているのは、この2つです。<b>同じ部屋なら 5GHz、遠い部屋なら 2.4GHz</b>。次の画面で、間取りの上で確かめます。",
+  memo:"ルーターの SSID 末尾の A/G（a は 5GHz、g は 2.4GHz の規格名）。「2G」は携帯の 2G ではない、と一言。" },
+
+{ eyebrow:"シミュレータ", title:"ルーターをどこに置くと、家じゅうに届くでしょうか", terms:["router","repeater","band","dbm","micro","mbps"],
+  sim:()=>`<div class="row"><span class="hint">置くもの：</span><button class="sel" id="mRouter">ルーター</button><button id="mRep">中継器</button><button id="mRepOff">中継器を外す</button><span class="hint">　→ 間取りをクリックして置きます</span></div>
+  <div class="row"><label class="f">周波数帯 <select id="band"><option value="0">2.4GHz</option><option value="1" selected>5GHz</option></select></label><label class="f">家の構造 <select id="house"><option value="wood">木造</option><option value="rc">鉄筋コンクリート</option></select></label><label class="f">電子レンジ <select id="micro"><option value="0">停止</option><option value="1">使用中</option></select></label></div>
+  <div class="floors"><div class="floor"><div class="t"><b>1階</b><span class="hint">クリックで置く</span></div><canvas id="f0"></canvas></div><div class="floor"><div class="t"><b>2階</b><span class="hint">クリックで置く</span></div><canvas id="f1"></canvas></div></div>
+  <div class="legend"><span><i style="background:hsl(120,70%,50%)"></i>強い（−40dBm）</span><span><i style="background:hsl(60,70%,52%)"></i>ふつう（−65）</span><span><i style="background:hsl(0,70%,55%)"></i>弱い（−90）</span><span><i style="background:#e9e9e6"></i>圏外</span><span><i style="background:#8a7a5a"></i>木の壁</span><span><i style="background:#3b3b3b"></i>外壁</span><span><i style="background:#6fb4d6"></i>窓</span><span><i style="background:#5b8a9a"></i>タイル</span></div>
+  <div class="rooms" id="rooms"></div>
+  <div class="grid"><div class="mission" id="m1"><b>ミッション1</b><span>木造・中継器なし・ルーター1台で、<b>全部屋</b>を 40Mbps 以上にする。帯域と置き場所は自由</span><span class="v" id="m1v"></span></div><div class="mission" id="m2"><b>ミッション2</b><span>2.4GHz と 5GHz を切り替えて、<b>風呂</b>で速いほうを見つける</span><span class="v" id="m2v"></span></div><div class="mission" id="m3"><b>ミッション3</b><span>中継器を1台置いて、<b>全部屋</b>で 20Mbps 以上にする（鉄筋コンクリートで）</span><span class="v" id="m3v"></span></div></div>`,
+  wire:()=>{ const c0=document.getElementById('f0'),c1=document.getElementById('f1'); const stats={m2:{}};
+    const redraw=()=>{ drawFloor(c0,0); drawFloor(c1,1); const rs=roomStats(); document.getElementById('rooms').innerHTML=rs.map(r=>`<div class="room ${r.m>=20?'ok':'ng'}"><b>${r.f?'2F ':'1F '}${r.n}</b><span class="v">${Math.round(r.r)} dBm</span><span>${r.m>=1?fmt(r.m)+' Mbps':'圏外'}　${r.m>=20?'動画OK':r.m>=1?'文字だけ':'—'}</span></div>`).join('');
+      const ok=rs.filter(r=>r.m>=20).length; const ok40=rs.filter(r=>r.m>=40).length; const m1=!ST.rep&&ST.house==='wood'&&ok40===rs.length; document.getElementById('m1v').textContent=ST.house!=='wood'?'家の構造を「木造」にしてください':`40Mbps 以上：今 ${ok40} / ${rs.length} 部屋${ST.rep?'（中継器を外してください）':''}`; document.getElementById('m1').classList.toggle('done',m1);
+      const bath=rs.find(r=>r.n==='風呂'); stats.m2[ST.band]=bath.m; const both=stats.m2[0]!==undefined&&stats.m2[1]!==undefined; document.getElementById('m2v').textContent=both?`風呂：2.4GHz ${fmt(stats.m2[0])} Mbps ／ 5GHz ${fmt(stats.m2[1])} Mbps → ${stats.m2[0]>stats.m2[1]?'2.4GHz':'5GHz'} のほうが速い`:`今の帯域での風呂：${fmt(bath.m)} Mbps。もう一方の帯域にも切り替えてください`; document.getElementById('m2').classList.toggle('done',both);
+      const m3=ST.house==='rc'&&!!ST.rep&&ok===rs.length; document.getElementById('m3v').textContent=ST.house!=='rc'?'家の構造を「鉄筋コンクリート」にしてください':!ST.rep?'中継器を置いてください':`今 ${ok} / ${rs.length} 部屋`; document.getElementById('m3').classList.toggle('done',m3); };
+    const place=(f,e,cv)=>{ const b=cv.getBoundingClientRect(); const x=(e.clientX-b.left)/b.width*12, y=(e.clientY-b.top)/b.height*8; const p={f,x:Math.max(0.3,Math.min(11.7,x)),y:Math.max(0.3,Math.min(7.7,y))}; if(ST.mode==='router')ST.router=p; else ST.rep=p; redraw(); };
+    c0.addEventListener('click',e=>place(0,e,c0)); c1.addEventListener('click',e=>place(1,e,c1));
+    document.getElementById('mRouter').addEventListener('click',()=>{ST.mode='router';document.getElementById('mRouter').classList.add('sel');document.getElementById('mRep').classList.remove('sel');});
+    document.getElementById('mRep').addEventListener('click',()=>{ST.mode='rep';document.getElementById('mRep').classList.add('sel');document.getElementById('mRouter').classList.remove('sel');});
+    document.getElementById('mRepOff').addEventListener('click',()=>{ST.rep=null;redraw();});
+    document.getElementById('band').value=ST.band; document.getElementById('house').value=ST.house; document.getElementById('micro').value=ST.micro?'1':'0';
+    document.getElementById('band').addEventListener('change',e=>{ST.band=+e.target.value;redraw();}); document.getElementById('house').addEventListener('change',e=>{ST.house=e.target.value;redraw();}); document.getElementById('micro').addEventListener('change',e=>{ST.micro=e.target.value==='1';redraw();});
+    redraw(); },
+  naru:"数字の右の <b>dBm</b> が電波の強さ、<b>Mbps</b> がその場所で出る速さの目安です。中継器は、ルーターの電波がある程度届く場所（−78dBm 以上）に置かないと働きません（赤くなります）。",
+  memo:"山場。先に自由に触らせる（5分）。詰まったら「家の真ん中・高い場所・床から離す」の3原則をヒントに。ミッション1の答えは「1階のほぼ中央（リビングと和室の境あたり）＋2.4GHz」。5GHz ではどこに置いても2階の端が届かない、が気づかせたいこと。ミッション3は1階中央にルーター、2階廊下に中継器が定石。5GHz だと中継器への電波が届かず赤くなるので、2.4GHz に切り替えるか、置き場所を変える。レンジを使用中にして 2.4GHz にするとキッチン周りが落ちる。数字は模式（距離指数2.2、壁・床は表の値）で、実物はもっと乱れる、と一言。" },
+
+{ eyebrow:"活動", title:"教室で測ってみましょう", terms:["rssi","dbm","mbps"],
+  sim:()=>`<table class="t"><tr><th>場所</th><th>扇マーク（本）</th><th>速さ（Mbps）</th><th>ルーターからの距離（m）</th></tr>${["教室の前（ルーターの近く）","教室の後ろ","廊下（ドアの外）","隣の教室","2階（別の階）"].map(p=>`<tr><td>${p}</td><td></td><td></td><td></td></tr>`).join('')}</table><div class="hint">スマホの速度測定で3回測って、真ん中の値を書きます。Wi-Fi に接続して測ります。</div>`,
+  wire:()=>{},
+  naru:"壁1枚、ドア1枚、階1つで、どれくらい落ちるかを<b>自分の数字</b>で確かめます。シミュレータの数字と比べてみましょう。",
+  memo:"10分。測定サイトが開かない場合は扇マークの本数だけでも成立する。測った数字を板書で並べると「距離」より「壁・階」のほうが効くと気づく。" },
+
+{ eyebrow:"小テスト", title:"小テスト（8問・採点は1回）", terms:[],
+  sim:()=>`<label class="row">名前 <input type="text" id="qn" style="width:12em;font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:7px"></label><div id="qs" style="display:flex;flex-direction:column;gap:14px"></div><div class="row"><button class="pri" id="qgrade">採点する</button><div class="big" id="qres"></div></div><div class="fb" id="qfb"></div>`,
+  wire:()=>{ const Q=[
+      {q:"電子レンジを使うと Wi-Fi が乱れることがあります。理由として正しいものはどれですか。",o:["レンジの電波と Wi-Fi の 2.4GHz帯が同じ周波数だから","レンジが電気をたくさん使って電圧が下がるから","レンジの熱で電波が溶けるから"],a:0,pts:1,why:"同じ 2.4GHz帯なので干渉します。"},
+      {q:"周波数が高い電波の特徴として正しいものはどれですか。",o:["波長が短く、壁に弱いが、多くの情報を乗せられる","波長が長く、遠くまで届く","周波数と届き方は関係ない"],a:0,pts:1,why:"5GHz や 28GHz は速いが障害物に弱い。"},
+      {q:"−30dBm から −60dBm に下がりました。強さは何分の1になりましたか。",o:["1/2","1/10","1/1000"],a:2,pts:1,why:"−30dB ＝ 1/1000。−10dB ごとに 1/10 です。"},
+      {q:"距離が 3m から 6m になりました。壁がなければ強さはおよそ何分の1になりますか。",o:["1/2","1/4","1/16"],a:1,pts:1,why:"距離2倍で 1/4（−6dB）です。"},
+      {q:"ルーターと同じ部屋でスマホを使います。速いのはどちらの帯域ですか。",o:["2.4GHz","5GHz","同じ"],a:1,pts:1,why:"同じ部屋なら 5GHz のほうが速い。遠い部屋なら 2.4GHz。"},
+      {q:"中継器が働かない置き方はどれですか。",o:["ルーターの電波がほとんど届かない部屋に置く","ルーターと届かない部屋の中間に置く","ルーターから見える廊下に置く"],a:0,pts:1,why:"中継器はルーターの電波を受け取って出し直すので、届かない場所では働きません。"},
+      {q:"鉄筋コンクリートのマンションで、2階の部屋に Wi-Fi が届きません。考えられる理由と、対策を1つ、用語を使って説明してください。",t:1,pts:2,kw:[["コンクリート","床","減衰","dB"],["中継器","メッシュ","2.4","置き"]],need:2,model:"コンクリートの床は電波を大きく減衰させる（−20dB以上）。対策は、中継器を階段や廊下に置く、ルーターを家の中央・高い場所に置く、遠い部屋は 2.4GHz につなぐ、など。"},
+      {q:"「周波数が高いほど速いが、届きにくい」のはなぜですか。波長という言葉を使って説明してください。",t:1,pts:2,kw:[["波長"],["短","長"],["壁","障害","回り込"],["情報","データ","速"]],need:3,model:"周波数が高いと波長が短くなる。波長が短いと壁や角を回り込めず減衰が大きいが、同じ時間に多くの波を送れるので多くの情報を乗せられる。"},
+    ];
+    const box=document.getElementById('qs'); box.innerHTML=Q.map((x,i)=>`<div class="col" style="border-top:1px solid var(--line);padding-top:10px"><b>問${i+1}　<span class="hint">${x.pts}点${x.t?'・記述':''}</span></b><span>${x.q}</span>${x.t?`<textarea data-q="${i}"></textarea>`:`<div class="opts">${x.o.map((o,j)=>`<label class="ck"><input type="radio" name="q${i}" value="${j}"><span>${o}</span></label>`).join('')}</div>`}<div class="fb" data-fb="${i}"></div></div>`).join('');
+    const norm=t=>(t||'').toLowerCase().replace(/\s/g,'');
+    document.getElementById('qgrade').addEventListener('click',()=>{ let total=0,max=0; let blank=[]; Q.forEach((x,i)=>{ max+=x.pts; let pts=0,msg=''; if(x.t){ const v=document.querySelector(`[data-q="${i}"]`).value; if(!v.trim()){blank.push(i+1);return;} const n=norm(v); const hits=x.kw.filter(g=>g.some(k=>n.includes(k.toLowerCase()))).length; pts=hits>=x.need?2:hits>0?1:0; msg=`キーワード ${hits}/${x.kw.length}（仮採点）。模範解答：${x.model}`; } else { const s=document.querySelector(`input[name="q${i}"]:checked`); if(!s){blank.push(i+1);return;} pts=+s.value===x.a?x.pts:0; msg=(pts?'○ ':'× 正解は「'+x.o[x.a]+'」。')+x.why; } total+=pts; const fb=document.querySelector(`[data-fb="${i}"]`); fb.className='fb '+(pts===x.pts?'ok':'ng'); fb.textContent=`${pts}/${x.pts}点　${msg}`; });
+      if(blank.length){ document.getElementById('qfb').className='fb ng'; document.getElementById('qfb').textContent=`問${blank.join('・')} が未回答です。`; return; }
+      document.getElementById('qres').textContent=`${total} / ${max} 点`; document.getElementById('qgrade').disabled=true; document.getElementById('qfb').className='fb'; document.getElementById('qfb').textContent=`${document.getElementById('qn').value||'名前なし'}　記述は仮採点です。先生が確認します。`; }); },
+  naru:"記述は、用語を使って文で書きます。採点は1回だけです。",
+  memo:"客観6問×1点＋記述2問×2点＝10点。記述はキーワードで仮採点。結果画面を見せてもらって最終判定。" },
+
+{ eyebrow:"まとめ", title:"ルーターの置き方、3つの原則", terms:["router","band","repeater"],
+  sim:()=>`<div class="grid"><div class="tile"><div class="k">原則1</div><div class="big" style="font-size:1.3rem">家の真ん中に</div><div class="k">電波は四方八方に広がる。端に置くと半分が外に出ていく</div></div><div class="tile"><div class="k">原則2</div><div class="big" style="font-size:1.3rem">高く、障害物から離す</div><div class="k">床・金属・水槽・電子レンジの近くは避ける</div></div><div class="tile"><div class="k">原則3</div><div class="big" style="font-size:1.3rem">部屋で帯域を使い分ける</div><div class="k">同じ部屋は 5GHz、遠い部屋・別の階は 2.4GHz。届かなければ中継器</div></div></div><div class="hint">家に帰ったら、自分の家のルーターがどこにあるか見てみましょう。</div>`,
+  wire:()=>{},
+  naru:"今日の数字は <b>dB</b> で考えました。距離で −6dB、木の壁で −4dB、コンクリートの床で −20dB。足し算で、家のどこに届くかが予想できます。",
+  memo:"最初の導入「家で一番弱いのはどこ」に戻って、自分の予想と比べさせて終わる。次回予告は任意（セキュリティ：偽サイト・パスワード）。" },
+];
+
+let i=0,memoOn=false; const slide=document.getElementById('slide');
+function render(){ const s=S[i]; slide.innerHTML=`<div class="eyebrow">${s.eyebrow}　${i+1} / ${S.length}</div><h2>${s.title}</h2><div class="sim">${s.sim()}</div><div class="naru">${s.naru}</div><div class="memo ${memoOn?'show':''}" id="memo">先生用メモ：${s.memo}</div>`; s.wire(); document.getElementById('gloss').innerHTML=(s.terms||[]).map(k=>`<div class="g"><b>${G[k][0]}</b><small>${G[k][1]}</small></div>`).join('')||'<div class="empty">この画面に用語はありません</div>'; document.getElementById('dots').innerHTML=S.map((_,k)=>`<i class="${k<i?'done':k===i?'cur':''}"></i>`).join(''); document.getElementById('prev').disabled=i===0; document.getElementById('next').disabled=i===S.length-1; window.scrollTo({top:0}); }
+document.getElementById('prev').addEventListener('click',()=>{if(i>0){i--;render();}});
+document.getElementById('next').addEventListener('click',()=>{if(i<S.length-1){i++;render();}});
+document.addEventListener('keydown',e=>{ const t=e.target.tagName; if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return; if(e.key==='ArrowRight'&&i<S.length-1){i++;render();} if(e.key==='ArrowLeft'&&i>0){i--;render();} if(e.key==='n'||e.key==='N'){memoOn=!memoOn;document.getElementById('memo').classList.toggle('show',memoOn);} });
+render();
+</script>
+
+</body>
+</html>

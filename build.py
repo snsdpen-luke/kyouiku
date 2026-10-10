@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""配布物を作る。本体は次の9つ。ここから機械的に生成する。
+"""配布物を作る。本体は次の10。ここから機械的に生成する。
 
   ラダー工房v2.html   → index.html         （GitHub Pages で配るもの）
   進路シミュレーション.html   → shinro/index.html  （同上。URL を /shinro/ で配るため）
@@ -10,8 +10,9 @@
   車の制御50.html     → car/index.html     （同上。電子計測制御・センサ当て。導入スライドの QR は /car/ を指す）
   複線図練習.html     → fukusen/index.html （同上。URL を /fukusen/ で配る）
   速い遅いの正体.html   → speed/index.html  （同上。通信速度・画質・ギガの余談スライド）
+  電波はどこまで届くか.html → wifi/index.html （同上。家の間取りで Wi-Fi の電波を試す）
 
-  python3 build.py                  上の9つを作る
+  python3 build.py                  上の10を作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
 
 本体を直したら必ず走らせること。生成物を手で編集してはいけない。
@@ -26,6 +27,7 @@ SRC5 = "サンプラー.html"
 SRC6 = "メッセージが届くまで.html"
 SRC7 = "車の制御50.html"
 SRC8 = "速い遅いの正体.html"
+SRC9 = "電波はどこまで届くか.html"
 s = io.open(SRC, encoding="utf-8").read()
 
 # 1) GitHub Pages 用。中身は本体そのまま。URL を短くするためだけの複製
@@ -70,6 +72,11 @@ print("生成: fukusen/index.html")
 os.makedirs("speed", exist_ok=True)
 shutil.copyfile(SRC8, "speed/index.html")
 print("生成: speed/index.html")
+
+# 1j) 電波はどこまで届くか（Wi-Fi・間取り・ルーターの置き方）。導入〜シミュレータ〜小テスト〜まとめ
+os.makedirs("wifi", exist_ok=True)
+shutil.copyfile(SRC9, "wifi/index.html")
+print("生成: wifi/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
