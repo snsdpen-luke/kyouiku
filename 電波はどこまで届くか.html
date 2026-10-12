@@ -123,11 +123,11 @@ function roomStats(){ return ROOMS.filter(r=>r.n!=='廊下').map(r=>{const v=rss
 const halves=(n,label)=>`<div class="halves">${Array.from({length:n+1},(_,k)=>`<div class="hb2"><i style="width:${Math.max(4,200/Math.pow(2,k))}px"></i><span>${k===0?'最初':'半分 '+k+'回目'}${k===n?'　← '+label:''}</span></div>`).join('')}</div>`;
 
 const S=[
-{ eyebrow:"導入", title:"家の中で、Wi-Fi がいちばん弱いのはどこですか", terms:["wave","rssi"],
-  sim:()=>`<div class="chips" id="q1">${["2階の自分の部屋","風呂","ベランダ","キッチン","玄関","どこでも同じ"].map(x=>`<span class="chip">${x}</span>`).join('')}</div><div class="hint">1つ選んでください。あとでシミュレータで確かめます</div>`,
-  wire:()=>{ document.querySelectorAll('#q1 .chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('#q1 .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');})); },
-  naru:"スマホの扇マークの本数は、受け取っている<b>電波の強さ</b>です。今日は、その強さが家のどこでどう変わるかを、自分で確かめます。",
-  memo:"挙手で集計して板書。正解は言わない。最後のシミュレータで各自確かめる。" },
+{ eyebrow:"導入", title:"同じ家、同じ Wi-Fi なのに、部屋で速さが違います", terms:["router","rssi","mbps"],
+  sim:()=>`<div class="grid"><div class="tile"><div class="k">リビング（ルーターのそば）</div><div class="big">320 Mbps</div><div class="k">▂▄▆█　4K もさくさく</div></div><div class="tile"><div class="k">2階の自分の部屋</div><div class="big">18 Mbps</div><div class="k">▂▄　動画がときどき止まる</div></div><div class="tile"><div class="k">風呂</div><div class="big">2 Mbps</div><div class="k">▂　読み込み中のまま</div></div></div><div class="hint">ルーターは1台、契約も1つ。速さを決めているのは「電波がどれだけ届いているか」です。</div><div class="row"><span class="hint">何が電波を弱くしていると思いますか（いくつでも）：</span></div><div class="chips" id="q1">${["距離","壁","床（階が違う）","電子レンジ","水（風呂）","家族が使っている"].map(x=>`<span class="chip">${x}</span>`).join('')}</div>`,
+  wire:()=>{ document.querySelectorAll('#q1 .chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on'))); },
+  naru:"今日の答えは<b>「全部」</b>です。ただし、効き方が違います。どれがどれくらい効くのかを、家の間取りの上で自分の手で確かめます。",
+  memo:"数字は例。「自分の家もこうなる？」と聞いて、2階や風呂で遅い経験を言わせる。選んだ原因は板書しておき、最後のまとめで戻る。" },
 
 { eyebrow:"導入", title:"電子レンジを使うと、動画が止まることがあります", terms:["micro","interf","freq"],
   sim:()=>`<div class="grid"><div class="tile"><div class="k">電子レンジ</div><div class="big">2.45 GHz</div><div class="k">水を温める電波</div></div><div class="tile"><div class="k">Wi-Fi（2.4GHz帯）</div><div class="big">2.40〜2.48 GHz</div><div class="k">スマホが通信に使う電波</div></div></div><div class="hint">たとえ：隣で同じ高さの声で話されると、相手の声が聞き取れなくなるのと同じです。</div>`,
