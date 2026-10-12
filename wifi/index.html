@@ -149,19 +149,27 @@ const S=[
   memo:"なぜ 2.4GHz が水を温める波で、かつ Wi-Fi に使われるか：水に吸われやすい周波数で、免許なしで使える帯だから。人間は水でできているので満員電車で落ちる、につなげる。" },
 
 { eyebrow:"説明①", title:"低い音は壁をすり抜け、高い音は壁で止まります。電波も同じです", terms:["wave","freq","lambda","band"],
-  sim:()=>`<div class="row"><label class="f">電波の種類（音の高さ） <input type="range" id="fq" min="0" max="3" step="1" value="1"></label><div class="big" id="fqv" style="font-size:1.2rem"></div></div><canvas id="wave" width="760" height="220"></canvas><div class="hint" id="fqd"></div>`,
-  wire:()=>{ const F=[["4G（700MHz）　太鼓",1,0.1,"波1つが約 43cm。壁をほぼ素通りして、建物の中まで入ります"],["Wi-Fi 2.4GHz　太鼓寄り",3,0.35,"波1つが約 12cm。壁で少し減りますが、隣の部屋まで届きます"],["Wi-Fi 5GHz　笛寄り",6,0.6,"波1つが約 6cm。壁で大きく減ります。同じ部屋なら速い"],["5G ミリ波（28GHz）　笛",24,0.95,"波1つが約 1cm。壁どころか手のひらでも止まります"]]; const r=document.getElementById('fq'); const cv=document.getElementById('wave'),g=cv.getContext('2d'); if(!g)return; let t=0;
-    const draw=()=>{ t+=0.08; const [n,k,loss,desc]=F[+r.value]; document.getElementById('fqv').textContent=n; document.getElementById('fqd').textContent=desc; g.clearRect(0,0,760,220); g.fillStyle='#fbf7ee'; g.fillRect(0,0,760,220);
-      // wall
-      g.fillStyle='#8a7a5a'; g.fillRect(372,20,16,180); g.fillStyle='#64737a'; g.font='12px sans-serif'; g.textAlign='center'; g.fillText('壁',380,215); g.fillText(k<=3?'🥁':'🎵',40,40);
-      // source
-      g.fillStyle='#1f2a2e'; g.beginPath(); g.arc(40,110,8,0,Math.PI*2); g.fill();
-      g.strokeStyle='#1f6fb2'; g.lineWidth=3; g.beginPath(); for(let x=40;x<372;x++){ const amp=60*(1-(x-40)/900); const y=110-amp*Math.sin((x/760)*Math.PI*2*k*2-t); x===40?g.moveTo(x,y):g.lineTo(x,y);} g.stroke();
-      g.beginPath(); for(let x=388;x<760;x++){ const amp=60*(1-(x-40)/900)*(1-loss); const y=110-amp*Math.sin((x/760)*Math.PI*2*k*2-t); x===388?g.moveTo(x,y):g.lineTo(x,y);} g.strokeStyle=loss>0.5?'#8fb8e8':'#1f6fb2'; g.stroke();
-      g.fillStyle='#1f2a2e'; g.font='bold 13px sans-serif'; g.fillText('壁の向こうに残る強さ：'+Math.round((1-loss)*100)+'%',570,40);
-      ANIM=requestAnimationFrame(draw); }; r.addEventListener('input',()=>{}); draw(); },
-  naru:"隣の部屋のテレビは、<b>低い音（ドンドン）</b>だけ聞こえます。高い音は壁で止まります。電波も同じで、<b>低い（波が長い）ほど遠くまで届き、高い（波が短い）ほど速いが届きません</b>。",
-  memo:"λ=c/f。「太鼓と笛」でずっと通す。数式は出さない。残る強さの％は模式。" },
+  sim:()=>`<div class="row"><button class="pri" id="snd">鳴らす</button><span class="chips" id="mode"><span class="chip on" data-m="0">音で見る</span><span class="chip" data-m="1">電波で見る</span></span><span class="hint" id="sndh">隣の部屋から聞こえるのは、どちらでしょうか</span></div><canvas id="wave" width="760" height="300"></canvas>`,
+  wire:()=>{ const cv=document.getElementById('wave'),g=cv.getContext('2d'); if(!g)return; let t=0,playing=false,mode=0;
+    const ROWS=[{y:80,k:2,loss:0.25,icon:'🥁',a:'太鼓（低い音）',b:'2.4GHz（波が長い）',ok:'ドンドン…聞こえる',okb:'届く',col:'#1f6fb2',len:'波1つ 約12cm'},{y:215,k:9,loss:0.85,icon:'🎵',a:'笛（高い音）',b:'5GHz（波が短い）',ok:'…ほとんど聞こえない',okb:'ほぼ届かない',col:'#c7641b',len:'波1つ 約6cm'}];
+    document.getElementById('snd').addEventListener('click',()=>{playing=true;t=0;});
+    document.querySelectorAll('#mode .chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('#mode .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');mode=+c.dataset.m;document.getElementById('sndh').textContent=mode?'隣の部屋まで届くのは、どちらでしょうか':'隣の部屋から聞こえるのは、どちらでしょうか';}));
+    const draw=()=>{ if(playing)t+=0.09; g.clearRect(0,0,760,300); g.fillStyle='#fbf7ee'; g.fillRect(0,0,760,300);
+      // rooms + wall
+      g.fillStyle='#8a7a5a'; g.fillRect(440,10,18,280); g.fillStyle='#64737a'; g.font='13px sans-serif'; g.textAlign='center'; g.fillText('自分の部屋',220,24); g.fillText('隣の部屋',610,24); g.fillText('壁',449,297);
+      const front=playing?Math.min(760,60+t*60):0; // wave front position
+      ROWS.forEach(r=>{ g.font='28px sans-serif'; g.textAlign='center'; g.fillText(mode?'📶':r.icon,40,r.y+10); g.font='bold 13px sans-serif'; g.fillStyle='#1f2a2e'; g.textAlign='left'; g.fillText(mode?r.b:r.a,70,r.y-38);
+        g.strokeStyle=r.col; g.lineWidth=3; g.beginPath(); let started=false; for(let x=70;x<Math.min(440,front);x++){ const y=r.y-30*Math.sin((x/760)*Math.PI*2*r.k*2-t*2); started?g.lineTo(x,y):g.moveTo(x,y); started=true;} g.stroke();
+        if(front>458){ g.beginPath(); started=false; for(let x=458;x<Math.min(760,front);x++){ const y=r.y-30*(1-r.loss)*Math.sin((x/760)*Math.PI*2*r.k*2-t*2); started?g.lineTo(x,y):g.moveTo(x,y); started=true;} g.globalAlpha=1-r.loss*0.6; g.stroke(); g.globalAlpha=1; }
+        // wavelength bracket
+        if(front>200){ const L=760/(r.k*2); g.strokeStyle='#64737a'; g.lineWidth=1; g.beginPath(); g.moveTo(120,r.y+42); g.lineTo(120+L,r.y+42); g.moveTo(120,r.y+37); g.lineTo(120,r.y+47); g.moveTo(120+L,r.y+37); g.lineTo(120+L,r.y+47); g.stroke(); g.fillStyle='#64737a'; g.font='11px sans-serif'; g.textAlign='left'; g.fillText((mode?r.len:'波1つ'),124+L,r.y+46); }
+        // listener
+        g.font='28px sans-serif'; g.textAlign='center'; g.fillText(mode?'📱':'🧑',720,r.y+10);
+        if(front>=760){ g.font='bold 13px sans-serif'; g.fillStyle=r.loss>0.5?'#b63a3a':'#2f8f5b'; g.textAlign='right'; g.fillText(mode?r.okb:r.ok,700,r.y-38); g.fillStyle='#1f2a2e'; g.font='12px sans-serif'; g.fillText('壁の向こうに残る強さ '+Math.round((1-r.loss)*100)+'%',700,r.y+60); } });
+      if(!playing){ g.fillStyle='#64737a'; g.font='14px sans-serif'; g.textAlign='center'; g.fillText('「鳴らす」を押してください',380,160); }
+      ANIM=requestAnimationFrame(draw); }; draw(); },
+  naru:"隣の部屋のテレビは、<b>低い音（ドンドン）</b>だけ聞こえます。高い音は壁で止まります。電波も同じで、<b>波が長い 2.4GHz は壁をすり抜けて遠くまで届き、波が短い 5GHz は速いが壁で止まります</b>。",
+  memo:"「鳴らす」で2本同時に波が出る。上が太鼓、下が笛。壁の向こうで笛の波がほぼ消える。「電波で見る」に切り替えると、同じ絵のまま 2.4GHz／5GHz のラベルになる。数式は出さない。" },
 
 { eyebrow:"説明②", title:"遠ざかると弱くなります。懐中電灯と同じです", terms:["atten","half","dbm"],
   sim:()=>`<div class="row"><label class="f">ルーターからの距離 <input type="range" id="ds" min="1" max="8" value="2"> <span class="v" id="dsv"></span></label><div class="big" id="dsb" style="font-size:1.3rem"></div></div><div class="two"><canvas id="torch" width="520" height="230"></canvas><div class="col"><div id="dsh"></div><div class="tile"><div class="k">スマホの数字では</div><div class="big" id="dsr"></div><div class="k">−30 がとても強い、−90 でほぼ圏外</div></div></div></div>`,
