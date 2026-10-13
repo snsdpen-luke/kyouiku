@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>電波はどこまで届くか</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <style>
 /* タブレット横向き（4:3）で1画面に収める。上：見出し、中：内容（内側でスクロール）、下：ナビ。用語は右上のボタンで開く引き出し。 */
 :root{
   --bg:#f3f5f7; --card:#ffffff; --fg:#1f2a2e; --mute:#64737a; --line:#d9dee3;
   --accent:#1f6fb2; --accent-ink:#ffffff; --soft:#e4eef8; --warn:#c7641b; --bad:#b63a3a; --good:#2f8f5b;
-  --sans:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --sans:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif; --disp:"Zen Maru Gothic","Noto Sans JP","Hiragino Maru Gothic ProN",sans-serif; --navy:#15243a; --paper:#fbf7ee; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -18,13 +18,16 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.5;overflow:hidden}
 .app{height:100%;display:flex;flex-direction:column;padding:10px 14px;gap:8px}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-h1{margin:0;font-size:1.05rem}h1 span{color:var(--mute);font-weight:400;font-size:.8rem;margin-left:.5em}
+h1{margin:0;font-size:1.05rem;font-family:var(--disp)}h1 span{color:var(--mute);font-weight:400;font-size:.8rem;margin-left:.5em}
 .dots{display:flex;gap:3px}.dots i{display:block;width:14px;height:5px;border-radius:3px;background:var(--line)}.dots i.cur{background:var(--warn)}.dots i.done{background:var(--accent)}
 .hb{display:flex;gap:8px;align-items:center}
 .stage{flex:1;min-height:0;position:relative;display:flex}
-.slide{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 18px;display:flex;flex-direction:column;gap:10px;overflow:auto}
-.eyebrow{font-size:.75rem;color:var(--accent);letter-spacing:.1em}
-h2{margin:0;font-size:1.3rem;line-height:1.3;text-wrap:balance}
+.slide{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 18px;display:flex;flex-direction:column;gap:10px;overflow:auto;animation:fadein .25s ease-out}@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}@media (prefers-reduced-motion:reduce){.slide{animation:none}}
+.slide.cover{background:var(--navy);color:#f6f7f4;border:none;justify-content:center;align-items:flex-start;padding:40px 56px;gap:18px}.cover .kicker{color:#8fb8e8;letter-spacing:.2em;font-size:.85rem}.cover h2{font-size:2.6rem;color:#fff}.cover p{margin:0;font-size:1.05rem;color:#bfd8d5;max-width:36em}.cover input{font-size:1.1rem;padding:10px 14px;width:16em}.cover .btn{font-size:1.1rem;padding:12px 28px}
+.tabs{display:flex;gap:4px}.tab{border:1px solid var(--line);border-radius:16px;padding:3px 12px;font-size:.8rem;color:var(--mute);cursor:pointer;background:var(--card)}.tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}.tab.done{border-color:var(--accent);color:var(--accent)}
+.cert{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cert .box{border:1px solid var(--line);border-radius:10px;padding:12px 14px}.cert .box h3{margin:0 0 6px;font-size:.9rem;color:var(--mute)}.cert .terms b{display:inline-block;background:var(--soft);border-radius:14px;padding:3px 10px;margin:2px;font-size:.9rem}
+.eyebrow{font-size:.75rem;color:var(--accent);letter-spacing:.1em;display:flex;align-items:center;gap:8px}.eyebrow .num{background:var(--accent);color:#fff;border-radius:12px;padding:1px 9px;font-family:var(--mono);font-size:.7rem}
+h2{margin:0;font-size:1.35rem;line-height:1.3;text-wrap:balance;font-family:var(--disp);font-weight:700}
 .sim{border:1px dashed var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .col{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -70,9 +73,9 @@ canvas{max-width:100%;height:auto;display:block;border-radius:6px}
 <body>
 
 <div class="app">
-<header><h1>電波はどこまで届くか <span>Wi-Fi・家の間取り・ルーターの置き方</span></h1><div class="hb"><div class="dots" id="dots"></div><button id="gbtn">用語</button></div></header>
+<header><h1>電波はどこまで届くか <span id="hname"></span></h1><div class="hb"><div class="tabs" id="tabs"></div><div class="dots" id="dots"></div><button id="gbtn">用語</button></div></header>
 <div class="stage"><section class="slide" id="slide"></section><aside class="gloss" id="gloss"></aside></div>
-<div class="nav"><button id="prev">← 前</button><span class="hint">← → キーでも進めます。N で先生用メモ</span><button id="next" class="pri">次 →</button></div>
+<div class="nav"><button id="prev">← 前</button><span class="hint">← → キーでも進めます</span><button id="next" class="pri">次 →</button></div>
 </div>
 
 <script>
@@ -106,6 +109,8 @@ const ROOMS=[
 ];
 const MICRO={f:0,x:11.2,y:0.8};
 const ST={router:{f:0,x:1.2,y:1.2},rep:null,band:1,house:'wood',micro:false,mode:'router'};
+const P={name:'',stages:[],terms:[],quiz:null,seen:[]}; try{Object.assign(P,JSON.parse(localStorage.getItem('wifi-house-p')||'{}'));}catch(e){}
+function saveP(){ try{localStorage.setItem('wifi-house-p',JSON.stringify(P));}catch(e){} }
 function segX(ax,ay,bx,by,cx,cy,dx,dy){ const d=(bx-ax)*(dy-cy)-(by-ay)*(dx-cx); if(Math.abs(d)<1e-9)return false; const t=((cx-ax)*(dy-cy)-(cy-ay)*(dx-cx))/d, u=((cx-ax)*(by-ay)-(cy-ay)*(bx-ax))/d; return t>0&&t<1&&u>0&&u<1; }
 function rssiFrom(src,ptx,f,x,y){ const b=ST.band; const dx=x-src.x, dy=y-src.y, dz=(f-src.f)*3; const d=Math.max(0.5,Math.hypot(dx,dy,dz)); let p=ptx-10*2.8*Math.log10(d)-(b?8:0); for(const w of WALLS){ if(w[0]!==src.f&&w[0]!==f)continue; if(segX(src.x,src.y,x,y,w[1],w[2],w[3],w[4])) p-=WALL[w[5]].l[b]*(src.f===f?1:0.7); } if(f!==src.f) p-=FLOORLOSS[ST.house][b]*Math.abs(f-src.f); if(ST.micro&&!b&&f===MICRO.f){ const dm=Math.hypot(x-MICRO.x,y-MICRO.y); if(dm<3.5) p-=50; else if(dm<5) p-=50*(5-dm)/1.5; } return p; }
 function rssiAt(f,x,y){ let p=rssiFrom(ST.router,-30,f,x,y); if(ST.rep){ const pr=rssiFrom(ST.router,-30,ST.rep.f,ST.rep.x,ST.rep.y); if(pr>=-78){ p=Math.max(p,rssiFrom(ST.rep,-33,f,x,y)); } } return p; }
@@ -126,13 +131,18 @@ function roomStats(){ return ROOMS.filter(r=>r.n!=='廊下').map(r=>{const v=rss
 const halves=(n,label)=>`<div class="halves">${Array.from({length:n+1},(_,k)=>`<div class="hb2"><i style="width:${Math.max(4,200/Math.pow(2,k))}px"></i><span>${k===0?'最初':'半分 '+k+'回目'}${k===n?'　← '+label:''}</span></div>`).join('')}</div>`;
 
 const S=[
-{ eyebrow:"導入", title:"同じ家、同じ Wi-Fi なのに、部屋で速さが違います", terms:["router","rssi","mbps"],
+{ ch:"", cover:true, title:"電波はどこまで届くか", terms:[],
+  sim:()=>`<div class="kicker">コンピュータシステム技術　ネットワーク③</div><h2>電波はどこまで届くか</h2><p>同じ家なのに、部屋によって Wi-Fi の速さが違うのはなぜでしょうか。家の間取りの上でルーターを動かしながら、電波のしくみを自分の手で確かめます。</p><div class="row"><input type="text" id="pname" placeholder="名前（例：2-6 ○○）" value="${P.name}"><button class="pri btn" id="start">はじめる →</button></div><div class="hint" style="color:#8fb8e8">導入 → しくみ → ゲーム → たしかめ（小テスト） → まとめ　の順に進みます。右上の「用語」でいつでも用語の説明が見られます。</div>`,
+  wire:()=>{ const go=()=>{P.name=document.getElementById('pname').value.trim();saveP();document.getElementById('hname').textContent=P.name;i=1;render();}; document.getElementById('start').addEventListener('click',go); document.getElementById('pname').addEventListener('keydown',e=>{if(e.key==='Enter')go();}); },
+  naru:"", memo:"表紙。名前を入れさせる。名前は小テストと修了画面に出る。" },
+
+{ ch:"導入", eyebrow:"導入", title:"同じ家、同じ Wi-Fi なのに、部屋で速さが違います", terms:["router","rssi","mbps"],
   sim:()=>`<div class="two"><svg viewBox="0 0 520 300" style="width:100%;max-width:520px;height:auto" aria-label="家の断面図"><rect x="20" y="150" width="480" height="130" fill="#fbf7ee" stroke="#8a7a5a" stroke-width="3"/><rect x="20" y="40" width="480" height="110" fill="#fbf7ee" stroke="#8a7a5a" stroke-width="3"/><polygon points="10,40 260,5 510,40" fill="#6b5b45"/><line x1="340" y1="150" x2="340" y2="280" stroke="#8a7a5a" stroke-width="3"/><line x1="200" y1="40" x2="200" y2="150" stroke="#8a7a5a" stroke-width="3"/><rect x="345" y="155" width="150" height="120" fill="#dbeaf0"/><text x="420" y="270" font-size="13" text-anchor="middle" fill="#64737a">風呂（タイル）</text><text x="110" y="270" font-size="13" text-anchor="middle" fill="#64737a">リビング</text><text x="350" y="140" font-size="13" text-anchor="middle" fill="#64737a">2階 自分の部屋</text><circle cx="90" cy="230" r="10" fill="#1f2a2e"/><text x="90" y="234" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">R</text><g stroke="#e0392b" fill="none" stroke-width="2" opacity=".7"><circle cx="90" cy="230" r="25"/><circle cx="90" cy="230" r="45"/><circle cx="90" cy="230" r="65"/></g><g stroke="#f2c14e" fill="none" stroke-width="2" opacity=".6"><circle cx="90" cy="230" r="90"/><circle cx="90" cy="230" r="115"/></g><g stroke="#2f6fb8" fill="none" stroke-width="2" opacity=".45"><circle cx="90" cy="230" r="145"/><circle cx="90" cy="230" r="180"/></g><g font-family="monospace" font-size="12" font-weight="700"><rect x="150" y="195" width="60" height="40" rx="6" fill="#fff" stroke="#e0392b" stroke-width="2"/><text x="180" y="212" text-anchor="middle" fill="#1f2a2e">▂▄▆█</text><text x="180" y="228" text-anchor="middle" fill="#e0392b">320M</text><rect x="320" y="80" width="60" height="40" rx="6" fill="#fff" stroke="#2f6fb8" stroke-width="2"/><text x="350" y="97" text-anchor="middle" fill="#1f2a2e">▂▄</text><text x="350" y="113" text-anchor="middle" fill="#2f6fb8">18M</text><rect x="410" y="195" width="60" height="40" rx="6" fill="#fff" stroke="#8fb8e8" stroke-width="2"/><text x="440" y="212" text-anchor="middle" fill="#1f2a2e">▂</text><text x="440" y="228" text-anchor="middle" fill="#2f6fb8">2M</text></g></svg><div class="col"><div class="tile"><div class="k">リビング（ルーターのそば）</div><div class="big">320 Mbps</div><div class="k">4K もさくさく</div></div><div class="tile"><div class="k">2階の自分の部屋</div><div class="big">18 Mbps</div><div class="k">動画がときどき止まる</div></div><div class="tile"><div class="k">風呂</div><div class="big">2 Mbps</div><div class="k">読み込み中のまま</div></div></div></div><div class="row"><span class="hint">何が電波を弱くしていると思いますか（いくつでも）：</span><span class="chips" id="q1">${["距離","壁","床（階が違う）","電子レンジ","水（風呂）","家族が使っている"].map(x=>`<span class="chip">${x}</span>`).join('')}</span></div>`,
   wire:()=>{ document.querySelectorAll('#q1 .chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on'))); },
   naru:"ルーターは1台、契約も1つ。速さを決めているのは<b>電波がどれだけ届いているか</b>です。今日の答えは「全部」ですが、効き方が違います。それを間取りの上で確かめます。",
   memo:"「自分の家もこうなる？」と聞いて、2階や風呂で遅い経験を言わせる。選んだ原因は板書しておき、最後のまとめで戻る。" },
 
-{ eyebrow:"導入", title:"電子レンジを使うと、動画が止まることがあります", terms:["micro","interf","freq"],
+{ ch:"導入", eyebrow:"導入", title:"電子レンジを使うと、動画が止まることがあります", terms:["micro","interf","freq"],
   sim:()=>`<div class="row"><button class="pri" id="mw">レンジを動かす</button><span class="hint" id="mwh">キッチンのレンジと、リビングのルーター。どちらも 2.4GHz の波を出しています</span></div><canvas id="mwc" width="760" height="260"></canvas>`,
   wire:()=>{ const cv=document.getElementById('mwc'),g=cv.getContext('2d'); if(!g)return; let on=false,t=0; const btn=document.getElementById('mw'); btn.addEventListener('click',()=>{on=!on;btn.textContent=on?'レンジを止める':'レンジを動かす';btn.classList.toggle('pri',!on);document.getElementById('mwh').textContent=on?'同じ高さの波がぶつかって、スマホの波が乱れます':'キッチンのレンジと、リビングのルーター。どちらも 2.4GHz の波を出しています';});
     const draw=()=>{ t+=1; g.clearRect(0,0,760,260); g.fillStyle='#fbf7ee'; g.fillRect(0,0,760,260); g.strokeStyle='#8a7a5a'; g.lineWidth=3; g.strokeRect(1,1,758,258); g.beginPath(); g.moveTo(380,0); g.lineTo(380,260); g.stroke(); g.fillStyle='#64737a'; g.font='13px sans-serif'; g.textAlign='center'; g.fillText('リビング',190,22); g.fillText('キッチン',570,22);
@@ -151,7 +161,7 @@ const S=[
   naru:"レンジは電波を外に漏らさない作りですが、少しだけ漏れます。Wi-Fi と<b>同じ高さの波</b>なので、ぶつかって乱れます。これを<b>干渉</b>といいます。隣で同じ高さの声で話されると聞き取れないのと同じです。",
   memo:"なぜ 2.4GHz が水を温める波で、かつ Wi-Fi に使われるか：水に吸われやすい周波数で、免許なしで使える帯だから。人間は水でできているので満員電車で落ちる、につなげる。" },
 
-{ eyebrow:"説明①", title:"低い音は壁をすり抜け、高い音は壁で止まります。電波も同じです", terms:["wave","freq","lambda","band"],
+{ ch:"しくみ", eyebrow:"説明①", title:"低い音は壁をすり抜け、高い音は壁で止まります。電波も同じです", terms:["wave","freq","lambda","band"],
   sim:()=>`<div class="row"><button class="pri" id="snd">鳴らす</button><span class="chips" id="mode"><span class="chip on" data-m="0">音で見る</span><span class="chip" data-m="1">電波で見る</span></span><span class="hint" id="sndh">隣の部屋から聞こえるのは、どちらでしょうか</span><button id="why">なぜ？</button></div><canvas id="wave" width="760" height="300"></canvas><div id="whybox" style="display:none" class="col"><div class="two"><div class="col"><b>理由1　長い波は、物を回り込む</b><span style="font-size:.92rem">波は、自分の波1つの長さと同じくらいの隙間や角に当たると、その先で<b>扇のように広がります</b>。太鼓の波（12cm）はドアの隙間や家具を回り込みますが、笛の波（1cm〜6cm）はまっすぐ抜けて、<b>影</b>ができます。防波堤の裏でも大きなうねりは揺れるのと同じです。</span></div><div class="col"><b>理由2　短い波ほど、壁の中で熱になりやすい</b><span style="font-size:.92rem">電波が壁を通るとき、壁の中の小さな粒を揺さぶります。1秒に揺さぶる回数が多い（高い）ほど、同じ厚さを通る間に力を奪われて熱になります。だから同じ壁でも笛のほうが減ります。電子レンジが水を温めるのも、この力です。</span></div></div><canvas id="dif" width="760" height="230"></canvas><div class="hint">ドアの隙間を通ったあと。左：太鼓の波は広がって隅まで届く　右：笛の波はまっすぐ抜けて、隅に影ができる</div></div>`,
   wire:()=>{ const cv=document.getElementById('wave'),g=cv.getContext('2d'); if(!g)return; let t=0,playing=false,mode=0;
     const ROWS=[{y:80,k:2,loss:0.25,icon:'🥁',a:'太鼓（低い音）',b:'2.4GHz（波が長い）',ok:'ドンドン…聞こえる',okb:'届く',col:'#1f6fb2',len:'波1つ 約12cm'},{y:215,k:9,loss:0.85,icon:'🎵',a:'笛（高い音）',b:'5GHz（波が短い）',ok:'…ほとんど聞こえない',okb:'ほぼ届かない',col:'#c7641b',len:'波1つ 約6cm'}];
@@ -189,7 +199,7 @@ const S=[
   naru:"隣の部屋のテレビは、<b>低い音（ドンドン）</b>だけ聞こえます。電波も同じで、<b>波が長い 2.4GHz は回り込んで遠くまで届き、波が短い 5GHz は速いが壁で止まります</b>。理由は「なぜ？」を押すと出ます。",
   memo:"「鳴らす」で2本同時に波が出る。「なぜ？」で理由2つ：①回折（波長と同じくらいの隙間で広がる。防波堤のうねり）②吸収（高いほど壁の中で熱になる。レンジと同じ力）。電気科向けの3つ目（受信アンテナの実効面積は波長の2乗に比例。空間自体が高い電波を余計に弱めるわけではない）は生徒には出さない。" },
 
-{ eyebrow:"説明②", title:"遠ざかると弱くなります。懐中電灯と同じです", terms:["atten","half","dbm"],
+{ ch:"しくみ", eyebrow:"説明②", title:"遠ざかると弱くなります。懐中電灯と同じです", terms:["atten","half","dbm"],
   sim:()=>`<div class="row"><label class="f">ルーターからの距離 <input type="range" id="ds" min="1" max="8" value="2"> <span class="v" id="dsv"></span></label><div class="big" id="dsb" style="font-size:1.3rem"></div></div><div class="two"><canvas id="torch" width="520" height="230"></canvas><div class="col"><div id="dsh"></div><div class="tile"><div class="k">スマホの数字では</div><div class="big" id="dsr"></div><div class="k">−30 がとても強い、−90 でほぼ圏外</div></div></div></div>`,
   wire:()=>{ const r=document.getElementById('ds'); const cv=document.getElementById('torch'),g=cv.getContext('2d'); const d=()=>{const m=+r.value; const n=Math.round(2*Math.log2(m)); const p=-30-3*n; document.getElementById('dsv').textContent=m+' m'; document.getElementById('dsr').textContent=Math.round(p)+' dBm'; document.getElementById('dsb').textContent='同じ光が '+(m*m)+' 倍の広さに広がる → 明るさ 1/'+(m*m)+'（半分が '+n+' 回）'; document.getElementById('dsh').innerHTML=halves(Math.min(n,8),m+'m のとき');
       if(!g)return; g.clearRect(0,0,520,230); g.fillStyle='#fbf7ee'; g.fillRect(0,0,520,230); // torch
@@ -199,7 +209,7 @@ const S=[
   naru:"電波は四方八方に広がります。<b>2倍離れると、同じ光が4倍の広さに薄く広がる</b>ので、明るさは 1/4（半分が2回）。電波の強さは<b>「半分が何回」</b>で数えると分かりやすいです。",
   memo:"半分1回＝−3dB。dB は用語欄に置くだけ。実際の家は反射があるので、きれいな逆二乗にはならない。" },
 
-{ eyebrow:"説明③", title:"壁1枚で、半分が何回でしょうか", terms:["atten","half","band"],
+{ ch:"しくみ", eyebrow:"説明③", title:"壁1枚で、半分が何回でしょうか", terms:["atten","half","band"],
   sim:()=>`<div class="chips" id="wm">${Object.entries(WALL).map(([k,w],i)=>`<span class="chip ${i===0?'on':''}" data-k="${k}">${w.n}</span>`).join('')}</div><canvas id="wallc" width="760" height="200"></canvas><div class="hint">上：2.4GHz（太鼓）　下：5GHz（笛）。数字は材質と厚さで大きく変わります。目安です</div>`,
   wire:()=>{ let key='wood',t=0; const cv=document.getElementById('wallc'),g=cv.getContext('2d'); if(!g)return;
     const draw=()=>{ t+=0.08; const w=WALL[key]; g.clearRect(0,0,760,200); g.fillStyle='#fbf7ee'; g.fillRect(0,0,760,200); g.fillStyle=w.c; g.fillRect(372,10,w.w*3,180); g.fillStyle='#64737a'; g.font='12px sans-serif'; g.textAlign='center'; g.fillText(w.n,380+w.w*1.5,198);
@@ -208,13 +218,13 @@ const S=[
     document.querySelectorAll('#wm .chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('#wm .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');key=c.dataset.k;})); draw(); },
   naru:"コンクリートの壁1枚で<b>半分が4回（1/16）</b>です。同じ壁でも <b>笛（5GHz）のほうが多く減ります</b>。床は壁より厚いので、1階と2階の間ではさらに減ります。",
   memo:"鉄筋コンクリートの床は半分6〜8回（−20dB以上）。木造住宅と RC マンションで届き方がまるで違う理由。" },
-{ eyebrow:"説明④", title:"太鼓（2.4GHz）と笛（5GHz）、どちらにつなぐとよいでしょうか", terms:["band","interf"],
+{ ch:"しくみ", eyebrow:"説明④", title:"太鼓（2.4GHz）と笛（5GHz）、どちらにつなぐとよいでしょうか", terms:["band","interf"],
   sim:()=>`<table class="t"><tr><th></th><th>2.4GHz帯（太鼓）</th><th>5GHz帯（笛）</th></tr><tr><td>届く距離・壁の回り込み</td><td>強い</td><td>弱い</td></tr><tr><td>速さ（上限の目安）</td><td class="n">〜150 Mbps</td><td class="n">〜500 Mbps 以上</td></tr><tr><td>混みやすさ</td><td>混む（電子レンジ・Bluetooth・隣の家も同じ帯）</td><td>空いている</td></tr><tr><td>向いている場所</td><td>遠い部屋・別の階</td><td>ルーターと同じ部屋</td></tr></table>`,
   wire:()=>{},
   naru:"ルーターの名前に <b>-A / -G</b> や <b>5G / 2G</b> が付いているのは、この2つです。<b>同じ部屋なら 5GHz、遠い部屋なら 2.4GHz</b>。次の画面で、間取りの上で確かめます。",
   memo:"SSID 末尾の A/G（a は 5GHz、g は 2.4GHz の規格名）。「2G」は携帯の 2G ではない、と一言。" },
 
-{ eyebrow:"ゲーム", title:"家族みんなが動画を見られるようにしよう", terms:["router","repeater","band","rssi","micro","mbps"],
+{ ch:"ゲーム", eyebrow:"ゲーム", title:"家族みんなが動画を見られるようにしよう", terms:["router","repeater","band","rssi","micro","mbps"],
   sim:()=>`<div class="simwrap">
   <div class="lvbar"><div class="lvtitle" id="lvt"></div><div class="lvgoal" id="lvg"></div><div class="lvprog"><div class="pbar"><i id="pfill"></i></div><span class="v" id="ptxt"></span></div></div>
   <div class="ctrl" id="ctrl"><span class="hint">置くもの：</span><button class="sel" id="mRouter">ルーター</button><button id="mRep">中継器</button><button id="mRepOff">中継器を外す</button><label id="lBand">電波 <select id="band"><option value="0">太鼓 2.4GHz</option><option value="1" selected>笛 5GHz</option></select></label><label id="lHouse">家 <select id="house"><option value="wood">木造</option><option value="rc">鉄筋コンクリート</option></select></label><label id="lMicro">電子レンジ <select id="micro"><option value="0">停止</option><option value="1">使用中</option></select></label><span class="hint">間取りをタップしてルーターを置きます</span></div>
@@ -236,7 +246,7 @@ const S=[
     const redraw=()=>{ drawFloor(c0,0); drawFloor(c1,1); const rs=roomStats(); const L=LV[lv];
       document.getElementById('rooms').innerHTML=rs.map(r=>`<div class="room ${r.m>=20?'ok':r.m>=1?'mid':'ng'}"><b>${face(r.m)} ${r.f?'2F ':'1F '}${r.n}</b><span class="who">${FAM[r.n]||''}</span><div class="m"><i style="width:${Math.max(2,Math.min(100,r.m/(ST.band?500:150)*100))}%;background:${color(r.r)}"></i></div><span class="s">${r.m>=1?fmt(r.m)+' Mbps':'圏外'}</span></div>`).join('');
       const okN=rs.filter(r=>r.m>=L.th).length; document.getElementById('pfill').style.width=(okN/rs.length*100)+'%'; document.getElementById('ptxt').textContent=`動画OK ${okN} / ${rs.length} 部屋`;
-      if(!cleared&&L.ok(rs)){ cleared=true; const nxt=lv<LV.length-1; document.getElementById('clear').innerHTML=`<div class="clearbox"><div class="big" style="font-size:1.4rem">🎉 ステージ${lv+1} クリア</div>${L.term?`<div class="termcard"><div class="k">覚えよう</div><b>${L.term[0]}</b><span>${L.term[1]}</span></div>`:''}${nxt?`<button class="pri" id="nextlv">次のステージへ →</button>`:''}</div>`; if(nxt)document.getElementById('nextlv').addEventListener('click',()=>{lv++;start();}); } };
+      if(!cleared&&L.ok(rs)){ cleared=true; if(!P.stages.includes(lv+1))P.stages.push(lv+1); if(L.term&&!P.terms.includes(L.term[0]))P.terms.push(L.term[0]); saveP(); const nxt=lv<LV.length-1; document.getElementById('clear').innerHTML=`<div class="clearbox"><div class="big" style="font-size:1.4rem">🎉 ステージ${lv+1} クリア</div>${L.term?`<div class="termcard"><div class="k">覚えよう</div><b>${L.term[0]}</b><span>${L.term[1]}</span></div>`:''}${nxt?`<button class="pri" id="nextlv">次のステージへ →</button>`:''}</div>`; if(nxt)document.getElementById('nextlv').addEventListener('click',()=>{lv++;start();}); } };
     const start=()=>{ const L=LV[lv]; cleared=false; L.setup(); document.getElementById('lvt').textContent=L.t; document.getElementById('lvg').textContent='目標：'+L.g; document.getElementById('clear').innerHTML=''; ST.mode='router';
       document.getElementById('lBand').style.display=L.show.band?'':'none'; document.getElementById('lHouse').style.display=L.show.house?'':'none'; document.getElementById('lMicro').style.display=L.show.micro?'':'none'; document.getElementById('mRep').style.display=L.show.rep?'':'none'; document.getElementById('mRepOff').style.display=L.show.rep?'':'none'; document.getElementById('mRouter').style.display=L.show.rep?'':'none';
       document.getElementById('mRouter').classList.add('sel'); document.getElementById('mRep').classList.remove('sel');
@@ -251,14 +261,14 @@ const S=[
   naru:"色は<b>サーモグラフィ</b>と同じで、赤いほど強く、青いほど弱いです。😀 が動画の見られる部屋。ステージをクリアするごとに、用語が1つ増えます。",
   memo:"ステージ1：1階中央に置けば8部屋は届く。ステージ2：太鼓（2.4GHz）に切り替えて1階中央なら全部屋。ステージ3：レンジで2.4がキッチン周りで落ちる→笛に戻す（1階中央なら届く）か、ルーターをレンジから離す。ステージ4：1階中央にルーター、2階廊下に中継器。5GHzだと中継器が赤くなる→太鼓に切替。ステージ5は自由。" },
 
-{ eyebrow:"活動", title:"教室で測ってみましょう", terms:["rssi","dbm","mbps"],
+{ ch:"たしかめ", eyebrow:"活動", title:"教室で測ってみましょう", terms:["rssi","dbm","mbps"],
   sim:()=>`<table class="t"><tr><th>場所</th><th>扇マーク（本）</th><th>速さ（Mbps）</th><th>ルーターからの距離（m）</th></tr>${["教室の前（ルーターの近く）","教室の後ろ","廊下（ドアの外）","隣の教室","2階（別の階）"].map(p=>`<tr><td>${p}</td><td></td><td></td><td></td></tr>`).join('')}</table><div class="hint">速度測定で3回測って、真ん中の値を書きます。Wi-Fi に接続して測ります。</div>`,
   wire:()=>{},
   naru:"壁1枚、ドア1枚、階1つで、どれくらい落ちるかを<b>自分の数字</b>で確かめます。シミュレータの「半分が何回」と比べてみましょう。",
   memo:"10分。測定サイトが開かない場合は扇マークの本数だけでも成立する。" },
 
-{ eyebrow:"小テスト", title:"小テスト（8問・採点は1回）", terms:[],
-  sim:()=>`<label class="row">名前 <input type="text" id="qn" style="width:12em"></label><div id="qs" style="display:flex;flex-direction:column;gap:12px"></div><div class="row"><button class="pri" id="qgrade">採点する</button><div class="big" id="qres"></div></div><div class="fb" id="qfb"></div>`,
+{ ch:"たしかめ", eyebrow:"小テスト", title:"小テスト（8問・採点は1回）", terms:[],
+  sim:()=>`<label class="row">名前 <input type="text" id="qn" style="width:12em" value="${P.name}"></label><div id="qs" style="display:flex;flex-direction:column;gap:12px"></div><div class="row"><button class="pri" id="qgrade">採点する</button><div class="big" id="qres"></div></div><div class="fb" id="qfb"></div>`,
   wire:()=>{ const Q=[
       {q:"電子レンジを使うと Wi-Fi が乱れることがあります。理由として正しいものはどれですか。",o:["レンジの電波と Wi-Fi の 2.4GHz帯が同じ周波数だから","レンジが電気をたくさん使って電圧が下がるから","レンジの熱で電波が溶けるから"],a:0,pts:1,why:"同じ 2.4GHz帯なので干渉します。"},
       {q:"「笛」のような高い電波（5GHz・ミリ波）の特徴として正しいものはどれですか。",o:["壁に弱いが、速い","壁をすり抜けて遠くまで届く","高さと届き方は関係ない"],a:0,pts:1,why:"高い（波が短い）電波は壁で減りますが、多くの情報を乗せられます。"},
@@ -273,19 +283,34 @@ const S=[
     const norm=t=>(t||'').toLowerCase().replace(/\s/g,'');
     document.getElementById('qgrade').addEventListener('click',()=>{ let total=0,max=0,blank=[]; Q.forEach((x,i)=>{ max+=x.pts; let pts=0,msg=''; if(x.t){ const v=document.querySelector(`[data-q="${i}"]`).value; if(!v.trim()){blank.push(i+1);return;} const n=norm(v); const hits=x.kw.filter(g=>g.some(k=>n.includes(k.toLowerCase()))).length; pts=hits>=x.need?2:hits>0?1:0; msg=`キーワード ${hits}/${x.kw.length}（仮採点）。模範解答：${x.model}`; } else { const s=document.querySelector(`input[name="q${i}"]:checked`); if(!s){blank.push(i+1);return;} pts=+s.value===x.a?x.pts:0; msg=(pts?'○ ':'× 正解は「'+x.o[x.a]+'」。')+x.why; } total+=pts; const fb=document.querySelector(`[data-fb="${i}"]`); fb.className='fb '+(pts===x.pts?'ok':'ng'); fb.textContent=`${pts}/${x.pts}点　${msg}`; });
       if(blank.length){ document.getElementById('qfb').className='fb ng'; document.getElementById('qfb').textContent=`問${blank.join('・')} が未回答です。`; return; }
-      document.getElementById('qres').textContent=`${total} / ${max} 点`; document.getElementById('qgrade').disabled=true; document.getElementById('qfb').className='fb'; document.getElementById('qfb').textContent=`${document.getElementById('qn').value||'名前なし'}　記述は仮採点です。先生が確認します。`; }); },
+      document.getElementById('qres').textContent=`${total} / ${max} 点`; P.quiz={score:total,max}; saveP(); document.getElementById('qgrade').disabled=true; document.getElementById('qfb').className='fb'; document.getElementById('qfb').textContent=`${document.getElementById('qn').value||'名前なし'}　記述は仮採点です。先生が確認します。`; }); },
   naru:"記述は、授業の言葉（太鼓・笛・半分が何回・中継器）を使って文で書きます。採点は1回だけです。",
   memo:"客観6問×1点＋記述2問×2点＝10点。記述はキーワードで仮採点。" },
 
-{ eyebrow:"まとめ", title:"ルーターの置き方、3つの原則", terms:["router","band","repeater"],
+{ ch:"まとめ", eyebrow:"まとめ", title:"ルーターの置き方、3つの原則", terms:["router","band","repeater"],
   sim:()=>`<div class="grid"><div class="tile"><div class="k">原則1</div><div class="big" style="font-size:1.2rem">家の真ん中に</div><div class="k">電波は四方八方に広がる。端に置くと半分が外に出ていく</div></div><div class="tile"><div class="k">原則2</div><div class="big" style="font-size:1.2rem">高く、障害物から離す</div><div class="k">床・金属・水槽・電子レンジの近くは避ける</div></div><div class="tile"><div class="k">原則3</div><div class="big" style="font-size:1.2rem">部屋で太鼓と笛を使い分ける</div><div class="k">同じ部屋は 5GHz（笛）、遠い部屋・別の階は 2.4GHz（太鼓）。届かなければ中継器</div></div></div><div class="hint">家に帰ったら、自分の家のルーターがどこにあるか見てみましょう。</div>`,
   wire:()=>{},
   naru:"今日の数字は<b>「半分が何回」</b>で考えました。距離2倍で2回、木の壁で1回、コンクリートの床で6回以上。足し算で、家のどこに届くかが予想できます。",
   memo:"最初の導入「家で一番弱いのはどこ」に戻って、自分の予想と比べさせて終わる。" },
+{ ch:"まとめ", eyebrow:"修了", title:"今日の記録", terms:[],
+  sim:()=>`<div class="cert"><div class="box"><h3>名前</h3><div class="big" style="font-size:1.3rem">${P.name||'（名前なし）'}</div></div><div class="box"><h3>小テスト</h3><div class="big">${P.quiz?P.quiz.score+' / '+P.quiz.max+' 点':'未受験'}</div></div><div class="box"><h3>クリアしたステージ</h3><div class="big" style="font-size:1.3rem">${P.stages.length} / 4</div><div class="hint">${P.stages.map(n=>'ステージ'+n).join('・')||'—'}</div></div><div class="box terms"><h3>覚えた用語</h3>${P.terms.length?P.terms.map(t=>'<b>'+t+'</b>').join(''):'<span class="hint">ゲームのステージをクリアすると増えます</span>'}</div></div><div class="row"><span class="hint">この画面を先生に見せてください。</span><button id="resetp">記録を消して最初から</button></div>`,
+  wire:()=>{ document.getElementById('resetp').addEventListener('click',()=>{Object.assign(P,{name:'',stages:[],terms:[],quiz:null,seen:[]});saveP();i=0;render();}); },
+  naru:"今日の数字は<b>「半分が何回」</b>で考えました。距離2倍で2回、木の壁で1回、コンクリートの床で6回以上。足し算で、家のどこに届くかが予想できます。",
+  memo:"修了画面。名前・小テストの点・クリアしたステージ・覚えた用語が1画面に出る。端末に残るので次の時間も見られる。" },
 ];
 
 let ANIM=null; let i=0,memoOn=false; const slide=document.getElementById('slide'), gl=document.getElementById('gloss');
-function render(){ if(ANIM){cancelAnimationFrame(ANIM);ANIM=null;} const s=S[i]; slide.innerHTML=`<div class="eyebrow">${s.eyebrow}　${i+1} / ${S.length}</div><h2>${s.title}</h2><div class="sim">${s.sim()}</div><div class="naru">${s.naru}</div><div class="memo ${memoOn?'show':''}" id="memo">先生用メモ：${s.memo}</div>`; try{s.wire();}catch(e){console.error(e);} gl.innerHTML=`<h3>用語の説明 <button id="gclose">閉じる</button></h3>`+((s.terms||[]).map(k=>`<div class="g"><b>${G[k][0]}</b><small>${G[k][1]}</small></div>`).join('')||'<div class="hint">この画面に用語はありません</div>'); document.getElementById('gclose').addEventListener('click',()=>gl.classList.remove('open')); document.getElementById('dots').innerHTML=S.map((_,k)=>`<i class="${k<i?'done':k===i?'cur':''}"></i>`).join(''); document.getElementById('prev').disabled=i===0; document.getElementById('next').disabled=i===S.length-1; slide.scrollTop=0; }
+const CH=["導入","しくみ","ゲーム","たしかめ","まとめ"];
+function render(){ if(ANIM){cancelAnimationFrame(ANIM);ANIM=null;} const s=S[i]; slide.className='slide'+(s.cover?' cover':''); slide.style.animation='none'; void slide.offsetWidth; slide.style.animation='';
+  if(s.cover){ slide.innerHTML=s.sim(); } else { slide.innerHTML=`<div class="eyebrow"><span class="num">${i}</span>${s.eyebrow}</div><h2>${s.title}</h2><div class="sim">${s.sim()}</div>${s.naru?`<div class="naru">${s.naru}</div>`:''}<div class="memo ${memoOn?'show':''}" id="memo">先生用メモ：${s.memo}</div>`; }
+  try{s.wire();}catch(e){console.error(e);}
+  if(!P.seen.includes(i)){P.seen.push(i);saveP();}
+  gl.innerHTML=`<h3>用語の説明 <button id="gclose">閉じる</button></h3>`+((s.terms||[]).map(k=>`<div class="g"><b>${G[k][0]}</b><small>${G[k][1]}</small></div>`).join('')||'<div class="hint">この画面に用語はありません</div>'); document.getElementById('gclose').addEventListener('click',()=>gl.classList.remove('open'));
+  document.getElementById('hname').textContent=P.name;
+  document.getElementById('tabs').innerHTML=CH.map(c=>{const idx=S.map((x,k)=>x.ch===c?k:-1).filter(k=>k>=0); const allSeen=idx.every(k=>P.seen.includes(k)); return `<span class="tab ${s.ch===c?'on':allSeen?'done':''}" data-ch="${c}">${c}</span>`;}).join('');
+  document.querySelectorAll('#tabs .tab').forEach(t=>t.addEventListener('click',()=>{const k=S.findIndex(x=>x.ch===t.dataset.ch); if(k>=0){i=k;render();}}));
+  const sib=S.map((x,k)=>x.ch===s.ch?k:-1).filter(k=>k>=0); document.getElementById('dots').innerHTML=s.cover?'':sib.map(k=>`<i class="${k<i?'done':k===i?'cur':''}"></i>`).join('');
+  document.getElementById('prev').disabled=i===0; document.getElementById('next').disabled=i===S.length-1; document.getElementById('next').textContent=i===S.length-1?'おわり':(S[i+1].ch!==s.ch&&S[i+1].ch?S[i+1].ch+' へ →':'次 →'); slide.scrollTop=0; }
 document.getElementById('gbtn').addEventListener('click',()=>gl.classList.toggle('open'));
 document.getElementById('prev').addEventListener('click',()=>{if(i>0){i--;render();}});
 document.getElementById('next').addEventListener('click',()=>{if(i<S.length-1){i++;render();}});
