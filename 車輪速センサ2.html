@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>車輪速センサ 第2時</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen 4:3 slide deck — each slide = moving picture (left) + one question or one idea (right); glossary column far right. Single light look on purpose (school tablets). */
+:root{
+  color-scheme:light;
+  --paper:#eef0ee; --sheet:#fbfbf8; --ink:#1d2b3a; --mute:#5d6b78; --line:#c5ccd1;
+  --metal:#c9d1d6; --tire:#2a333c; --road:#d9dedb; --amber:#c96a00; --amber-soft:#fbe7cf;
+  --teal:#1f7a6d; --teal-soft:#d5ece7; --blue:#2f6db5; --blue-soft:#dde8f6;
+  --good:#1f7a4d; --good-soft:#d9efe2; --bad:#b3261e; --bad-soft:#f7dcd9;
+  --f-disp:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;padding-inline:12px;padding-block:10px;box-sizing:border-box;overflow:hidden}
+*{box-sizing:border-box}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.app{height:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-rows:auto 1fr;gap:8px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.15rem;line-height:1.2;white-space:nowrap}
+header h1 small{font-family:var(--f-body);font-weight:700;font-size:.8rem;color:var(--mute);margin-left:8px}
+.prog{flex:1;max-width:420px;display:flex;align-items:center;gap:10px}
+.bar{flex:1;height:8px;background:var(--sheet);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--teal);transition:width .3s}
+.pn{font-family:var(--f-mono);font-size:.8rem;color:var(--mute);white-space:nowrap}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;min-height:0}
+.slide{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;grid-template-rows:auto 1fr auto;gap:10px;min-height:0;min-width:0}
+.sec{margin:0;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;color:var(--amber)}
+.slide h2{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.45rem;line-height:1.3;text-wrap:balance}
+.work{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;min-height:0}
+.work.solo{grid-template-columns:1fr}
+.lab{display:flex;flex-direction:column;gap:6px;min-height:0;min-width:0}
+.cv{position:relative;flex:1;min-height:200px;background:var(--paper);border-radius:8px;overflow:hidden}
+.cv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.88rem;min-height:38px}
+.ctrl label{display:flex;align-items:center;gap:6px}
+.ctrl input[type=range]{width:150px;accent-color:var(--amber)}
+.btn{border:1.5px solid var(--ink);background:var(--sheet);border-radius:6px;padding:4px 14px;min-height:40px;font-weight:700;font-size:.9rem}
+.btn.dark{background:var(--ink);color:var(--sheet)}
+.btn[aria-pressed="true"]{background:var(--amber-soft);border-color:var(--amber)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.read{font-family:var(--f-mono);font-variant-numeric:tabular-nums;background:var(--ink);color:var(--sheet);border-radius:4px;padding:2px 8px;font-size:.88rem}
+.side{display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0;padding-right:4px}
+.txt{margin:0;font-size:1rem}
+.txt.big{font-size:1.15rem}
+.note{margin:0;background:var(--paper);border-radius:6px;padding:8px 12px;font-size:.92rem}
+.qt{margin:0;font-weight:700;font-size:1.02rem;border-left:4px solid var(--amber);padding-left:10px}
+.qrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qrow input{width:7em;border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;font-family:var(--f-mono);font-size:1.05rem;background:var(--paper)}
+.unit{font-size:1rem}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:8px 12px;text-align:left;font-size:.95rem;min-height:44px}
+.opt.ok{border-color:var(--good);background:var(--good-soft)}
+.opt.ng{border-color:var(--bad);background:var(--bad-soft)}
+textarea{width:100%;border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--paper);resize:vertical;min-height:4.5em;font-size:.95rem}
+.fb{margin:0;border-radius:6px;padding:8px 12px;font-size:.92rem}
+.fb.ok{background:var(--good-soft)}
+.fb.ng{background:var(--bad-soft)}
+.fb.ex{background:var(--blue-soft)}
+.fb b{display:block}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nav .hint{font-size:.85rem;color:var(--mute)}
+.nav .btn{min-width:110px;min-height:44px}
+.hero{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap}
+.hero .num{font-family:var(--f-disp);font-weight:900;font-size:7rem;line-height:1;color:var(--amber)}
+.hero .num small{font-size:2.4rem;color:var(--mute)}
+aside{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto}
+aside h3{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1rem}
+.term{border-top:1px solid var(--line);padding-top:6px}
+.term b{display:block;font-size:.92rem}
+.term span{font-size:.82rem;color:var(--mute)}
+.term.new{background:var(--amber-soft);margin-inline:-6px;padding-inline:6px;border-radius:4px}
+.term.new b::after{content:"NEW";margin-left:6px;font-family:var(--f-mono);font-size:.62rem;color:var(--sheet);background:var(--amber);border-radius:3px;padding:0 4px;vertical-align:2px}
+@media (max-width:820px){
+  body{overflow:auto}
+  .app{height:auto}
+  .body{grid-template-columns:1fr}
+  .work{grid-template-columns:1fr}
+  .cv{min-height:240px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>車輪速センサ<small>第2時　止まる直前に何が起きる？</small></h1>
+    <div class="prog"><div class="bar"><b id="bar"></b></div><span class="pn" id="pn"></span></div>
+  </header>
+  <div class="body">
+    <section class="slide" id="slide" aria-live="polite"></section>
+    <aside id="gloss" aria-label="用語"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const TERMS={
+  emi:["電磁誘導（でんじゆうどう）","コイルのそばで磁石を動かすと、コイルに電気が生まれることです。自転車のライト（ダイナモ）もこのしくみです。"],
+  coil:["コイル","電線をぐるぐる巻いたものです。磁石の動きを電気に変えます。"],
+  passive:["パッシブ型","磁石とコイルでできた車輪速センサです。電源がいりません。ゆっくりだと信号が小さくなります。"],
+  th:["しきい値（しきいち）","「ここより大きければ読む」と決めた線です。信号がこの線に届かないと、パルスとして数えられません。"],
+  hall:["ホール素子","磁石が近いか遠いかを、電気の信号に変える部品です。磁石が止まっていても感じられます。"],
+  active:["アクティブ型","ホール素子などを使った車輪速センサです。電源が必要ですが、止まる直前まで読めます。"],
+  power:["電源","部品を動かすための電気です。車ではバッテリーから送られます。"]
+};
+
+/* ---------- canvas ---------- */
+let raf=0, ctx=null, cv=null, W=0, H=0, onFrame=null, last=0;
+function mountCanvas(host){ cv=document.createElement("canvas"); host.appendChild(cv); ctx=cv.getContext("2d"); fit(); }
+function fit(){ if(!cv) return; const r=cv.getBoundingClientRect(), d=window.devicePixelRatio||1; W=r.width; H=r.height; cv.width=Math.round(W*d); cv.height=Math.round(H*d); ctx.setTransform(d,0,0,d,0,0); }
+window.addEventListener("resize",fit);
+function loop(t){ const dt=Math.min(.05,(t-last)/1000||0); last=t; if(onFrame&&ctx){ ctx.clearRect(0,0,W,H); onFrame(dt);} raf=requestAnimationFrame(loop); }
+function stopAnim(){ cancelAnimationFrame(raf); onFrame=null; cv=null; ctx=null; }
+function startAnim(fn){ onFrame=fn; last=performance.now(); raf=requestAnimationFrame(loop); }
+const C=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function txt(s,x,y,size,color,align,mono){ ctx.font=mono?`700 ${size}px "JetBrains Mono", monospace`:`700 ${size}px "BIZ UDPGothic", sans-serif`; ctx.fillStyle=color; ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(s,x,y); }
+function drawWheel(cx,cy,R,ang,opt){
+  ctx.save(); ctx.translate(cx,cy);
+  ctx.fillStyle=C("--tire"); ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=C("--metal"); ctx.beginPath(); ctx.arc(0,0,R*.72,0,Math.PI*2); ctx.fill();
+  ctx.rotate(ang);
+  if(opt.spokes){ ctx.strokeStyle=C("--mute"); ctx.lineWidth=1.5; for(let i=0;i<opt.spokes;i++){ const a=i*Math.PI*2/opt.spokes; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*R*.72,Math.sin(a)*R*.72); ctx.stroke(); } }
+  if(opt.teeth){
+    const r1=R*.5, r2=R*.62, n=opt.teeth;
+    ctx.fillStyle=C("--ink"); ctx.beginPath(); ctx.arc(0,0,r1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=C("--amber");
+    for(let i=0;i<n;i++){ const a=i*Math.PI*2/n; ctx.save(); ctx.rotate(a); const w=Math.max(3,Math.min(10,Math.PI*2*r2/n*.5)); ctx.fillRect(r1-1,-w/2,r2-r1+1,w); ctx.restore(); }
+    ctx.fillStyle=C("--metal"); ctx.beginPath(); ctx.arc(0,0,r1*.55,0,Math.PI*2); ctx.fill();
+  }
+  if(opt.magnet){ ctx.fillStyle=C("--bad"); ctx.fillRect(R*.55,-7,R*.14,14); }
+  if(opt.dot){ ctx.fillStyle=C("--bad"); ctx.beginPath(); ctx.arc(R*.86,0,6,0,Math.PI*2); ctx.fill(); }
+  ctx.restore();
+  ctx.fillStyle=C("--ink"); ctx.beginPath(); ctx.arc(cx,cy,R*.08,0,Math.PI*2); ctx.fill();
+}
+function drawSensor(x,y,lit){ ctx.fillStyle=lit?C("--amber"):C("--mute"); ctx.fillRect(x,y-9,34,18); ctx.fillStyle=lit?C("--amber"):C("--line"); ctx.beginPath(); ctx.arc(x+44,y,6,0,Math.PI*2); ctx.fill(); }
+
+/* click sound (only after the student turns it on) */
+let actx=null, sound=false;
+function beep(){ if(!sound) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=1800; g.gain.setValueAtTime(.25,actx.currentTime); g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.05); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+.06);}catch(e){} }
+
+/* ---------- labs ---------- */
+function panel(gx,gy,gw,gh,label){ ctx.fillStyle=C("--sheet"); ctx.fillRect(gx,gy,gw,gh); ctx.strokeStyle=C("--line"); ctx.lineWidth=1; ctx.strokeRect(gx,gy,gw,gh); ctx.strokeStyle=C("--line"); ctx.beginPath(); ctx.moveTo(gx,gy+gh/2); ctx.lineTo(gx+gw,gy+gh/2); ctx.stroke(); if(label) txt(label,gx,gy-11,12,C("--mute"),"left"); }
+const VFULL=20, TH=3; /* この教材では：時速20kmで波が最大、時速3km未満は読めない */
+function wave(gx,gy,gw,gh,v,phase,kind){
+  const cyc=v/30*8, amp=Math.min(1,v/VFULL), mid=gy+gh/2, half=gh*.42;
+  ctx.strokeStyle=C(kind==="p"?"--amber":"--teal"); ctx.lineWidth=2.5; ctx.beginPath();
+  for(let i=0;i<=gw;i+=2){ const u=i/gw, s=Math.sin(2*Math.PI*(cyc*u-phase)); const y=kind==="p"?mid-amp*s*half:mid-(s>0?1:-1)*half*.8; if(i===0) ctx.moveTo(gx+i,y); else ctx.lineTo(gx+i,y); }
+  ctx.stroke();
+  if(kind==="p"){ const t=TH/VFULL*half; ctx.setLineDash([6,5]); ctx.strokeStyle=C("--bad"); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(gx,mid-t); ctx.lineTo(gx+gw,mid-t); ctx.stroke(); ctx.setLineDash([]); txt("しきい値",gx+gw-4,mid-t-9,11,C("--bad"),"right"); }
+}
+function speedCtrl(ctrl,init,max,extra){
+  ctrl.innerHTML=`<label>速さ <input type="range" id="sp" min="0" max="${max}" step="0.5" value="${init}"></label><span class="read" id="spv"></span>${extra||""}`;
+  const o={v:init}; const upd=()=>{ $("#spv").textContent=`時速 ${o.v.toFixed(1)} km`; };
+  $("#sp").addEventListener("input",e=>{o.v=+e.target.value;upd();}); upd(); return o;
+}
+const LABS={
+  dynamo(ctrl){
+    const sp=speedCtrl(ctrl,10,30); let ang=0;
+    startAnim(dt=>{
+      const v=sp.v, R=Math.min(W*.28,H*.36), cx=W*.36, cy=H*.52;
+      ang+=v/3.6/2*Math.PI*2*dt*.5;
+      drawWheel(cx,cy,R,ang,{spokes:16});
+      const dx=cx+R*.92, dy=cy-R*.42;
+      ctx.fillStyle=C("--mute"); ctx.fillRect(dx,dy-14,34,28); txt("ダイナモ",dx+17,dy-26,12,C("--mute"),"center");
+      ctx.strokeStyle=C("--ink"); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(dx+34,dy); ctx.lineTo(W*.82,dy); ctx.stroke();
+      const b=Math.min(1,v/25), lx=W*.86, ly=dy;
+      if(b>0){ const g=ctx.createRadialGradient(lx,ly,4,lx,ly,20+b*70); g.addColorStop(0,`rgba(255,190,60,${.9*b})`); g.addColorStop(1,"rgba(255,190,60,0)"); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(lx,ly,20+b*70,0,Math.PI*2); ctx.fill(); }
+      ctx.fillStyle=b>0?`rgb(255,${Math.round(230-60*b)},${Math.round(150-110*b)})`:C("--line"); ctx.beginPath(); ctx.arc(lx,ly,14,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=C("--ink"); ctx.lineWidth=1.5; ctx.stroke();
+      txt("ライト",lx,ly+30,12,C("--mute"),"center");
+      txt(v===0?"止まっているので、光りません":"",W/2,H-18,14,C("--mute"),"center");
+    });
+  },
+  coil(ctrl){
+    ctrl.innerHTML=`<label>磁石を動かす速さ <input type="range" id="mv" min="0" max="10" step="0.5" value="3"></label>`;
+    let k=3, t=0, pos=0; $("#mv").addEventListener("input",e=>{k=+e.target.value;});
+    startAnim(dt=>{
+      t+=dt*k*.7; const A=W*.12; const x=Math.sin(t)*A, vel=k===0?0:Math.cos(t)*k/10;
+      const cy=H*.42, coilX=W*.5;
+      ctx.strokeStyle=C("--amber"); ctx.lineWidth=3;
+      for(let i=0;i<8;i++){ const xx=coilX-50+i*14; ctx.beginPath(); ctx.ellipse(xx,cy,7,34,0,0,Math.PI*2); ctx.stroke(); }
+      txt("コイル",coilX,cy-50,12,C("--mute"),"center");
+      const mx=coilX-W*.3+x; ctx.fillStyle=C("--bad"); ctx.fillRect(mx-40,cy-14,40,28); ctx.fillStyle=C("--blue"); ctx.fillRect(mx,cy-14,40,28);
+      txt("N",mx-20,cy,13,C("--sheet"),"center"); txt("S",mx+20,cy,13,C("--sheet"),"center");
+      // meter
+      const mcx=W*.5, mcy=H*.92, r=Math.min(W*.18,H*.32);
+      ctx.strokeStyle=C("--ink"); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(mcx,mcy,r,Math.PI,2*Math.PI); ctx.stroke();
+      for(let i=-4;i<=4;i++){ const a=-Math.PI/2+i*Math.PI/10; ctx.beginPath(); ctx.moveTo(mcx+Math.cos(a)*r*.88,mcy+Math.sin(a)*r*.88); ctx.lineTo(mcx+Math.cos(a)*r,mcy+Math.sin(a)*r); ctx.stroke(); }
+      const na=-Math.PI/2+vel*Math.PI*.4; ctx.strokeStyle=C("--bad"); ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(mcx,mcy); ctx.lineTo(mcx+Math.cos(na)*r*.85,mcy+Math.sin(na)*r*.85); ctx.stroke();
+      txt("電気の大きさ",mcx,mcy-r-12,12,C("--mute"),"center");
+      if(k===0) txt("磁石が止まっています",W/2,18,14,C("--mute"),"center");
+    });
+  },
+  passive(ctrl){
+    const sp=speedCtrl(ctrl,15,30,`<span class="read" id="st"></span>`); let ph=0, ang=0;
+    startAnim(dt=>{
+      const v=sp.v; ph+=v/30*8*.25*dt; ang+=v*.06*dt;
+      const R=Math.min(W*.16,H*.3), cx=R+14, cy=H*.5;
+      drawWheel(cx,cy,R,-ang,{teeth:24}); ctx.fillStyle=C("--amber"); ctx.fillRect(cx+R*.64,cy-8,26,16); txt("磁石＋コイル",cx,cy+R+14,11,C("--mute"),"center");
+      const gx=cx+R+30, gw=W-gx-12, gh=H*.36, gy=H*.14;
+      panel(gx,gy,gw,gh,"コイルから出る波"); wave(gx,gy,gw,gh,v,ph,"p");
+      const oy=gy+gh+34, oh=H*.2; ctx.fillStyle=C("--sheet"); ctx.fillRect(gx,oy,gw,oh); ctx.strokeStyle=C("--line"); ctx.strokeRect(gx,oy,gw,oh); txt("数えられたパルス",gx,oy-11,12,C("--mute"),"left");
+      const ok=v>=TH; ctx.strokeStyle=C("--ink"); ctx.lineWidth=2.5; ctx.beginPath();
+      for(let i=0;i<=gw;i+=2){ const s=Math.sin(2*Math.PI*(v/30*8*(i/gw)-ph)); const on=ok&&s>.5; const y=oy+oh*(on?.25:.8); if(i===0) ctx.moveTo(gx+i,y); else ctx.lineTo(gx+i,y); } ctx.stroke();
+      $("#st").textContent=ok?"読めています":"読めません";
+    });
+  },
+  hall(ctrl){
+    ctrl.innerHTML=`<label>磁石までの距離 <input type="range" id="ds" min="0" max="100" step="1" value="80"></label><span class="read" id="hs"></span>`;
+    let d=80; $("#ds").addEventListener("input",e=>{d=+e.target.value;});
+    startAnim(dt=>{
+      const sx=W*.2, cy=H*.42, mx=sx+70+d/100*W*.5;
+      ctx.fillStyle=C("--ink"); ctx.fillRect(sx-30,cy-24,60,48); txt("ホール素子",sx,cy-38,12,C("--mute"),"center");
+      ctx.fillStyle=C("--bad"); ctx.fillRect(mx,cy-16,36,32); ctx.fillStyle=C("--blue"); ctx.fillRect(mx+36,cy-16,36,32);
+      txt("N",mx+18,cy,13,C("--sheet"),"center"); txt("S",mx+54,cy,13,C("--sheet"),"center");
+      const str=1-d/100;
+      const bx=W*.12, by=H*.66, bw=W*.76, bh=16;
+      const g=ctx.createLinearGradient(bx,0,bx+bw,0); g.addColorStop(0,"#2f6db5"); g.addColorStop(.5,"#e8c64a"); g.addColorStop(1,"#c0392b");
+      ctx.fillStyle=C("--line"); ctx.fillRect(bx,by,bw,bh); ctx.save(); ctx.beginPath(); ctx.rect(bx,by,bw*str,bh); ctx.clip(); ctx.fillStyle=g; ctx.fillRect(bx,by,bw,bh); ctx.restore();
+      txt("磁石の力（弱い→強い）",bx,by-11,12,C("--mute"),"left");
+      const on=d<40; ctx.fillStyle=on?C("--amber"):C("--line"); ctx.beginPath(); ctx.arc(W*.5,H*.86,16,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=C("--ink"); ctx.lineWidth=1.5; ctx.stroke();
+      txt(on?"出力：ON":"出力：OFF",W*.5+26,H*.86,15,C("--ink"),"left");
+      $("#hs").textContent="磁石は止まっています";
+    });
+  },
+  compare(ctrl){
+    const sp=speedCtrl(ctrl,1,30,`<span class="read" id="st"></span>`); let ph=0;
+    startAnim(dt=>{
+      const v=sp.v; ph+=v/30*8*.25*dt;
+      const gx=14, gw=W-28, gh=H*.3;
+      panel(gx,22,gw,gh,"パッシブ型（磁石＋コイル）"); wave(gx,22,gw,gh,v,ph,"p");
+      txt(v>=TH?"読めています":"読めません",gx+gw-6,34,13,v>=TH?C("--good"):C("--bad"),"right");
+      const g2=22+gh+40; panel(gx,g2,gw,gh,"アクティブ型（ホール素子）"); wave(gx,g2,gw,gh,v,ph,"a");
+      txt("読めています",gx+gw-6,g2+12,13,C("--good"),"right");
+      $("#st").textContent=v>=TH?"両方読めています":"アクティブ型だけ読めています";
+    });
+  }
+};
+
+/* ---------- slides ---------- */
+const SL=[
+ {sec:"はじめに",title:"歯が通ったことを、どうやって電気にする？",hero:{big:"？",small:""},
+  text:"前の時間、車輪速センサは「歯が前を通った回数」を数えて速さを出していることがわかりました。今日は、センサの中で、歯が通ったことをどうやって<b>電気の信号</b>に変えているのかを調べます。"},
+ {sec:"自転車のライト",title:"自転車のライトの明るさ",lab:"dynamo",
+  text:"タイヤにこすりつけて回す自転車のライト（ダイナモ）を思い出してください。スライダーでこぐ速さを変えてみましょう。",
+  q:{type:"choice",t:"ゆっくりこぐと、ライトはどうなりますか。",o:["暗くなる","明るくなる","変わらない"],ans:0,why:"ゆっくり回すと、生まれる電気が少なくなるので暗くなります。止まると光りません。"}},
+ {sec:"自転車のライト",title:"電気はどこから来る？",lab:"coil",terms:["emi","coil"],
+  text:"ダイナモの中には、磁石とコイル（電線をぐるぐる巻いたもの）が入っています。コイルのそばで磁石を動かすと、電気が生まれます。これを<b>電磁誘導</b>といいます。",
+  q:{type:"choice",t:"磁石を速く動かすと、メーターの振れはどうなりますか。",o:["大きくなる","小さくなる","変わらない"],ans:0,why:"磁石を速く動かすほど、大きな電気が生まれます。だから速くこぐほどライトは明るくなります。"}},
+ {sec:"自転車のライト",title:"磁石を止めると？",lab:"coil",
+  text:"スライダーを一番左（0）にして、磁石を止めてみましょう。",
+  q:{type:"choice",t:"磁石が止まっているとき、電気はどうなりますか。",o:["生まれない（0になる）","一番大きくなる","ゆっくり増えていく"],ans:0,why:"電磁誘導で電気が生まれるのは、磁石が「動いている」ときだけです。止まっていると、そばにあっても電気は生まれません。"}},
+ {sec:"パッシブ型",title:"パッシブ型の車輪速センサ",lab:"passive",terms:["passive"],
+  text:"車輪速センサにも、磁石とコイルを使うものがあります。<b>パッシブ型</b>といいます。歯が通るたびに、コイルに波のような電気が生まれます。速さを変えて、波を見てみましょう。",
+  q:{type:"choice",t:"速くすると、波はどうなりますか。",o:["大きく、細かくなる","小さく、ゆったりになる","形は変わらない"],ans:0,why:"速いほど、歯が次々に通るので波が細かくなり、磁石の変化も速いので波が大きくなります。"}},
+ {sec:"パッシブ型",title:"どこまで遅くできる？",lab:"passive",terms:["th"],
+  text:"波が赤い点線（<b>しきい値</b>）をこえたときだけ、パルスとして数えます。スライダーを少しずつ左に動かして、パルスが数えられなくなる速さを探してください。",
+  q:{type:"num",t:"時速何kmより遅くすると、パルスが数えられなくなりましたか。",unit:"km",ans:3,tol:.5,why:"この教材では、時速3kmより遅いと波がしきい値に届かず、読めなくなります。本物の車でも、とてもゆっくりのときは読めなくなります（何km/hかは車によってちがいます）。"}},
+ {sec:"パッシブ型",title:"止まっているときは？",lab:"passive",
+  q:{type:"choice",t:"車が止まっているとき、パッシブ型のセンサからはどんな信号が出ますか。",o:["何も出ない","一番大きな波が出る","パルスが1回だけ出る"],ans:0,why:"磁石が動かないと電気は生まれません。だから、止まっているのか、とてもゆっくり動いているのか、区別できません。"}},
+ {sec:"アクティブ型",title:"止まっていても磁石を感じる部品",lab:"hall",terms:["hall"],
+  text:"<b>ホール素子</b>は、磁石が近いか遠いかを電気の信号に変える部品です。スライダーで磁石を近づけたり遠ざけたりしてみましょう。磁石はその場で止まっています。",
+  q:{type:"choice",t:"止まったままの磁石を近づけると、出力はどうなりましたか。",o:["ONになった","OFFのままだった","磁石を動かさないと変わらない"],ans:0,why:"ホール素子は、磁石が「動いているか」ではなく「近くにあるか」を感じます。だから止まっていても読めます。"}},
+ {sec:"アクティブ型",title:"アクティブ型の車輪速センサ",lab:"hall",terms:["active","power"],
+  text:"ホール素子を使った車輪速センサを<b>アクティブ型</b>といいます。歯（磁石）が近いとON、遠いとOFFの、四角いパルスが出ます。",
+  q:{type:"choice",t:"ホール素子を動かすには、何が必要ですか。",o:["電源（車のバッテリーからの電気）","何もいらない","強い光"],ans:0,why:"ホール素子は電気を流して使う部品なので、電源が必要です。パッシブ型は自分で電気を生むので、電源がいりません。"}},
+ {sec:"くらべる",title:"とてもゆっくりのとき",lab:"compare",
+  text:"上がパッシブ型、下がアクティブ型です。今は時速1kmです。スライダーを動かして、2つをくらべましょう。",
+  q:{type:"choice",t:"時速1kmのとき、パルスが読めるのはどちらですか。",o:["アクティブ型だけ","パッシブ型だけ","両方"],ans:0,why:"パッシブ型は波が小さすぎて読めません。アクティブ型は、どんなにゆっくりでも、きちんとした四角いパルスが出ます。"}},
+ {sec:"くらべる",title:"パッシブ型のよいところ",lab:"compare",
+  q:{type:"choice",t:"パッシブ型がアクティブ型よりよいところはどれですか。",o:["電源がいらない","止まる直前まで読める","波が四角くて読みやすい"],ans:0,why:"パッシブ型は、磁石とコイルだけで電気を生むので、電源がいりません。しくみも簡単です。"}},
+ {sec:"制御とつなげる",title:"止まる直前まで知りたい制御",
+  text:"前の時間の50個の制御を思い出してください。",
+  q:{type:"choice",t:"「止まる直前、とてもゆっくりのとき」の速さを知りたい制御はどれですか。",o:["オートブレーキホールド（止まったらブレーキを保つ）","オートライト（暗いとライトをつける）","間欠ワイパー（ワイパーを止めたり動かしたりする）"],ans:0,why:"「完全に止まったか」を知るには、止まる直前まで速さがわかる必要があります。坂道発進の手助けや、自動駐車も同じです。"}},
+ {sec:"制御とつなげる",title:"なぜアクティブ型が増えている？",
+  q:{type:"text",t:"今の車ではアクティブ型の車輪速センサが増えていると言われます。その理由を、今日わかったことを使って書いてください。",ex:"とてもゆっくりのときや、止まる直前でも速さがわかるから。オートブレーキホールドや自動駐車など、ゆっくりのときに働く制御が増えているので、止まる直前まで読めるセンサが必要になった。"}},
+ {sec:"確認問題",title:"確認問題 1",
+  q:{type:"choice",t:"パッシブ型の車輪速センサで、速さが2倍になると、波の大きさはどうなりますか。",o:["大きくなる","小さくなる","変わらない"],ans:0,why:"磁石の変化が速くなるので、生まれる電気が大きくなります。"}},
+ {sec:"確認問題",title:"確認問題 2",
+  q:{type:"choice",t:"磁石とコイルで電気が生まれることを何といいますか。",o:["電磁誘導","しきい値","分解能"],ans:0,why:"電磁誘導です。ダイナモや発電所の発電機も同じしくみです。"}},
+ {sec:"確認問題",title:"確認問題 3",
+  q:{type:"choice",t:"「電源が必要だが、止まっていても磁石を感じられる」のはどちらですか。",o:["アクティブ型（ホール素子）","パッシブ型（磁石＋コイル）"],ans:0,why:"アクティブ型です。パッシブ型は電源がいらないかわりに、ゆっくりだと読めません。"}},
+ {sec:"確認問題",title:"確認問題 4",
+  q:{type:"text",t:"時速2kmで止まりかけている車があります。パッシブ型のセンサだと、ABS やオートブレーキホールドには何が困りますか。",ex:"波がしきい値に届かず、パルスが数えられないので、タイヤが回っているのか止まったのかがわからない。だから、止まったことに気づけず、ブレーキを保つタイミングなどがわからなくなる。"}},
+ {sec:"まとめ",title:"今日わかったこと",end:true}
+];
+
+const KEY="wheel-speed-2-v1";
+let S={i:0,ans:{}};
+try{const v=JSON.parse(localStorage.getItem(KEY)||"null"); if(v&&v.ans) S=v;}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderGloss(){
+  const shown=[]; SL.slice(0,S.i+1).forEach(s=>(s.terms||[]).forEach(k=>{ if(!shown.includes(k)) shown.push(k); }));
+  const fresh=SL[S.i].terms||[];
+  $("#gloss").innerHTML=`<h3>用語</h3>`+shown.slice().reverse().map(k=>`<div class="term ${fresh.includes(k)?"new":""}"><b>${TERMS[k][0]}</b><span>${TERMS[k][1]}</span></div>`).join("");
+}
+function near(a,q){ const tol=q.tol!=null?q.tol:Math.max(.001,Math.abs(q.ans)*.01); return Math.abs(a-q.ans)<=tol; }
+function qHTML(q,key){
+  const a=S.ans[key]; let h=`<p class="qt">${q.t}</p>`;
+  if(q.type==="num"){
+    h+=`<div class="qrow"><input id="inp" inputmode="decimal" value="${a?esc(a.v):""}" ${a?"disabled":""} aria-label="答え"><span class="unit">${q.unit}</span>${a?"":`<button class="btn dark" id="chk">答え合わせ</button>`}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":`正解は ${q.ans} ${q.unit} です。`}</b>${q.why}</p>`;
+  } else if(q.type==="choice"){
+    h+=`<div class="opts">${q.o.map((o,k)=>{ let c=""; if(a){ if(k===q.ans) c="ok"; else if(k===a.v) c="ng"; } return `<button class="opt ${c}" data-k="${k}" ${a?"disabled":""}>${o}</button>`; }).join("")}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":"正解は緑の答えです。"}</b>${q.why}</p>`;
+  } else {
+    h+=`<textarea id="inp" rows="3" ${a?"disabled":""} aria-label="答え">${a?esc(a.v):""}</textarea>`;
+    h+=a?`<p class="fb ex"><b>答えの例</b>${q.ex}</p>`:`<div class="qrow"><button class="btn dark" id="chk">書けた</button></div>`;
+  }
+  return h;
+}
+function render(){
+  stopAnim();
+  const s=SL[S.i], n=SL.length, el=$("#slide");
+  $("#bar").style.width=(S.i/(n-1)*100)+"%"; $("#pn").textContent=`${S.i+1} / ${n}`;
+  renderGloss();
+  const answered=!s.q||!!S.ans[S.i];
+  let main="";
+  if(s.end){
+    const qs=SL.map((x,i)=>[x,i]).filter(([x])=>x.q&&x.q.type!=="text"), ok=qs.filter(([,i])=>S.ans[i]&&S.ans[i].ok).length;
+    main=`<div class="side"><p class="txt big">車輪速センサには、2つの種類がありました。</p>
+      <p class="txt"><b>パッシブ型</b>：磁石とコイル（電磁誘導）。電源はいらないが、ゆっくりだと波が小さくなって読めない。</p>
+      <p class="txt"><b>アクティブ型</b>：ホール素子。電源が必要だが、止まる直前まで読める。</p>
+      <p class="txt">ゆっくりのときに働く制御が増えたので、止まる直前まで読めるセンサが大事になっています。</p>
+      <p class="note">答えのある問題 ${qs.length}問のうち、<b>${ok}問</b> 正解しました。</p>
+      <div class="qrow"><button class="btn" id="again">最初からやり直す</button><span id="againc"></span></div></div>`;
+  } else if(s.hero){
+    main=`<div class="side" style="justify-content:center;gap:18px"><div class="hero"><span class="num">${s.hero.big}<small>${s.hero.small}</small></span></div><p class="txt big">${s.text}</p></div>`;
+  } else {
+    const right=(s.text?`<p class="txt">${s.text}</p>`:"")+(s.q?qHTML(s.q,S.i):"");
+    main=s.lab?`<div class="work"><div class="lab"><div class="cv" id="cvh"></div><div class="ctrl" id="ctrl"></div></div><div class="side" id="side">${right}</div></div>`
+              :`<div class="work solo"><div class="side" id="side" style="max-width:40em">${right}</div></div>`;
+  }
+  el.innerHTML=`<div><p class="sec">${s.sec}</p><h2>${s.title}</h2></div>${main}
+    <div class="nav"><button class="btn" id="prev" ${S.i===0?"disabled":""}>← もどる</button><span class="hint"></span>${s.end?"<span></span>":`<button class="btn ${answered?"dark":""}" id="next">次へ →</button>`}</div>`;
+  if(s.lab){ mountCanvas($("#cvh")); LABS[s.lab]($("#ctrl"),s.labOpt||{}); }
+  wire(s);
+  $("#prev").addEventListener("click",()=>go(S.i-1));
+  if(!s.end) $("#next").addEventListener("click",()=>go(S.i+1));
+  if(s.end) $("#again").addEventListener("click",()=>{ $("#againc").innerHTML=`<button class="btn dark" id="ay">消して最初から</button> <button class="btn" id="an">やめる</button>`; $("#ay").addEventListener("click",()=>{S={i:0,ans:{}};save();render();}); $("#an").addEventListener("click",()=>{$("#againc").innerHTML="";}); });
+}
+function rerenderQ(s){ $("#side").innerHTML=(s.text?`<p class="txt">${s.text}</p>`:"")+qHTML(s.q,S.i); $("#next").disabled=false; document.querySelector(".nav .hint").textContent=""; }
+function wire(s){
+  if(!s.q||S.ans[S.i]) return;
+  const q=s.q;
+  if(q.type==="num"){
+    const inp=$("#inp"); const run=()=>{ const raw=inp.value.trim().replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)); if(raw===""||isNaN(+raw)){ inp.focus(); return; } S.ans[S.i]={v:raw,ok:near(+raw,q)}; save(); rerenderQ(s); };
+    $("#chk").addEventListener("click",run); inp.addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
+  } else if(q.type==="choice"){
+    document.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{ const k=+b.dataset.k; S.ans[S.i]={v:k,ok:k===q.ans}; save(); rerenderQ(s); }));
+  } else {
+    $("#chk").addEventListener("click",()=>{ const v=$("#inp").value.trim(); if(!v){ $("#inp").focus(); return; } S.ans[S.i]={v,ok:true}; save(); rerenderQ(s); });
+  }
+}
+function go(i){ S.i=Math.max(0,Math.min(SL.length-1,i)); save(); render(); }
+document.addEventListener("keydown",e=>{ if(e.target.closest("input,textarea")) return; const nx=$("#next"); if(e.key==="ArrowRight"&&nx&&!nx.disabled) go(S.i+1); if(e.key==="ArrowLeft"&&S.i>0) go(S.i-1); });
+render();
+})();
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@
   サンプラー.html      → sampler/index.html （同上。こえサンプラー）
   メッセージが届くまで.html → network/index.html（同上。TCP/IP 教材。導入スライドの QR は /network/ を指す）
   車輪速センサ1.html  → wheel/index.html   （同上。電子計測制御・車輪速センサ第1時）
+  車輪速センサ2.html  → wheel2/index.html  （同上。車輪速センサ第2時）
   車の制御50.html     → car/index.html     （同上。電子計測制御・センサ当て。導入スライドの QR は /car/ を指す）
   複線図練習.html     → fukusen/index.html （同上。URL を /fukusen/ で配る）
   速い遅いの正体.html   → speed/index.html  （同上。通信速度・画質・ギガの余談スライド）
@@ -28,6 +29,7 @@ SRC5 = "サンプラー.html"
 SRC6 = "メッセージが届くまで.html"
 SRC7 = "車の制御50.html"
 SRC_WHEEL = "車輪速センサ1.html"
+SRC_WHEEL2 = "車輪速センサ2.html"
 SRC8 = "速い遅いの正体.html"
 SRC9 = "電波はどこまで届くか.html"
 s = io.open(SRC, encoding="utf-8").read()
@@ -70,6 +72,9 @@ print("生成: car/index.html")
 os.makedirs("wheel", exist_ok=True)
 shutil.copyfile(SRC_WHEEL, "wheel/index.html")
 print("生成: wheel/index.html")
+os.makedirs("wheel2", exist_ok=True)
+shutil.copyfile(SRC_WHEEL2, "wheel2/index.html")
+print("生成: wheel2/index.html")
 
 # 1h) 複線図れんしゅう（第二種電気工事士 技能試験の複線図）
 os.makedirs("fukusen", exist_ok=True)
