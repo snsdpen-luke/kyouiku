@@ -25,6 +25,7 @@
 | こえサンプラー | <https://snsdpen-luke.github.io/kyouiku/sampler/> |
 | メッセージが届くまで | <https://snsdpen-luke.github.io/kyouiku/network/> （導入スライド7枚目の QR はここ） |
 | 車の制御50 | <https://snsdpen-luke.github.io/kyouiku/car/> （導入スライド最後の QR はここ） |
+| 車輪速センサ 第1時 | <https://snsdpen-luke.github.io/kyouiku/wheel/> |
 | 複線図れんしゅう | <https://snsdpen-luke.github.io/kyouiku/fukusen/> |
 | 速い・遅いの正体 | <https://snsdpen-luke.github.io/kyouiku/speed/> |
 | 電波はどこまで届くか | <https://snsdpen-luke.github.io/kyouiku/wifi/> |
@@ -43,6 +44,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `サンプラー.html` | **こえサンプラーの本体。直すのはここだけ** |
 | `メッセージが届くまで.html` | **メッセージが届くまでの本体。直すのはここだけ** |
 | `車の制御50.html` | **車の制御50（センサ当て）の本体。直すのはここだけ** |
+| `車輪速センサ1.html` | **車輪速センサ 第1時の本体。直すのはここだけ** |
 | `複線図練習.html` | **複線図れんしゅうの本体。直すのはここだけ** |
 | `速い遅いの正体.html` | **速い・遅いの正体の本体。直すのはここだけ** |
 | `電波はどこまで届くか.html` | **電波はどこまで届くかの本体。直すのはここだけ** |
@@ -53,6 +55,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `sampler/index.html` | GitHub Pages が配るもの（こえサンプラー）。同じく**生成物** |
 | `network/index.html` | GitHub Pages が配るもの（メッセージが届くまで）。同じく**生成物** |
 | `car/index.html` | GitHub Pages が配るもの（車の制御50）。同じく**生成物** |
+| `wheel/index.html` | GitHub Pages が配るもの（車輪速センサ 第1時）。同じく**生成物** |
 | `fukusen/index.html` | GitHub Pages が配るもの（複線図れんしゅう）。同じく**生成物** |
 | `speed/index.html` | GitHub Pages が配るもの（速い・遅いの正体）。同じく**生成物** |
 | `wifi/index.html` | GitHub Pages が配るもの（電波はどこまで届くか）。同じく**生成物** |
