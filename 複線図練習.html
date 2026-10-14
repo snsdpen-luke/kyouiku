@@ -290,7 +290,7 @@
             <tr><td>小</td><td>○</td><td>1.6mm×2本</td></tr>
             <tr><td>小</td><td>小</td><td>1.6mm×3〜4本 ／ 2.0mm×2本 ／ 2.0mm×1本＋1.6mm×1〜2本</td></tr>
             <tr><td>中</td><td>中</td><td>1.6mm×5〜6本 ／ 2.0mm×3〜4本 ／ 2.0mm×1本＋1.6mm×3〜5本 ／ 2.0mm×2本＋1.6mm×1〜3本</td></tr></table>
-          <div class="note">差込形コネクタは、つなぐ線の本数と同じ「何本用」を使う。どちらを使うかは施工条件で決まる。●をタップ →「接続」で選ぶ。</div>
+          <div class="note">この練習では、ボックス内の接続はすべてリングスリーブ。●をタップ →「接続」で大きさと刻印を選ぶ。</div>
           <ol>
             <li>単線図を見て、要る部品を部品図から選び、図の置きたい所をタップ。記号（イ・ロ…、ボックスは B1・B2…）を単線図と同じにする</li>
             <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
@@ -324,7 +324,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-14a";
+const VER = "2026-10-14b";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -414,6 +414,7 @@ const COMMON_COND = [
   "電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する",
   "ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する",
   "ボックスを経由する電線は、すべて接続箇所を設ける",
+  "ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）",
   "記載のない電線の種類は VVF1.6 とする（公表問題の注記）",
 ];
 /* ケーブル。心線の色は種類から決める（2C 黒白 ／ 3C 黒白赤 ／ ×2 なら2本分） */
@@ -1040,7 +1041,8 @@ const STATE_TEXT = s => P.switches.map(p => PNAME(p) + " を「" + TYPES[p.type]
    リングスリーブの組み合わせ（JIS C 2806。1.6mm×2本だけが刻印「○」）
      小・○: 1.6×2   小・小: 1.6×3〜4、2.0×2、2.0×1＋1.6×1〜2
      中・中: 1.6×5〜6、2.0×3〜4、2.0×1＋1.6×3〜5、2.0×2＋1.6×1〜3
-   差込形コネクタは、つなぐ本数と同じ「n本用」。ボックスに join: "sleeve" / "conn" があれば、その方法に限る
+   差込形コネクタは、つなぐ本数と同じ「n本用」。ボックスはすべてリングスリーブ（先生の決め。2026-10-14）。
+   差込形コネクタを使うボックスには join: "conn" を書く（そのボックスだけ差込形コネクタのボタンを出し、差込形コネクタを正解にする）
    ============================================================ */
 const JOINS = ["小○", "小", "中", "差2", "差3", "差4"];
 const JOIN_TEXT = { "小○": "リングスリーブ 小・刻印「○」", "小": "リングスリーブ 小・刻印「小」", "中": "リングスリーブ 中・刻印「中」", "大": "リングスリーブ 大・刻印「大」",
@@ -1063,10 +1065,11 @@ function sleeveFor(w) {
   return null;
 }
 function wireText(w) { return [w.n16 ? "1.6mm×" + w.n16 + "本" : "", w.n20 ? "2.0mm×" + w.n20 + "本" : ""].filter(Boolean).join("＋") || w.n + "本"; }
+const boxJoin = b => (b && b.join) || "sleeve";                     // 決めていないボックスはリングスリーブ
 function rightJoin(st, j) {                                          // 正しい接続方法（お手本用）
   const w = wiresAt(st, j.id), b = P.box[j.box] || {};
-  if (b.join === "conn" && w.n >= 2 && w.n <= 4) return "差" + w.n;
-  return sleeveFor(w) || (w.n >= 2 && w.n <= 4 ? "差" + w.n : null);
+  if (boxJoin(b) === "conn") return w.n >= 2 && w.n <= 4 ? "差" + w.n : null;
+  return sleeveFor(w);
 }
 function judge(st) {
   const iss = [];
@@ -1139,8 +1142,8 @@ function judge(st) {
     const rule = "線の太さと本数を数えて、刻印の早見表（「描き方」の窓）で探す。1.6mm×2本だけが刻印「○」。";
     if (!j.join) { add("接続", at + " の接続方法を、まだ決めていない。", "●をタップすると、リングスリーブの大きさと刻印、差込形コネクタを選べる。" + rule, [j.id]); return; }
     const conn = j.join[0] === "差";
-    if (b.join === "conn" && !conn) { add("接続", at + " は、差込形コネクタでつなぐ決まり。", "施工条件で、このボックスは差込形コネクタを使うと決まっている。", [j.id]); return; }
-    if (b.join === "sleeve" && conn) { add("接続", at + " は、リングスリーブでつなぐ決まり。", "施工条件で、このボックスはリングスリーブを使うと決まっている。", [j.id]); return; }
+    if (boxJoin(b) === "conn" && !conn) { add("接続", at + " は、差込形コネクタでつなぐ決まり。", "施工条件で、このボックスは差込形コネクタを使うと決まっている。", [j.id]); return; }
+    if (boxJoin(b) === "sleeve" && conn) { add("接続", at + " は、リングスリーブでつなぐ決まり。", "施工条件で、ボックス内の接続はリングスリーブを使うと決まっている。", [j.id]); return; }
     if (conn) { if (+j.join.slice(1) !== w.n) add("接続", at + " に「" + JOIN_TEXT[j.join] + "」を選んだが、本数が合わない。", "差込形コネクタは、つなぐ線の本数と同じ「何本用」を使う。", [j.id]); return; }
     const need = sleeveFor(w);
     if (!need) { add("接続", at + " は、リングスリーブ（小・中）でつなげる組み合わせではない。", rule, [j.id]); return; }
@@ -2306,9 +2309,8 @@ function drawJoinBtns() {
   const mk = (v, txt) => { const b = document.createElement("button"); b.textContent = txt; b.classList.toggle("on", j.join === v);
     b.onclick = () => { j.join = j.join === v ? undefined : v; if (!j.join) delete j.join; status(j.join ? "ボックス " + j.box + " の●を「" + JOIN_TEXT[v] + "」にした。" : "接続方法を取り消した。"); changed(); };
     host.appendChild(b); };
-  mk("小○", "スリーブ小・○"); mk("小", "スリーブ小・小"); mk("中", "スリーブ中・中");
-  const sp = document.createElement("span"); sp.className = "sp"; host.appendChild(sp);
-  mk("差2", "差込 2本用"); mk("差3", "差込 3本用"); mk("差4", "差込 4本用");
+  if (boxJoin(P.box[j.box]) === "conn") { mk("差2", "差込 2本用"); mk("差3", "差込 3本用"); mk("差4", "差込 4本用"); }   // 差込形コネクタのボックスだけ
+  else { mk("小○", "スリーブ小・○"); mk("小", "スリーブ小・小"); mk("中", "スリーブ中・中"); }
 }
 $("mvTerm").dataset.act = "moveTerm";
 $("mvTerm").onclick = () => { if (!(sel && sel.item)) return; const on = sel.act !== "moveTerm"; sel = { item: sel.item }; if (on) sel.act = "moveTerm";
