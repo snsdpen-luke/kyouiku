@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>車輪速センサ 第1時</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen 4:3 slide deck — each slide = moving picture (left) + one question or one idea (right); glossary column far right. Single light look on purpose (school tablets). */
+:root{
+  color-scheme:light;
+  --paper:#eef0ee; --sheet:#fbfbf8; --ink:#1d2b3a; --mute:#5d6b78; --line:#c5ccd1;
+  --metal:#c9d1d6; --tire:#2a333c; --road:#d9dedb; --amber:#c96a00; --amber-soft:#fbe7cf;
+  --teal:#1f7a6d; --teal-soft:#d5ece7; --blue:#2f6db5; --blue-soft:#dde8f6;
+  --good:#1f7a4d; --good-soft:#d9efe2; --bad:#b3261e; --bad-soft:#f7dcd9;
+  --f-disp:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;padding-inline:12px;padding-block:10px;box-sizing:border-box;overflow:hidden}
+*{box-sizing:border-box}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.app{height:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-rows:auto 1fr;gap:8px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.15rem;line-height:1.2;white-space:nowrap}
+header h1 small{font-family:var(--f-body);font-weight:700;font-size:.8rem;color:var(--mute);margin-left:8px}
+.prog{flex:1;max-width:420px;display:flex;align-items:center;gap:10px}
+.bar{flex:1;height:8px;background:var(--sheet);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--teal);transition:width .3s}
+.pn{font-family:var(--f-mono);font-size:.8rem;color:var(--mute);white-space:nowrap}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;min-height:0}
+.slide{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;grid-template-rows:auto 1fr auto;gap:10px;min-height:0;min-width:0}
+.sec{margin:0;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;color:var(--amber)}
+.slide h2{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.45rem;line-height:1.3;text-wrap:balance}
+.work{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;min-height:0}
+.work.solo{grid-template-columns:1fr}
+.lab{display:flex;flex-direction:column;gap:6px;min-height:0;min-width:0}
+.cv{position:relative;flex:1;min-height:200px;background:var(--paper);border-radius:8px;overflow:hidden}
+.cv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.88rem;min-height:38px}
+.ctrl label{display:flex;align-items:center;gap:6px}
+.ctrl input[type=range]{width:150px;accent-color:var(--amber)}
+.btn{border:1.5px solid var(--ink);background:var(--sheet);border-radius:6px;padding:4px 14px;min-height:40px;font-weight:700;font-size:.9rem}
+.btn.dark{background:var(--ink);color:var(--sheet)}
+.btn[aria-pressed="true"]{background:var(--amber-soft);border-color:var(--amber)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.read{font-family:var(--f-mono);font-variant-numeric:tabular-nums;background:var(--ink);color:var(--sheet);border-radius:4px;padding:2px 8px;font-size:.88rem}
+.side{display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0;padding-right:4px}
+.txt{margin:0;font-size:1rem}
+.txt.big{font-size:1.15rem}
+.note{margin:0;background:var(--paper);border-radius:6px;padding:8px 12px;font-size:.92rem}
+.qt{margin:0;font-weight:700;font-size:1.02rem;border-left:4px solid var(--amber);padding-left:10px}
+.qrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qrow input{width:7em;border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;font-family:var(--f-mono);font-size:1.05rem;background:var(--paper)}
+.unit{font-size:1rem}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:8px 12px;text-align:left;font-size:.95rem;min-height:44px}
+.opt.ok{border-color:var(--good);background:var(--good-soft)}
+.opt.ng{border-color:var(--bad);background:var(--bad-soft)}
+textarea{width:100%;border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--paper);resize:vertical;min-height:4.5em;font-size:.95rem}
+.fb{margin:0;border-radius:6px;padding:8px 12px;font-size:.92rem}
+.fb.ok{background:var(--good-soft)}
+.fb.ng{background:var(--bad-soft)}
+.fb.ex{background:var(--blue-soft)}
+.fb b{display:block}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nav .hint{font-size:.85rem;color:var(--mute)}
+.nav .btn{min-width:110px;min-height:44px}
+.hero{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap}
+.hero .num{font-family:var(--f-disp);font-weight:900;font-size:7rem;line-height:1;color:var(--amber)}
+.hero .num small{font-size:2.4rem;color:var(--mute)}
+aside{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto}
+aside h3{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1rem}
+.term{border-top:1px solid var(--line);padding-top:6px}
+.term b{display:block;font-size:.92rem}
+.term span{font-size:.82rem;color:var(--mute)}
+.term.new{background:var(--amber-soft);margin-inline:-6px;padding-inline:6px;border-radius:4px}
+.term.new b::after{content:"NEW";margin-left:6px;font-family:var(--f-mono);font-size:.62rem;color:var(--sheet);background:var(--amber);border-radius:3px;padding:0 4px;vertical-align:2px}
+@media (max-width:820px){
+  body{overflow:auto}
+  .app{height:auto}
+  .body{grid-template-columns:1fr}
+  .work{grid-template-columns:1fr}
+  .cv{min-height:240px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>車輪速センサ<small>第1時　何を数えて、速さを出す？</small></h1>
+    <div class="prog"><div class="bar"><b id="bar"></b></div><span class="pn" id="pn"></span></div>
+  </header>
+  <div class="body">
+    <section class="slide" id="slide" aria-live="polite"></section>
+    <aside id="gloss" aria-label="用語"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const TERMS={
+  sensor:["センサ","まわりの様子（明るさ・速さ・温度など）を測って、電気の信号に変える部品です。"],
+  pulse:["パルス","「カチッ」と1回だけ出る、短い電気の信号です。数えると回数がわかります。"],
+  circ:["周長（しゅうちょう）","タイヤが1回転したときに進む長さです。タイヤのまわりの長さと同じです。"],
+  kmh:["秒速と時速","1秒に進む長さが秒速、1時間に進む長さが時速です。秒速(m)×3.6＝時速(km)。"],
+  wss:["車輪速センサ","タイヤの回る速さを測るセンサです。4つのタイヤに1つずつ付いています。"],
+  rotor:["センサロータ","タイヤと一緒に回る、歯のついた輪です。歯がセンサの前を通るたびにパルスが出ます。"],
+  lock:["ロック","急ブレーキでタイヤの回転が止まり、回らないまま地面をすべる状態です。ハンドルを切っても曲がれません。"],
+  abs:["ABS","タイヤがロックしかけたら、ブレーキを一瞬ゆるめて、タイヤを回し続けるしくみです。"],
+  reso:["分解能（ぶんかいのう）","どれだけ細かく測れるかです。目盛りの多い物差しほど、細かく測れます。"]
+};
+
+/* ---------- canvas ---------- */
+let raf=0, ctx=null, cv=null, W=0, H=0, onFrame=null, last=0;
+function mountCanvas(host){ cv=document.createElement("canvas"); host.appendChild(cv); ctx=cv.getContext("2d"); fit(); }
+function fit(){ if(!cv) return; const r=cv.getBoundingClientRect(), d=window.devicePixelRatio||1; W=r.width; H=r.height; cv.width=Math.round(W*d); cv.height=Math.round(H*d); ctx.setTransform(d,0,0,d,0,0); }
+window.addEventListener("resize",fit);
+function loop(t){ const dt=Math.min(.05,(t-last)/1000||0); last=t; if(onFrame&&ctx){ ctx.clearRect(0,0,W,H); onFrame(dt);} raf=requestAnimationFrame(loop); }
+function stopAnim(){ cancelAnimationFrame(raf); onFrame=null; cv=null; ctx=null; }
+function startAnim(fn){ onFrame=fn; last=performance.now(); raf=requestAnimationFrame(loop); }
+const C=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function txt(s,x,y,size,color,align,mono){ ctx.font=mono?`700 ${size}px "JetBrains Mono", monospace`:`700 ${size}px "BIZ UDPGothic", sans-serif`; ctx.fillStyle=color; ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(s,x,y); }
+function drawWheel(cx,cy,R,ang,opt){
+  ctx.save(); ctx.translate(cx,cy);
+  ctx.fillStyle=C("--tire"); ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=C("--metal"); ctx.beginPath(); ctx.arc(0,0,R*.72,0,Math.PI*2); ctx.fill();
+  ctx.rotate(ang);
+  if(opt.spokes){ ctx.strokeStyle=C("--mute"); ctx.lineWidth=1.5; for(let i=0;i<opt.spokes;i++){ const a=i*Math.PI*2/opt.spokes; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*R*.72,Math.sin(a)*R*.72); ctx.stroke(); } }
+  if(opt.teeth){
+    const r1=R*.5, r2=R*.62, n=opt.teeth;
+    ctx.fillStyle=C("--ink"); ctx.beginPath(); ctx.arc(0,0,r1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=C("--amber");
+    for(let i=0;i<n;i++){ const a=i*Math.PI*2/n; ctx.save(); ctx.rotate(a); const w=Math.max(3,Math.min(10,Math.PI*2*r2/n*.5)); ctx.fillRect(r1-1,-w/2,r2-r1+1,w); ctx.restore(); }
+    ctx.fillStyle=C("--metal"); ctx.beginPath(); ctx.arc(0,0,r1*.55,0,Math.PI*2); ctx.fill();
+  }
+  if(opt.magnet){ ctx.fillStyle=C("--bad"); ctx.fillRect(R*.55,-7,R*.14,14); }
+  if(opt.dot){ ctx.fillStyle=C("--bad"); ctx.beginPath(); ctx.arc(R*.86,0,6,0,Math.PI*2); ctx.fill(); }
+  ctx.restore();
+  ctx.fillStyle=C("--ink"); ctx.beginPath(); ctx.arc(cx,cy,R*.08,0,Math.PI*2); ctx.fill();
+}
+function drawSensor(x,y,lit){ ctx.fillStyle=lit?C("--amber"):C("--mute"); ctx.fillRect(x,y-9,34,18); ctx.fillStyle=lit?C("--amber"):C("--line"); ctx.beginPath(); ctx.arc(x+44,y,6,0,Math.PI*2); ctx.fill(); }
+
+/* click sound (only after the student turns it on) */
+let actx=null, sound=false;
+function beep(){ if(!sound) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=1800; g.gain.setValueAtTime(.25,actx.currentTime); g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.05); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+.06);}catch(e){} }
+
+/* ---------- labs ---------- */
+const LABS={
+  bike(ctrl,opt){
+    const sensA=-Math.PI/2; let ang=sensA-Math.PI/2, rps=1.5, flash=0, meas=-1;
+    if(opt.count){
+      ctrl.innerHTML=`<button class="btn dark" id="go10">10秒はかる</button><span class="read" id="tm">0.0 秒</span><button class="btn" id="snd" aria-pressed="false">音を出す</button>`;
+      $("#go10").addEventListener("click",()=>{ ang=sensA-Math.PI/3; meas=0; $("#go10").disabled=true; });
+      $("#snd").addEventListener("click",e=>{ sound=!sound; e.currentTarget.setAttribute("aria-pressed",sound); if(sound){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); actx.resume&&actx.resume(); }catch(er){} } });
+    } else ctrl.innerHTML="";
+    startAnim(dt=>{
+      const R=Math.min(W*.33,H*.38), cx=W*.45, cy=H*.55;
+      const running=!opt.count||(meas>=0&&meas<10);
+      const b=((ang-sensA)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+      if(running) ang+=rps*Math.PI*2*dt;
+      const a=((ang-sensA)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+      if(running&&a<b){ flash=.2; beep(); }
+      if(meas>=0&&meas<10){ meas=Math.min(10,meas+dt); if(meas>=10) $("#go10").disabled=false; }
+      flash=Math.max(0,flash-dt);
+      drawWheel(cx,cy,R,ang,{spokes:16,magnet:true});
+      ctx.strokeStyle=C("--ink"); ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*.2,cy-R*1.2); ctx.stroke();
+      drawSensor(cx-17,cy-R*.62,flash>0);
+      ctx.strokeStyle=C("--mute"); ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(cx-R*.55,cy-R-8); ctx.lineTo(cx-12,cy-R*.62-10); ctx.stroke(); txt("センサ",cx-R*.55,cy-R-18,13,C("--mute"),"center");
+      if(flash>0) txt("カチッ",cx+R*.45,cy-R*.95,24,C("--amber"),"left");
+      txt("赤い四角＝磁石",14,H-16,13,C("--bad"),"left");
+      if(opt.count){ $("#tm").textContent=`${(meas<0?0:meas).toFixed(1)} 秒`; if(meas<0) txt("「10秒はかる」を押してください",W/2,22,14,C("--mute"),"center"); else if(meas>=10) txt("おわり。何回でしたか？",W/2,22,15,C("--ink"),"center"); }
+    });
+  },
+  roll(ctrl){
+    ctrl.innerHTML=`<span class="note">赤い点が地面に2回つくまでに進んだ長さが、周長です。</span>`;
+    let d=0, hold=0;
+    startAnim(dt=>{
+      const R=Math.min(H*.2,W*.1), gy=H*.68, x0=W*.12, L=Math.PI*2*R;
+      if(hold>0){ hold-=dt; if(hold<=0) d=0; } else { d+=L*.45*dt; if(d>=L){ d=L; hold=1.6; } }
+      ctx.fillStyle=C("--road"); ctx.fillRect(0,gy,W,H-gy);
+      ctx.strokeStyle=C("--amber"); ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(x0,gy+3); ctx.lineTo(x0+d,gy+3); ctx.stroke();
+      ctx.fillStyle=C("--bad"); ctx.beginPath(); ctx.arc(x0,gy+3,5,0,Math.PI*2); ctx.fill();
+      if(d>=L){ ctx.beginPath(); ctx.arc(x0+L,gy+3,5,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=C("--ink"); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x0,gy+22); ctx.lineTo(x0+L,gy+22); ctx.stroke(); txt("1回転で 2m（周長）",x0+L/2,gy+38,15,C("--ink"),"center"); }
+      drawWheel(x0+d,gy-R,R,Math.PI/2+d/R,{spokes:12,dot:true});
+    });
+  },
+  car(ctrl,opt){
+    let kmh=opt.kmh||40, slow=true, ang=0, pts=[], clk=0;
+    const N=48, CIRC=1.92;
+    ctrl.innerHTML=(opt.slider?`<label>速さ <input type="range" id="sp" min="0" max="120" step="0.1" value="${kmh}"></label><span class="read" id="spv"></span>`:"")+`<button class="btn" id="slo" aria-pressed="true">スロー再生（1/50）</button>`+(opt.slider?`<span class="read" id="pps"></span>`:"");
+    const upd=()=>{ if(!opt.slider) return; $("#spv").textContent=`時速 ${kmh.toFixed(1)} km`; $("#pps").textContent=`1秒のパルス ${Math.round(kmh/3.6/CIRC*N)} 回`; };
+    if(opt.slider) $("#sp").addEventListener("input",e=>{kmh=+e.target.value;upd();});
+    $("#slo").addEventListener("click",e=>{slow=!slow; e.currentTarget.setAttribute("aria-pressed",slow); e.currentTarget.textContent=slow?"スロー再生（1/50）":"本当の速さ";});
+    upd();
+    startAnim(dt=>{
+      const sdt=slow?dt/50:dt; clk+=sdt; ang+=kmh/3.6/CIRC*Math.PI*2*sdt;
+      const lit=(ang/(Math.PI*2/N)+.5)%1<.5;
+      pts.push({t:clk,v:lit?1:0}); const span=.04; while(pts.length&&pts[0].t<clk-span) pts.shift();
+      const R=Math.min(W*.24,H*.38), cx=W*.27, cy=H*.45;
+      drawWheel(cx,cy,R,-ang,{teeth:N});
+      drawSensor(cx+R*.64,cy,lit); txt("センサ",cx+R*.64+22,cy+24,12,C("--mute"),"center");
+      txt("歯のついた輪（48個）",cx,cy+R+16,12,C("--mute"),"center");
+      const gx=W*.56, gw=W*.41, gy=H*.22, gh=H*.46;
+      ctx.fillStyle=C("--sheet"); ctx.fillRect(gx,gy,gw,gh); ctx.strokeStyle=C("--line"); ctx.lineWidth=1; ctx.strokeRect(gx,gy,gw,gh);
+      txt("センサから出る信号",gx,gy-12,12,C("--mute"),"left");
+      ctx.strokeStyle=C("--amber"); ctx.lineWidth=2.5; ctx.beginPath();
+      pts.forEach((p,i)=>{ const x=gx+gw-(clk-p.t)/span*gw, y=gy+gh*(p.v?.25:.8); if(i===0) ctx.moveTo(x,y); else { ctx.lineTo(x,gy+gh*(pts[i-1].v?.25:.8)); ctx.lineTo(x,y);} });
+      ctx.stroke();
+      txt(slow?"スロー（本当は50倍速い）":"本当の速さ（速すぎて見えない）",gx,gy+gh+16,12,C("--mute"),"left");
+    });
+  },
+  abs(ctrl){
+    let on=false, t=-1, x=0, y=0, v=0, hit=false, spin=0;
+    ctrl.innerHTML=`<button class="btn" id="absb" aria-pressed="false">ABS なし</button><button class="btn dark" id="brk">急ブレーキ ＋ ハンドルを切る</button>`;
+    $("#absb").addEventListener("click",e=>{ on=!on; e.currentTarget.setAttribute("aria-pressed",on); e.currentTarget.textContent=on?"ABS あり":"ABS なし"; t=-1; x=0; y=0; v=0; hit=false; });
+    $("#brk").addEventListener("click",()=>{ t=0; x=0; y=0; v=1; hit=false; });
+    startAnim(dt=>{
+      const lane=H*.62, carW=Math.min(90,W*.16), carH=carW*.5, x0=W*.08, obX=W*.72, brakeAt=.6;
+      if(t>=0){ t+=dt; if(v>0&&!hit){ if(t>brakeAt) v=Math.max(0,v-dt*.45); x+=v*W*.32*dt; if(on&&t>brakeAt) y=Math.min(H*.3,y+v*H*.28*dt); if(x0+x+carW>obX-6&&y<H*.12){ hit=true; v=0; } } }
+      const locked=t>brakeAt&&!on&&v>0;
+      spin+=(locked?0:v)*dt*14;
+      ctx.fillStyle=C("--road"); ctx.fillRect(0,H*.2,W,H*.62);
+      ctx.setLineDash([16,12]); ctx.strokeStyle=C("--sheet"); ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,H*.5); ctx.lineTo(W,H*.5); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=C("--amber"); ctx.fillRect(obX,lane-carH*.8,20,carH*1.6); txt("障害物",obX+10,lane+carH+8,12,C("--ink"),"center");
+      const cx=x0+x, cy=lane-y;
+      ctx.fillStyle=C("--blue"); ctx.fillRect(cx,cy-carH/2,carW,carH);
+      const wheel=(wx,wy)=>{ ctx.fillStyle=C("--tire"); ctx.fillRect(wx-9,wy-4,18,8); if(!locked){ ctx.fillStyle=C("--metal"); const o=(spin%1)*14-7; ctx.fillRect(wx+o-1,wy-4,2,8);} };
+      wheel(cx+carW*.2,cy-carH/2); wheel(cx+carW*.8,cy-carH/2); wheel(cx+carW*.2,cy+carH/2); wheel(cx+carW*.8,cy+carH/2);
+      if(t<0) txt("ボタンを押してください",W/2,H*.12,14,C("--mute"),"center");
+      else if(hit) txt("曲がれずに、ぶつかりました",W/2,H*.12,16,C("--bad"),"center");
+      else if(locked) txt("タイヤが止まったまま、すべっています（ロック）",W/2,H*.12,15,C("--bad"),"center");
+      else if(t>brakeAt&&v===0) txt("よけて止まれました",W/2,H*.12,16,C("--good"),"center");
+      else if(t>brakeAt) txt("タイヤが回り続けているので、曲がれます",W/2,H*.12,15,C("--good"),"center");
+    });
+  },
+  brake(ctrl){
+    const V0=20/3.6, A=V0/2, CIRC=1.92; let t=-1, trace=[];
+    const m=[{n:48,last:0,pos:0,val:V0},{n:1,last:0,pos:0,val:V0}];
+    ctrl.innerHTML=`<button class="btn dark" id="brk">急ブレーキ</button><span class="read" id="m48"></span><span class="read" id="m1"></span>`;
+    $("#brk").addEventListener("click",()=>{ t=0; trace=[]; m.forEach(k=>{k.last=0;k.pos=0;k.val=V0;}); });
+    const vAt=x=>x<.5?V0:Math.max(0,V0-A*(x-.5));
+    const dAt=x=>x<.5?V0*x:V0*.5+V0*Math.min(x-.5,2)-A*Math.min(x-.5,2)**2/2;
+    startAnim(dt=>{
+      if(t>=0&&t<5){ const tEnd=Math.min(5,t+dt*.8); while(t<tEnd){ t=Math.min(tEnd,t+.0005);
+        m.forEach(k=>{ const step=CIRC/k.n, d=dAt(t), n=Math.floor(d/step); if(n>k.pos){ if(t>k.last) k.val=(n-k.pos)*step/(t-k.last); k.pos=n; k.last=t; } else if(t>k.last){ k.val=Math.min(k.val,step/(t-k.last)); } });
+        } trace.push({t,v:vAt(t),a:m[0].val,b:m[1].val}); }
+      const gx=44, gy=18, gw=W-60, gh=H-58;
+      ctx.strokeStyle=C("--line"); ctx.lineWidth=1;
+      for(let k=0;k<=4;k++){ const y=gy+gh-k/4*gh; ctx.beginPath(); ctx.moveTo(gx,y); ctx.lineTo(gx+gw,y); ctx.stroke(); txt(`${k*5}`,gx-8,y,11,C("--mute"),"right"); }
+      txt("時速(km)",6,8,11,C("--mute"),"left");
+      for(let s=0;s<=5;s++) txt(`${s}秒`,gx+s/5*gw,gy+gh+14,11,C("--mute"),"center");
+      const X=x=>gx+x/5*gw, Y=v=>gy+gh-Math.min(1,v*3.6/20)*gh;
+      const line=(key,col,w,dash)=>{ ctx.strokeStyle=C(col); ctx.lineWidth=w; ctx.setLineDash(dash||[]); ctx.beginPath(); trace.forEach((p,i)=>{ const x=X(p.t), y=Y(p[key]); if(i===0) ctx.moveTo(x,y); else { ctx.lineTo(x,Y(trace[i-1][key])); ctx.lineTo(x,y);} }); ctx.stroke(); ctx.setLineDash([]); };
+      if(trace.length){ line("v","--mute",2,[5,4]); line("a","--amber",3); line("b","--blue",3); }
+      else txt("「急ブレーキ」を押してください",gx+gw/2,gy+gh/2,15,C("--mute"),"center");
+      const lx=gx+gw-160; [["本当の速さ","--mute"],["歯48個のメーター","--amber"],["歯1個のメーター","--blue"]].forEach((l,i)=>{ ctx.fillStyle=C(l[1]); ctx.fillRect(lx,gy+8+i*18,14,4); txt(l[0],lx+20,gy+10+i*18,11,C("--ink"),"left"); });
+      $("#m48").textContent=`歯48個 ${(m[0].val*3.6).toFixed(1)} km/h`; $("#m1").textContent=`歯1個 ${(m[1].val*3.6).toFixed(1)} km/h`;
+    });
+  }
+};
+
+/* ---------- slides ---------- */
+const SL=[
+ {sec:"はじめに",title:"15個の制御を支えるセンサ",hero:true,terms:["wss"],
+  text:"前の時間、50個の制御のうち <b>15個</b> が同じセンサを使っていました。それが <b>車輪速センサ</b> です。今日は、このセンサが何を数えて速さを出しているのかを調べます。"},
+ {sec:"自転車のメーター",title:"自転車のスピードメーター",lab:"bike",terms:["sensor","pulse"],
+  text:"自転車のタイヤに磁石が1個ついています。磁石がセンサの前を通るたびに「カチッ」と信号が出ます。",
+  q:{type:"choice",t:"「カチッ」と信号が出るのは、いつですか。",o:["磁石がセンサの前を通ったとき","タイヤが地面に当たったとき","ペダルをこいだとき"],ans:0,why:"磁石が近づいたことをセンサが感じて、信号を1回出します。この1回の信号をパルスといいます。"}},
+ {sec:"自転車のメーター",title:"自分で数えよう",lab:"bike",labOpt:{count:true},
+  text:"「10秒はかる」を押すと、タイヤが10秒だけ回ります。「カチッ」が何回あったか、自分で数えてください。",
+  q:{type:"num",t:"10秒間に「カチッ」は何回ありましたか。",unit:"回",ans:15,tol:1,why:"15回です。数えまちがえたら、もう一度「10秒はかる」を押して数えなおしてみましょう。"}},
+ {sec:"自転車のメーター",title:"1秒あたりにすると？",lab:"bike",
+  q:{type:"num",t:"10秒で15回でした。1秒あたり何回ですか。",unit:"回",ans:1.5,why:"15÷10＝1.5回です。タイヤは1秒に1.5回転しています。"}},
+ {sec:"自転車のメーター",title:"1回転で進む長さ",lab:"roll",terms:["circ"],
+  text:"タイヤが1回転すると、タイヤのまわりの長さだけ進みます。この長さを <b>周長</b> といいます。この自転車の周長は 2m です。",
+  q:{type:"choice",t:"タイヤが3回転すると、何m進みますか。",o:["2m","3m","6m"],ans:2,why:"1回転で2m なので、3回転では 2×3＝6m です。"}},
+ {sec:"自転車のメーター",title:"秒速を出そう",lab:"roll",
+  q:{type:"num",t:"タイヤは1秒に1.5回転、周長は2mです。1秒に何m進みますか。",unit:"m",ans:3,why:"2×1.5＝3m です。1秒に3m 進む速さを「秒速3m」といいます。"}},
+ {sec:"自転車のメーター",title:"時速にしよう",lab:"roll",terms:["kmh"],
+  text:"1時間は3600秒、1kmは1000mです。だから「秒速(m) × 3600 ÷ 1000」、つまり <b>秒速(m) × 3.6 ＝ 時速(km)</b> です。",
+  q:{type:"num",t:"秒速3mは、時速何kmですか。",unit:"km",ans:10.8,why:"3×3.6＝10.8km です。メーターは、この計算をいつもしています。"}},
+ {sec:"車のセンサ",title:"車は「歯のついた輪」を見ている",lab:"car",terms:["rotor"],
+  text:"車のタイヤには、歯のついた輪（センサロータ）がついています。歯が1つセンサの前を通るたびにパルスが1回出ます。本当の速さでは速すぎるので、スロー再生にしてあります。",
+  q:{type:"choice",t:"この車のセンサは、タイヤが1回転するとパルスが何回出ますか。",o:["1回","48回","100回"],ans:1,why:"歯が48個あるので、1回転で48回です。自転車の1回とくらべて、とても多くなります。"}},
+ {sec:"車のセンサ",title:"歯1つ分で進む長さ",lab:"car",
+  text:"この車のタイヤの周長は 1.92m です。",
+  q:{type:"num",t:"1.92m を48個の歯で分けると、歯1つ分で何m進みますか。",unit:"m",ans:.04,why:"1.92÷48＝0.04m です。パルスが1回出るたびに、車は0.04m（4cm）進んでいます。"}},
+ {sec:"車のセンサ",title:"パルスの数から秒速を出す",lab:"car",
+  q:{type:"num",t:"1秒間にパルスが400回出ました。1秒に何m進みましたか。",unit:"m",ans:16,why:"0.04×400＝16m です。秒速16m です。"}},
+ {sec:"車のセンサ",title:"時速にして、確かめよう",lab:"car",labOpt:{slider:true,kmh:30},
+  text:"答えたら、スライダーをその時速に合わせてみましょう。「1秒のパルス」が約400回になれば正解です。",
+  q:{type:"num",t:"秒速16mは、時速何kmですか。",unit:"km",ans:57.6,why:"16×3.6＝57.6km です。"}},
+ {sec:"ABS",title:"急ブレーキでタイヤが止まると？",lab:"abs",terms:["lock"],
+  text:"雨の日などに強くブレーキをかけると、タイヤの回転が止まって、回らないまま地面をすべることがあります。これを <b>ロック</b> といいます。まず「ABS なし」のまま、ボタンを押してみましょう。",
+  q:{type:"choice",t:"タイヤがロックすると、どうなりましたか。",o:["ハンドルを切っても曲がれなかった","すぐに止まれた","タイヤが速く回った"],ans:0,why:"タイヤが回っていないと、ハンドルを切っても車の向きが変わりません。そのまま障害物にぶつかってしまいます。"}},
+ {sec:"ABS",title:"ABS があると？",lab:"abs",terms:["abs"],
+  text:"左のボタンを「ABS あり」にして、もう一度押してみましょう。ABS は、タイヤがロックしかけたら、ブレーキを一瞬ゆるめてタイヤを回し続けます。",
+  q:{type:"choice",t:"ABS は、タイヤが「ロックしかけた」ことを何で知りますか。",o:["車輪速センサで、タイヤの回転が急に遅くなったこと","カメラで、タイヤの色が変わったこと","マイクで、タイヤの音が変わったこと"],ans:0,why:"4つのタイヤの車輪速センサを見て、1つだけ急に回転が遅くなったら「ロックしかけている」と判断します。"}},
+ {sec:"歯の数",title:"歯が1個だったら？",lab:"brake",terms:["reso"],
+  text:"歯が48個のメーターと、自転車のように歯が1個のメーターをくらべます。どちらも「次のパルスが来ない間は、速さが下がったと考える」しくみにしてあります。「急ブレーキ」を押して、グラフを見てください。",
+  q:{type:"choice",t:"止まったとき、歯が1個のメーターはどうなりましたか。",o:["本当は止まっているのに、しばらく速さが残っていた","48個のメーターより早く0になった","2つのメーターは同じ動きだった"],ans:0,why:"歯が1個だと、次のパルスが来るまで（タイヤが1回転するまで）新しい速さがわかりません。目盛りが1本しかない物差しで測るのと同じです。"}},
+ {sec:"歯の数",title:"ABS にとって何が困る？",lab:"brake",
+  q:{type:"text",t:"もし歯が1個のセンサだったら、ABS には何が起きるでしょうか。自分の言葉で書いてください。",ex:"タイヤがロックしかけても、次のパルスが来るまで気づけない。気づいたときにはもうロックしていて、ブレーキをゆるめるのが間に合わない。"}},
+ {sec:"確認問題",title:"確認問題 1",
+  text:"ここからは、ちがう車で考えます。電卓を使ってかまいません。",
+  q:{type:"num",t:"タイヤの周長 1.8m、歯 45個のセンサです。歯1つ分で何m進みますか。",unit:"m",ans:.04,why:"1.8÷45＝0.04m です。"}},
+ {sec:"確認問題",title:"確認問題 2",
+  q:{type:"num",t:"このセンサから、1秒間に500回パルスが出ました。時速は何kmですか。",unit:"km",ans:72,why:"0.04×500＝20m（秒速）、20×3.6＝72km です。"}},
+ {sec:"確認問題",title:"確認問題 3",
+  q:{type:"num",t:"同じタイヤで、歯を90個に増やしました。時速72kmのとき、1秒間のパルスは何回ですか。",unit:"回",ans:1000,why:"歯1つ分が 1.8÷90＝0.02m になります。20÷0.02＝1000回です。歯を2倍にすると、パルスも2倍になります。"}},
+ {sec:"確認問題",title:"確認問題 4",
+  q:{type:"text",t:"車の車輪速センサの歯が、自転車のように1個ではなく、たくさんある理由を書いてください。",ex:"歯が多いと、タイヤが少し回っただけでパルスが出るので、速さの変化にすぐ気づける。止まりかけたこともすぐわかるので、ABS が間に合う。"}},
+ {sec:"まとめ",title:"今日わかったこと",end:true}
+];
+
+const KEY="wheel-speed-1-v2";
+let S={i:0,ans:{}};
+try{const v=JSON.parse(localStorage.getItem(KEY)||"null"); if(v&&v.ans) S=v;}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderGloss(){
+  const shown=[]; SL.slice(0,S.i+1).forEach(s=>(s.terms||[]).forEach(k=>{ if(!shown.includes(k)) shown.push(k); }));
+  const fresh=SL[S.i].terms||[];
+  $("#gloss").innerHTML=`<h3>用語</h3>`+shown.slice().reverse().map(k=>`<div class="term ${fresh.includes(k)?"new":""}"><b>${TERMS[k][0]}</b><span>${TERMS[k][1]}</span></div>`).join("");
+}
+function near(a,q){ const tol=q.tol!=null?q.tol:Math.max(.001,Math.abs(q.ans)*.01); return Math.abs(a-q.ans)<=tol; }
+function qHTML(q,key){
+  const a=S.ans[key]; let h=`<p class="qt">${q.t}</p>`;
+  if(q.type==="num"){
+    h+=`<div class="qrow"><input id="inp" inputmode="decimal" value="${a?esc(a.v):""}" ${a?"disabled":""} aria-label="答え"><span class="unit">${q.unit}</span>${a?"":`<button class="btn dark" id="chk">答え合わせ</button>`}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":`正解は ${q.ans} ${q.unit} です。`}</b>${q.why}</p>`;
+  } else if(q.type==="choice"){
+    h+=`<div class="opts">${q.o.map((o,k)=>{ let c=""; if(a){ if(k===q.ans) c="ok"; else if(k===a.v) c="ng"; } return `<button class="opt ${c}" data-k="${k}" ${a?"disabled":""}>${o}</button>`; }).join("")}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":"正解は緑の答えです。"}</b>${q.why}</p>`;
+  } else {
+    h+=`<textarea id="inp" rows="3" ${a?"disabled":""} aria-label="答え">${a?esc(a.v):""}</textarea>`;
+    h+=a?`<p class="fb ex"><b>答えの例</b>${q.ex}</p>`:`<div class="qrow"><button class="btn dark" id="chk">書けた</button></div>`;
+  }
+  return h;
+}
+function render(){
+  stopAnim();
+  const s=SL[S.i], n=SL.length, el=$("#slide");
+  $("#bar").style.width=(S.i/(n-1)*100)+"%"; $("#pn").textContent=`${S.i+1} / ${n}`;
+  renderGloss();
+  const answered=!s.q||!!S.ans[S.i];
+  let main="";
+  if(s.end){
+    const qs=SL.map((x,i)=>[x,i]).filter(([x])=>x.q&&x.q.type!=="text"), ok=qs.filter(([,i])=>S.ans[i]&&S.ans[i].ok).length;
+    main=`<div class="side"><p class="txt big">車輪速センサは、<b>歯がセンサの前を通った回数</b>を数えて、速さを出しています。</p>
+      <p class="txt">歯1つ分で進む長さ × 1秒のパルスの数 ＝ 秒速。秒速 × 3.6 ＝ 時速。</p>
+      <p class="txt">歯が多いほど、速さの変化にすぐ気づけます。だから ABS は、タイヤがロックしかける前にブレーキをゆるめられます。</p>
+      <p class="note">答えのある問題 ${qs.length}問のうち、<b>${ok}問</b> 正解しました。</p>
+      <p class="txt" style="color:var(--mute)">次の時間：センサの中で、「歯が通ったこと」をどうやって電気の信号に変えているのかを見ます。</p>
+      <div class="qrow"><button class="btn" id="again">最初からやり直す</button><span id="againc"></span></div></div>`;
+  } else if(s.hero){
+    main=`<div class="side" style="justify-content:center;gap:18px"><div class="hero"><span class="num">15<small> / 50</small></span></div><p class="txt big">${s.text}</p></div>`;
+  } else {
+    const right=(s.text?`<p class="txt">${s.text}</p>`:"")+(s.q?qHTML(s.q,S.i):"");
+    main=s.lab?`<div class="work"><div class="lab"><div class="cv" id="cvh"></div><div class="ctrl" id="ctrl"></div></div><div class="side" id="side">${right}</div></div>`
+              :`<div class="work solo"><div class="side" id="side" style="max-width:40em">${right}</div></div>`;
+  }
+  el.innerHTML=`<div><p class="sec">${s.sec}</p><h2>${s.title}</h2></div>${main}
+    <div class="nav"><button class="btn" id="prev" ${S.i===0?"disabled":""}>← もどる</button><span class="hint"></span>${s.end?"<span></span>":`<button class="btn ${answered?"dark":""}" id="next">次へ →</button>`}</div>`;
+  if(s.lab){ mountCanvas($("#cvh")); LABS[s.lab]($("#ctrl"),s.labOpt||{}); }
+  wire(s);
+  $("#prev").addEventListener("click",()=>go(S.i-1));
+  if(!s.end) $("#next").addEventListener("click",()=>go(S.i+1));
+  if(s.end) $("#again").addEventListener("click",()=>{ $("#againc").innerHTML=`<button class="btn dark" id="ay">消して最初から</button> <button class="btn" id="an">やめる</button>`; $("#ay").addEventListener("click",()=>{S={i:0,ans:{}};save();render();}); $("#an").addEventListener("click",()=>{$("#againc").innerHTML="";}); });
+}
+function rerenderQ(s){ $("#side").innerHTML=(s.text?`<p class="txt">${s.text}</p>`:"")+qHTML(s.q,S.i); $("#next").disabled=false; document.querySelector(".nav .hint").textContent=""; }
+function wire(s){
+  if(!s.q||S.ans[S.i]) return;
+  const q=s.q;
+  if(q.type==="num"){
+    const inp=$("#inp"); const run=()=>{ const raw=inp.value.trim().replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)); if(raw===""||isNaN(+raw)){ inp.focus(); return; } S.ans[S.i]={v:raw,ok:near(+raw,q)}; save(); rerenderQ(s); };
+    $("#chk").addEventListener("click",run); inp.addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
+  } else if(q.type==="choice"){
+    document.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{ const k=+b.dataset.k; S.ans[S.i]={v:k,ok:k===q.ans}; save(); rerenderQ(s); }));
+  } else {
+    $("#chk").addEventListener("click",()=>{ const v=$("#inp").value.trim(); if(!v){ $("#inp").focus(); return; } S.ans[S.i]={v,ok:true}; save(); rerenderQ(s); });
+  }
+}
+function go(i){ S.i=Math.max(0,Math.min(SL.length-1,i)); save(); render(); }
+document.addEventListener("keydown",e=>{ if(e.target.closest("input,textarea")) return; const nx=$("#next"); if(e.key==="ArrowRight"&&nx&&!nx.disabled) go(S.i+1); if(e.key==="ArrowLeft"&&S.i>0) go(S.i-1); });
+render();
+})();
+</script>
+</body>
+</html>
