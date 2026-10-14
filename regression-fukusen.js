@@ -108,6 +108,17 @@ const j3=jointOf("Sa.2");
 pen("黒"); line("La.C","j:"+j3);
 ok(E("S.cores.length")===6 && E("S.joints.length")===3,"6本の線と3つの接続点ができた");
 tap("#judgeBtn");
+ok(!/合格！/.test($("result").textContent) && /接続/.test($("result").textContent) && E("judged.every(x=>x.cat==='接続')") && E("judged.length")===3,"接続方法を決めていない●は「接続」で指摘される（3つ）");
+const joinPick=(jid,txt)=>{ tap(`[data-hit="j:${jid}"]`); const b=[...d.querySelectorAll("#joinBtns button")].find(b=>b.textContent===txt); if(!b) throw new Error("ボタンが無い: "+txt); b.click(); tap("#unselJ"); };
+tap(`[data-hit="j:${j1}"]`);
+ok(/1\.6mm×2本/.test($("joinLab").textContent) && d.querySelectorAll("#joinBtns button").length===6,"●を選ぶと「接続（1.6mm×2本）」と、スリーブ・差込形コネクタのボタンが出る");
+tap("#unselJ");
+joinPick(j1,"スリーブ小・小");
+tap("#judgeBtn");
+ok(E("judged.filter(x=>x.cat==='接続').length")===3 && /合わない/.test(E("judged.find(x=>x.cat==='接続'&&x.mark[0]==='"+j1+"').lv2")) && /刻印が違う/.test(E("judged.find(x=>x.mark[0]==='"+j1+"').lv3")),"1.6mm×2本に「小・小」→ 大きさは合っているが刻印が違う、と言う");
+joinPick(j1,"スリーブ小・○"); joinPick(j2,"差込 2本用"); joinPick(j3,"スリーブ小・○");
+ok(E("S.joints.find(j=>j.id==='"+j2+"').join")==="差2" && d.querySelectorAll('#stage text').length>0 && [...d.querySelectorAll('#stage g[pointer-events="none"] text')].some(t=>t.textContent==="○"),"選んだ刻印が●の横に出る");
+tap("#judgeBtn");
 ok(/合格/.test($("result").textContent),"判定 → 合格");
 ok(d.querySelector("#probs button.on").classList.contains("done"),"合格した問題に印がつく");
 // 線をタップして色を変える → 不合格 → ヒント
@@ -187,6 +198,7 @@ tap(`[data-hit="core:${iC}"]`); tap("#reCore"); tap(`[data-hit="box:B1"]`);
 ok(E("S.joints.length")===3 && E(`S.cores.filter(k=>k.a==="${jN}"||k.b==="${jN}").length`)===3,"線のつなぎ先を、ボックスの新しい●へ変えられる");
 const iS=E(`S.cores.findIndex(k=>k.a==="Sa.2"||k.b==="Sa.2")`), jNew=J("La.C");
 tap(`[data-hit="core:${iS}"]`); tap("#reCore"); tap(`[data-hit="j:${jNew}"]`);
+E("S.joints.forEach(j=>{j.join=rightJoin(S,j)})");
 tap("#judgeBtn");
 ok(d.querySelector("#result .cat.pass")&&d.querySelectorAll("#result .cat:not(.pass)").length===0,"まとめ・付け替えで元の正しい形に戻せば合格");
 // 渡り線は付け替えできない
@@ -693,6 +705,18 @@ console.log("\n【AF】お手本: 道の角を通り、線が重ならない");
   }
   ok(!bad.length,"全問題のお手本で、道が曲がる所の線はまっすぐ（斜め）にならない"+(bad.length?" "+bad:""));
   ok(!ov.length,"全問題のお手本で、線どうしが重ならない"+(ov.length?" "+ov:"")); }
+
+console.log("\n【AG】リングスリーブと刻印（JIS C 2806）");
+{ const T=(a,b)=>E(`sleeveFor({n16:${a},n20:${b},other:0})`);
+  ok(T(2,0)==="小○" && T(3,0)==="小" && T(4,0)==="小" && T(5,0)==="中" && T(6,0)==="中","1.6mm: 2本→小・○、3〜4本→小・小、5〜6本→中・中");
+  ok(T(0,2)==="小" && T(0,3)==="中" && T(0,4)==="中","2.0mm: 2本→小・小、3〜4本→中・中");
+  ok(T(1,1)==="小" && T(2,1)==="小" && T(3,1)==="中" && T(5,1)==="中","2.0mm×1＋1.6mm: 1〜2本→小・小、3〜5本→中・中");
+  ok(T(1,2)==="中" && T(3,2)==="中","2.0mm×2＋1.6mm×1〜3本→中・中"); }
+for (const id of ["k1","k4","k5"]) { E(`openProblem("${id}")`);
+  ok(E("(()=>{const st=refState(P); return st.joints.every(j=>j.join) && judge(st).length===0;})()"),id+": お手本の●には全部、正しい接続方法が入っている"); }
+E(`openProblem("k4")`);
+ok(E("(()=>{const st=refState(P); return st.joints.some(j=>wiresAt(st,j.id).n20===2&&wiresAt(st,j.id).n16===0&&j.join==='小');})()"),"No.4: 2.0mm×2本の●は「小・小」（2.0mm が数えられている）");
+ok(/JIS C 2806/.test($("howBox").textContent) && d.querySelectorAll("#howBox table.sleeve tr").length===4,"「描き方」の窓に刻印の早見表");
 
 console.log("\n【F】後始末");
 ok(usedModal.length===0,"ブラウザの confirm / alert に頼っていない"+(usedModal.length?" → "+usedModal.join(" / "):""));

@@ -108,6 +108,12 @@
   #kPop .kSrc { margin-top: 8px; word-break: break-all; }
   #kOne { font-size: 12.5px; padding: 3px 9px; flex: 0 0 auto; }
   #partbar.termMode > :not(#mvTerm):not(#rsTerm) { display: none; }   /* 端子を動かしている間は、帯を小さくして器具を隠さない */
+  .joinrow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; flex-basis: 100%; }
+  #joinBtns button { padding: 3px 8px; font-size: 13px; }
+  #joinBtns .sp { width: 8px; }
+  table.sleeve { border-collapse: collapse; font-size: 13px; margin: 4px 0 8px; }
+  table.sleeve th, table.sleeve td { border: 1px solid var(--line); padding: 3px 7px; text-align: left; }
+  table.sleeve th { background: #f3f5f4; }
   #idPop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; align-items: center; justify-content: center; z-index: 11; }
   #idPop.show { display: flex; }
   #idPop .box { background: #fff; border-radius: 10px; padding: 16px 18px; max-width: 360px; width: 90%; display: flex; flex-direction: column; gap: 8px; }
@@ -211,6 +217,7 @@
         <button id="mgJoint">ほかの●とまとめる</button>
         <button id="delJoint">消す</button>
         <button id="unselJ">選ぶのをやめる</button>
+        <span class="joinrow"><span class="lab" id="joinLab">接続</span><span id="joinBtns"></span></span>
         </div>
         <div class="bar selbar" id="partbar">
         <span class="lab" id="partName"></span>
@@ -278,6 +285,12 @@
         </div>
         <div class="how" id="howBox">
           <h2>描き方</h2>
+          <div class="h3">リングスリーブの大きさと刻印（JIS C 2806）</div>
+          <table class="sleeve"><tr><th>スリーブ</th><th>刻印</th><th>電線の組み合わせ</th></tr>
+            <tr><td>小</td><td>○</td><td>1.6mm×2本</td></tr>
+            <tr><td>小</td><td>小</td><td>1.6mm×3〜4本 ／ 2.0mm×2本 ／ 2.0mm×1本＋1.6mm×1〜2本</td></tr>
+            <tr><td>中</td><td>中</td><td>1.6mm×5〜6本 ／ 2.0mm×3〜4本 ／ 2.0mm×1本＋1.6mm×3〜5本 ／ 2.0mm×2本＋1.6mm×1〜3本</td></tr></table>
+          <div class="note">差込形コネクタは、つなぐ線の本数と同じ「何本用」を使う。どちらを使うかは施工条件で決まる。●をタップ →「接続」で選ぶ。</div>
           <ol>
             <li>単線図を見て、要る部品を部品図から選び、図の置きたい所をタップ。記号（イ・ロ…、ボックスは B1・B2…）を単線図と同じにする</li>
             <li>単線図どおりに置けると、部品のあいだにケーブル（薄い帯）が出る</li>
@@ -311,7 +324,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-10a";
+const VER = "2026-10-14a";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -923,6 +936,7 @@ function refState(Pr) {
     return map[e];
   };
   Pr.ref.forEach(([a, b, c]) => st.cores.push({ a: end(a), b: end(b), c }));
+  st.joints.forEach(j => { const r = rightJoin(st, j); if (r) j.join = r; });   // お手本には正しい接続方法
   return st;
 }
 
@@ -1021,6 +1035,39 @@ function allStates() {
 }
 const STATE_TEXT = s => P.switches.map(p => PNAME(p) + " を「" + TYPES[p.type].stateText(s[p.id]) + "」").join("、");
 
+/* ============================================================
+   接続点の接続方法: リングスリーブ（大きさと刻印）か差込形コネクタ。j.join に入れる
+   リングスリーブの組み合わせ（JIS C 2806。1.6mm×2本だけが刻印「○」）
+     小・○: 1.6×2   小・小: 1.6×3〜4、2.0×2、2.0×1＋1.6×1〜2
+     中・中: 1.6×5〜6、2.0×3〜4、2.0×1＋1.6×3〜5、2.0×2＋1.6×1〜3
+   差込形コネクタは、つなぐ本数と同じ「n本用」。ボックスに join: "sleeve" / "conn" があれば、その方法に限る
+   ============================================================ */
+const JOINS = ["小○", "小", "中", "差2", "差3", "差4"];
+const JOIN_TEXT = { "小○": "リングスリーブ 小・刻印「○」", "小": "リングスリーブ 小・刻印「小」", "中": "リングスリーブ 中・刻印「中」", "大": "リングスリーブ 大・刻印「大」",
+  "差2": "差込形コネクタ 2本用", "差3": "差込形コネクタ 3本用", "差4": "差込形コネクタ 4本用" };
+const JOIN_TAG = { "小○": "○", "小": "小", "中": "中", "大": "大", "差2": "差2", "差3": "差3", "差4": "差4" };
+function wireMM(k) { const c = routeOf(k.a, k.b), m = c && /(\d\.\d)/.exec(c.spec); return m ? m[1] : "1.6"; }
+function wiresAt(st, jid) {                                         // 線の太さは、その図（st）のつながりで数える（どのケーブルを通るかが要る）
+  const keep = view; view = st;
+  const ks = st.cores.filter(k => k.a === jid || k.b === jid), n16 = ks.filter(k => wireMM(k) === "1.6").length, n20 = ks.filter(k => wireMM(k) === "2.0").length;
+  view = keep;
+  return { n: ks.length, n16, n20, other: ks.length - n16 - n20 };
+}
+function sleeveFor(w) {
+  if (w.other) return null; const a = w.n16, b = w.n20;
+  if (b === 0) return a === 2 ? "小○" : a <= 4 && a >= 3 ? "小" : a <= 6 && a >= 5 ? "中" : a === 7 ? "大" : null;
+  if (b === 1) return a >= 1 && a <= 2 ? "小" : a >= 3 && a <= 5 ? "中" : a === 6 ? "大" : null;
+  if (b === 2) return a === 0 ? "小" : a <= 3 ? "中" : null;
+  if (b === 3 || b === 4) return a === 0 ? "中" : (b === 4 && a === 1) ? "大" : null;
+  if (b === 5 && a === 0) return "大";
+  return null;
+}
+function wireText(w) { return [w.n16 ? "1.6mm×" + w.n16 + "本" : "", w.n20 ? "2.0mm×" + w.n20 + "本" : ""].filter(Boolean).join("＋") || w.n + "本"; }
+function rightJoin(st, j) {                                          // 正しい接続方法（お手本用）
+  const w = wiresAt(st, j.id), b = P.box[j.box] || {};
+  if (b.join === "conn" && w.n >= 2 && w.n <= 4) return "差" + w.n;
+  return sleeveFor(w) || (w.n >= 2 && w.n <= 4 ? "差" + w.n : null);
+}
 function judge(st) {
   const iss = [];
   const add = (cat, lv2, lv3, mark) => iss.push({ cat, lv2, lv3, mark: mark || [] });
@@ -1084,6 +1131,21 @@ function judge(st) {
     const pot = potOf[u.find(k.a)], need = pot && P.potColor && P.potColor[pot];
     if (need && k.c !== need)
       add("色", ENDNAME(k.a) + " と " + ENDNAME(k.b) + " を結ぶ線の色。", pot === "N" ? "電源の N（接地側）からスイッチを通らずにつながっている線は、すべて白にする決まり。" : pot === "E" ? "接地線は緑にする決まり。" : "電源の " + pot + " からスイッチを通らずにつながっている線は、すべて" + need + "にする決まり。", ["core:" + i]);
+  });
+  // 接続（リングスリーブと刻印・差込形コネクタ）
+  st.joints.forEach(j => {
+    const w = wiresAt(st, j.id); if (w.n < 2) return;
+    const b = P.box[j.box] || {}, at = "ボックス " + j.box + " の●（" + wireText(w) + "）";
+    const rule = "線の太さと本数を数えて、刻印の早見表（「描き方」の窓）で探す。1.6mm×2本だけが刻印「○」。";
+    if (!j.join) { add("接続", at + " の接続方法を、まだ決めていない。", "●をタップすると、リングスリーブの大きさと刻印、差込形コネクタを選べる。" + rule, [j.id]); return; }
+    const conn = j.join[0] === "差";
+    if (b.join === "conn" && !conn) { add("接続", at + " は、差込形コネクタでつなぐ決まり。", "施工条件で、このボックスは差込形コネクタを使うと決まっている。", [j.id]); return; }
+    if (b.join === "sleeve" && conn) { add("接続", at + " は、リングスリーブでつなぐ決まり。", "施工条件で、このボックスはリングスリーブを使うと決まっている。", [j.id]); return; }
+    if (conn) { if (+j.join.slice(1) !== w.n) add("接続", at + " に「" + JOIN_TEXT[j.join] + "」を選んだが、本数が合わない。", "差込形コネクタは、つなぐ線の本数と同じ「何本用」を使う。", [j.id]); return; }
+    const need = sleeveFor(w);
+    if (!need) { add("接続", at + " は、リングスリーブ（小・中）でつなげる組み合わせではない。", rule, [j.id]); return; }
+    if (need !== j.join) add("接続", at + " に「" + JOIN_TEXT[j.join] + "」を選んだが、合わない。",
+      (need[0] !== j.join[0] ? "スリーブの大きさが違う。" : "スリーブの大きさは合っている。刻印が違う。") + rule, [j.id]);
   });
   /* 施工条件で端子ごとに色が決まっているもの（P.termColor = { "器具.端子": "赤", … }） */
   Object.keys(P.termColor || {}).forEach(tid => { const need = P.termColor[tid];
@@ -1545,10 +1607,14 @@ function render() {
   P.parts.forEach(p => { if (p.shown) p.terms.forEach(t => { g += drawTerm(p, t, "t:" + t.id, mk); }); });
   extraTerms.forEach(q => q.terms.forEach(t => { g += drawTerm(q, t, "tx:" + q.id, mk); }));
   // 接続点
+  let jtags = "";
   view.joints.forEach(j => { if (!P.box[j.box].shown) return; const q = jointPos(j), on = sel && (sel.end === j.id || sel.joint === j.id), warn = mk.has(j.id);
     g += `<circle cx="${q.x}" cy="${q.y}" r="8" fill="${on ? "#2563eb" : "#151a18"}" stroke="${warn ? "#ef4444" : "#fff"}" stroke-width="${warn ? 4 : 2}"/>`;
+    if (j.join) { const t = JOIN_TAG[j.join] || j.join, wd = t.length > 1 ? 26 : 18, conn = j.join[0] === "差";   // 選んだ接続方法（刻印・差込形コネクタ）
+      jtags += `<g pointer-events="none"><rect x="${q.x + 9}" y="${q.y - 25}" width="${wd}" height="17" rx="${conn ? 3 : 8.5}" fill="${conn ? "#fff7ed" : "#fff"}" stroke="${conn ? "#c2410c" : "#0f6b4f"}" stroke-width="1.5"/>`
+        + `<text x="${q.x + 9 + wd / 2}" y="${q.y - 12.5}" text-anchor="middle" font-size="12" font-weight="700" fill="${conn ? "#c2410c" : "#0f6b4f"}">${esc(t)}</text></g>`; }
     if (!showingRef && mode === "draw") g += `<circle class="hit" data-hit="j:${j.id}" cx="${q.x}" cy="${q.y}" r="18" fill="transparent"/>`; });
-  g += bendHandles;
+  g += jtags + bendHandles;
   if (drag && drag.kind === "wire" && drag.moving && drag.cur) {    // 伸ばしている線と、離せばつながる所の輪
     const a = endPos(drag.id), [ok, ...r] = (drag.over || "").split(":"), oid = r.join(":");
     if ((ok === "t" && oid !== drag.id) || ok === "j") { const q = endPos(ok === "j" ? oid : oid);
@@ -1566,6 +1632,7 @@ function render() {
   const it = sel && sel.item && S.placed.find(x => x.u === sel.item);
   $("partbar").classList.toggle("show", !!it && !showingRef);
   if (it) drawPartBar(it);
+  drawJoinBtns();
   ["reCore", "mvJoint", "mgJoint", "mvPart", "mvTerm"].forEach(id => $(id).classList.toggle("on", !!(sel && sel.act && $(id).dataset.act === sel.act)));
   document.querySelectorAll("#selPens .pen").forEach(b => b.classList.toggle("on", cs && view.cores[sel.core] && view.cores[sel.core].c === b.dataset.c));
   document.querySelectorAll("#pens .pen").forEach(b => b.classList.toggle("on", b.dataset.c === pen));
@@ -2189,7 +2256,7 @@ svg.addEventListener("click", e => {
     sel = { core: c }; status("曲げ点を1つ消した。"); save(); render(); return;
   }
   if (kind === "core") { sel = { core: +id }; status("線を選んだ。＋をドラッグすると、そこで曲がる（曲げ点は" + BEND_MAX + "つまで）。色を変える・つなぎ先を変える・消すもできる。"); render(); return; }
-  if (kind === "j" && !(sel && sel.end)) { sel = { end: id, joint: id }; status("接続点を選んだ。動かす・まとめる・消す。この●から別のボックスへ線を引くこともできる。"); render(); return; }
+  if (kind === "j" && !(sel && sel.end)) { sel = { end: id, joint: id }; status("接続点を選んだ。動かす・まとめる・消す。下の「接続」で、リングスリーブ（大きさと刻印）か差込形コネクタを選ぶ。この●から別のボックスへ線を引くこともできる。"); render(); return; }
   if (kind === "t" || kind === "j") {
     if (sel && sel.end) { addCore(sel.end, id); return; }
     sel = { end: id }; status(ENDNAME(id) + " を選んだ。つなぐ先（ボックスか、その中の●）をタップ。"); render(); return;
@@ -2228,6 +2295,21 @@ $("reCore").dataset.act = "reattach"; $("mvJoint").dataset.act = "move"; $("mgJo
 $("reCore").onclick = () => { if (!(sel && sel.core !== undefined)) return; const k = S.cores[sel.core];
   if (k.a[0] !== "#" && k.b[0] !== "#") return status("渡り線はボックスを通らないので、消して引き直す。", true);
   sel.act = "reattach"; status("新しいつなぎ先の●をタップ。ボックスの空いた所なら新しい●を作る。"); render(); };
+/* 接続点の接続方法を選ぶボタン（●を選んでいるとき） */
+function drawJoinBtns() {
+  const host = $("joinBtns"), j = sel && sel.joint && S.joints.find(x => x.id === sel.joint);
+  if (!j || showingRef) { host.innerHTML = ""; host.dataset.for = ""; return; }
+  const w = wiresAt(S, j.id);
+  $("joinLab").textContent = "接続（" + wireText(w) + "）";
+  if (host.dataset.for === j.id + ":" + (j.join || "")) return;
+  host.dataset.for = j.id + ":" + (j.join || ""); host.innerHTML = "";
+  const mk = (v, txt) => { const b = document.createElement("button"); b.textContent = txt; b.classList.toggle("on", j.join === v);
+    b.onclick = () => { j.join = j.join === v ? undefined : v; if (!j.join) delete j.join; status(j.join ? "ボックス " + j.box + " の●を「" + JOIN_TEXT[v] + "」にした。" : "接続方法を取り消した。"); changed(); };
+    host.appendChild(b); };
+  mk("小○", "スリーブ小・○"); mk("小", "スリーブ小・小"); mk("中", "スリーブ中・中");
+  const sp = document.createElement("span"); sp.className = "sp"; host.appendChild(sp);
+  mk("差2", "差込 2本用"); mk("差3", "差込 3本用"); mk("差4", "差込 4本用");
+}
 $("mvTerm").dataset.act = "moveTerm";
 $("mvTerm").onclick = () => { if (!(sel && sel.item)) return; const on = sel.act !== "moveTerm"; sel = { item: sel.item }; if (on) sel.act = "moveTerm";
   status(on ? "青い点線の輪の端子を、好きな所へドラッグ（端子をタップ → 行き先をタップ でもよい）。終わったら「端子を動かすのを終える」。" : ""); render(); };
@@ -2256,7 +2338,7 @@ function penButtons(host, cb) {
 }
 
 /* ---------- 判定とヒント ---------- */
-const CATS = ["部品", "未完成", "短絡", "動作", "接地側", "色"];
+const CATS = ["部品", "未完成", "短絡", "動作", "接地側", "色", "接続"];
 const LV1 = {
   "部品": n => "単線図と合わない所が " + n + " か所ある（置き忘れ・余分・記号のちがい）。",
   "未完成": n => "まだ描き終わっていない所が " + n + " か所ある。",
@@ -2264,6 +2346,7 @@ const LV1 = {
   "動作": n => "スイッチを操作したときの点き方が、決まりどおりでない器具が " + n + " つある。",
   "接地側": n => "接地側につなぐ決まりの端子に、別の線が来ている所が " + n + " か所ある。",
   "色": n => "電線の色の決まりに合わない所が " + n + " か所ある。",
+  "接続": n => "接続点（●）の接続方法（リングスリーブの大きさと刻印・差込形コネクタ）が決まりに合わない、または決めていない所が " + n + " か所ある。",
 };
 /* 右の列のタブ: tansen 単線図 / cond 施工条件 / result 判定 */
 let sideTab = "tansen";
