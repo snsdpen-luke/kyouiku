@@ -27,6 +27,8 @@
 | 車の制御50 | <https://snsdpen-luke.github.io/kyouiku/car/> （導入スライド最後の QR はここ） |
 | 車輪速センサ 第1時 | <https://snsdpen-luke.github.io/kyouiku/wheel/> |
 | 車輪速センサ 第2時 | <https://snsdpen-luke.github.io/kyouiku/wheel2/> |
+| 距離センサ 第1時 | <https://snsdpen-luke.github.io/kyouiku/dist/> （超音波・駐車センサ） |
+| 距離センサ 第2時 | <https://snsdpen-luke.github.io/kyouiku/dist2/> （ミリ波レーダー・ACCへの橋） |
 | 複線図れんしゅう | <https://snsdpen-luke.github.io/kyouiku/fukusen/> |
 | 速い・遅いの正体 | <https://snsdpen-luke.github.io/kyouiku/speed/> |
 | 電波はどこまで届くか | <https://snsdpen-luke.github.io/kyouiku/wifi/> |
@@ -58,6 +60,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `network/index.html` | GitHub Pages が配るもの（メッセージが届くまで）。同じく**生成物** |
 | `car/index.html` | GitHub Pages が配るもの（車の制御50）。同じく**生成物** |
 | `wheel/index.html` | GitHub Pages が配るもの（車輪速センサ 第1時）。同じく**生成物** |
+| `dist/index.html`, `dist2/index.html` | GitHub Pages が配るもの（距離センサ 第1時・第2時）。同じく**生成物** |
 | `fukusen/index.html` | GitHub Pages が配るもの（複線図れんしゅう）。同じく**生成物** |
 | `speed/index.html` | GitHub Pages が配るもの（速い・遅いの正体）。同じく**生成物** |
 | `wifi/index.html` | GitHub Pages が配るもの（電波はどこまで届くか）。同じく**生成物** |

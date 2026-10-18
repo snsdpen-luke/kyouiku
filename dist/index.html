@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>距離センサ 第1時</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen 4:3 slide deck — each slide = moving picture (left) + one question or one idea (right); glossary column far right. Single light look on purpose (school tablets). Same engine as 車輪速センサ 1・2. */
+:root{
+  color-scheme:light;
+  --paper:#eef0ee; --sheet:#fbfbf8; --ink:#1d2b3a; --mute:#5d6b78; --line:#c5ccd1;
+  --metal:#c9d1d6; --tire:#2a333c; --road:#d9dedb; --amber:#c96a00; --amber-soft:#fbe7cf;
+  --teal:#1f7a6d; --teal-soft:#d5ece7; --blue:#2f6db5; --blue-soft:#dde8f6;
+  --good:#1f7a4d; --good-soft:#d9efe2; --bad:#b3261e; --bad-soft:#f7dcd9;
+  --f-disp:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;padding-inline:12px;padding-block:10px;box-sizing:border-box;overflow:hidden}
+*{box-sizing:border-box}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.app{height:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-rows:auto 1fr;gap:8px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.15rem;line-height:1.2;white-space:nowrap}
+header h1 small{font-family:var(--f-body);font-weight:700;font-size:.8rem;color:var(--mute);margin-left:8px}
+.prog{flex:1;max-width:420px;display:flex;align-items:center;gap:10px}
+.bar{flex:1;height:8px;background:var(--sheet);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--teal);transition:width .3s}
+.pn{font-family:var(--f-mono);font-size:.8rem;color:var(--mute);white-space:nowrap}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;min-height:0}
+.slide{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;grid-template-rows:auto 1fr auto;gap:10px;min-height:0;min-width:0}
+.sec{margin:0;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;color:var(--amber)}
+.slide h2{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.45rem;line-height:1.3;text-wrap:balance}
+.work{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;min-height:0}
+.work.solo{grid-template-columns:1fr}
+.lab{display:flex;flex-direction:column;gap:6px;min-height:0;min-width:0}
+.cv{position:relative;flex:1;min-height:200px;background:var(--paper);border-radius:8px;overflow:hidden}
+.cv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.88rem;min-height:38px}
+.ctrl label{display:flex;align-items:center;gap:6px}
+.ctrl input[type=range]{width:150px;accent-color:var(--amber)}
+.btn{border:1.5px solid var(--ink);background:var(--sheet);border-radius:6px;padding:4px 14px;min-height:40px;font-weight:700;font-size:.9rem}
+.btn.dark{background:var(--ink);color:var(--sheet)}
+.btn[aria-pressed="true"]{background:var(--amber-soft);border-color:var(--amber)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.read{font-family:var(--f-mono);font-variant-numeric:tabular-nums;background:var(--ink);color:var(--sheet);border-radius:4px;padding:2px 8px;font-size:.88rem}
+.side{display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0;padding-right:4px}
+.txt{margin:0;font-size:1rem}
+.txt.big{font-size:1.15rem}
+.note{margin:0;background:var(--paper);border-radius:6px;padding:8px 12px;font-size:.92rem}
+.qt{margin:0;font-weight:700;font-size:1.02rem;border-left:4px solid var(--amber);padding-left:10px}
+.qrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qrow input{width:7em;border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;font-family:var(--f-mono);font-size:1.05rem;background:var(--paper)}
+.unit{font-size:1rem}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:8px 12px;text-align:left;font-size:.95rem;min-height:44px}
+.opt.ok{border-color:var(--good);background:var(--good-soft)}
+.opt.ng{border-color:var(--bad);background:var(--bad-soft)}
+textarea{width:100%;border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--paper);resize:vertical;min-height:4.5em;font-size:.95rem}
+.fb{margin:0;border-radius:6px;padding:8px 12px;font-size:.92rem}
+.fb.ok{background:var(--good-soft)}
+.fb.ng{background:var(--bad-soft)}
+.fb.ex{background:var(--blue-soft)}
+.fb b{display:block}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nav .hint{font-size:.85rem;color:var(--mute)}
+.nav .btn{min-width:110px;min-height:44px}
+.hero{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap}
+.hero .num{font-family:var(--f-disp);font-weight:900;font-size:7rem;line-height:1;color:var(--amber)}
+.hero .num small{font-size:2.4rem;color:var(--mute)}
+aside{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto}
+aside h3{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1rem}
+.term{border-top:1px solid var(--line);padding-top:6px}
+.term b{display:block;font-size:.92rem}
+.term span{font-size:.82rem;color:var(--mute)}
+.term.new{background:var(--amber-soft);margin-inline:-6px;padding-inline:6px;border-radius:4px}
+.term.new b::after{content:"NEW";margin-left:6px;font-family:var(--f-mono);font-size:.62rem;color:var(--sheet);background:var(--amber);border-radius:3px;padding:0 4px;vertical-align:2px}
+@media (max-width:820px){
+  body{overflow:auto}
+  .app{height:auto}
+  .body{grid-template-columns:1fr}
+  .work{grid-template-columns:1fr}
+  .cv{min-height:240px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>距離センサ<small>第1時　距離を「時間」で測る</small></h1>
+    <div class="prog"><div class="bar"><b id="bar"></b></div><span class="pn" id="pn"></span></div>
+  </header>
+  <div class="body">
+    <section class="slide" id="slide" aria-live="polite"></section>
+    <aside id="gloss" aria-label="用語"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const TERMS={
+  echo:["反射（はんしゃ）","音や光が、物に当たってはね返ることです。山びこは、声が山に反射して返ってきたものです。"],
+  rt:["往復時間（おうふくじかん）","音を出してから、物に当たって返ってくるまでの時間です。「行き」と「帰り」の両方が入っています。"],
+  vs:["音速（おんそく）","音が進む速さです。空気の中では、1秒に約340m進みます。この教材では340m/sで計算します。"],
+  us:["超音波（ちょうおんぱ）","人の耳には聞こえない、とても高い音です。車の駐車センサやコウモリが使っています。"],
+  psen:["超音波センサ","超音波を出して、返ってくるまでの時間から距離を測る部品です。車ではバンパーの丸い部分です。"],
+  ms:["ミリ秒（ms）","1000分の1秒です。1ms＝0.001秒。6ms＝0.006秒です。"]
+};
+const VS=340; /* この教材での音速 m/s */
+const MAXR=5; /* この教材では：5mより遠いと返りが弱くて読めない */
+
+/* ---------- canvas ---------- */
+let raf=0, ctx=null, cv=null, W=0, H=0, onFrame=null, last=0;
+function mountCanvas(host){ cv=document.createElement("canvas"); host.appendChild(cv); ctx=cv.getContext("2d"); fit(); }
+function fit(){ if(!cv) return; const r=cv.getBoundingClientRect(), d=window.devicePixelRatio||1; W=r.width; H=r.height; cv.width=Math.round(W*d); cv.height=Math.round(H*d); ctx.setTransform(d,0,0,d,0,0); }
+window.addEventListener("resize",fit);
+function loop(t){ const dt=Math.min(.05,(t-last)/1000||0); last=t; if(onFrame&&ctx){ ctx.clearRect(0,0,W,H); onFrame(dt);} raf=requestAnimationFrame(loop); }
+function stopAnim(){ cancelAnimationFrame(raf); onFrame=null; cv=null; ctx=null; }
+function startAnim(fn){ onFrame=fn; last=performance.now(); raf=requestAnimationFrame(loop); }
+const C=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function txt(s,x,y,size,color,align,mono){ ctx.font=mono?`700 ${size}px "JetBrains Mono", monospace`:`700 ${size}px "BIZ UDPGothic", sans-serif`; ctx.fillStyle=color; ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(s,x,y); }
+
+/* beep (only after the student turns it on) */
+let actx=null, sound=false;
+function beep(f,len){ if(!sound) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=f||1200; g.gain.setValueAtTime(.2,actx.currentTime); g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+(len||.08)); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+(len||.08)+.01);}catch(e){} }
+function soundBtn(){ return `<button class="btn" id="snd" aria-pressed="${sound}">音 ${sound?"ON":"OFF"}</button>`; }
+function wireSound(){ const b=$("#snd"); if(!b) return; b.addEventListener("click",()=>{ sound=!sound; b.setAttribute("aria-pressed",sound); b.textContent=`音 ${sound?"ON":"OFF"}`; if(sound) beep(); }); }
+
+/* ---------- drawing helpers ---------- */
+function wall(x,y0,y1,label){ ctx.fillStyle=C("--ink"); ctx.fillRect(x,y0,10,y1-y0); ctx.strokeStyle=C("--line"); ctx.lineWidth=1; for(let y=y0;y<y1;y+=14){ ctx.beginPath(); ctx.moveTo(x+10,y); ctx.lineTo(x+22,y+7); ctx.stroke(); } if(label) txt(label,x+5,y0-12,12,C("--mute"),"center"); }
+function sensorBox(x,y,lit,label){ ctx.fillStyle=C("--metal"); ctx.fillRect(x-14,y-22,28,44); ctx.fillStyle=lit?C("--amber"):C("--mute"); ctx.beginPath(); ctx.arc(x+8,y,7,0,Math.PI*2); ctx.fill(); if(label) txt(label,x,y+36,12,C("--mute"),"center"); }
+function bat(x,y,flap){ ctx.save(); ctx.translate(x,y); ctx.fillStyle=C("--ink");
+  ctx.beginPath(); ctx.ellipse(0,0,10,14,0,0,Math.PI*2); ctx.fill();
+  const w=18+flap*10; ctx.beginPath(); ctx.moveTo(-6,-4); ctx.quadraticCurveTo(-40,-w,-52,6); ctx.quadraticCurveTo(-30,8,-6,8); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(6,-4); ctx.quadraticCurveTo(40,-w,52,6); ctx.quadraticCurveTo(30,8,6,8); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-6,-12); ctx.lineTo(-9,-22); ctx.lineTo(-2,-14); ctx.fill(); ctx.beginPath(); ctx.moveTo(6,-12); ctx.lineTo(9,-22); ctx.lineTo(2,-14); ctx.fill();
+  ctx.restore(); }
+function car(x,y,w,h){ ctx.fillStyle=C("--blue"); ctx.beginPath(); ctx.roundRect(x,y,w,h,8); ctx.fill(); ctx.fillStyle=C("--blue-soft"); ctx.beginPath(); ctx.roundRect(x+w*.18,y+6,w*.5,h*.45,5); ctx.fill(); ctx.fillStyle=C("--tire"); [x+w*.2,x+w*.8].forEach(cx=>{ ctx.beginPath(); ctx.arc(cx,y+h,h*.28,0,Math.PI*2); ctx.fill(); }); }
+/* one ping: amber arc going out, teal arc coming back */
+function pingArc(cx,cy,r,dir,color,alpha){ ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx,cy,r,dir>0?-Math.PI/3:Math.PI-Math.PI/3,dir>0?Math.PI/3:Math.PI+Math.PI/3); ctx.stroke(); ctx.restore(); }
+
+/* ---------- echo lab (shared by 3 slides) ---------- */
+/* opt.timer: show stopwatch; opt.weak: ping fades with distance (max MAXR) ; opt.auto: keep pinging */
+function echoLab(ctrl,opt){
+  opt=opt||{};
+  const maxD=opt.maxD||4;
+  ctrl.innerHTML=`<label>壁までの距離 <input type="range" id="ds" min="0.5" max="${maxD}" step="0.1" value="${opt.init||2}"></label><span class="read" id="dv"></span><button class="btn dark" id="go">音を出す</button><button class="btn" id="slo" aria-pressed="true">スロー再生（1/300）</button>${soundBtn()}`;
+  let d=opt.init||2, slow=true, t=-1, flap=0;
+  const upd=()=>{ $("#dv").textContent=`${d.toFixed(1)} m`; };
+  $("#ds").addEventListener("input",e=>{d=+e.target.value;upd();});
+  $("#slo").addEventListener("click",e=>{slow=!slow;e.currentTarget.setAttribute("aria-pressed",slow);e.currentTarget.textContent=slow?"スロー再生（1/300）":"本当の速さ";});
+  $("#go").addEventListener("click",()=>{ t=0; beep(1600,.06); });
+  wireSound(); upd();
+  startAnim(dt=>{
+    const rt=2*d/VS; /* 往復時間 s */
+    if(t>=0){ t+=slow?dt/300:dt; }
+    const back=t>=rt;
+    const sx=W*.12, cy=H*.56, wx=W*.12+(W*.76)*(d/maxD);
+    /* ground + scale */
+    ctx.fillStyle=C("--road"); ctx.fillRect(0,cy+40,W,H-cy-40);
+    for(let m=0;m<=maxD;m+=.5){ const x=W*.12+(W*.76)*(m/maxD); ctx.strokeStyle=C("--line"); ctx.beginPath(); ctx.moveTo(x,cy+40); ctx.lineTo(x,cy+48); ctx.stroke(); if(m%1===0) txt(`${m}m`,x,cy+60,11,C("--mute"),"center"); }
+    if(opt.bat){ flap=(flap+dt*8)%(Math.PI*2); bat(sx,cy,Math.sin(flap)); txt("コウモリ",sx,cy+34,12,C("--mute"),"center"); }
+    else sensorBox(sx,cy,t>=0&&t<rt*.08,"センサ");
+    wall(wx,cy-60,cy+40,"壁");
+    /* ping position */
+    if(t>=0){
+      const half=d/VS; let xpos, dir, col, alpha=1;
+      if(t<half){ xpos=sx+ (wx-sx)*(t/half); dir=1; col=C("--amber"); }
+      else if(t<rt){ xpos=wx-(wx-sx)*((t-half)/half); dir=-1; col=C("--teal"); if(opt.weak) alpha=Math.max(0,1-(d/MAXR)*(d/MAXR)); }
+      else { xpos=sx; dir=-1; col=C("--teal"); }
+      if(t<rt){ for(let k=0;k<3;k++) pingArc(xpos,cy,14+k*12,dir,col,alpha*(1-k*.3)); }
+      if(back&&opt.weak&&d>MAXR-.01){ txt("返ってきた音が小さすぎて、読めません",W/2,cy-80,14,C("--bad"),"center"); }
+      else if(back){ sensorBox(sx,cy,true,""); if(!opt.bat) txt("返ってきた！",sx,cy-40,14,C("--teal"),"center"); if(!echoLab._b){ echoLab._b=true; beep(900,.08);} }
+      if(t>=0&&t<rt) echoLab._b=false;
+    }
+    /* stopwatch */
+    if(opt.timer){
+      const shown=t<0?0:Math.min(t,rt);
+      const hide=opt.weak&&d>MAXR-.01&&back;
+      ctx.fillStyle=C("--sheet"); ctx.fillRect(W*.6,12,W*.37,58); ctx.strokeStyle=C("--line"); ctx.strokeRect(W*.6,12,W*.37,58);
+      txt("往復時間",W*.62,26,12,C("--mute"),"left");
+      txt(hide?"--":`${(shown*1000).toFixed(1)} ms`,W*.95,44,22,back?C("--ink"):C("--amber"),"right",true);
+      txt(hide?"":`（${shown.toFixed(4)} 秒）`,W*.95,62,11,C("--mute"),"right",true);
+    }
+    if(t<0) txt("「音を出す」を押してください",W/2,22,13,C("--mute"),"center");
+  });
+}
+
+/* ---------- parking lab ---------- */
+function parkingLab(ctrl){
+  ctrl.innerHTML=`<label>車を後ろへ <input type="range" id="ds" min="0.2" max="3" step="0.05" value="3"></label><span class="read" id="dv"></span>${soundBtn()}`;
+  let d=3, bt=0;
+  const upd=()=>{ $("#dv").textContent=`壁まで ${d.toFixed(2)} m`; };
+  $("#ds").addEventListener("input",e=>{d=+e.target.value;upd();}); wireSound(); upd();
+  startAnim(dt=>{
+    const iv=d<=.3?0:Math.min(1.2,d*.4); /* 鳴る間隔 s */
+    bt+=dt; let lit=false;
+    if(iv===0){ lit=true; if(bt>.09){ bt=0; beep(1400,.05);} } else if(bt>=iv){ bt=0; beep(1400,.06); } lit=lit||bt<.1;
+    const cy=H*.55, wx=W*.88, cw=W*.3, carX=wx-10-(W*.5)*(d/3)-cw;
+    ctx.fillStyle=C("--road"); ctx.fillRect(0,cy+36,W,H-cy-36);
+    wall(wx,cy-70,cy+36,"壁");
+    car(carX,cy-20,cw,44);
+    /* 4 sensors on rear bumper */
+    for(let i=0;i<4;i++){ const y=cy-10+i*12; ctx.fillStyle=lit?C("--amber"):C("--mute"); ctx.beginPath(); ctx.arc(carX+cw+4,y,3.5,0,Math.PI*2); ctx.fill(); }
+    txt("超音波センサ×4",carX+cw+4,cy+50,11,C("--mute"),"center");
+    if(lit){ for(let k=0;k<3;k++) pingArc(carX+cw+10+k*10,cy+8,12+k*10,1,C("--amber"),1-k*.3); }
+    /* meter */
+    const bx=W*.08, by=H*.86, bw=W*.6;
+    ctx.fillStyle=C("--line"); ctx.fillRect(bx,by,bw,12);
+    const g=ctx.createLinearGradient(bx,0,bx+bw,0); g.addColorStop(0,"#c0392b"); g.addColorStop(.5,"#e8c64a"); g.addColorStop(1,"#2f6db5");
+    ctx.save(); ctx.beginPath(); ctx.rect(bx,by,bw*(d/3),12); ctx.clip(); ctx.fillStyle=g; ctx.fillRect(bx,by,bw,12); ctx.restore();
+    txt("近い",bx,by-12,11,C("--bad"),"left"); txt("遠い",bx+bw,by-12,11,C("--blue"),"right");
+    txt(iv===0?"ピーーー（連続）":iv<.3?"ピッピッピッ":iv<.7?"ピッ　ピッ　ピッ":"ピッ　　　ピッ",W*.84,by+6,14,C("--ink"),"center");
+  });
+}
+
+const LABS={
+  bat(ctrl){ echoLab(ctrl,{bat:true,maxD:4,init:2}); },
+  echo(ctrl){ echoLab(ctrl,{timer:true,maxD:4,init:1}); },
+  range(ctrl){ echoLab(ctrl,{timer:true,weak:true,maxD:8,init:2}); },
+  parking:parkingLab
+};
+
+/* ---------- slides ---------- */
+const SL=[
+ {sec:"はじめに",title:"バックのとき鳴る「ピッピッ」は何を測っている？",hero:{big:"？",small:""},
+  text:"車を後ろに下げると、壁が近づくにつれて「ピッ、ピッ、ピッピッピッ」と音が速くなります。車は<b>壁までの距離</b>を知っています。目がないのに、どうやって距離がわかるのでしょう。"},
+ {sec:"コウモリ",title:"コウモリは目で見ていない",lab:"bat",terms:["echo"],
+  text:"コウモリは暗い中でも壁にぶつかりません。口から音を出して、壁に<b>反射</b>して返ってきた音を聞いています。「音を出す」を押して、音の行き帰りを見てみましょう。",
+  q:{type:"choice",t:"壁を遠くにすると、音が返ってくるまでの時間はどうなりますか。",o:["長くなる","短くなる","変わらない"],ans:0,why:"音は決まった速さで進むので、遠いほど行き帰りに時間がかかります。コウモリはこの時間の長さで「遠いか近いか」を知っています。"}},
+ {sec:"時間を測る",title:"返ってくるまでの時間を読む",lab:"echo",terms:["rt","ms"],
+  text:"コウモリの代わりに、センサに音を出させます。右上のストップウォッチが<b>往復時間</b>です。壁を 1m にして「音を出す」を押し、時間を読んでください。",
+  q:{type:"num",t:"壁まで 1m のとき、往復時間は何 ms でしたか。",unit:"ms",ans:5.9,tol:.2,why:"約 5.9ms（0.0059秒）です。音はとても速いので、1mでも 100分の1秒かかりません。だからスロー再生で見ています。"}},
+ {sec:"時間を測る",title:"距離を2倍にすると？",lab:"echo",
+  text:"壁を 2m にして、もう一度「音を出す」を押してください。",
+  q:{type:"choice",t:"壁を 1m → 2m にすると、往復時間はどうなりましたか。",o:["2倍になった（約11.8ms）","変わらなかった","半分になった"],ans:0,why:"距離が2倍なら、音が進む道のりも2倍、時間も2倍です。「時間」と「距離」はきれいに比例しています。だから時間を測れば距離がわかります。"}},
+ {sec:"計算する",title:"音の速さは決まっている",terms:["vs"],
+  text:"音は空気の中を 1秒に約 <b>340m</b> 進みます（<b>音速</b>）。音が往復するのにかかった時間がわかれば、「音速 × 時間」で音が進んだ道のりがわかります。",
+  q:{type:"num",t:"往復時間が 0.006秒 のとき、音が進んだ道のり（行き＋帰り）は何mですか。",unit:"m",ans:2.04,tol:.02,why:"340 × 0.006 ＝ 2.04m です。これは「行って帰ってきた」道のりの合計です。"}},
+ {sec:"計算する",title:"壁までの距離は？",
+  text:"音が進んだ道のりは 2.04m でした。",
+  q:{type:"choice",t:"では、壁までの距離は何mですか。",o:["1.02m（2.04 ÷ 2）","2.04m（そのまま）","4.08m（2.04 × 2）"],ans:0,why:"音は壁まで「行って」から「帰って」きます。進んだ道のり 2.04m は行きと帰りの合計なので、壁までの距離はその半分の 1.02m です。<br><b>距離 ＝ 音速 × 往復時間 ÷ 2</b>"}},
+ {sec:"車のセンサ",title:"駐車センサになってみる",lab:"parking",terms:["us","psen"],
+  text:"車の後ろのバンパーには、丸い<b>超音波センサ</b>が4つくらい付いています。人に聞こえない高い音（<b>超音波</b>）を出し続けて、返ってくる時間から壁までの距離を測っています。スライダーで車を後ろに下げてみましょう。",
+  q:{type:"choice",t:"壁に近づくと、運転手に聞かせる「ピッピッ」はどうなりますか。",o:["間隔が短くなり、最後は鳴りっぱなしになる","間隔が長くなる","音が低くなる"],ans:0,why:"センサが測った距離が短くなるほど、車は「ピッ」の間隔を短くして運転手に知らせます。これが制御の「出力」です。入力はセンサの時間、出力は音の間隔です。"}},
+ {sec:"車のセンサ",title:"なぜ聞こえない音を使う？",
+  q:{type:"choice",t:"駐車センサが、人に聞こえない超音波を使うのはなぜだと思いますか。",o:["人に聞こえないので、うるさくない","聞こえない音のほうが速く進む","聞こえない音のほうが遠くまで届く"],ans:0,why:"音の速さは高さで変わりません（どんな高さでも約340m/s）。超音波を使うのは、人にうるさくないことと、高い音ほどまっすぐ狙った方向に出しやすいからです。"}},
+ {sec:"どこまで測れる？",title:"壁を遠ざけていくと？",lab:"range",
+  text:"壁を少しずつ遠くにして、そのたびに「音を出す」を押してください。返ってくる音（緑）の濃さを見てください。",
+  q:{type:"num",t:"何 m より遠くすると、往復時間が読めなくなりましたか。",unit:"m",ans:5,tol:.3,why:"この教材では 5m です。音は遠くへ行くほど広がって弱くなり、返ってきた音が小さすぎて読めなくなります。本物の駐車センサもだいたい数m までです（何mかは車によってちがいます）。"}},
+ {sec:"どこまで測れる？",title:"前の車までの距離は測れる？",
+  text:"高速道路を走っているとき、前の車までは 50m くらいあります。",
+  q:{type:"text",t:"超音波センサで、50m 先の車までの距離は測れますか。今日わかったことを使って、理由も書いてください。",ex:"測れない。音は遠くへ行くほど弱くなり、数mより遠いと返ってきた音が読めなくなるから。50m先の車を測るには、別の方法が必要。"}},
+ {sec:"確認問題",title:"確認問題 1",
+  q:{type:"num",t:"往復時間が 0.012秒 でした。壁までの距離は何mですか。（音速 340m/s）",unit:"m",ans:2.04,tol:.02,why:"340 × 0.012 ÷ 2 ＝ 2.04m です。「÷2」を忘れると、行きと帰りの合計になってしまいます。"}},
+ {sec:"確認問題",title:"確認問題 2",
+  q:{type:"choice",t:"「距離 ＝ 音速 × 往復時間 ÷ 2」の「÷2」はなぜ必要ですか。",o:["音は壁まで行って帰ってくるので、道のりが距離の2倍だから","音速が2種類あるから","センサが2個あるから"],ans:0,why:"往復時間には行きと帰りの両方が入っています。壁までの距離は、音が進んだ道のりの半分です。"}},
+ {sec:"確認問題",title:"確認問題 3",
+  q:{type:"choice",t:"壁までの距離が 3m のとき、往復時間はおよそ何秒ですか。",o:["約 0.018秒","約 0.009秒","約 1.8秒"],ans:0,why:"3m × 2 ÷ 340 ＝ 約 0.0176秒 です。約 18ms。「×2」を忘れると 0.009秒になってしまいます。"}},
+ {sec:"確認問題",title:"確認問題 4",
+  q:{type:"text",t:"駐車センサを「制御」として見ると、入力（センサが測るもの）と出力（運転手に伝えるもの）はそれぞれ何ですか。",ex:"入力：超音波が返ってくるまでの往復時間（そこから距離を計算する）。出力：運転手に聞かせる「ピッ」の間隔（近いほど短く、最後は鳴りっぱなし）。"}},
+ {sec:"まとめ",title:"今日わかったこと",end:true}
+];
+
+const KEY="distance-1-v1";
+let S={i:0,ans:{}};
+try{const v=JSON.parse(localStorage.getItem(KEY)||"null"); if(v&&v.ans) S=v;}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderGloss(){
+  const shown=[]; SL.slice(0,S.i+1).forEach(s=>(s.terms||[]).forEach(k=>{ if(!shown.includes(k)) shown.push(k); }));
+  const fresh=SL[S.i].terms||[];
+  $("#gloss").innerHTML=`<h3>用語</h3>`+shown.slice().reverse().map(k=>`<div class="term ${fresh.includes(k)?"new":""}"><b>${TERMS[k][0]}</b><span>${TERMS[k][1]}</span></div>`).join("");
+}
+function near(a,q){ const tol=q.tol!=null?q.tol:Math.max(.001,Math.abs(q.ans)*.01); return Math.abs(a-q.ans)<=tol; }
+function qHTML(q,key){
+  const a=S.ans[key]; let h=`<p class="qt">${q.t}</p>`;
+  if(q.type==="num"){
+    h+=`<div class="qrow"><input id="inp" inputmode="decimal" value="${a?esc(a.v):""}" ${a?"disabled":""} aria-label="答え"><span class="unit">${q.unit}</span>${a?"":`<button class="btn dark" id="chk">答え合わせ</button>`}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":`正解は ${q.ans} ${q.unit} です。`}</b>${q.why}</p>`;
+  } else if(q.type==="choice"){
+    h+=`<div class="opts">${q.o.map((o,k)=>{ let c=""; if(a){ if(k===q.ans) c="ok"; else if(k===a.v) c="ng"; } return `<button class="opt ${c}" data-k="${k}" ${a?"disabled":""}>${o}</button>`; }).join("")}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":"正解は緑の答えです。"}</b>${q.why}</p>`;
+  } else {
+    h+=`<textarea id="inp" rows="3" ${a?"disabled":""} aria-label="答え">${a?esc(a.v):""}</textarea>`;
+    h+=a?`<p class="fb ex"><b>答えの例</b>${q.ex}</p>`:`<div class="qrow"><button class="btn dark" id="chk">書けた</button></div>`;
+  }
+  return h;
+}
+function render(){
+  stopAnim();
+  const s=SL[S.i], n=SL.length, el=$("#slide");
+  $("#bar").style.width=(S.i/(n-1)*100)+"%"; $("#pn").textContent=`${S.i+1} / ${n}`;
+  renderGloss();
+  const answered=!s.q||!!S.ans[S.i];
+  let main="";
+  if(s.end){
+    const qs=SL.map((x,i)=>[x,i]).filter(([x])=>x.q&&x.q.type!=="text"), ok=qs.filter(([,i])=>S.ans[i]&&S.ans[i].ok).length;
+    main=`<div class="side"><p class="txt big">距離は、音の<b>往復時間</b>から計算できました。</p>
+      <p class="txt"><b>距離 ＝ 音速（340m/s） × 往復時間 ÷ 2</b></p>
+      <p class="txt">音速は決まっているので、時間を測るだけで距離がわかります。「÷2」は行きと帰りの分です。</p>
+      <p class="txt">車の<b>超音波センサ</b>は数mまで。それより遠くは測れません。次の時間は、50m先の車を測る方法を調べます。</p>
+      <p class="note">答えのある問題 ${qs.length}問のうち、<b>${ok}問</b> 正解しました。</p>
+      <div class="qrow"><button class="btn" id="again">最初からやり直す</button><span id="againc"></span></div></div>`;
+  } else if(s.hero){
+    main=`<div class="side" style="justify-content:center;gap:18px"><div class="hero"><span class="num">${s.hero.big}<small>${s.hero.small}</small></span></div><p class="txt big">${s.text}</p></div>`;
+  } else {
+    const right=(s.text?`<p class="txt">${s.text}</p>`:"")+(s.q?qHTML(s.q,S.i):"");
+    main=s.lab?`<div class="work"><div class="lab"><div class="cv" id="cvh"></div><div class="ctrl" id="ctrl"></div></div><div class="side" id="side">${right}</div></div>`
+              :`<div class="work solo"><div class="side" id="side" style="max-width:40em">${right}</div></div>`;
+  }
+  el.innerHTML=`<div><p class="sec">${s.sec}</p><h2>${s.title}</h2></div>${main}
+    <div class="nav"><button class="btn" id="prev" ${S.i===0?"disabled":""}>← もどる</button><span class="hint"></span>${s.end?"<span></span>":`<button class="btn ${answered?"dark":""}" id="next">次へ →</button>`}</div>`;
+  if(s.lab){ mountCanvas($("#cvh")); LABS[s.lab]($("#ctrl")); }
+  wire(s);
+  $("#prev").addEventListener("click",()=>go(S.i-1));
+  if(!s.end) $("#next").addEventListener("click",()=>go(S.i+1));
+  if(s.end) $("#again").addEventListener("click",()=>{ $("#againc").innerHTML=`<button class="btn dark" id="ay">消して最初から</button> <button class="btn" id="an">やめる</button>`; $("#ay").addEventListener("click",()=>{S={i:0,ans:{}};save();render();}); $("#an").addEventListener("click",()=>{$("#againc").innerHTML="";}); });
+}
+function rerenderQ(s){ $("#side").innerHTML=(s.text?`<p class="txt">${s.text}</p>`:"")+qHTML(s.q,S.i); $("#next").disabled=false; document.querySelector(".nav .hint").textContent=""; }
+function wire(s){
+  if(!s.q||S.ans[S.i]) return;
+  const q=s.q;
+  if(q.type==="num"){
+    const inp=$("#inp"); const run=()=>{ const raw=inp.value.trim().replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)); if(raw===""||isNaN(+raw)){ inp.focus(); return; } S.ans[S.i]={v:raw,ok:near(+raw,q)}; save(); rerenderQ(s); };
+    $("#chk").addEventListener("click",run); inp.addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
+  } else if(q.type==="choice"){
+    document.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{ const k=+b.dataset.k; S.ans[S.i]={v:k,ok:k===q.ans}; save(); rerenderQ(s); }));
+  } else {
+    $("#chk").addEventListener("click",()=>{ const v=$("#inp").value.trim(); if(!v){ $("#inp").focus(); return; } S.ans[S.i]={v,ok:true}; save(); rerenderQ(s); });
+  }
+}
+function go(i){ S.i=Math.max(0,Math.min(SL.length-1,i)); save(); render(); }
+document.addEventListener("keydown",e=>{ if(e.target.closest("input,textarea")) return; const nx=$("#next"); if(e.key==="ArrowRight"&&nx&&!nx.disabled) go(S.i+1); if(e.key==="ArrowLeft"&&S.i>0) go(S.i-1); });
+render();
+})();
+</script>
+</body>
+</html>

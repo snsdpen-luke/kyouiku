@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>距離センサ 第2時</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one-screen 4:3 slide deck — each slide = moving picture (left) + one question or one idea (right); glossary column far right. Single light look on purpose (school tablets). Same engine as 車輪速センサ 1・2. */
+:root{
+  color-scheme:light;
+  --paper:#eef0ee; --sheet:#fbfbf8; --ink:#1d2b3a; --mute:#5d6b78; --line:#c5ccd1;
+  --metal:#c9d1d6; --tire:#2a333c; --road:#d9dedb; --amber:#c96a00; --amber-soft:#fbe7cf;
+  --teal:#1f7a6d; --teal-soft:#d5ece7; --blue:#2f6db5; --blue-soft:#dde8f6;
+  --good:#1f7a4d; --good-soft:#d9efe2; --bad:#b3261e; --bad-soft:#f7dcd9;
+  --f-disp:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;padding-inline:12px;padding-block:10px;box-sizing:border-box;overflow:hidden}
+*{box-sizing:border-box}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.app{height:100%;max-width:1180px;margin:0 auto;display:grid;grid-template-rows:auto 1fr;gap:8px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.15rem;line-height:1.2;white-space:nowrap}
+header h1 small{font-family:var(--f-body);font-weight:700;font-size:.8rem;color:var(--mute);margin-left:8px}
+.prog{flex:1;max-width:420px;display:flex;align-items:center;gap:10px}
+.bar{flex:1;height:8px;background:var(--sheet);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar b{display:block;height:100%;background:var(--teal);transition:width .3s}
+.pn{font-family:var(--f-mono);font-size:.8rem;color:var(--mute);white-space:nowrap}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;min-height:0}
+.slide{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;grid-template-rows:auto 1fr auto;gap:10px;min-height:0;min-width:0}
+.sec{margin:0;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;color:var(--amber)}
+.slide h2{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1.45rem;line-height:1.3;text-wrap:balance}
+.work{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;min-height:0}
+.work.solo{grid-template-columns:1fr}
+.lab{display:flex;flex-direction:column;gap:6px;min-height:0;min-width:0}
+.cv{position:relative;flex:1;min-height:200px;background:var(--paper);border-radius:8px;overflow:hidden}
+.cv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ctrl{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.88rem;min-height:38px}
+.ctrl label{display:flex;align-items:center;gap:6px}
+.ctrl input[type=range]{width:150px;accent-color:var(--amber)}
+.btn{border:1.5px solid var(--ink);background:var(--sheet);border-radius:6px;padding:4px 14px;min-height:40px;font-weight:700;font-size:.9rem}
+.btn.dark{background:var(--ink);color:var(--sheet)}
+.btn[aria-pressed="true"]{background:var(--amber-soft);border-color:var(--amber)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.read{font-family:var(--f-mono);font-variant-numeric:tabular-nums;background:var(--ink);color:var(--sheet);border-radius:4px;padding:2px 8px;font-size:.88rem}
+.side{display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0;padding-right:4px}
+.txt{margin:0;font-size:1rem}
+.txt.big{font-size:1.15rem}
+.note{margin:0;background:var(--paper);border-radius:6px;padding:8px 12px;font-size:.92rem}
+.qt{margin:0;font-weight:700;font-size:1.02rem;border-left:4px solid var(--amber);padding-left:10px}
+.qrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qrow input{width:7em;border:1.5px solid var(--line);border-radius:6px;padding:6px 10px;font-family:var(--f-mono);font-size:1.05rem;background:var(--paper)}
+.unit{font-size:1rem}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{border:1.5px solid var(--line);background:var(--paper);border-radius:6px;padding:8px 12px;text-align:left;font-size:.95rem;min-height:44px}
+.opt.ok{border-color:var(--good);background:var(--good-soft)}
+.opt.ng{border-color:var(--bad);background:var(--bad-soft)}
+textarea{width:100%;border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--paper);resize:vertical;min-height:4.5em;font-size:.95rem}
+.fb{margin:0;border-radius:6px;padding:8px 12px;font-size:.92rem}
+.fb.ok{background:var(--good-soft)}
+.fb.ng{background:var(--bad-soft)}
+.fb.ex{background:var(--blue-soft)}
+.fb b{display:block}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nav .hint{font-size:.85rem;color:var(--mute)}
+.nav .btn{min-width:110px;min-height:44px}
+.hero{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap}
+.hero .num{font-family:var(--f-disp);font-weight:900;font-size:7rem;line-height:1;color:var(--amber)}
+.hero .num small{font-size:2.4rem;color:var(--mute)}
+aside{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto}
+aside h3{margin:0;font-family:var(--f-disp);font-weight:900;font-size:1rem}
+.term{border-top:1px solid var(--line);padding-top:6px}
+.term b{display:block;font-size:.92rem}
+.term span{font-size:.82rem;color:var(--mute)}
+.term.new{background:var(--amber-soft);margin-inline:-6px;padding-inline:6px;border-radius:4px}
+.term.new b::after{content:"NEW";margin-left:6px;font-family:var(--f-mono);font-size:.62rem;color:var(--sheet);background:var(--amber);border-radius:3px;padding:0 4px;vertical-align:2px}
+@media (max-width:820px){
+  body{overflow:auto}
+  .app{height:auto}
+  .body{grid-template-columns:1fr}
+  .work{grid-template-columns:1fr}
+  .cv{min-height:240px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>距離センサ<small>第2時　遠くの車までの距離を測る</small></h1>
+    <div class="prog"><div class="bar"><b id="bar"></b></div><span class="pn" id="pn"></span></div>
+  </header>
+  <div class="body">
+    <section class="slide" id="slide" aria-live="polite"></section>
+    <aside id="gloss" aria-label="用語"></aside>
+  </div>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const TERMS={
+  radio:["電波（でんぱ）","目に見えない波で、ラジオやスマホの通信にも使われています。光と同じ速さで進みます。"],
+  mmwave:["ミリ波（みりは）","電波の中でも、波の長さが数ミリのとても細かいものです。車のレーダーに使われます。"],
+  radar:["ミリ波レーダー","電波を出して、返ってくるまでの時間から前の車までの距離を測る装置です。車の前のグリルの中にあります。"],
+  c:["光の速さ","1秒に約 3億m（30万km）です。電波もこの速さで進みます。地球を1秒に7周半できる速さです。"],
+  acc:["ACC（アダプティブ・クルーズ・コントロール）","前の車までの距離を測りながら、自分の速さを前の車に合わせて走る制御です。"],
+  rel:["相対速度（そうたいそくど）","自分と相手の速さの差です。自分 60km/h、前の車 40km/h なら、相対速度は 20km/h です。"]
+};
+const VS=340; /* この教材での音速 m/s */
+const MAXR=5; /* この教材では：超音波は5mより遠いと返りが読めない */
+
+/* ---------- canvas ---------- */
+let raf=0, ctx=null, cv=null, W=0, H=0, onFrame=null, last=0;
+function mountCanvas(host){ cv=document.createElement("canvas"); host.appendChild(cv); ctx=cv.getContext("2d"); fit(); }
+function fit(){ if(!cv) return; const r=cv.getBoundingClientRect(), d=window.devicePixelRatio||1; W=r.width; H=r.height; cv.width=Math.round(W*d); cv.height=Math.round(H*d); ctx.setTransform(d,0,0,d,0,0); }
+window.addEventListener("resize",fit);
+function loop(t){ const dt=Math.min(.05,(t-last)/1000||0); last=t; if(onFrame&&ctx){ ctx.clearRect(0,0,W,H); onFrame(dt);} raf=requestAnimationFrame(loop); }
+function stopAnim(){ cancelAnimationFrame(raf); onFrame=null; cv=null; ctx=null; }
+function startAnim(fn){ onFrame=fn; last=performance.now(); raf=requestAnimationFrame(loop); }
+const C=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function txt(s,x,y,size,color,align,mono){ ctx.font=mono?`700 ${size}px "JetBrains Mono", monospace`:`700 ${size}px "BIZ UDPGothic", sans-serif`; ctx.fillStyle=color; ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(s,x,y); }
+
+/* beep (only after the student turns it on) */
+let actx=null, sound=false;
+function beep(f,len){ if(!sound) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=f||1200; g.gain.setValueAtTime(.2,actx.currentTime); g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+(len||.08)); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+(len||.08)+.01);}catch(e){} }
+function soundBtn(){ return `<button class="btn" id="snd" aria-pressed="${sound}">音 ${sound?"ON":"OFF"}</button>`; }
+function wireSound(){ const b=$("#snd"); if(!b) return; b.addEventListener("click",()=>{ sound=!sound; b.setAttribute("aria-pressed",sound); b.textContent=`音 ${sound?"ON":"OFF"}`; if(sound) beep(); }); }
+
+/* ---------- drawing helpers ---------- */
+function road(y){ ctx.fillStyle=C("--road"); ctx.fillRect(0,y,W,H-y); ctx.strokeStyle=C("--sheet"); ctx.lineWidth=3; ctx.setLineDash([22,18]); ctx.beginPath(); ctx.moveTo(0,y+34); ctx.lineTo(W,y+34); ctx.stroke(); ctx.setLineDash([]); }
+function car(x,y,w,h,color){ ctx.fillStyle=color||C("--blue"); ctx.beginPath(); ctx.roundRect(x,y,w,h,8); ctx.fill(); ctx.fillStyle=C("--sheet"); ctx.globalAlpha=.75; ctx.beginPath(); ctx.roundRect(x+w*.32,y+6,w*.5,h*.45,5); ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle=C("--tire"); [x+w*.2,x+w*.8].forEach(cx=>{ ctx.beginPath(); ctx.arc(cx,y+h,h*.28,0,Math.PI*2); ctx.fill(); }); }
+function pingArc(cx,cy,r,dir,color,alpha){ ctx.save(); ctx.globalAlpha=Math.max(0,alpha); ctx.strokeStyle=color; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx,cy,r,dir>0?-Math.PI/3:Math.PI-Math.PI/3,dir>0?Math.PI/3:Math.PI+Math.PI/3); ctx.stroke(); ctx.restore(); }
+function scale(x0,x1,y,maxM,step){ for(let m=0;m<=maxM;m+=step){ const x=x0+(x1-x0)*(m/maxM); ctx.strokeStyle=C("--line"); ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+8); ctx.stroke(); txt(`${m}m`,x,y+20,11,C("--mute"),"center"); } }
+function box(x,y,w,h,label,big,small,color){ ctx.fillStyle=C("--sheet"); ctx.fillRect(x,y,w,h); ctx.strokeStyle=C("--line"); ctx.strokeRect(x,y,w,h); txt(label,x+10,y+14,12,C("--mute"),"left"); txt(big,x+w-10,y+h*.55,22,color||C("--ink"),"right",true); if(small) txt(small,x+w-10,y+h-12,11,C("--mute"),"right",true); }
+
+/* ---------- labs ---------- */
+const LABS={
+  /* 超音波で50m先の車を狙う：音は途中で消える */
+  far(ctrl){
+    ctrl.innerHTML=`<label>前の車まで <input type="range" id="ds" min="2" max="60" step="1" value="50"></label><span class="read" id="dv"></span><button class="btn dark" id="go">超音波を出す</button>${soundBtn()}`;
+    let d=50, t=-1;
+    const upd=()=>{ $("#dv").textContent=`${d} m`; };
+    $("#ds").addEventListener("input",e=>{d=+e.target.value;upd();});
+    $("#go").addEventListener("click",()=>{ t=0; beep(1600,.06); }); wireSound(); upd();
+    startAnim(dt=>{
+      const rt=2*d/VS; if(t>=0) t+=dt/40;
+      const cy=H*.55, x0=W*.2, x1=W*.94, maxM=60, xm=m=>x0+(x1-x0)*(m/maxM);
+      road(cy+22); scale(x0,x1,cy+60,maxM,10);
+      car(xm(0)-56,cy-18,56,40); txt("自分の車",xm(0)-28,cy-34,12,C("--mute"),"center");
+      car(xm(d),cy-18,56,40,C("--amber")); txt("前の車",xm(d)+28,cy-34,12,C("--mute"),"center");
+      /* ping travels and fades out by MAXR */
+      if(t>=0){
+        const trav=Math.min(t*VS,2*d); const outward=trav<=d; const pos=outward?trav:2*d-trav;
+        const alpha=1-trav/(MAXR*2.5);
+        if(alpha>0){ for(let k=0;k<3;k++) pingArc(xm(pos)+ (outward?8:-8),cy+4,12+k*10,outward?1:-1,outward?C("--amber"):C("--teal"),alpha*(1-k*.3)); }
+        else txt(d>MAXR?"音は途中で弱くなって消えました。返ってきません":"",W/2,cy-70,14,C("--bad"),"center");
+        box(W*.6,10,W*.36,58,"往復時間",(d<=MAXR&&t>=rt)?`${(rt*1000).toFixed(1)} ms`:(d<=MAXR?`${(Math.min(t,rt)*1000).toFixed(1)} ms`:"--"),d<=MAXR?"":"読めない",d<=MAXR?C("--ink"):C("--bad"));
+      } else txt("「超音波を出す」を押してください",W/2,22,13,C("--mute"),"center");
+    });
+  },
+  /* ミリ波レーダー：電波はすぐ返る。時間は見えないので距離の数字だけ出る */
+  radar(ctrl){
+    ctrl.innerHTML=`<label>前の車まで <input type="range" id="ds" min="5" max="150" step="1" value="50"></label><span class="read" id="dv"></span>`;
+    let d=50, ph=0;
+    const upd=()=>{ $("#dv").textContent=`${d} m`; };
+    $("#ds").addEventListener("input",e=>{d=+e.target.value;upd();}); upd();
+    startAnim(dt=>{
+      ph=(ph+dt*2.2)%1;
+      const cy=H*.55, x0=W*.2, x1=W*.94, maxM=150, xm=m=>x0+(x1-x0)*(m/maxM);
+      road(cy+22); scale(x0,x1,cy+60,maxM,50);
+      car(xm(0)-56,cy-18,56,40); txt("自分の車",xm(0)-28,cy-34,12,C("--mute"),"center");
+      /* radar unit on the front grille */
+      ctx.fillStyle=C("--teal"); ctx.fillRect(xm(0)-4,cy-2,6,14); txt("ミリ波レーダー",xm(0),cy+36,11,C("--teal"),"center");
+      car(xm(d),cy-18,56,40,C("--amber")); txt("前の車",xm(d)+28,cy-34,12,C("--mute"),"center");
+      /* fast continuous wavefronts out and back */
+      for(let k=0;k<5;k++){ const u=((ph+k/5)%1); const pos=u<.5?u*2*d:(1-u)*2*d; pingArc(xm(pos),cy+4,10,u<.5?1:-1,C("--teal"),.9-u*.5); }
+      ctx.strokeStyle=C("--teal"); ctx.setLineDash([4,6]); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(xm(0)+2,cy+4); ctx.lineTo(xm(d),cy+4); ctx.stroke(); ctx.setLineDash([]);
+      const rt=2*d/3e8;
+      box(W*.5,10,W*.46,70,"レーダーが出した距離",`${d.toFixed(1)} m`,`往復時間 ${rt.toFixed(9)} 秒`,C("--teal"));
+    });
+  },
+  /* ACC への橋：前の車との距離 ＋ 自分の速さ（車輪速センサ） */
+  acc(ctrl){
+    ctrl.innerHTML=`<label>自分の速さ <input type="range" id="sp" min="0" max="120" step="1" value="60"></label><span class="read" id="spv"></span><button class="btn" id="rst">距離を 40m にもどす</button>`;
+    let own=60, lead=40, d=40, hit=false;
+    const upd=()=>{ $("#spv").textContent=`時速 ${own} km`; };
+    $("#sp").addEventListener("input",e=>{own=+e.target.value;upd();}); $("#rst").addEventListener("click",()=>{d=40;hit=false;}); upd();
+    startAnim(dt=>{
+      const rel=(own-lead)/3.6; /* m/s, + なら近づく */
+      if(!hit){ d-=rel*dt; if(d<=1){ d=1; hit=true; } if(d>95) d=95; }
+      const cy=H*.55, x0=W*.2, x1=W*.94, maxM=100, xm=m=>x0+(x1-x0)*(m/maxM);
+      road(cy+22); scale(x0,x1,cy+60,maxM,20);
+      car(xm(0)-56,cy-18,56,40); txt("自分の車",xm(0)-28,cy-34,12,C("--mute"),"center");
+      car(xm(d),cy-18,56,40,C("--amber")); txt(`前の車　時速 ${lead} km`,xm(d)+28,cy-34,12,C("--mute"),"center");
+      ctx.strokeStyle=C("--teal"); ctx.setLineDash([4,6]); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(xm(0)+2,cy+4); ctx.lineTo(xm(d),cy+4); ctx.stroke(); ctx.setLineDash([]);
+      const bw=W*.3;
+      box(W*.03,10,bw,66,"自分の速さ",`${own} km/h`,"車輪速センサ",C("--amber"));
+      box(W*.35,10,bw,66,"前の車まで",`${d.toFixed(1)} m`,"ミリ波レーダー",C("--teal"));
+      const ttc=rel>0?d/rel:null;
+      box(W*.67,10,bw,66,"ぶつかるまで",hit?"ぶつかった":ttc==null?"ぶつからない":`${ttc.toFixed(1)} 秒`,"距離 ÷ 速さの差",hit||(ttc!=null&&ttc<3)?C("--bad"):C("--ink"));
+      if(hit) txt("「距離を 40m にもどす」で、もう一度",W/2,H-16,13,C("--mute"),"center");
+    });
+  }
+};
+
+/* ---------- slides ---------- */
+const SL=[
+ {sec:"はじめに",title:"50m 先の車までの距離は、どう測る？",hero:{big:"50<small>m</small>",small:""},
+  text:"前の時間、超音波センサは<b>数m</b>までしか測れないことがわかりました。でも高速道路では、前の車まで 50m くらいあります。クルーズコントロールのように「前の車について走る」には、この距離が必要です。"},
+ {sec:"超音波の限界",title:"超音波で 50m 先を狙ってみる",lab:"far",
+  text:"前の車を 50m にして「超音波を出す」を押してください。音の行方を見てください。",
+  q:{type:"choice",t:"50m 先の車から、音は返ってきましたか。",o:["返ってこなかった（途中で消えた）","返ってきた","2回返ってきた"],ans:0,why:"音は進むうちに広がって弱くなります。50m 先まで届いて、さらに返ってくるころには、小さすぎて聞き取れません。超音波では遠くを測れないのです。"}},
+ {sec:"電波に替える",title:"音の代わりに電波を使う",lab:"radar",terms:["radio","mmwave","radar"],
+  text:"そこで車の前には、音ではなく<b>電波</b>を出す<b>ミリ波レーダー</b>が付いています。やっていることは超音波センサと同じで、「出して、返ってくるまでの時間」を測ります。スライダーで前の車を遠ざけてみましょう。",
+  q:{type:"choice",t:"電波を使うと、何がよくなりますか。",o:["遠くまで届く（100m以上）","音より安い","目で見える"],ans:0,why:"電波は音よりずっと弱まりにくく、100m 以上先からも返ってきます。雨や霧の中でも届きます。だから高速道路での「前の車との距離」はレーダーで測ります。"}},
+ {sec:"電波に替える",title:"時間が見えないのはなぜ？",lab:"radar",terms:["c"],
+  text:"右上の往復時間を見てください。電波は<b>光と同じ速さ</b>（1秒に 3億m ＝ 30万km）で進みます。50m 先なら往復 0.00000033秒。目では見えないので、車の中のコンピュータが時間を測って距離に直しています。",
+  q:{type:"choice",t:"ミリ波レーダーが距離を出す計算は、超音波センサと同じですか。",o:["同じ（速さ × 往復時間 ÷ 2）。速さの数字がちがうだけ","まったく別の計算","計算はしない"],ans:0,why:"同じです。<b>距離 ＝ 速さ × 往復時間 ÷ 2</b>。音なら 340m/s、電波なら 3億m/s を入れるだけです。"}},
+ {sec:"計算する",title:"電波の往復時間から距離を出す",
+  text:"電波の速さは 300,000,000 m/s（3億 m/s）です。",
+  q:{type:"num",t:"往復時間が 0.0000004秒 のとき、前の車までの距離は何mですか。",unit:"m",ans:60,tol:1,why:"300,000,000 × 0.0000004 ＝ 120m（行き＋帰り）。÷2 で 60m です。"}},
+ {sec:"ACCへ",title:"距離がわかれば安全？",lab:"acc",terms:["acc"],
+  text:"前の車は時速 40km で走っています。自分の車の速さは、前に学んだ<b>車輪速センサ</b>からわかります。今、自分は時速 60km。距離の数字を見てください。",
+  q:{type:"choice",t:"自分が時速 60km、前の車が時速 40km のとき、距離はどうなっていきますか。",o:["どんどん縮まる","変わらない","広がる"],ans:0,why:"自分のほうが速いので、1秒ごとに距離が縮まります。距離が 40m あっても、このままだとぶつかります。"}},
+ {sec:"ACCへ",title:"速さをそろえると？",lab:"acc",
+  text:"「距離を 40m にもどす」を押してから、スライダーで自分の速さを前の車と同じ時速 40km にしてください。",
+  q:{type:"choice",t:"速さを前の車と同じにすると、距離はどうなりますか。",o:["変わらない（40m のまま）","縮まる","広がる"],ans:0,why:"同じ速さなら、距離は変わりません。「前の車について走る」とは、距離を測りながら、自分の速さを前の車に合わせることです。これが ACC（アダプティブ・クルーズ・コントロール）の中身です。"}},
+ {sec:"ACCへ",title:"ぶつかるまで何秒？",lab:"acc",terms:["rel"],
+  text:"距離を 40m にもどし、自分の速さを時速 60km にしてください。右上の「ぶつかるまで」の秒数が出ます。自分で計算して確かめましょう。<br>速さの差（<b>相対速度</b>）：60 − 40 ＝ 20km/h ＝ 20÷3.6 ＝ 約 5.6m/s",
+  q:{type:"num",t:"距離 40m、速さの差 5.6m/s。ぶつかるまで何秒ですか。",unit:"秒",ans:7.2,tol:.3,why:"40 ÷ 5.6 ＝ 約 7.2秒 です。<b>ぶつかるまでの時間 ＝ 距離 ÷ 速さの差</b>。車はこの秒数が短くなるとブレーキをかけます。"}},
+ {sec:"ACCへ",title:"距離だけでは足りない",
+  q:{type:"choice",t:"前の車まで 40m です。安全だと言えますか。",o:["速さの差による。差が大きければ数秒でぶつかる","40m あれば安全","40m は危ない"],ans:0,why:"同じ 40m でも、速さの差が 0 なら永遠にぶつからず、差が 20km/h なら 7秒でぶつかります。だから車は「距離」と「自分の速さ」の<b>2つのセンサ</b>を両方見ています。"}},
+ {sec:"ACCへ",title:"ACC を制御として見る",
+  q:{type:"text",t:"ACC（前の車について走る制御）の入力と出力を書いてください。入力は2つあります。",ex:"入力：前の車までの距離（ミリ波レーダー）と、自分の速さ（車輪速センサ）。出力：アクセルとブレーキ（距離が縮まればブレーキ、広がればアクセル）。"}},
+ {sec:"確認問題",title:"確認問題 1",
+  q:{type:"choice",t:"超音波センサとミリ波レーダーの、共通していることはどれですか。",o:["出して、返ってくるまでの時間から距離を出す","どちらも 100m 先まで測れる","どちらも電源がいらない"],ans:0,why:"どちらも「速さ × 往復時間 ÷ 2」です。ちがうのは、音か電波か、そして届く距離です。"}},
+ {sec:"確認問題",title:"確認問題 2",
+  q:{type:"num",t:"前の車まで 50m。自分は時速 80km、前の車は時速 60km。ぶつかるまで約何秒ですか。",unit:"秒",ans:9,tol:.5,why:"速さの差 20km/h ＝ 約 5.6m/s。50 ÷ 5.6 ＝ 約 9秒 です。"}},
+ {sec:"確認問題",title:"確認問題 3",
+  q:{type:"choice",t:"駐車のときは超音波、高速道路ではミリ波レーダーを使うのはなぜですか。",o:["超音波は数mまで、電波は100m以上届くから","超音波のほうが正確だから","電波は近くを測れないから"],ans:0,why:"近くは安い超音波で足り、遠くは電波でないと返ってきません。目的に合わせてセンサを使い分けています。"}},
+ {sec:"確認問題",title:"確認問題 4",
+  q:{type:"text",t:"ミリ波レーダーが壊れて、距離がわからなくなりました。ACC は何ができなくなりますか。車輪速センサは生きています。",ex:"自分の速さはわかるので、決めた速さを保つこと（ふつうのクルーズコントロール）はできる。でも前の車との距離がわからないので、前の車に合わせて速さを変えること（ACC）はできなくなる。"}},
+ {sec:"まとめ",title:"今日わかったこと",end:true}
+];
+
+const KEY="distance-2-v1";
+let S={i:0,ans:{}};
+try{const v=JSON.parse(localStorage.getItem(KEY)||"null"); if(v&&v.ans) S=v;}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderGloss(){
+  const shown=[]; SL.slice(0,S.i+1).forEach(s=>(s.terms||[]).forEach(k=>{ if(!shown.includes(k)) shown.push(k); }));
+  const fresh=SL[S.i].terms||[];
+  $("#gloss").innerHTML=`<h3>用語</h3>`+shown.slice().reverse().map(k=>`<div class="term ${fresh.includes(k)?"new":""}"><b>${TERMS[k][0]}</b><span>${TERMS[k][1]}</span></div>`).join("");
+}
+function near(a,q){ const tol=q.tol!=null?q.tol:Math.max(.001,Math.abs(q.ans)*.01); return Math.abs(a-q.ans)<=tol; }
+function qHTML(q,key){
+  const a=S.ans[key]; let h=`<p class="qt">${q.t}</p>`;
+  if(q.type==="num"){
+    h+=`<div class="qrow"><input id="inp" inputmode="decimal" value="${a?esc(a.v):""}" ${a?"disabled":""} aria-label="答え"><span class="unit">${q.unit}</span>${a?"":`<button class="btn dark" id="chk">答え合わせ</button>`}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":`正解は ${q.ans} ${q.unit} です。`}</b>${q.why}</p>`;
+  } else if(q.type==="choice"){
+    h+=`<div class="opts">${q.o.map((o,k)=>{ let c=""; if(a){ if(k===q.ans) c="ok"; else if(k===a.v) c="ng"; } return `<button class="opt ${c}" data-k="${k}" ${a?"disabled":""}>${o}</button>`; }).join("")}</div>`;
+    if(a) h+=`<p class="fb ${a.ok?"ok":"ng"}"><b>${a.ok?"正解です。":"正解は緑の答えです。"}</b>${q.why}</p>`;
+  } else {
+    h+=`<textarea id="inp" rows="3" ${a?"disabled":""} aria-label="答え">${a?esc(a.v):""}</textarea>`;
+    h+=a?`<p class="fb ex"><b>答えの例</b>${q.ex}</p>`:`<div class="qrow"><button class="btn dark" id="chk">書けた</button></div>`;
+  }
+  return h;
+}
+function render(){
+  stopAnim();
+  const s=SL[S.i], n=SL.length, el=$("#slide");
+  $("#bar").style.width=(S.i/(n-1)*100)+"%"; $("#pn").textContent=`${S.i+1} / ${n}`;
+  renderGloss();
+  const answered=!s.q||!!S.ans[S.i];
+  let main="";
+  if(s.end){
+    const qs=SL.map((x,i)=>[x,i]).filter(([x])=>x.q&&x.q.type!=="text"), ok=qs.filter(([,i])=>S.ans[i]&&S.ans[i].ok).length;
+    main=`<div class="side"><p class="txt big">遠くの車までの距離は、<b>電波</b>（ミリ波レーダー）で測ります。</p>
+      <p class="txt">計算は超音波と同じ：<b>距離 ＝ 速さ × 往復時間 ÷ 2</b>。速さが 340m/s から 3億m/s に変わるだけです。</p>
+      <p class="txt">距離だけでは安全かわかりません。<b>速さの差</b>も要ります。<b>ぶつかるまでの時間 ＝ 距離 ÷ 速さの差</b>。</p>
+      <p class="txt">これで、ACC に必要な2つのセンサがそろいました。車輪速センサ（自分の速さ）とミリ波レーダー（前の車までの距離）。次は ACC そのものを組み立てます。</p>
+      <p class="note">答えのある問題 ${qs.length}問のうち、<b>${ok}問</b> 正解しました。</p>
+      <div class="qrow"><button class="btn" id="again">最初からやり直す</button><span id="againc"></span></div></div>`;
+  } else if(s.hero){
+    main=`<div class="side" style="justify-content:center;gap:18px"><div class="hero"><span class="num">${s.hero.big}<small>${s.hero.small}</small></span></div><p class="txt big">${s.text}</p></div>`;
+  } else {
+    const right=(s.text?`<p class="txt">${s.text}</p>`:"")+(s.q?qHTML(s.q,S.i):"");
+    main=s.lab?`<div class="work"><div class="lab"><div class="cv" id="cvh"></div><div class="ctrl" id="ctrl"></div></div><div class="side" id="side">${right}</div></div>`
+              :`<div class="work solo"><div class="side" id="side" style="max-width:40em">${right}</div></div>`;
+  }
+  el.innerHTML=`<div><p class="sec">${s.sec}</p><h2>${s.title}</h2></div>${main}
+    <div class="nav"><button class="btn" id="prev" ${S.i===0?"disabled":""}>← もどる</button><span class="hint"></span>${s.end?"<span></span>":`<button class="btn ${answered?"dark":""}" id="next">次へ →</button>`}</div>`;
+  if(s.lab){ mountCanvas($("#cvh")); LABS[s.lab]($("#ctrl")); }
+  wire(s);
+  $("#prev").addEventListener("click",()=>go(S.i-1));
+  if(!s.end) $("#next").addEventListener("click",()=>go(S.i+1));
+  if(s.end) $("#again").addEventListener("click",()=>{ $("#againc").innerHTML=`<button class="btn dark" id="ay">消して最初から</button> <button class="btn" id="an">やめる</button>`; $("#ay").addEventListener("click",()=>{S={i:0,ans:{}};save();render();}); $("#an").addEventListener("click",()=>{$("#againc").innerHTML="";}); });
+}
+function rerenderQ(s){ $("#side").innerHTML=(s.text?`<p class="txt">${s.text}</p>`:"")+qHTML(s.q,S.i); $("#next").disabled=false; document.querySelector(".nav .hint").textContent=""; }
+function wire(s){
+  if(!s.q||S.ans[S.i]) return;
+  const q=s.q;
+  if(q.type==="num"){
+    const inp=$("#inp"); const run=()=>{ const raw=inp.value.trim().replace(/[０-９．]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)); if(raw===""||isNaN(+raw)){ inp.focus(); return; } S.ans[S.i]={v:raw,ok:near(+raw,q)}; save(); rerenderQ(s); };
+    $("#chk").addEventListener("click",run); inp.addEventListener("keydown",e=>{ if(e.key==="Enter") run(); });
+  } else if(q.type==="choice"){
+    document.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{ const k=+b.dataset.k; S.ans[S.i]={v:k,ok:k===q.ans}; save(); rerenderQ(s); }));
+  } else {
+    $("#chk").addEventListener("click",()=>{ const v=$("#inp").value.trim(); if(!v){ $("#inp").focus(); return; } S.ans[S.i]={v,ok:true}; save(); rerenderQ(s); });
+  }
+}
+function go(i){ S.i=Math.max(0,Math.min(SL.length-1,i)); save(); render(); }
+document.addEventListener("keydown",e=>{ if(e.target.closest("input,textarea")) return; const nx=$("#next"); if(e.key==="ArrowRight"&&nx&&!nx.disabled) go(S.i+1); if(e.key==="ArrowLeft"&&S.i>0) go(S.i-1); });
+render();
+})();
+</script>
+</body>
+</html>
