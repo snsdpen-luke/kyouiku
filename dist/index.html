@@ -113,6 +113,13 @@ const TERMS={
   psen:["超音波センサ","超音波を出して、返ってくるまでの時間から距離を測る部品です。車ではバンパーの丸い部分です。"],
   vt:["音速と気温","音速は気温が高いほど速くなります。音速 ≒ 331.5 ＋ 0.6 × 気温（m/s）。0℃で約331m/s、30℃で約350m/s です。"],
   ring:["残響（ざんきょう）","音を出したあと、振動板がしばらく震え続けることです。この間は返ってきた音を聞き分けられません。"],
+  tof:["飛行時間（TOF）","Time of Flight。音や電波が出てから返ってくるまでの時間のことです。往復時間と同じ意味で、センサの説明書ではこう書かれます。"],
+  trig:["トリガー（Trig）","「今、音を出せ」という合図の信号です。Arduino の超音波センサでは Trig ピンに 10µs の信号を入れると、超音波が出ます。"],
+  echo2:["エコー（Echo）","センサが「音を出してから返ってくるまで」ON にする信号です。この ON の長さ（パルス幅）がそのまま往復時間です。"],
+  pw:["パルス幅","信号が ON になっている時間の長さです。Echo のパルス幅 ＝ 往復時間。Arduino では pulseIn() で µs 単位で測れます。"],
+  txrx:["送信・受信（送受一体）","音を出す部品が送信（Tx）、聞く部品が受信（Rx）です。車の駐車センサは 1 枚の板で両方をするので「送受一体」です。"],
+  dir:["指向性","音や電波が、どのくらい狭い方向にまとまって出るかです。高い音ほど指向性が強く、まっすぐ飛びます。"],
+  att:["減衰（げんすい）","音や電波が進むうちに弱くなることです。広がる分と、空気に吸われる分があります。高い音ほど空気に吸われやすいです。"],
   ms:["ミリ秒（ms）","1000分の1秒です。1ms＝0.001秒。6ms＝0.006秒です。"]
 };
 const VS=340; /* この教材での音速 m/s */
@@ -252,7 +259,42 @@ function tempLab(ctrl){
 }
 function box(x,y,w,h,label,big,small,color){ ctx.fillStyle=C("--sheet"); ctx.fillRect(x,y,w,h); ctx.strokeStyle=C("--line"); ctx.strokeRect(x,y,w,h); txt(label,x+10,y+14,12,C("--mute"),"left"); txt(big,x+w-10,y+h*.55,20,color||C("--ink"),"right",true); if(small) txt(small,x+w-10,y+h-11,11,C("--mute"),"right",true); }
 
+/* ---------- Trig / Echo タイミング図 ---------- */
+function timingLab(ctrl){
+  ctrl.innerHTML=`<label>壁までの距離 <input type="range" id="ds" min="0.05" max="0.5" step="0.01" value="0.1"></label><span class="read" id="dv"></span>`;
+  let d=0.1, t=0;
+  const upd=()=>{ $("#dv").textContent=`${Math.round(d*100)} cm`; };
+  $("#ds").addEventListener("input",e=>{d=+e.target.value;upd();}); upd();
+  startAnim(dt=>{
+    const rt=2*d/VS*1e6; /* µs */
+    const span=3500; /* µs shown */
+    t=(t+dt*600)%(span+800); /* sweeping cursor, µs */
+    const gx=W*.16, gw=W*.8, rows=[["Trig",H*.2],["超音波",H*.43],["Echo",H*.66]], rh=H*.15;
+    const X=us=>gx+gw*us/span;
+    rows.forEach(([n,y])=>{ txt(n,gx-10,y+rh/2,13,C("--ink"),"right"); ctx.strokeStyle=C("--line"); ctx.beginPath(); ctx.moveTo(gx,y+rh); ctx.lineTo(gx+gw,y+rh); ctx.stroke(); });
+    const t0=200, pulse=10, burst=200; /* µs */
+    const b0=t0+pulse, e0=b0+burst, e1=e0+rt;
+    const vis=us=>us<=t;
+    function sq(y,a,b,color){ const x1=X(a), x2=X(Math.min(b,t)); if(!vis(a)) return; ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(gx,y+rh); ctx.lineTo(x1,y+rh); ctx.lineTo(x1,y+rh*.2); ctx.lineTo(x2,y+rh*.2); if(t>=b){ ctx.lineTo(x2,y+rh); ctx.lineTo(X(Math.min(t,span)),y+rh);} ctx.stroke(); }
+    function flat(y,color,upto){ ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(gx,y+rh); ctx.lineTo(X(Math.min(t,upto)),y+rh); ctx.stroke(); }
+    /* Trig */
+    if(t<t0) flat(rows[0][1],C("--amber"),t0); else sq(rows[0][1],t0,t0+pulse,C("--amber"));
+    txt("10µs",X(t0+pulse)+6,rows[0][1]+rh*.2,11,C("--amber"),"left",true);
+    /* burst out */
+    if(t<b0) flat(rows[1][1],C("--ink"),b0); else { ctx.strokeStyle=C("--ink"); ctx.lineWidth=1.5; ctx.beginPath(); for(let u=0;u<=Math.min(t,span)-0;u+=4){ const on=u>=b0&&u<b0+burst; const back=u>=e0+rt&&u<e0+rt+burst; const amp=on?rh*.4:back?rh*.18:0; const y=rows[1][1]+rh*.55+(amp?Math.sin(u*1.2)*amp:0); if(u===0) ctx.moveTo(X(u),y); else ctx.lineTo(X(u),y);} ctx.stroke(); }
+    txt("出した音（8回）",X(b0),rows[1][1]-4,11,C("--mute"),"left"); if(t>e0+rt) txt("返ってきた音",X(e0+rt),rows[1][1]-4,11,C("--teal"),"left");
+    /* Echo */
+    if(t<e0) flat(rows[2][1],C("--teal"),e0); else sq(rows[2][1],e0,Math.max(e1,e0+1),C("--teal"));
+    if(t>e0){ ctx.strokeStyle=C("--bad"); ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(X(e0),rows[2][1]+rh*.2-6); ctx.lineTo(X(Math.min(t,e1)),rows[2][1]+rh*.2-6); ctx.stroke(); ctx.setLineDash([]); }
+    box(W*.52,8,W*.44,52,"Echo のパルス幅（往復時間）",t>=e1?`${Math.round(e1-e0)} µs`:`${Math.max(0,Math.round(Math.min(t,e1)-e0))} µs`,"",t>=e1?C("--teal"):C("--amber"));
+    /* cursor */
+    ctx.strokeStyle=C("--mute"); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(X(Math.min(t,span)),H*.17); ctx.lineTo(X(Math.min(t,span)),H*.84); ctx.stroke();
+    txt("時間 →（µs）",gx+gw,H*.9,11,C("--mute"),"right");
+  });
+}
+
 const LABS={
+  timing:timingLab,
   bat(ctrl){ echoLab(ctrl,{bat:true,maxD:4,init:2}); },
   echo(ctrl){ echoLab(ctrl,{timer:true,maxD:4,init:1}); },
   range(ctrl){ echoLab(ctrl,{timer:true,weak:true,maxD:8,init:2}); },
@@ -268,7 +310,7 @@ const SL=[
  {sec:"観察",title:"コウモリは目で見ていない",lab:"bat",terms:["echo"],
   text:"コウモリは暗い中でも壁にぶつかりません。口から音を出して、壁に<b>反射</b>して返ってきた音を聞いています。「音を出す」を押して、音の行き帰りを見てみましょう。",
   q:{type:"choice",t:"壁を遠くにすると、音が返ってくるまでの時間はどうなりますか。",o:["長くなる","短くなる","変わらない"],ans:0,why:"音は決まった速さで進むので、遠いほど行き帰りに時間がかかります。コウモリはこの時間の長さで「遠いか近いか」を知っています。"}},
- {sec:"観察",title:"返ってくるまでの時間を読む",lab:"echo",terms:["rt","ms"],
+ {sec:"観察",title:"返ってくるまでの時間を読む",lab:"echo",terms:["rt","ms","tof"],
   text:"コウモリの代わりに、センサに音を出させます。右上のストップウォッチが<b>往復時間</b>です。壁を 1m にして「音を出す」を押し、時間を読んでください。",
   q:{type:"num",t:"壁まで 1m のとき、往復時間は何 ms でしたか。",unit:"ms",ans:5.9,tol:.2,why:"約 5.9ms（0.0059秒）です。音はとても速いので、1mでも 100分の1秒かかりません。だからスロー再生で見ています。"}},
  {sec:"観察",title:"距離を2倍にすると？",lab:"echo",
@@ -282,12 +324,15 @@ const SL=[
   q:{type:"choice",t:"では、壁までの距離は何mですか。",o:["1.02m（2.04 ÷ 2）","2.04m（そのまま）","4.08m（2.04 × 2）"],ans:0,why:"音は壁まで「行って」から「帰って」きます。進んだ道のり 2.04m は行きと帰りの合計なので、壁までの距離はその半分の 1.02m です。<br><b>距離 ＝ 音速 × 往復時間 ÷ 2</b>"}},
  {sec:"計算",title:"逆に、時間を求める",
   q:{type:"num",t:"壁までの距離が 3m のとき、往復時間は何 ms ですか。（音速 340m/s）",unit:"ms",ans:17.6,tol:.3,why:"3 × 2 ÷ 340 ＝ 0.0176秒 ＝ 約 17.6ms です。「×2」を忘れると 8.8ms になってしまいます。"}},
- {sec:"車のセンサ",title:"駐車センサになってみる",lab:"parking",terms:["us","psen"],
+ {sec:"車のセンサ",title:"駐車センサになってみる",lab:"parking",terms:["us","psen","txrx"],
   text:"車の後ろのバンパーには、丸い<b>超音波センサ</b>が4つくらい付いています。人に聞こえない高い音（<b>超音波</b>）を出し続けて、返ってくる時間から壁までの距離を測っています。スライダーで車を後ろに下げてみましょう。",
   q:{type:"choice",t:"壁に近づくと、運転手に聞かせる「ピッピッ」はどうなりますか。",o:["間隔が短くなり、最後は鳴りっぱなしになる","間隔が長くなる","音が低くなる"],ans:0,why:"センサが測った距離が短くなるほど、車は「ピッ」の間隔を短くして運転手に知らせます。これが制御の「出力」です。入力はセンサの時間、出力は音の間隔です。"}},
- {sec:"車のセンサ",title:"なぜ聞こえない音を使う？",
+ {sec:"車のセンサ",title:"Arduino のセンサで言うと",lab:"timing",terms:["trig","echo2","pw"],
+  text:"Arduino で使った超音波センサ（HC-SR04）も、中身は同じです。<b>Trig</b> ピンに合図を入れると超音波が出て、<b>Echo</b> ピンが ON になります。返ってきた音を受けると Echo が OFF になります。Echo が ON だった長さ（<b>パルス幅</b>）が、そのまま往復時間です。壁を 10cm にして、Echo の幅を読んでください。",
+  q:{type:"num",t:"Echo が 580µs（0.00058秒）ON でした。壁までの距離は何 cm ですか。（音速 340m/s）",unit:"cm",ans:9.9,tol:.3,why:"340 × 0.00058 ÷ 2 ＝ 0.0986m ＝ 約 9.9cm です。説明書にある「距離(cm) ＝ 時間(µs) ÷ 58」も同じ計算です（580 ÷ 58 ＝ 10）。"}},
+ {sec:"車のセンサ",title:"なぜ聞こえない音を使う？",terms:["dir"],
   q:{type:"choice",t:"駐車センサが、人に聞こえない超音波（約 40kHz）を使うのはなぜだと思いますか。",o:["人にうるさくなく、高い音ほどまっすぐ狙った方向に出せるから","聞こえない音のほうが速く進むから","聞こえない音のほうが遠くまで届くから"],ans:0,why:"音の速さは高さで変わりません（どんな高さでも約340m/s）。高い音ほど広がりにくく、狙った方向にまっすぐ出せます。遠くへ届くのはむしろ低い音のほうです。"}},
- {sec:"どこまで測れる？",title:"壁を遠ざけていくと？",lab:"range",
+ {sec:"どこまで測れる？",title:"壁を遠ざけていくと？",lab:"range",terms:["att"],
   text:"壁を少しずつ遠くにして、そのたびに「音を出す」を押してください。返ってくる音（緑）の濃さを見てください。",
   q:{type:"num",t:"何 m より遠くすると、往復時間が読めなくなりましたか。",unit:"m",ans:5,tol:.3,why:"この教材では 5m です。音は遠くへ行くほど広がって弱くなり、返ってきた音が小さすぎて読めなくなります。本物の駐車センサもだいたい数m までです（何mかは車によってちがいます）。"}},
  {sec:"条件が変わったら",title:"音速は本当に「決まっている」？",lab:"temp",terms:["vt"],
@@ -320,7 +365,7 @@ const SL=[
  {sec:"まとめ",title:"今日わかったこと",end:true}
 ];
 
-const KEY="distance-1-v2";
+const KEY="distance-1-v3";
 let S={i:0,ans:{}};
 try{const v=JSON.parse(localStorage.getItem(KEY)||"null"); if(v&&v.ans) S=v;}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
