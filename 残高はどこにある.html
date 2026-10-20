@@ -17,22 +17,15 @@
   --f-body:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
   --f-led:"DotGothic16","BIZ UDPGothic",monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --paper:#11151c; --panel:#19202a; --ink:#e7eaef; --sub:#9aa3b1; --line:#2c3441;
-  --accent:#55b6d2; --accent-soft:#1d3440; --mark:#d9b02a; --ok:#4cc38a; --ng:#f07a4a;
-  --led-bg:#0a0d12; --led:#ffb52e; --led-dim:#7a5e28; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --paper:#11151c; --panel:#19202a; --ink:#e7eaef; --sub:#9aa3b1; --line:#2c3441;
-  --accent:#55b6d2; --accent-soft:#1d3440; --mark:#d9b02a; --ok:#4cc38a; --ng:#f07a4a;
-  --led-bg:#0a0d12; --led:#ffb52e; --led-dim:#7a5e28; color-scheme:dark}
+:root{color-scheme:light}
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
-#fit{position:absolute;inset:0;display:grid;place-items:center}
-.stage{width:1024px;height:768px;transform-origin:center;display:grid;grid-template-columns:1fr 240px;grid-template-rows:1fr 56px;
+#fit{position:fixed;inset:0;overflow:hidden;background:var(--paper)}
+.stage{position:absolute;left:0;top:0;width:1024px;height:768px;transform-origin:0 0;display:grid;grid-template-columns:1fr 240px;grid-template-rows:1fr 56px;
   background:var(--paper);border:1px solid var(--line);flex:none}
 main{position:relative;overflow:hidden}
-.slide{position:absolute;inset:0;padding:22px 30px 16px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
+.slide{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:22px 30px 16px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
 .slide[hidden]{display:none!important}
 .eyebrow{display:flex;gap:10px;align-items:center;font-size:14px;font-weight:700;color:var(--accent);letter-spacing:.06em}
 .lv{font-family:var(--f-led);font-size:13px;letter-spacing:0;background:var(--led-bg);color:var(--led);border-radius:4px;padding:2px 8px}
@@ -915,17 +908,19 @@ const TERMS={
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait=ms=>new Promise(r=>setTimeout(r,reduce?1:ms));
-function fit(){const s=Math.min(innerWidth/1026,innerHeight/770);$('#stage').style.transform=`scale(${s})`}
-addEventListener('resize',fit);fit();
+function fit(){const v=window.visualViewport;const w=v?v.width:innerWidth,h=v?v.height:innerHeight;const s=Math.min(w/1024,h/768);const x=(w-1024*s)/2,y=(h-768*s)/2;$('#stage').style.transform=`translate(${x}px,${y}px) scale(${s})`}
+addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,300));if(window.visualViewport)visualViewport.addEventListener('resize',fit);fit();
 /* nav */
 const slides=$$('.slide');let cur=0;
-function show(i){cur=Math.max(0,Math.min(slides.length-1,i));slides.forEach((s,k)=>s.hidden=k!==cur);
+function show(i){cur=Math.max(0,Math.min(slides.length-1,i));slides.forEach((s,k)=>s.hidden=k!==cur);slides[cur].scrollTop=0;
  $('#pageNo').textContent=`${cur+1} / ${slides.length}`;$('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1;
  const lv=+slides[cur].dataset.lv;$$('#ladder i').forEach((x,k)=>x.classList.toggle('on',k<lv));
  const t=(slides[cur].dataset.terms||'').split(',').filter(Boolean);
  $('#terms').innerHTML=t.map(k=>`<div class="term"><b>${k}</b><span>${TERMS[k]||''}</span></div>`).join('');
  if(slides[cur].querySelector('#cmpBody'))fillCmp();}
 $('#prev').onclick=()=>show(cur-1);$('#next').onclick=()=>show(cur+1);
+let tx0=null,ty0=null;$('#main').addEventListener('touchstart',e=>{if(e.target.closest('input,textarea,select,button,svg'))return;tx0=e.touches[0].clientX;ty0=e.touches[0].clientY},{passive:true});
+$('#main').addEventListener('touchend',e=>{if(tx0===null)return;const dx=e.changedTouches[0].clientX-tx0,dy=e.changedTouches[0].clientY-ty0;tx0=null;if(Math.abs(dx)>80&&Math.abs(dx)>Math.abs(dy)*2)show(cur+(dx<0?1:-1))},{passive:true});
 addEventListener('keydown',e=>{if(e.target.matches('textarea,input,select'))return;if(e.key==='ArrowRight')show(cur+1);if(e.key==='ArrowLeft')show(cur-1)});
 /* think → reveal */
 $$('[data-think]').forEach(ta=>{const sec=ta.closest('.think');const b=sec.querySelector('[data-reveal]');ta.addEventListener('input',()=>{if(b)b.disabled=ta.value.trim().length<2})});
