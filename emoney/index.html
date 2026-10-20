@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0;font-size:14px}img{max-width:100%}</style>
+<title>残高はどこにある？</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=DotGothic16&display=swap">
+<style>
+/* 4:3 stage (1024x768) scaled to fit. Left: slide body. Right: 用語 panel. Bottom: nav. Station-signage look: ink, paper, amber LED numbers. */
+:root{
+  --paper:#f3f5f1; --panel:#ffffff; --ink:#1c2331; --sub:#5a6374; --line:#d3d8dd;
+  --accent:#0d6b86; --accent-soft:#dcecf1; --mark:#ffd84a; --ok:#23845a; --ng:#c24414;
+  --led-bg:#121720; --led:#ffae1f; --led-dim:#8a6a2c;
+  --f-body:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  --f-led:"DotGothic16","BIZ UDPGothic",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11151c; --panel:#19202a; --ink:#e7eaef; --sub:#9aa3b1; --line:#2c3441;
+  --accent:#55b6d2; --accent-soft:#1d3440; --mark:#d9b02a; --ok:#4cc38a; --ng:#f07a4a;
+  --led-bg:#0a0d12; --led:#ffb52e; --led-dim:#7a5e28; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#11151c; --panel:#19202a; --ink:#e7eaef; --sub:#9aa3b1; --line:#2c3441;
+  --accent:#55b6d2; --accent-soft:#1d3440; --mark:#d9b02a; --ok:#4cc38a; --ng:#f07a4a;
+  --led-bg:#0a0d12; --led:#ffb52e; --led-dim:#7a5e28; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
+#fit{position:absolute;inset:0;display:grid;place-items:center}
+.stage{width:1024px;height:768px;transform-origin:center;display:grid;grid-template-columns:1fr 240px;grid-template-rows:1fr 56px;
+  background:var(--paper);border:1px solid var(--line);flex:none}
+main{position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;padding:22px 30px 16px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
+.slide[hidden]{display:none!important}
+.eyebrow{display:flex;gap:10px;align-items:center;font-size:14px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+.lv{font-family:var(--f-led);font-size:13px;letter-spacing:0;background:var(--led-bg);color:var(--led);border-radius:4px;padding:2px 8px}
+h1{font-size:44px;line-height:1.25;margin:0;text-wrap:balance}
+h2{font-size:25px;line-height:1.35;margin:0;text-wrap:balance}
+p{margin:0;font-size:17px;line-height:1.65}
+.sub{color:var(--sub)}
+.small{font-size:13.5px;color:var(--sub);line-height:1.55}
+aside{border-left:1px solid var(--line);background:var(--panel);padding:20px 16px;overflow:auto}
+aside h3{margin:0 0 12px;font-size:13px;letter-spacing:.12em;color:var(--sub)}
+.term{margin-bottom:13px}
+.term b{display:block;font-size:15px;margin-bottom:2px;color:var(--accent)}
+.term span{font-size:13.5px;line-height:1.55}
+nav{grid-column:1/3;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--panel)}
+.ladder{display:flex;gap:4px}
+.ladder i{width:34px;height:8px;border-radius:2px;background:var(--line)}
+.ladder i.on{background:var(--accent)}
+.btn{font:inherit;font-size:15px;font-weight:700;border:2px solid var(--accent);background:var(--accent);color:var(--panel);border-radius:8px;padding:7px 16px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+#pageNo{font-family:var(--f-led);font-size:18px;color:var(--sub);font-variant-numeric:tabular-nums}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* think box */
+.think{display:flex;flex-direction:column;gap:6px;border:2px dashed var(--accent);border-radius:10px;padding:10px 12px;background:var(--accent-soft)}
+.think label{font-weight:700;font-size:14.5px}
+textarea{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;background:var(--panel);color:var(--ink);resize:none;height:52px}
+.answer{border-left:5px solid var(--mark);background:var(--panel);padding:10px 14px;border-radius:0 8px 8px 0;display:flex;flex-direction:column;gap:4px}
+.answer p{font-size:16px}
+.hl{background:linear-gradient(transparent 55%,var(--mark) 55%);font-weight:700}
+/* cover */
+.cover{justify-content:center;gap:20px}
+.led{font-family:var(--f-led);background:var(--led-bg);color:var(--led);border-radius:8px;padding:12px 20px;display:inline-flex;gap:18px;align-items:baseline;width:fit-content;font-size:22px}
+.led big{font-size:54px;letter-spacing:.04em}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.levels div{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:10px 12px;font-size:15px}
+.levels b{display:block;font-family:var(--f-led);font-weight:400;color:var(--accent);font-size:14px}
+/* boxes */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.box{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.box b{font-size:17px}
+/* order game */
+.order{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.order button{font:inherit;font-size:17px;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:16px 8px;cursor:pointer;position:relative}
+.order button .n{position:absolute;top:6px;left:8px;font-family:var(--f-led);color:var(--accent);font-size:16px}
+.order button.done{border-color:var(--accent)}
+.tl{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:4px solid var(--accent);margin-top:6px}
+.tl div{padding:8px 8px 0;border-left:1px dashed var(--line);font-size:14.5px;line-height:1.5}
+.tl b{font-family:var(--f-led);font-weight:400;font-size:18px;color:var(--accent);display:block}
+/* sorting */
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font:inherit;font-size:14.5px;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:20px;padding:5px 13px;cursor:pointer}
+.chip.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chip.right{border-color:var(--ok);color:var(--ok)}
+.chip.wrong{border-color:var(--ng);color:var(--ng);text-decoration:line-through}
+.buckets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1;min-height:0}
+.bucket{border:2px solid var(--line);border-radius:10px;background:var(--panel);padding:10px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+.bucket h4{margin:0;font-size:17px}
+.bucket .when{font-size:13px;color:var(--sub)}
+.bdesc{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin:0;font-size:12.5px;line-height:1.45;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.bdesc dt{color:var(--sub);font-weight:700}.bdesc dd{margin:0}
+.bucket .in{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+/* predict */
+.prow{display:grid;grid-template-columns:220px 1fr;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.prow b{font-size:18px}
+select{font:inherit;font-size:16px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+/* simulator */
+.seg{display:inline-flex;border:2px solid var(--accent);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:14.5px;font-weight:700;border:0;background:transparent;color:var(--accent);padding:6px 12px;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--panel)}
+.switch{font:inherit;font-size:14.5px;font-weight:700;border:2px solid var(--ok);color:var(--ok);background:var(--panel);border-radius:20px;padding:5px 14px;cursor:pointer}
+.switch.off{border-color:var(--ng);color:var(--ng)}
+svg text{font-family:var(--f-body)}
+.simsvg{width:100%;height:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;display:block}
+.n-box{fill:var(--paper);stroke:var(--line);stroke-width:2}
+.n-title{fill:var(--ink);font-size:13px;font-weight:700}
+.n-sub{fill:var(--sub);font-size:11px}
+.n-num{fill:var(--ink);font-size:16px;font-family:var(--f-led)!important}
+.flash{animation:fl 1.1s ease-out}
+@keyframes fl{0%{fill:var(--ng)}100%{fill:var(--ink)}}
+.wire{stroke:var(--line);stroke-width:3;fill:none}
+.wire.cut{stroke:var(--ng);stroke-dasharray:6 6}
+.trail{stroke:var(--ok);stroke-width:6;fill:none;stroke-linecap:round}
+.simwrap{position:relative}
+.ov-method{position:absolute;left:0;top:1%;background:var(--panel)}
+.ov-method button{font-size:13px;padding:6px 10px}
+.ov-net{position:absolute;left:41%;right:0;top:1%}
+.ov-pay{position:absolute;left:0.5%;top:76%;width:21%;display:flex;flex-direction:column;gap:6px}
+.ov-pay .btn{font-size:14px;padding:5px 8px}
+.netbar{font:inherit;display:flex;align-items:center;gap:10px;border:2px solid var(--ok);background:var(--panel);color:var(--ok);border-radius:10px;padding:6px 14px;cursor:pointer;font-size:16px;font-weight:700}
+.netbar i{width:14px;height:14px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px var(--accent-soft);flex:none}
+.netbar small{margin-left:auto;font-size:12px;font-weight:400;color:var(--sub)}
+.netbar.off{border-color:var(--ng);color:var(--ng);border-style:dashed}
+.netbar.off i{background:var(--ng)}
+.log{font-size:14px;line-height:1.55;background:var(--led-bg);color:var(--led);font-family:var(--f-led);border-radius:8px;padding:8px 12px;height:92px;overflow:hidden}
+.log div:not(:first-child){color:var(--led-dim)}
+/* anatomy & steps */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.part{opacity:.35;transition:opacity .3s}
+.part.on{opacity:1}
+.partbtns{display:flex;gap:8px;flex-wrap:wrap}
+.steplist{display:flex;flex-direction:column;gap:5px}
+.st{border:1px solid var(--line);border-radius:8px;padding:6px 11px;background:var(--panel);opacity:.45;transition:opacity .3s}
+.st.on{opacity:1;border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
+.st b{font-size:15px}.st p{font-size:13.5px;line-height:1.5}
+/* lockers */
+.rooms{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.room{border:2px solid var(--line);border-radius:10px;background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+#cMore p{font-size:14px;line-height:1.5}
+.cond{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 10px}
+.cond .cr{display:grid;grid-template-columns:120px 56px 1fr;gap:6px;align-items:center;font-size:14.5px}
+.cond output{font-family:var(--f-led);font-size:17px}
+.cond .small{font-size:12px;line-height:1.4}
+.res12{display:flex;flex-direction:column;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.r12row{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto 26px;column-gap:10px;align-items:center}
+.r12row .r12k{grid-row:1/3;font-weight:700;font-size:20px}
+.r12row i{display:block;height:26px;border-radius:4px;background:var(--accent);grid-column:2;grid-row:2}
+.r12row i.qr{background:var(--ng)}
+.r12row b{grid-column:2;grid-row:2;justify-self:end;font-family:var(--f-led);font-weight:400;font-size:22px}
+.cardnum{display:flex;gap:14px;justify-content:center;font-family:var(--f-led);font-size:32px;background:var(--led-bg);border-radius:12px;padding:10px}
+.cardnum .g{display:flex;gap:2px}
+.cardnum span{width:24px;text-align:center;border-bottom:5px solid transparent;color:var(--led)}
+.cardnum span.c1{border-color:#e0533d}.cardnum span.c2{border-color:#3fa7d6}.cardnum span.c3{border-color:#9aa3b1}.cardnum span.c4{border-color:#f2c12e}
+.cardnum span.chg{color:#ff6b6b}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:13px}
+.legend i{display:inline-block;width:16px;height:6px;margin-right:6px;vertical-align:middle;border-radius:2px}
+.legend i.c1{background:#e0533d}.legend i.c2{background:#3fa7d6}.legend i.c3{background:#9aa3b1}.legend i.c4{background:#f2c12e}
+.cnres{font-weight:700;font-size:15px}
+#cnCalc{min-height:0;font-size:14px}
+.fraud{table-layout:fixed}.fraud td,.fraud th{font-size:14.5px;padding:5px 10px}.fraud th:nth-child(1){width:110px}.fraud th:nth-child(2){width:200px}.fraud th:nth-child(3){width:90px}
+.fraud tr.sel2 td{background:var(--accent-soft)}
+.fraud button{font:inherit;font-size:14px;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:16px;padding:3px 12px;cursor:pointer}
+.fraud tr.sel2 button{border-color:var(--accent);color:var(--accent);font-weight:700}
+.fraud td.why{font-size:13px;color:var(--sub)}
+.flsvg{flex:none}
+#flCRtext{min-height:76px}
+#s12a,#s12b{font-size:14px;padding:3px 4px}
+#qrMode small{font-weight:400;font-size:12px}
+.t12 th,.t12 td{font-size:13.5px;padding:5px 8px}
+.intro12{display:flex;flex-direction:column;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px}.intro12 p{font-size:14.5px;line-height:1.6}
+.keytbl td,.keytbl th{font-size:17px;padding:10px 14px}.keytbl td.r,.keytbl td.w{text-align:center;font-size:19px}
+.room h4{margin:0;font-size:16px}
+.room .data{font-family:var(--f-led);background:var(--led-bg);color:var(--led);border-radius:6px;padding:6px 10px;font-size:15px;min-height:46px}
+.room.ok{border-color:var(--ok)}.room.ng{border-color:var(--ng)}
+/* calc */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rng{display:grid;grid-template-columns:140px 1fr 70px;gap:8px;align-items:center;font-size:14.5px}
+.rng output{font-family:var(--f-led);font-size:17px;text-align:right}
+input[type=range]{accent-color:var(--accent);width:100%}
+input[type=number]{font:inherit;font-size:17px;width:90px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:40px 1fr 80px;gap:8px;align-items:center;font-size:15px}
+.bar i{display:block;height:20px;border-radius:4px;background:var(--accent);width:0;transition:width .8s}
+.bar i.qr{background:var(--ng)}
+.bar span{font-family:var(--f-led);font-size:17px;text-align:right}
+.mono{font-family:var(--f-led);font-size:15.5px}
+.steps-calc{font-size:14.5px;line-height:1.7}
+/* table */
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft)}
+td.r{color:var(--ok);font-weight:700}td.w{color:var(--ng);font-weight:700}
+.pick{display:flex;gap:12px}
+.pick button{flex:1;font:inherit;font-size:15px;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:10px;cursor:pointer;text-align:left;line-height:1.5}
+.pick button.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+/* flow */
+.fl-node{fill:var(--paper);stroke:var(--line);stroke-width:2}
+.fl-node.act{stroke:var(--accent);stroke-width:3}
+.fl-arrow{stroke:var(--line);stroke-width:2.5;fill:none;opacity:.25}
+.fl-arrow.past{opacity:.7;stroke:var(--sub)}
+.fl-arrow.act{opacity:1;stroke:var(--accent);stroke-width:3.5}
+.fl-num{fill:var(--panel);stroke:var(--line);stroke-width:2;opacity:.25}
+.fl-num.past,.fl-num.act{opacity:1}
+.fl-num.act{stroke:var(--accent);fill:var(--mark)}
+.fl-numt{font-size:11px;font-weight:700;fill:var(--ink);opacity:.3}
+.fl-numt.past,.fl-numt.act{opacity:1}
+.fl-text{min-height:58px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:15.5px;line-height:1.6}
+.fl-text b{color:var(--accent)}
+/* scenario table */
+.sc select{font-size:14px;padding:3px 4px}
+/* quiz */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.q{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--panel)}
+.q p{font-size:14.5px;font-weight:700;margin-bottom:5px;line-height:1.5}
+.opts{display:flex;flex-wrap:wrap;gap:5px}
+.opts button{font:inherit;font-size:13px;border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:4px 8px;cursor:pointer;text-align:left}
+.opts button.right{border-color:var(--ok);color:var(--ok);font-weight:700}
+.opts button.wrong{border-color:var(--ng);color:var(--ng)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div id="fit"><div class="stage" id="stage">
+<main id="main">
+
+<!-- 1 cover -->
+<section class="slide cover" data-lv="0" data-terms="電子マネー,残高,キャッシュレス決済">
+  <div class="eyebrow">コンピュータシステム技術　電子マネー ①</div>
+  <h1>電子マネーの残高は、<br>どこに書いてある？</h1>
+  <div class="led"><span>残額</span><big>¥1,234</big></div>
+  <p class="sub">改札にタッチすると出る、この数字。今日は4つの段階で、だんだん深く調べます。</p>
+  <div class="levels">
+    <div><b>STEP 1</b>身近なところ</div>
+    <div><b>STEP 2</b>しくみ</div>
+    <div><b>STEP 3</b>カードの中</div>
+    <div><b>STEP 4</b>システムの構造</div>
+  </div>
+</section>
+
+<!-- 2 history -->
+<section class="slide" data-lv="1" data-terms="キャッシュレス決済,クレジットカード,デビットカード,電子マネー,コード決済">
+  <div class="eyebrow"><span class="lv">STEP 1</span>身近なところ　キャッシュレス決済の4つの仲間</div>
+  <h2>現金を使わない払い方は、大きく4つ。<br>始まった順に並べられる？</h2>
+  <p class="small">古いと思う順にタップしてください。</p>
+  <div class="order" id="order"></div>
+  <div class="row"><button class="btn" id="ordCheck" disabled>答え合わせ</button><button class="btn ghost" id="ordReset">やり直す</button><span class="small" id="ordMsg"></span></div>
+  <div id="ordAns" hidden>
+    <div class="tl">
+      <div><b>1960年代</b>クレジットカード<br><span class="small">長いあいだ、キャッシュレスといえばこれだけ</span></div>
+      <div><b>1990年代末</b>デビットカード<br><span class="small">銀行のキャッシュカードで払える</span></div>
+      <div><b>2000年代</b>電子マネー<br><span class="small">Suica・Edy・nanaco・WAON など</span></div>
+      <div><b>2010年代</b>コード決済<br><span class="small">PayPay など。スマホが広まってから</span></div>
+    </div>
+    <p class="small" style="margin-top:8px">電子マネーは、スマホより前に生まれました。だから「カード」の形から始まっています。この順番は、あとで大事なヒントになります。</p>
+  </div>
+</section>
+
+<!-- 3 cash vs record -->
+<section class="slide" data-lv="1" data-terms="電子マネー,残高,チャージ">
+  <div class="eyebrow"><span class="lv">STEP 1</span>問い ①</div>
+  <h2>100円玉が入った財布と、残高100円のSuica。<br>両方とも落としてしまいました。</h2>
+  <div class="two">
+    <div class="box">
+      <svg viewBox="0 0 120 90" width="130" aria-label="100円玉"><circle cx="60" cy="45" r="36" fill="var(--line)" stroke="var(--sub)" stroke-width="3"/><text x="60" y="54" text-anchor="middle" font-size="26" font-weight="700" fill="var(--ink)">100</text></svg>
+      <b>財布の100円玉</b>
+    </div>
+    <div class="box">
+      <svg viewBox="0 0 160 90" width="170" aria-label="ICカード"><rect x="10" y="8" width="140" height="74" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="3"/><rect x="24" y="30" width="26" height="20" rx="3" fill="var(--mark)"/><text x="138" y="70" text-anchor="end" font-size="13" fill="var(--sub)">IC CARD</text></svg>
+      <b>Suicaの「残高100円」</b>
+    </div>
+  </div>
+  <p><b>お金がもどってくることがあるのは、どっち？</b>　<span class="small">（Suicaは名前を登録してあるものとします）</span></p>
+  <div class="pick" id="pick3">
+    <button data-p="coin"><b>A　財布の100円玉</b></button>
+    <button data-p="suica"><b>B　Suicaの残高100円</b></button>
+  </div>
+  <div class="think">
+    <label for="t3">そう思った理由を1行で</label>
+    <textarea id="t3" data-think placeholder="〜だから、もどってくる（もどってこない）"></textarea>
+    <button class="btn" data-reveal="a3" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a3" hidden>
+    <p>答えは <b>B</b>。名前を登録したSuicaは、駅で手続きすると<span class="hl">残高が入った新しいカード</span>を作ってもらえます。</p>
+    <p>なぜできるのか。Suicaの100円は、お金そのものではなく<span class="hl">「残高 100」という数字の記録</span>だからです。会社にも同じ記録があるので、新しいカードに書き直せます。100円玉は物そのものなので、なくしたら終わりです。</p>
+    <p class="small">だから大事なのは「その記録はどこにあって、だれが書きかえるのか」。今日はこれを調べていきます。</p>
+  </div>
+</section>
+
+<!-- 4 timing -->
+<section class="slide" data-lv="1" data-terms="前払い,後払い,デビットカード,クレジットカード">
+  <div class="eyebrow"><span class="lv">STEP 1</span>ワーク　払うタイミングで分けよう</div>
+  <h2>お金が減るのは「いつ」？　カードを選んで箱をタップ</h2>
+  <div class="chips" id="sortChips"></div>
+  <div class="buckets" id="sortBuckets">
+    <div class="bucket" data-b="pre"><h4>前払い</h4><div class="when">お金が減るのは「使う前」</div><div class="in"></div></div>
+    <div class="bucket" data-b="now"><h4>その場で払う</h4><div class="when">お金が減るのは「使った瞬間」</div><div class="in"></div></div>
+    <div class="bucket" data-b="post"><h4>後払い</h4><div class="when">お金が減るのは「使ったあと」</div><div class="in"></div></div>
+  </div>
+  <div id="sortExp" hidden>
+    <table>
+      <thead><tr><th></th><th>前払い（プリペイド）</th><th>その場で払う（デビット）</th><th>後払い（ポストペイ）</th></tr></thead>
+      <tbody>
+        <tr><th>どうする</th><td>先に<b>チャージ</b>してから使う</td><td>銀行口座とつないで使う</td><td>会社が<b>立てかえて</b>くれる</td></tr>
+        <tr><th>お金が減る</th><td>チャージしたとき</td><td>使った瞬間に口座から</td><td>翌月などにまとめて口座から</td></tr>
+        <tr><th>たとえ</th><td>図書カード・回数券</td><td>口座から直接払う財布</td><td>お店の「ツケ」</td></tr>
+        <tr><th>注意</th><td>残高が0なら使えない</td><td>口座が空なら使えない</td><td>手元にお金がなくても使える。使いすぎ注意</td></tr>
+      </tbody>
+    </table>
+    <p class="small" style="margin-top:6px">電子マネーの多くは「前払い」。だから先にチャージがいります。iD・QUICPayはSuicaと同じようにかざすのに後払い。見た目では分かりません。</p>
+  </div>
+  <div class="row">
+    <button class="btn" id="sortCheck">答え合わせ</button>
+    <button class="btn ghost" id="sortReset">やり直す</button>
+    <button class="btn ghost" id="sortExpBtn" hidden>くわしい説明</button>
+    <span class="small" id="sortMsg">気づいたこと：どの箱がいちばん多くなりましたか？</span>
+  </div>
+</section>
+
+<!-- 5 predict -->
+<section class="slide" data-lv="2" data-terms="交通系ICカード,コード決済,クレジットカード,プリペイドカード">
+  <div class="eyebrow"><span class="lv">STEP 2</span>しくみ　問い ②（今日の中心）</div>
+  <h2>3つの払い方。お金の記録は、<br>どこで書きかわると思う？</h2>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div class="prow"><b>交通系ICカード<br><span class="small">Suica・nimoca など</span></b><select id="pIC" aria-label="交通系ICカードの予想"></select></div>
+    <div class="prow"><b>コード決済<br><span class="small">PayPay など（残高で払う）</span></b><select id="pCode" aria-label="コード決済の予想"></select></div>
+    <div class="prow"><b>クレジットカード</b><select id="pCredit" aria-label="クレジットカードの予想"></select></div>
+  </div>
+  <div class="think">
+    <label for="t5">理由も書こう。ヒント：①スマホのアプリを消したら、PayPayの残高は消える？ ②コンビニで売っている、番号だけが書いたネット用のプリペイドカード。残高はどこ？</label>
+    <textarea id="t5" placeholder="そう考えた理由"></textarea>
+  </div>
+  <p class="small">次のページのシミュレータで確かめます。</p>
+</section>
+
+<!-- 6 simulator -->
+<section class="slide" data-lv="2" data-terms="ICチップ,サーバ,通信,オフライン,同期,引き落とし">
+  <div class="eyebrow"><span class="lv">STEP 2</span>シミュレータ　どこの数字が書きかわる？</div>
+  <div class="simwrap">
+  <div class="seg ov-method" id="simMethod" role="group" aria-label="払い方">
+    <button data-m="ic" class="on">交通系IC</button><button data-m="code">コード決済</button><button data-m="credit">クレジット</button>
+  </div>
+  <button class="netbar ov-net" id="simNet" aria-pressed="true"><i></i><span id="netText">ネットワーク：つながっている</span><small>押すと切りかわる</small></button>
+  <div class="ov-pay">
+    <button class="btn" id="simPay">160円 払う</button>
+    <button class="btn ghost" id="simCharge">チャージ +1000</button>
+    <button class="btn ghost" id="simMonth" hidden>1か月後へ</button>
+  </div>
+  <svg class="simsvg" id="simSvg" viewBox="0 0 700 370" role="img" aria-label="支払いのしくみの図"><g transform="translate(0,60)">
+    <path class="wire" id="w1" d="M130 150 H175"/>
+    <path class="wire" id="w2" d="M285 150 H330"/>
+    <path class="wire" id="w3" d="M420 150 C445 150 445 55 470 55"/>
+    <path class="wire" id="w4" d="M420 150 H470"/>
+    <path class="wire" id="w5" d="M420 150 C445 150 445 245 470 245"/>
+    <path class="wire" id="w6" d="M80 105 C80 40 360 40 375 120"/>
+    <g id="payer"></g>
+    <rect class="n-box" x="175" y="95" width="110" height="110" rx="10"/>
+    <text class="n-title" x="230" y="118" text-anchor="middle" id="termTitle">改札・レジ</text>
+    <rect x="190" y="130" width="80" height="40" rx="4" fill="var(--led-bg)"/>
+    <text x="230" y="157" text-anchor="middle" font-size="15" fill="var(--led)" style="font-family:var(--f-led)" id="termScreen">待機中</text>
+    <text class="n-sub" x="230" y="192" text-anchor="middle" id="termPend">未送信の記録 0件</text>
+    <ellipse class="n-box" cx="375" cy="150" rx="45" ry="30"/>
+    <text class="n-title" x="375" y="155" text-anchor="middle" font-size="12" id="netLabel">ネットワーク</text>
+    <rect class="n-box" x="470" y="15" width="220" height="80" rx="10"/>
+    <text class="n-title" x="482" y="36">交通会社のコンピュータ</text>
+    <text class="n-sub" x="482" y="54">ICの記録を受け取り、照合する</text>
+    <text class="n-num" x="482" y="80" id="trNum">受け取った記録 0件</text>
+    <rect class="n-box" x="470" y="110" width="220" height="80" rx="10"/>
+    <text class="n-title" x="482" y="131">コード決済会社のコンピュータ</text>
+    <text class="n-sub" x="482" y="149">あなたの残高が書いてある</text>
+    <text class="n-num" x="482" y="175" id="coNum">残高 ¥1,000</text>
+    <rect class="n-box" x="470" y="205" width="220" height="85" rx="10"/>
+    <text class="n-title" x="482" y="226">カード会社 ／ 銀行</text>
+    <text class="n-num" x="482" y="252" id="crNum" font-size="14">今月の利用 ¥0</text>
+    <text class="n-num" x="482" y="278" id="bkNum">銀行口座 ¥30,000</text>
+    <g id="trails"></g>
+    <circle id="dot" r="7" fill="var(--mark)" stroke="var(--ink)" stroke-width="2" cx="-20" cy="-20"/>
+    <text id="xMark" x="375" y="125" text-anchor="middle" font-size="30" font-weight="700" fill="var(--ng)" visibility="hidden">✕</text>
+  </g></svg>
+  </div>
+  <div class="log" id="simLog" aria-live="polite"><div>払い方を選んで「払う」を押してください。</div></div>
+  <div class="row"><p class="small" style="flex:1">ためすこと：3つとも払う → 通信を切って払う → 残高がなくなるまで払う → クレジットで7回払って「1か月後へ」</p><button class="btn ghost" id="simReset">最初にもどす</button></div>
+</section>
+
+<!-- 7 answer -->
+<section class="slide" data-lv="2" data-terms="ICカード型,サーバ型,オフライン,同期">
+  <div class="eyebrow"><span class="lv">STEP 2</span>問い ③</div>
+  <h2>通信を切っても払えたのはどれ？　それはなぜ？</h2>
+  <table>
+    <thead><tr><th>払い方</th><th>あなたの予想</th><th>記録が書きかわった場所</th><th>通信なし</th></tr></thead>
+    <tbody id="cmpBody"></tbody>
+  </table>
+  <div class="think">
+    <label for="t7">なぜICだけ通信なしで払えるのか。上の表の「場所」を使って説明しよう</label>
+    <textarea id="t7" data-think placeholder="〜だから、〜できる"></textarea>
+    <button class="btn" data-reveal="a7" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a7" hidden>
+    <p>交通系ICは、<span class="hl">残高がカードの中のICチップに書いてある</span>からです。支払いの瞬間は、カードと改札の2つだけで決まります。これを<b>ICカード型</b>といいます。</p>
+    <p>コード決済やネット用のプリペイドは、残高が会社のコンピュータ（サーバ）の中。スマホの画面は<b>見せているだけ</b>です。これを<b>サーバ型</b>といいます。</p>
+  </div>
+</section>
+
+<!-- 8 anatomy -->
+<section class="slide" data-lv="3" data-terms="アンテナ,ICチップ,電磁誘導,FeliCa">
+  <div class="eyebrow"><span class="lv">STEP 3</span>カードの中　ICカードを分解する</div>
+  <h2>うすいカードの中には、何が入っている？</h2>
+  <div class="split">
+    <svg viewBox="0 0 360 240" class="simsvg" aria-label="ICカードの中身">
+      <rect x="20" y="20" width="320" height="200" rx="14" fill="var(--paper)" stroke="var(--sub)" stroke-width="2"/>
+      <g class="part" id="pa-ant">
+        <rect x="36" y="36" width="288" height="168" rx="12" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <rect x="46" y="46" width="268" height="148" rx="10" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <rect x="56" y="56" width="248" height="128" rx="8" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <text x="300" y="80" text-anchor="end" font-size="13" font-weight="700" fill="var(--accent)">アンテナ（コイル）</text>
+      </g>
+      <g class="part" id="pa-chip">
+        <rect x="80" y="96" width="70" height="56" rx="6" fill="var(--mark)" stroke="var(--ink)" stroke-width="2"/>
+        <text x="115" y="118" text-anchor="middle" font-size="10" fill="#1c2331">CPU</text>
+        <text x="115" y="132" text-anchor="middle" font-size="10" fill="#1c2331">メモリ</text>
+        <text x="115" y="146" text-anchor="middle" font-size="10" fill="#1c2331">暗号回路</text>
+        <path d="M80 124 H56 M150 124 H200" stroke="var(--ink)" stroke-width="2"/>
+        <text x="115" y="170" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">ICチップ</text>
+      </g>
+      <g class="part" id="pa-bat">
+        <rect x="220" y="110" width="70" height="36" rx="4" fill="none" stroke="var(--ng)" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="255" y="133" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ng)">電池なし</text>
+      </g>
+    </svg>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="partbtns" id="partBtns">
+        <button class="btn ghost" data-p="ant">アンテナ</button><button class="btn ghost" data-p="chip">ICチップ</button><button class="btn ghost" data-p="bat">電池</button>
+      </div>
+      <div class="fl-text" id="partText">ボタンを押すと、その部品が光ります。</div>
+    </div>
+  </div>
+  <div class="think">
+    <label for="t8">考えよう：スマホでもSuicaが使えるのはなぜ？ カードとスマホで同じもの・ちがうものは？</label>
+    <textarea id="t8" data-think placeholder="同じ部品は〜、ちがうのは〜"></textarea>
+    <button class="btn" data-reveal="a8" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a8" hidden>
+    <p>多くのスマホにも、<span class="hl">同じ種類のICチップとアンテナ</span>が入っています。読み取り機はカードと同じものです。</p>
+    <p>ちがうのは中のソフト。カードは工場でソフトが入っています。スマホは<b>アプリでSuicaのデータを入れる</b>ことで、同じように使えます。</p>
+  </div>
+</section>
+
+<!-- 9 touch -->
+<section class="slide" data-lv="3" data-terms="電磁誘導,相互認証,暗号,処理時間">
+  <div class="eyebrow"><span class="lv">STEP 3</span>カードの中　タッチした一瞬に起きていること</div>
+  <h2>電池のないカードが、0.2秒で仕事をする</h2>
+  <div class="split">
+    <svg viewBox="0 0 360 280" class="simsvg" aria-label="カードと改札のやりとり">
+      <rect x="40" y="190" width="280" height="80" rx="10" fill="var(--paper)" stroke="var(--line)" stroke-width="2"/>
+      <text x="180" y="256" text-anchor="middle" class="n-title">改札の読み取り部</text>
+      <rect x="110" y="202" width="140" height="26" rx="4" fill="var(--led-bg)"/>
+      <text x="180" y="221" text-anchor="middle" font-size="14" fill="var(--led)" style="font-family:var(--f-led)" id="gScreen">　</text>
+      <g id="gWaves" opacity="0">
+        <path d="M120 185 Q180 165 240 185" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <path d="M100 175 Q180 145 260 175" fill="none" stroke="var(--accent)" stroke-width="3" opacity=".6"/>
+        <path d="M80 165 Q180 125 280 165" fill="none" stroke="var(--accent)" stroke-width="3" opacity=".3"/>
+      </g>
+      <g id="gCard" transform="translate(0,-60)" style="transition:transform .6s">
+        <rect x="90" y="70" width="180" height="96" rx="10" fill="var(--panel)" stroke="var(--accent)" stroke-width="3"/>
+        <rect x="102" y="80" width="156" height="76" rx="18" fill="none" stroke="var(--sub)" stroke-width="2" stroke-dasharray="4 3"/>
+        <rect x="120" y="102" width="36" height="28" rx="4" fill="var(--mark)"/>
+        <text x="250" y="138" text-anchor="end" style="font-family:var(--f-led)" font-size="16" fill="var(--ink)" id="gBal">¥1,234</text>
+      </g>
+      <g id="gLock" opacity="0"><rect x="290" y="24" width="56" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/><text x="318" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="var(--accent)">本物？</text></g>
+    </svg>
+    <div class="steplist" id="gSteps">
+      <div class="st"><b>1　電気をつくる</b><p>改札の電波（13.56MHz）がカードのコイルを通り、電気が生まれます（電磁誘導）。</p></div>
+      <div class="st"><b>2　確かめあう</b><p>カードと改札が、暗号を使って「おたがい本物か」を確かめます。前回の本人確認の、機械どうし版です。</p></div>
+      <div class="st"><b>3　読む</b><p>残高と、どの駅から乗ったかの記録を読みます。</p></div>
+      <div class="st"><b>4　書きかえる</b><p>運賃を引いた新しい残高をカードに書きこみます。</p></div>
+      <div class="st"><b>5　ためておく</b><p>改札は記録をため、あとで会社のコンピュータへ送ります。</p></div>
+      <div class="row"><button class="btn" id="gPlay">タッチする</button><span class="small">改札の反応は0.2秒（200ミリ秒）が目安</span></div>
+    </div>
+  </div>
+  <div class="think">
+    <label for="t9">考えよう：4の「書きかえる」の途中でカードを離したら、残高はどうなる？ どうなっていてほしい？</label>
+    <textarea id="t9" data-think placeholder="困ることと、その防ぎ方"></textarea>
+    <button class="btn" data-reveal="a9" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a9" hidden>
+    <p>書きこみは「<span class="hl">全部終わった</span>」か「<span class="hl">何もしなかった</span>」かのどちらかになります。1つでも失敗したら、全部を取り消す仕組みです。半端な残高は残りません。</p>
+  </div>
+</section>
+
+<!-- 10a intro to keys -->
+<section class="slide" data-lv="3" data-terms="ICチップ,読み取り機,鍵">
+  <div class="eyebrow"><span class="lv">STEP 3</span>カードの中　問い</div>
+  <h2>残高がカードの中にあるなら、<br>自分で書きかえられるのでは？</h2>
+  <div class="split">
+    <svg viewBox="0 0 360 200" class="simsvg" aria-label="スマホでカードを読む図">
+      <rect x="20" y="40" width="170" height="110" rx="10" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="3"/>
+      <rect x="36" y="64" width="34" height="26" rx="4" fill="var(--mark)"/>
+      <text x="176" y="136" text-anchor="end" style="font-family:var(--f-led)" font-size="20" fill="var(--ink)">¥1,234</text>
+      <rect x="240" y="20" width="96" height="160" rx="14" fill="var(--paper)" stroke="var(--ink)" stroke-width="3"/>
+      <rect x="250" y="40" width="76" height="110" rx="4" fill="var(--led-bg)"/>
+      <text x="288" y="70" text-anchor="middle" font-size="11" fill="var(--led)">読みとり</text>
+      <text x="288" y="94" text-anchor="middle" font-size="15" fill="var(--led)" style="font-family:var(--f-led)">¥1,234</text>
+      <text x="288" y="128" text-anchor="middle" font-size="15" fill="var(--ng)" style="font-family:var(--f-led)">¥99,999?</text>
+      <path d="M195 95 Q215 85 235 95" fill="none" stroke="var(--accent)" stroke-width="3"/>
+      <path d="M195 105 Q215 95 235 105" fill="none" stroke="var(--accent)" stroke-width="3" opacity=".5"/>
+    </svg>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <p>スマホには、カードを読む部品が入っています。アプリを入れると、<b>Suicaの残高や使った記録を読む</b>ことができます。</p>
+      <p>では、そのスマホでカードの数字を <b style="color:var(--ng)">¥99,999</b> に<b>書きかえる</b>ことはできるでしょうか。</p>
+    </div>
+  </div>
+  <div class="think">
+    <label for="t10a">できる？ できない？ できないなら、何がじゃまをしていると思う？</label>
+    <textarea id="t10a" data-think placeholder="できる／できない。理由は〜"></textarea>
+    <button class="btn" data-reveal="a10a" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a10a" hidden>
+    <p><b>できません。</b>カードのデータには<span class="hl">鍵（かぎ）</span>がかかっています。鍵は、決まった会社の機械しか持っていません。</p>
+    <p>9ページの「確かめあう」は、この鍵を使って行っています。次のページで、その<b>鍵のルール</b>を見ます。</p>
+  </div>
+</section>
+
+<!-- 10 rooms -->
+<section class="slide" data-lv="3" data-terms="鍵,権限,暗号">
+  <div class="eyebrow"><span class="lv">STEP 3</span>カードの中　鍵のルール</div>
+  <h2>「読む」と「書きかえる」で、ルールがちがう</h2>
+  <table class="keytbl">
+    <thead><tr><th>機械</th><th>残高を読む</th><th>残高を書きかえる</th></tr></thead>
+    <tbody>
+      <tr><td><b>改札・駅の券売機</b><br><span class="small">交通会社の鍵を持っている</span></td><td class="r">できる</td><td class="r">できる</td></tr>
+      <tr><td><b>スマホのアプリ</b><br><span class="small">鍵を持っていない</span></td><td class="r">できる</td><td class="w">できない</td></tr>
+    </tbody>
+  </table>
+  <p>カードの中のデータごとに、会社が「<b>読むのに鍵がいるか</b>」「<b>書きかえるのに鍵がいるか</b>」を決めています。Suicaの残高は、読むのは鍵なし、書きかえるのは鍵ありです。</p>
+  <div class="think">
+    <label for="t10">考えよう：なぜ「読む」のは、鍵なしでもよいことにしてあるのでしょう？</label>
+    <textarea id="t10" data-think placeholder="読めると〜。読まれても〜"></textarea>
+    <button class="btn" data-reveal="a10" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a10" hidden>
+    <p>残高を<b>自分で確かめられると便利</b>だからです。読まれても、お金は減りません。</p>
+    <p>書きかえられたら、お金をふやせてしまいます。だから<span class="hl">困ることが起きる所だけに鍵をかけています</span>。全部に鍵をかけると、安全でも不便になります。</p>
+  </div>
+</section>
+
+<!-- 11 calc -->
+<section class="slide" data-lv="3" data-terms="処理時間,読み取り機">
+  <div class="eyebrow"><span class="lv">STEP 3</span>数字で見る　かざすだけの速さは、どれくらい大事？</div>
+  <div class="intro12">
+    <p><b>いま駅で起きていること</b>　JR東日本では2024年から、スマホのQRコードで通れる改札が始まっています。QRなら、カードの中のICチップはいりません。</p>
+    <p><b>このページの目的</b>　では、全部の改札をQRコードだけにしてもよいのでしょうか。ICの「かざして0.2秒」が朝の駅でどれだけ大事かを、<span class="hl">数字で確かめます</span>。</p>
+  </div>
+  <h2>朝の駅に3,000人。改札5台で、全員が通りぬけるまでの時間</h2>
+  <div class="res12">
+    <div class="r12row"><span class="r12k">IC</span><span class="small">1人 1.0秒 → 1台で1分に60人 → 5台で300人</span><i style="width:40%"></i><b>10分</b></div>
+    <div class="r12row"><span class="r12k">QR</span><span class="small">1人 2.0秒（仮）→ 1台で1分に30人 → 5台で150人</span><i class="qr" style="width:80%"></i><b>20分</b></div>
+  </div>
+  <div class="answer">
+    <p>QRで同じ10分にするには、改札が<span class="hl">2倍の10台</span>いります。でも駅には、改札をふやす場所がありません。</p>
+    <p>だから人がたくさん通る駅では、<b>かざすだけで0.2秒</b>のICが大事なのです。</p>
+  </div>
+</section>
+
+<!-- 12 code payment -->
+<section class="slide" data-lv="4" data-terms="店舗提示型,利用者提示型,サーバ,QRコード">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　コード決済の2つの方式</div>
+  <div class="row">
+    <div class="seg" id="qrMode" role="group" aria-label="方式">
+      <button data-q="mpm" class="on">店舗提示型<br><small>お客がお店のQRを読む</small></button><button data-q="cpm">利用者提示型<br><small>お店がお客のコードを読む</small></button>
+    </div>
+    <span style="flex:1"></span><button class="btn" id="flQRnext">次へ</button><button class="btn ghost" id="flQRreset">最初から</button>
+  </div>
+  <svg class="simsvg flsvg" id="flQR" viewBox="0 0 700 230" aria-label="コード決済の流れ"></svg>
+  <div class="fl-text" id="flQRtext"></div>
+</section>
+
+<!-- 12b which fits -->
+<section class="slide" data-lv="4" data-terms="店舗提示型,利用者提示型,読み取り機">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　問い</div>
+  <h2>店舗提示型と利用者提示型。<br>どんなお店に向いている？</h2>
+  <div class="think">
+    <label>考えよう：次の2つのお店には、どちらの方式が向いている？ 前のページの図で、「お店に必要なもの」と「だれが金額を入れるか」をくらべよう</label>
+    <div class="row" style="font-size:15px;gap:6px">① 文化祭の屋台<span class="small">（1日だけ・お金をかけたくない）</span><select id="s12a" aria-label="屋台の方式"><option>（選ぶ）</option><option>店舗提示型</option><option>利用者提示型</option></select></div>
+    <div class="row" style="font-size:15px;gap:6px">② 昼休みに行列ができるコンビニ<select id="s12b" aria-label="コンビニの方式"><option>（選ぶ）</option><option>店舗提示型</option><option>利用者提示型</option></select></div>
+    <textarea id="t12" data-think placeholder="①は〜だから、②は〜だから"></textarea>
+    <button class="btn" data-reveal="a12" disabled>答えを見る</button>
+  </div>
+  <div id="a12" hidden>
+    <table class="t12">
+      <thead><tr><th></th><th>店舗提示型（お客がお店のQRを読む）</th><th>利用者提示型（お店がお客のコードを読む）</th></tr></thead>
+      <tbody>
+        <tr><th>お店に必要なもの</th><td class="r">QRを印刷した紙だけ。安く始められる</td><td class="w">読み取り機とレジのしくみ。お金がかかる</td></tr>
+        <tr><th>金額を入れる人</th><td class="w">お客。紙のQRには金額が入っていないので、アプリに自分で打ちこみ、画面を店員に見せる。時間がかかり、打ちまちがえもある</td><td class="r">レジ。商品を読みとった金額がそのまま送られる。速く、まちがえにくい</td></tr>
+        <tr><th>向いているお店</th><td>① 屋台・小さなお店</td><td>② コンビニ・スーパー</td></tr>
+      </tbody>
+    </table>
+    <p class="small" style="margin-top:6px">利用者提示型のコードは、数分ごとに書きかわります。画面を写真にとられても、あとで使われないようにするためです。</p>
+  </div>
+</section>
+
+<!-- 13a credit intro -->
+<section class="slide" data-lv="4" data-terms="後払い">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　クレジットカード</div>
+  <h2>クレジットカードで、1万円の服を買いました</h2>
+  <div class="split">
+    <svg viewBox="0 0 360 190" class="simsvg" aria-label="服屋でカードで払う図">
+      <rect x="20" y="30" width="120" height="130" rx="10" class="n-box"/>
+      <text x="80" y="58" text-anchor="middle" class="n-title">あなた</text>
+      <rect x="40" y="76" width="80" height="50" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+      <rect x="50" y="88" width="16" height="12" rx="2" fill="var(--mark)"/>
+      <text x="80" y="148" text-anchor="middle" class="n-sub">財布のお金はそのまま</text>
+      <rect x="220" y="30" width="120" height="130" rx="10" class="n-box"/>
+      <text x="280" y="58" text-anchor="middle" class="n-title">服屋さん</text>
+      <path d="M255 80 h50 l-6 40 h-38z" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+      <path d="M268 80 q12 -14 24 0" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+      <text x="280" y="148" text-anchor="middle" class="n-sub">服をわたした</text>
+      <path d="M150 95 H210" stroke="var(--accent)" stroke-width="3"/><path d="M202 88 L212 95 L202 102" fill="none" stroke="var(--accent)" stroke-width="3"/>
+      <text x="180" y="84" text-anchor="middle" font-size="12" fill="var(--accent)" font-weight="700">ピッ</text>
+    </svg>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <p>カードをかざして「ピッ」。服を受けとって、お店を出ました。</p>
+      <p>でも、<b>あなたの財布からも、銀行口座からも、まだお金は出ていません</b>。シミュレータでも、クレジットはその場では口座が減りませんでした。</p>
+      <p>では、服屋さんは<b>いつ・だれから</b>1万円をもらうのでしょう？</p>
+    </div>
+  </div>
+  <div class="think">
+    <label for="t13a">予想を書こう（「だれから」と「いつ」の2つを書く）</label>
+    <textarea id="t13a" data-think placeholder="服屋さんは、〜から、〜にもらう"></textarea>
+    <button class="btn" data-reveal="a13a" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a13a" hidden>
+    <p>服屋さんにお金を払うのは、あなたではなく<span class="hl">カード会社</span>です。カード会社が先に<b>立てかえて</b>払います。あなたは<b>翌月</b>、カード会社にまとめて払います。</p>
+    <p>実はこのあいだに、<b>何社もの会社</b>が入っています。次のページで、その会社たちを順番に見ていきます。</p>
+    <p class="small">クレジットカードは、多くの場合、高校生をのぞく18歳以上から申しこめます。みなさんも、もうすぐ使える立場になります。</p>
+  </div>
+</section>
+
+<!-- 13 credit -->
+<section class="slide" data-lv="4" data-terms="オーソリ,イシュア,アクワイアラ,国際ブランド,CAFIS,加盟店手数料">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　クレジットカードの登場人物</div>
+  <svg class="simsvg flsvg" id="flCR" viewBox="0 0 700 250" aria-label="クレジットカードの流れ"></svg>
+  <div class="fl-text" id="flCRtext"></div>
+  <div class="row"><button class="btn" id="flCRnext">次へ</button><button class="btn ghost" id="flCRreset">最初から</button></div>
+  <div class="think">
+    <label>計算：10,000円売れた。加盟店手数料が3%なら、お店に入るのは何円？</label>
+    <div class="row"><input type="number" id="feeIn" aria-label="お店に入る金額" style="width:120px"> 円 <button class="btn" id="feeGo" disabled>答え合わせ</button><span class="small" id="feeMsg"></span></div>
+  </div>
+  <div class="answer" id="feeMore" hidden><p>手数料は、カード会社やブランドで分けられます。手数料の相場は<b>売上の2〜5%くらい</b>。それでもお店がカードを入れるのは、現金を持たない客をのがさないためです。</p></div>
+</section>
+
+<!-- 13c card number -->
+<section class="slide" data-lv="4" data-terms="カード番号,BIN,チェックデジット,国際ブランド,イシュア">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　カード番号の中身</div>
+  <h2>16けたのカード番号には、意味がある</h2>
+  <div class="cardnum" id="cardNum" aria-label="カード番号の例"></div>
+  <div class="legend">
+    <span><i class="c1"></i>1けた目：国際ブランド（4＝Visa、5＝Mastercard、3＝JCBなど）</span>
+    <span><i class="c2"></i>先頭6けた：カードを出した会社（BIN）</span>
+    <span><i class="c3"></i>会員番号：会社が1人ずつ決める</span>
+    <span><i class="c4"></i>最後の1けた：チェック用の数字</span>
+  </div>
+  <div class="row">
+    <span class="small">例の番号は作り物です。</span>
+    <button class="btn" id="cnChange">どこか1けたを変える</button>
+    <button class="btn ghost" id="cnReset">もとにもどす</button>
+    <button class="btn ghost" id="cnShow">チェックの計算を見る</button>
+    <span class="cnres" id="cnRes"></span>
+  </div>
+  <div class="fl-text" id="cnCalc" hidden></div>
+  <div class="think">
+    <label for="t13c">考えよう：チェック用の数字が合っていれば、そのカードは使えるでしょうか？</label>
+    <textarea id="t13c" data-think placeholder="使える／使えない。理由は〜"></textarea>
+    <button class="btn" data-reveal="a13c" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a13c" hidden>
+    <p><b>使えるとはかぎりません。</b>チェック用の数字が見つけるのは、<span class="hl">打ちまちがい</span>だけです。ネットで番号を1けたまちがえると、すぐ「番号がちがいます」と出るのはこのためです。</p>
+    <p>本当に使えるかどうかは、前のページの「調べる」で、<b>カードを出した会社</b>が決めます。</p>
+  </div>
+</section>
+
+<!-- 13d fraud -->
+<section class="slide" data-lv="4" data-terms="不正検知,3Dセキュア,ICチップ">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　不正を止めるしくみ</div>
+  <h2>熊本に住むAさんのカードの記録。<br>あやしいのはどれ？</h2>
+  <table class="fraud">
+    <thead><tr><th>日時</th><th>お店</th><th>金額</th><th>あやしい？</th></tr></thead>
+    <tbody id="frBody"></tbody>
+  </table>
+  <div class="row"><button class="btn" id="frCheck">答え合わせ</button><button class="btn ghost" id="frToggle" hidden>止めるしくみを見る</button><span class="small" id="frMsg" style="flex:1">あやしいと思うものをタップしてください（いくつでも）。</span></div>
+  <div id="frAns" hidden>
+    <table>
+      <thead><tr><th>しくみ</th><th>どうやって止める？</th></tr></thead>
+      <tbody>
+        <tr><th>不正検知</th><td>カード会社のコンピュータが、<b>いつもとちがう使い方</b>（場所・時間・金額）を見つけて、承認しない・一時停止する・本人に連絡する</td></tr>
+        <tr><th>ICチップ</th><td>お店では、カードのICチップが暗号で本物か確かめる。磁気の線だけのカードより、<b>コピーした偽物が作りにくい</b></td></tr>
+        <tr><th>3Dセキュア</th><td>ネットでは、カード番号のほかに<b>ワンタイムパスワードなどで本人確認</b>する。前回の二段階認証と同じ考え方。国は2025年3月末までに、原則すべてのネットのお店に導入を求めた</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 13e section intro: where to compute -->
+<section class="slide" data-lv="4" data-terms="システム,サーバ">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　ここから新しい話</div>
+  <h2>3つの払い方を、もう一度ながめてみよう</h2>
+  <div class="intro12">
+    <p><b>ここまで</b>　交通系IC・コード決済・クレジットカードの、お金の記録の流れを見てきました。</p>
+    <p><b>ここから</b>　見方を変えます。「お金の計算を<b>どこのコンピュータがしているか</b>」です。これは、システムを作る人が<span class="hl">最初に決めなければならないこと</span>の1つです。決め方しだいで、速さ・止まりにくさ・直しやすさが変わります。</p>
+  </div>
+  <table>
+    <thead><tr><th>払い方</th><th>残高を引く計算をしているのは？</th></tr></thead>
+    <tbody>
+      <tr><td>交通系IC（これまでの方式）</td><td><button class="btn ghost rv" type="button" data-ans="駅の<b>改札機</b>（あちこちに何千台もある）">？ タップ</button></td></tr>
+      <tr><td>コード決済</td><td><button class="btn ghost rv" type="button" data-ans="コード決済<b>会社のコンピュータ</b>（真ん中に1つ）">？ タップ</button></td></tr>
+      <tr><td>クレジットカード</td><td><button class="btn ghost rv" type="button" data-ans="カード<b>会社のコンピュータ</b>（真ん中に1つ）">？ タップ</button></td></tr>
+    </tbody>
+  </table>
+  <div class="think">
+    <label for="t13e">考えよう：「端っこにたくさん」と「真ん中に1つ」。それぞれ、どんなときに強そう？ どんなときに困りそう？</label>
+    <textarea id="t13e" placeholder="端っこにたくさんだと〜。真ん中に1つだと〜"></textarea>
+  </div>
+  <p class="small">次のページで、この2つの形に名前をつけて、強いところ・弱いところをくらべます。</p>
+</section>
+
+<!-- 14 central vs distributed -->
+<section class="slide" data-lv="4" data-terms="集中処理,分散処理,ネガリスト,同期">
+  <div class="eyebrow"><span class="lv">STEP 4</span>システムの構造　集中処理と分散処理</div>
+  <h2>計算する場所は「真ん中に1つ」？「端っこにたくさん」？</h2>
+  <div class="two">
+    <div class="box" style="align-items:flex-start"><b>分散処理</b><span class="small">これまでのSuica。<b>改札機が</b>その場で計算し、記録はあとで真ん中へ送る。</span></div>
+    <div class="box" style="align-items:flex-start"><b>集中処理</b><span class="small">コード決済・クレジット。<b>真ん中のコンピュータ</b>が毎回計算する。</span></div>
+  </div>
+  <p class="small">それぞれの場合、払える（○）か、こまる（✕）か、予想して選ぼう。</p>
+  <table class="sc">
+    <thead><tr><th>こんなとき</th><th>分散処理</th><th>集中処理</th></tr></thead>
+    <tbody id="scBody"></tbody>
+  </table>
+  <div class="row"><button class="btn" id="scCheck">答え合わせ</button><span class="small" id="scMsg"></span></div>
+</section>
+
+<!-- 15 why 2001 -->
+<section class="slide" data-lv="4" data-terms="分散処理,集中処理,サーバ">
+  <div class="eyebrow"><span class="lv">STEP 4</span>問い ④</div>
+  <h2>2001年、Suicaは分散処理を選びました。<br>なぜ真ん中で計算しなかったのでしょう？</h2>
+  <div class="two">
+    <div class="box" style="align-items:flex-start"><b>ヒント1</b><span>改札は1台で1分に約60人を通す。反応は0.2秒が目安。</span></div>
+    <div class="box" style="align-items:flex-start"><b>ヒント2</b><span>2ページ目の年表。スマホはまだありません。</span></div>
+  </div>
+  <div class="think">
+    <label for="t15">当時の機械の事情を想像して書こう</label>
+    <textarea id="t15" data-think placeholder="当時は〜だったから、〜した"></textarea>
+    <button class="btn" data-reveal="a15" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a15" hidden>
+    <p>当時は、<span class="hl">真ん中のコンピュータの力も、つなぐ回線も弱かった</span>からです。毎回問い合わせていたら、0.2秒では間に合いません。</p>
+    <p>だから計算を改札機とカードに任せ、あとでまとめて送る形にしました。<b>道具の速さが、システムの形を決めた</b>のです。</p>
+  </div>
+</section>
+
+<!-- 16 now changing -->
+<section class="slide" data-lv="4" data-terms="センターサーバー方式,集中処理,ID">
+  <div class="eyebrow"><span class="lv">STEP 4</span>いま起きていること</div>
+  <h2>Suicaが、集中処理に切りかわっている</h2>
+  <svg class="simsvg" viewBox="0 0 700 170" aria-label="改札処理の移りかわり">
+    <rect x="20" y="20" width="300" height="130" rx="10" class="n-box"/>
+    <text x="36" y="44" class="n-title">これまで（2001年〜）</text>
+    <rect x="40" y="62" width="80" height="50" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/><text x="80" y="92" text-anchor="middle" font-size="12" fill="var(--ink)">カード</text>
+    <rect x="170" y="62" width="90" height="50" rx="6" fill="var(--mark)" stroke="var(--ink)" stroke-width="2"/><text x="215" y="85" text-anchor="middle" font-size="12" fill="#1c2331">改札機</text><text x="215" y="101" text-anchor="middle" font-size="11" fill="#1c2331">運賃を計算</text>
+    <path d="M120 87 H170" stroke="var(--ink)" stroke-width="2"/>
+    <text x="36" y="138" class="n-sub">計算するのは改札機。あとで記録をまとめて送る</text>
+    <path d="M330 85 H370" stroke="var(--accent)" stroke-width="4"/><path d="M362 77 L374 85 L362 93" fill="none" stroke="var(--accent)" stroke-width="4"/>
+    <rect x="380" y="20" width="300" height="130" rx="10" class="n-box"/>
+    <text x="396" y="44" class="n-title">2023年〜（センターサーバー方式）</text>
+    <rect x="396" y="62" width="70" height="50" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/><text x="431" y="92" text-anchor="middle" font-size="12" fill="var(--ink)">カード</text>
+    <rect x="490" y="62" width="70" height="50" rx="6" class="n-box"/><text x="525" y="92" text-anchor="middle" font-size="12" fill="var(--ink)">改札機</text>
+    <rect x="585" y="62" width="85" height="50" rx="6" fill="var(--mark)" stroke="var(--ink)" stroke-width="2"/><text x="627" y="85" text-anchor="middle" font-size="11" fill="#1c2331">センター</text><text x="627" y="101" text-anchor="middle" font-size="11" fill="#1c2331">運賃を計算</text>
+    <path d="M466 87 H490 M560 87 H585" stroke="var(--ink)" stroke-width="2"/>
+    <text x="396" y="138" class="n-sub">改札機は読んで、問い合わせて、書くだけ</text>
+  </svg>
+  <table>
+    <tbody>
+      <tr><th>いつ</th><td>2023年5月に北東北の45駅から始まり、首都圏などへ順に広げています</td></tr>
+      <tr><th>理由</th><td>コンピュータと回線が速くなった。真ん中だけ直せば、新しい運賃や割引を早く始められる</td></tr>
+      <tr><th>これから</th><td>カードは「残高の入れ物」から「だれのカードかを示す番号（ID）」の役割へ近づいていきます</td></tr>
+    </tbody>
+  </table>
+  <div class="think">
+    <label for="t16">考えよう：20ページの表。センターサーバー方式のSuicaだと、どの答えが変わる？ そのために会社は何に力を入れる？</label>
+    <textarea id="t16" data-think placeholder="変わるのは〜。だから〜"></textarea>
+    <button class="btn" data-reveal="a16" disabled>答えを見る</button>
+  </div>
+  <div class="answer" id="a16" hidden><p>「通信が切れた」「センターが止まった」で困る側になります。だから<span class="hl">回線とセンターを止めない設計</span>（予備の回線・予備のコンピュータ）が大事になります。良いところと弱いところは、いつもセットです。</p></div>
+</section>
+
+<!-- 17 festival -->
+<section class="slide" data-lv="4" data-terms="加盟店,読み取り機,コード決済,交通系ICカード">
+  <div class="eyebrow"><span class="lv">STEP 4</span>使う側から考える</div>
+  <h2>文化祭の屋台で、ジュースを100円で売ります。<br>現金のほかに1つ入れるなら、どっち？</h2>
+  <div class="pick" id="pick17">
+    <button data-p="ic"><b>A　交通系IC</b><br><span class="small">お客さんがカードをタッチする</span></button>
+    <button data-p="code"><b>B　コード決済（店舗提示型）</b><br><span class="small">お客さんがスマホでお店のQRを読む</span></button>
+  </div>
+  <div class="think">
+    <label for="t17">選んだ理由。お店に必要なもの・速さ・通信・手数料から考えよう</label>
+    <textarea id="t17" data-think placeholder="〜だから、〜を選ぶ"></textarea>
+    <button class="btn" data-reveal="a17" disabled>くらべる表を見る</button>
+  </div>
+  <div id="a17" hidden>
+    <table>
+      <thead><tr><th>くらべること</th><th>交通系IC</th><th>コード決済（店舗提示型）</th></tr></thead>
+      <tbody>
+        <tr><td>お店に必要なもの</td><td>専用の読み取り機と回線</td><td>QRコードを印刷した紙</td></tr>
+        <tr><td>1人あたりの速さ</td><td>とても速い</td><td>アプリを開いて金額を入れる分、時間がかかる</td></tr>
+        <tr><td>通信</td><td>支払いの瞬間はなくてもよい（これまでの方式）</td><td>お客さんのスマホに必要</td></tr>
+        <tr><td>システムの形</td><td>分散処理から集中処理へ移りつつある</td><td>集中処理</td></tr>
+      </tbody>
+    </table>
+    <p class="small" style="margin-top:6px">駅は「速さ」が一番大事。小さなお店は「始めやすさ」が大事。目的によって、選ぶ構造が変わります。</p>
+  </div>
+</section>
+
+<!-- 18 quiz -->
+<section class="slide" data-lv="4" data-terms="ICカード型,サーバ型,集中処理,分散処理">
+  <div class="eyebrow">確認問題</div>
+  <div class="qgrid" id="quiz"></div>
+  <p class="small" id="quizScore">0 / 8</p>
+</section>
+
+<!-- 19 summary -->
+<section class="slide" data-lv="4" data-terms="残高,集中処理,分散処理">
+  <div class="eyebrow">まとめ</div>
+  <h2>電子マネーの正体は「残高の記録」。<br>ちがいは、記録の置き場所と、計算する場所。</h2>
+  <table>
+    <tbody>
+      <tr><th>STEP 1</th><td>電子マネーは「数字の記録」。多くは前払い</td></tr>
+      <tr><th>STEP 2</th><td>ICカード型＝残高はカードの中。サーバ型・コード決済＝残高は会社のコンピュータ</td></tr>
+      <tr><th>STEP 3</th><td>カードはアンテナとICチップ。電池なし。暗号で確かめあい、鍵で部屋を守る</td></tr>
+      <tr><th>STEP 4</th><td>分散処理と集中処理。技術の進歩で、Suicaも集中処理へ移っている</td></tr>
+    </tbody>
+  </table>
+  <div class="answer"><p><b>次の時間への問い</b>　どの方式でも、記録を最後に持っているのは<span class="hl">1つの会社</span>です。その会社がいなくても、みんなで記録を正しく守る方法はある？</p></div>
+  <div class="think">
+    <label for="t19">今日いちばん「なるほど」と思ったことを1文で</label>
+    <textarea id="t19" placeholder="〜が〜だと知った"></textarea>
+  </div>
+</section>
+
+</main>
+<aside><h3>用語</h3><div id="terms"></div></aside>
+<nav>
+  <button class="btn ghost" id="prev">← 前へ</button>
+  <div class="row"><div class="ladder" id="ladder"><i></i><i></i><i></i><i></i></div><span id="pageNo">1 / 19</span></div>
+  <button class="btn" id="next">次へ →</button>
+</nav>
+</div></div>
+
+<script>
+const TERMS={
+ "キャッシュレス決済":"現金を使わない払い方。クレジット・デビット・電子マネー・コード決済など。",
+ "電子マネー":"お金を数字の記録にして、カードやスマホで払えるようにしたもの。日本銀行は「先にチャージして使う払い方」と説明している。",
+ "残高":"いま使えるお金の量。",
+ "チャージ":"先にお金を入れて、残高をふやすこと。",
+ "前払い":"先にお金を払っておき、あとで使う方法。",
+ "後払い":"先に使って、あとでまとめて払う方法。",
+ "デビットカード":"払った瞬間に、銀行の口座からお金が引かれるカード。",
+ "クレジットカード":"カード会社が立てかえて払い、あとで口座から引き落とすカード。",
+ "コード決済":"QRコードやバーコードを読みとって払う方法。PayPay など。",
+ "交通系ICカード":"Suica・nimoca など、電車やバスに乗れるICカード。",
+ "プリペイドカード":"先にお金を払って買うカード。番号を入れて使うネット用のものもある。",
+ "ICチップ":"カードの中の小さなコンピュータ。計算・記録・暗号ができる。",
+ "ICカード型":"残高がカード（やスマホ）のICチップに記録されるタイプの電子マネー。",
+ "サーバ型":"残高が会社のサーバに記録されるタイプの電子マネー。",
+ "サーバ":"データをあずかって処理する、会社の大きなコンピュータ。",
+ "通信":"機械どうしが、データをやりとりすること。",
+ "オフライン":"通信がつながっていない状態。",
+ "同期":"はなれた場所にある記録を、同じ内容にそろえること。",
+ "引き落とし":"銀行の口座から、自動でお金が引かれること。",
+ "アンテナ":"電波を受けとる部品。ICカードでは、ぐるぐる巻いた線（コイル）。",
+ "FeliCa":"ソニーが作った、かざして使うICカードの方式。日本の交通系ICカードの多くが使う。",
+ "電磁誘導":"コイルのまわりの磁界が変わると、コイルに電気が生まれる現象。",
+ "相互認証":"おたがいに「本物か」を確かめあうこと。",
+ "暗号":"決まった相手にしか読めないように、データを変えること。",
+ "処理時間":"機械が1回の仕事を終えるのにかかる時間。",
+ "鍵":"暗号のデータを開けるための、秘密の数字。",
+ "権限":"「読んでよい」「書きかえてよい」など、何をしてよいかの決まり。",
+ "読み取り機":"カードやコードを読みとる機械。",
+ "店舗提示型":"お店が出したQRコードを、お客のスマホで読む方式。",
+ "利用者提示型":"お客のスマホに出したコードを、お店のレジで読む方式。",
+ "QRコード":"縦と横の両方に情報を持つ、四角い2次元コード。日本で生まれた。",
+ "オーソリ":"使ってよいかをカード発行会社に問い合わせること。数秒で終わる。",
+ "イシュア":"カードを発行し、利用者からお金を集める会社。",
+ "アクワイアラ":"お店と契約し、お店に売上を払う会社。",
+ "国際ブランド":"Visa・Mastercard・JCB など。世界中でカードを使えるようにする決済の通り道。",
+ "加盟店手数料":"お店がカード会社に払う手数料。売上の数%。",
+ "立替払い":"代わりに先に払っておくこと。",
+ "加盟店":"その払い方が使えるお店。",
+ "集中処理":"真ん中の1台のコンピュータが、まとめて計算する形。",
+ "分散処理":"たくさんの機械が、それぞれの場所で計算する形。",
+ "ネガリスト":"使えなくしたカードの一覧。各機械に配って、止めるのに使う。",
+ "センターサーバー方式":"運賃の計算などを、改札機ではなくセンターのコンピュータで行う方式。",
+ "ID":"ひとつひとつを見分けるための番号。",
+ "カード番号":"クレジットカードの表に書いてある、ふつう16けたの番号。",
+ "BIN":"カード番号の先頭6〜8けた。どの会社が出したカードかを表す。",
+ "チェックデジット":"打ちまちがいを見つけるために、最後につける数字。",
+ "不正検知":"いつもとちがう使い方を、コンピュータが見つけること。",
+ "3Dセキュア":"ネットでカードを使うとき、ワンタイムパスワードなどで本人か確かめるしくみ。",
+ "CAFIS":"NTTデータが運営する、お店とカード会社をつなぐネットワーク。",
+ "システム":"いくつもの機械やコンピュータがつながって、1つの仕事をするしくみ。"
+};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait=ms=>new Promise(r=>setTimeout(r,reduce?1:ms));
+function fit(){const s=Math.min(innerWidth/1026,innerHeight/770);$('#stage').style.transform=`scale(${s})`}
+addEventListener('resize',fit);fit();
+/* nav */
+const slides=$$('.slide');let cur=0;
+function show(i){cur=Math.max(0,Math.min(slides.length-1,i));slides.forEach((s,k)=>s.hidden=k!==cur);
+ $('#pageNo').textContent=`${cur+1} / ${slides.length}`;$('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1;
+ const lv=+slides[cur].dataset.lv;$$('#ladder i').forEach((x,k)=>x.classList.toggle('on',k<lv));
+ const t=(slides[cur].dataset.terms||'').split(',').filter(Boolean);
+ $('#terms').innerHTML=t.map(k=>`<div class="term"><b>${k}</b><span>${TERMS[k]||''}</span></div>`).join('');
+ if(slides[cur].querySelector('#cmpBody'))fillCmp();}
+$('#prev').onclick=()=>show(cur-1);$('#next').onclick=()=>show(cur+1);
+addEventListener('keydown',e=>{if(e.target.matches('textarea,input,select'))return;if(e.key==='ArrowRight')show(cur+1);if(e.key==='ArrowLeft')show(cur-1)});
+/* think → reveal */
+$$('[data-think]').forEach(ta=>{const sec=ta.closest('.think');const b=sec.querySelector('[data-reveal]');ta.addEventListener('input',()=>{if(b)b.disabled=ta.value.trim().length<2})});
+$$('[data-reveal]').forEach(b=>b.addEventListener('click',()=>{document.getElementById(b.dataset.reveal).hidden=false;b.hidden=true}));
+/* order game */
+const ORD=["クレジットカード","デビットカード","電子マネー","コード決済"];let ordPick=[];
+function buildOrd(){ordPick=[];const shuf=["電子マネー","クレジットカード","コード決済","デビットカード"];
+ $('#order').innerHTML='';shuf.forEach(n=>{const b=document.createElement('button');b.type='button';b.innerHTML=`<span class="n"></span>${n}`;
+  b.onclick=()=>{if(b.classList.contains('done'))return;ordPick.push(n);b.classList.add('done');b.querySelector('.n').textContent=ordPick.length;$('#ordCheck').disabled=ordPick.length<4};$('#order').appendChild(b)});
+ $('#ordCheck').disabled=true;$('#ordMsg').textContent='';$('#ordAns').hidden=true}
+$('#ordCheck').onclick=()=>{const ok=ordPick.filter((n,i)=>n===ORD[i]).length;$('#ordMsg').textContent=`4つ中 ${ok}つが正しい位置でした。`;$('#ordAns').hidden=false};
+$('#ordReset').onclick=buildOrd;buildOrd();
+/* sorting */
+const SORT=[["Suica・nimoca","pre"],["WAON","pre"],["楽天ペイ（チャージした残高）","pre"],["PayPay（チャージした残高）","pre"],["図書カード","pre"],["ネット用プリペイドカード","pre"],["デビットカード","now"],["クレジットカード","post"],["スマホ料金と一緒に払う","post"],["iD・QUICPay（かざして払う）","post"]];
+let selChip=null;
+function buildSort(){$('#sortChips').innerHTML='';$$('#sortBuckets .in').forEach(x=>x.innerHTML='');
+ SORT.forEach(([n,a])=>{const c=document.createElement('button');c.className='chip';c.textContent=n;c.dataset.a=a;c.type='button';
+  c.onclick=e=>{e.stopPropagation();$$('.chip').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');selChip=c};$('#sortChips').appendChild(c)});
+ $('#sortMsg').textContent='気づいたこと：どの箱がいちばん多くなりましたか？'}
+$$('#sortBuckets .bucket').forEach(b=>b.onclick=()=>{if(!selChip)return;selChip.classList.remove('sel','right','wrong');selChip.dataset.put=b.dataset.b;b.querySelector('.in').appendChild(selChip);selChip=null});
+$('#sortCheck').onclick=()=>{let ok=0,n=0;$$('#sortBuckets .chip').forEach(c=>{n++;const r=c.dataset.put===c.dataset.a;c.classList.toggle('right',r);c.classList.toggle('wrong',!r);if(r)ok++});
+ $('#sortMsg').textContent=`${SORT.length}こ中 ${ok}こ正解（箱に入れたのは${n}こ）。どの箱がいちばん多い？`;$('#sortExpBtn').hidden=false};
+$('#sortExpBtn').onclick=()=>{const on=$('#sortExp').hidden;$('#sortExp').hidden=!on;$('#sortBuckets').hidden=on;$('#sortChips').hidden=on;$('#sortExpBtn').textContent=on?'箱にもどる':'くわしい説明'};
+$('#sortReset').onclick=()=>{buildSort();$('#sortExp').hidden=true;$('#sortBuckets').hidden=false;$('#sortChips').hidden=false;$('#sortExpBtn').hidden=true;$('#sortExpBtn').textContent='くわしい説明'};buildSort();
+/* predictions */
+const PLACES=["（選ぶ）","カードの中","会社のコンピュータ","銀行の口座","スマホの中","わからない"];
+['pIC','pCode','pCredit'].forEach(id=>{$('#'+id).innerHTML=PLACES.map(p=>`<option>${p}</option>`).join('')});
+const seen={ic:{paid:false,off:null},code:{paid:false,off:null},credit:{paid:false,off:null}};
+function fillCmp(){const rows=[["交通系IC","pIC","ic","カードの中のICチップ"],["コード決済","pCode","code","コード決済会社のコンピュータ"],["クレジット","pCredit","credit","カード会社の記録（あとで銀行口座）"]];
+ $('#cmpBody').innerHTML=rows.map(([n,p,k,ans])=>{const v=$('#'+p).value;const o=seen[k].off;
+  return `<tr><td>${n}</td><td>${v==='（選ぶ）'?'—':v}</td><td>${seen[k].paid?ans:'（シミュレータでためしてください）'}</td><td>${o===null?'—':(o?'払えた':'払えなかった')}</td></tr>`}).join('')}
+/* simulator */
+const S={m:'ic',net:true,ic:1000,code:1000,used:0,bank:1000,limit:5000,late:false,pend:0,recv:0,busy:false};
+const yen=n=>'¥'+n.toLocaleString();
+function log(t){const L=$('#simLog');const d=document.createElement('div');d.textContent=t;L.prepend(d);while(L.children.length>5)L.lastChild.remove()}
+function flash(id){const e=$('#'+id);if(!e)return;e.classList.remove('flash');void e.getBBox();e.classList.add('flash')}
+function drawPayer(){const g=$('#payer');
+ if(S.m==='ic')g.innerHTML=`<rect class="n-box" x="15" y="105" width="115" height="90" rx="10"/><text class="n-title" x="72" y="126" text-anchor="middle">ICカード</text><rect x="27" y="136" width="20" height="16" rx="2" fill="var(--mark)"/><text class="n-sub" x="37" y="166" text-anchor="middle">チップ</text><text class="n-num" x="120" y="183" text-anchor="end" id="pNum">${yen(S.ic)}</text>`;
+ else if(S.m==='code')g.innerHTML=`<rect class="n-box" x="40" y="95" width="70" height="115" rx="12"/><text class="n-title" x="75" y="116" text-anchor="middle">スマホ</text><rect x="48" y="124" width="54" height="56" rx="3" fill="var(--led-bg)"/><text x="75" y="144" text-anchor="middle" font-size="9" fill="var(--led)">画面の残高</text><text x="75" y="166" text-anchor="middle" font-size="12" fill="var(--led)" style="font-family:var(--f-led)" id="pNum">${S.net?yen(S.code):'表示不可'}</text><text class="n-sub" x="75" y="200" text-anchor="middle">見せているだけ</text>`;
+ else g.innerHTML=`<rect class="n-box" x="15" y="110" width="115" height="80" rx="10"/><text class="n-title" x="72" y="132" text-anchor="middle">クレジットカード</text><rect x="27" y="142" width="20" height="16" rx="2" fill="var(--mark)"/><text class="n-sub" x="72" y="180" text-anchor="middle">残高はない</text>`;
+ $('#simCharge').hidden=S.m==='credit';$('#simMonth').hidden=S.m!=='credit';
+ $('#termTitle').textContent=S.m==='ic'?'改札・レジ':(S.m==='code'?'お店のレジ':'お店の端末')}
+function upd(){$('#trNum').textContent=`受け取った記録 ${S.recv}件`;$('#coNum').textContent='残高 '+yen(S.code);$('#crNum').textContent=S.late?`未払い ${yen(S.used)}（延滞中）`:`利用 ${yen(S.used)}／限度 ${yen(S.limit)}`;$('#crNum').style.fill=S.late?'var(--ng)':'';$('#bkNum').textContent='銀行口座 '+yen(S.bank);$('#termPend').textContent=`未送信の記録 ${S.pend}件`;drawPayer()}
+function clearTrails(){$('#trails').innerHTML=''}
+function along(path,rev){return new Promise(res=>{const p=$('#'+path);const len=p.getTotalLength();const d=$('#dot');const dur=reduce?1:650;let t0=null;
+ const tr=document.createElementNS('http://www.w3.org/2000/svg','path');tr.setAttribute('d',p.getAttribute('d'));tr.setAttribute('class','trail');$('#trails').appendChild(tr);
+ (function step(ts){if(!t0)t0=ts;const k=Math.min(1,(ts-t0)/dur);const pt=p.getPointAtLength(len*(rev?1-k:k));d.setAttribute('cx',pt.x);d.setAttribute('cy',pt.y);
+  tr.setAttribute('stroke-dasharray',rev?`0 ${len*(1-k)} ${len*k} ${len}`:`${len*k} ${len}`);if(k<1)requestAnimationFrame(step);else res()})(performance.now())})}
+const hideDot=()=>{$('#dot').setAttribute('cx',-20);$('#dot').setAttribute('cy',-20)};
+async function blocked(msg,x=375,y=125,scr='エラー'){const X=$('#xMark');X.setAttribute('x',x);X.setAttribute('y',y);X.setAttribute('visibility','visible');$('#termScreen').textContent=scr;log('✕ '+msg);await wait(1200);X.setAttribute('visibility','hidden');hideDot()}
+async function sendPending(){if(!S.pend||!S.net)return;await along('w2');await along('w3');S.recv+=S.pend;log(`改札にたまっていた記録 ${S.pend}件を、交通会社のコンピュータへ送りました`);S.pend=0;hideDot();upd();flash('trNum')}
+async function pay(){if(S.busy)return;S.busy=true;clearTrails();$('#simPay').disabled=true;const P=160;$('#termScreen').textContent='処理中';
+ try{
+ if(S.m==='ic'){await along('w1');if(S.ic<P){return blocked(`カードの残高 ${yen(S.ic)} では、160円を払えません。チャージしてください`,120,115,'残高不足')}
+  S.ic-=P;S.pend++;upd();flash('pNum');$('#termScreen').textContent='ピッ';log(`カードの中の残高が ${yen(S.ic+P)} → ${yen(S.ic)} に書きかわりました`);hideDot();seen.ic.paid=true;if(!S.net)seen.ic.off=true;
+  await wait(500);if(S.net)await sendPending();else log('通信がないので、記録は改札にためておきます')}
+ else if(S.m==='code'){await along('w6');if(!S.net){seen.code.off=false;return blocked('通信できないので、会社のコンピュータに届きません。払えません')}
+  await along('w4');if(S.code<P){await along('w4',true);await along('w2',true);return blocked(`会社のコンピュータの残高 ${yen(S.code)} では、160円を払えません`,690,130,'残高不足')}
+  S.code-=P;upd();flash('coNum');log(`会社のコンピュータの残高が ${yen(S.code+P)} → ${yen(S.code)} に書きかわりました`);await along('w4',true);await along('w2',true);
+  $('#termScreen').textContent='完了';log('会社のコンピュータからお店へ「支払い完了」が届きました');hideDot();seen.code.paid=true}
+ else{await along('w1');await along('w2');if(!S.net){seen.credit.off=false;return blocked('通信できないので、カード会社に確認できません。払えません')}
+  await along('w5');
+  if(S.late){await along('w5',true);await along('w2',true);return blocked('支払いがおくれているので、カードが止められています',690,225,'利用不可')}
+  if(S.used+P>S.limit){await along('w5',true);await along('w2',true);return blocked(`限度額 ${yen(S.limit)} をこえるので、払えません`,690,225,'承認されず')}
+  S.used+=P;upd();flash('crNum');log(`カード会社の記録「今月の利用」が ${yen(S.used)} になりました。銀行口座はまだ変わりません`+(S.used>S.bank?'（口座のお金より多く使っています）':''));
+  await along('w5',true);await along('w2',true);$('#termScreen').textContent='OK';hideDot();seen.credit.paid=true}
+ }finally{S.busy=false;$('#simPay').disabled=false}}
+$('#simPay').onclick=pay;
+$('#simReset').onclick=()=>{if(S.busy)return;Object.assign(S,{ic:1000,code:1000,used:0,bank:1000,late:false,pend:0,recv:0});clearTrails();$('#termScreen').textContent='待機中';upd();log('最初の状態にもどしました')};
+$('#simCharge').onclick=()=>{if(S.busy)return;if(S.m==='ic'){S.ic+=1000;upd();flash('pNum');log('現金1000円を入れて、カードの中の残高を +1000 しました')}
+ else{if(!S.net){log('✕ 通信できないので、チャージできません');return}if(S.bank<1000){blocked(`銀行口座の残高 ${yen(S.bank)} では、1000円をチャージできません`,690,280,'チャージ不可');return}S.code+=1000;S.bank-=1000;upd();flash('coNum');flash('bkNum');log('銀行口座から、会社のコンピュータの残高へ +1000 しました')}};
+$('#simMonth').onclick=()=>{if(S.busy)return;if(!S.used){log('今月の利用がありません');return}
+ if(S.bank<S.used){S.late=true;upd();flash('crNum');blocked(`1か月後：口座に ${yen(S.bank)} しかなく、${yen(S.used)} を引き落とせません。支払いがおくれました（延滞）`,690,280,'引き落とし失敗');return}
+ S.bank-=S.used;log(`1か月後：銀行口座から ${yen(S.used)} がまとめて引き落とされました`);S.used=0;upd();flash('bkNum')};
+$('#simNet').onclick=async()=>{S.net=!S.net;const b=$('#simNet');b.classList.toggle('off',!S.net);b.setAttribute('aria-pressed',S.net);$('#netText').textContent=S.net?'ネットワーク：つながっている':'ネットワーク：切れている';
+ ['w2','w3','w4','w5','w6'].forEach(w=>$('#'+w).classList.toggle('cut',!S.net));$('#netLabel').textContent=S.net?'ネットワーク':'切断';log(S.net?'通信がもどりました':'通信を切りました');upd();
+ if(S.net&&S.pend&&!S.busy){S.busy=true;await sendPending();S.busy=false}};
+$$('#simMethod button').forEach(b=>b.onclick=()=>{if(S.busy)return;$$('#simMethod button').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.m=b.dataset.m;$('#termScreen').textContent='待機中';clearTrails();upd()});
+upd();
+/* anatomy */
+const PART={ant:"<b>アンテナ（コイル）</b>　カードのふちを、細い線がぐるぐる回っています。改札の電波（13.56MHz）を受けとり、<b>電磁誘導で電気を作ります</b>。データのやりとりもこの線で行います。とどくのは数cm〜10cmくらい。",
+ chip:"<b>ICチップ</b>　小さなコンピュータです。計算する部分（CPU）、記録する部分（メモリ）、暗号の計算をする回路が入っています。残高はこのメモリに書いてあります。",
+ bat:"<b>電池</b>　入っていません。電気は、タッチしたときだけ改札からもらいます。だからカードは何年も使えます。"};
+$$('#partBtns button').forEach(b=>b.onclick=()=>{$$('.part').forEach(p=>p.classList.remove('on'));$('#pa-'+b.dataset.p).classList.add('on');$('#partText').innerHTML=PART[b.dataset.p]});
+/* gate */
+let gRun=false;
+$('#gPlay').onclick=async()=>{if(gRun)return;gRun=true;const st=$$('#gSteps .st');st.forEach(s=>s.classList.remove('on'));
+ const card=$('#gCard');card.setAttribute('transform','translate(0,-60)');$('#gScreen').textContent='　';await wait(200);
+ card.setAttribute('transform','translate(0,15)');await wait(500);$('#gWaves').setAttribute('opacity','1');st[0].classList.add('on');$('#gScreen').textContent='電気がとどく';await wait(1300);
+ st[1].classList.add('on');$('#gLock').setAttribute('opacity','1');$('#gScreen').textContent='本物か確認';await wait(1300);$('#gLock').setAttribute('opacity','0');
+ st[2].classList.add('on');$('#gScreen').textContent='残高 ¥1,234';await wait(1300);
+ st[3].classList.add('on');$('#gBal').textContent='¥1,064';flash('gBal');$('#gScreen').textContent='−170 → ¥1,064';await wait(1500);
+ $('#gWaves').setAttribute('opacity','0');card.setAttribute('transform','translate(0,-60)');st[4].classList.add('on');$('#gScreen').textContent='記録をためる';await wait(900);
+ $('#gBal').textContent='¥1,234';gRun=false};
+/* flow engine */
+function flow(svgId,textId,nextId,resetId,getDef){
+ let def,i;
+ const svg=$('#'+svgId);
+ function ep(n,tx,ty){const cx=n.x+n.w/2,cy=n.y+n.h/2,dx=tx-cx,dy=ty-cy;const s=Math.min(dx?(n.w/2+4)/Math.abs(dx):1e9,dy?(n.h/2+4)/Math.abs(dy):1e9);return [cx+dx*s,cy+dy*s]}
+ function render(){def=getDef();i=-1;const N={};def.nodes.forEach(n=>N[n.id]=n);
+  let h='<defs><marker id="ah-'+svgId+'" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" style="fill:var(--sub)"/></marker></defs>';
+  def.steps.forEach((s,k)=>{const a=N[s.from],b=N[s.to];if(a===b){h+=`<text class="fl-numt" data-k="${k}" x="${a.x+a.w/2}" y="${a.y+a.h+18}" text-anchor="middle">${k+1}. ここで書きかわる</text>`;return}const ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2;
+   const L=Math.hypot(bx-ax,by-ay);const fw=def.nodes.indexOf(a)<def.nodes.indexOf(b);const off=(s.off!=null?s.off:(fw?7:-7));const cx=fw?bx-ax:ax-bx,cy=fw?by-ay:ay-by;const ox=-cy/L*off,oy=cx/L*off;
+   const [x1,y1]=ep(a,bx+ox,by+oy),[x2,y2]=ep(b,ax+ox,ay+oy);
+   h+=`<path class="fl-arrow" data-k="${k}" d="M${x1+ox} ${y1+oy} L${x2+ox} ${y2+oy}" marker-end="url(#ah-${svgId})"/>`;
+   const mx=(x1+x2)/2+ox*1.8,my=(y1+y2)/2+oy*1.8;h+=`<circle class="fl-num" data-k="${k}" cx="${mx}" cy="${my}" r="10"/><text class="fl-numt" data-k="${k}" x="${mx}" y="${my+4}" text-anchor="middle">${k+1}</text>`});
+  def.nodes.forEach(n=>{h+=`<rect class="fl-node" data-n="${n.id}" x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="10"/><text class="n-title" x="${n.x+n.w/2}" y="${n.y+n.h/2-(n.sub?3:-5)}" text-anchor="middle">${n.label}</text>`+(n.sub?`<text class="n-sub" x="${n.x+n.w/2}" y="${n.y+n.h/2+14}" text-anchor="middle">${n.sub}</text>`:'')});
+  svg.innerHTML=h;$('#'+textId).innerHTML=def.intro;$('#'+nextId).disabled=false;$('#'+nextId).textContent='次へ'}
+ function go(){if(i>=def.steps.length-1)return;i++;const s=def.steps[i];
+  svg.querySelectorAll('[data-k]').forEach(e=>{const k=+e.dataset.k;e.classList.toggle('past',k<i);e.classList.toggle('act',k===i)});
+  svg.querySelectorAll('.fl-node').forEach(e=>e.classList.toggle('act',e.dataset.n===s.from||e.dataset.n===s.to));
+  $('#'+textId).innerHTML=`<b>${i+1}. ${s.title}</b>　${s.text}`;if(i===def.steps.length-1){$('#'+nextId).disabled=true;$('#'+nextId).textContent='おわり'}}
+ $('#'+nextId).onclick=go;$('#'+resetId).onclick=render;render();return render}
+/* QR flows */
+let qrMode='mpm';
+const QR={
+ mpm:{intro:"<b>店舗提示型</b>　お店はQRコードを印刷して置くだけ。QRの中身は「どのお店か」を表す番号です。「次へ」で進めます。",
+  nodes:[{id:'u',label:'お客のスマホ',x:20,y:85,w:130,h:60},{id:'s',label:'お店のQR（紙）',sub:'お店の番号だけ',x:20,y:5,w:130,h:58},{id:'v',label:'コード決済会社',sub:'残高と売上の記録',x:290,y:80,w:160,h:70},{id:'t',label:'お店のタブレット',sub:'入金の確認',x:540,y:85,w:140,h:60}],
+  steps:[{from:'u',to:'s',off:0,title:'読む',text:'お客がスマホでお店のQRを読みます。これで「どのお店に払うか」がわかります。'},
+   {from:'u',to:'v',title:'送る',text:'紙のQRには金額が入っていないので、お客がアプリに「160」と打ちこみます。するとスマホが会社のサーバへ「このお店に160円」と送ります。'},
+   {from:'v',to:'v',title:'書きかえる',text:'サーバがお客の残高を160円引き、お店の売上に160円を記録します。残高はスマホではなく、ここで書きかわります。'},{from:'v',to:'t',title:'知らせる',text:'サーバがお店に「160円の支払いがありました」と知らせます。'},
+   {from:'v',to:'u',off:-14,title:'完了',text:'お客のスマホにも「支払い完了」が出ます。お店は画面で確認します。'}]},
+ cpm:{intro:"<b>利用者提示型</b>　お客のアプリに、いまだけ使えるコードが出ます。コンビニのレジでよく見る方式です。",
+  nodes:[{id:'u',label:'お客のスマホ',sub:'コードを表示',x:20,y:40,w:140,h:60},{id:'r',label:'お店のレジ',sub:'読み取り機',x:270,y:168,w:150,h:60},{id:'v',label:'コード決済会社',sub:'残高と売上の記録',x:520,y:35,w:160,h:70}],
+  steps:[{from:'v',to:'u',title:'コードを作る',text:'サーバが「この人の、いまだけの番号」を作り、スマホに表示させます。'},
+   {from:'r',to:'u',title:'読む',text:'レジの読み取り機が、スマホのコードを読みます。'},
+   {from:'r',to:'v',title:'問い合わせる',text:'レジがサーバへ「この番号の人から160円」と送ります。'},
+   {from:'v',to:'r',title:'書きかえて返す',text:'サーバが番号の持ち主を見つけ、残高を160円引いて、レジへ「OK」を返します。'},
+   {from:'v',to:'u',off:16,title:'完了',text:'お客のスマホにも「支払い完了」が出ます。'}]}};
+const renderQR=flow('flQR','flQRtext','flQRnext','flQRreset',()=>QR[qrMode]);
+$$('#qrMode button').forEach(b=>b.onclick=()=>{$$('#qrMode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');qrMode=b.dataset.q;renderQR()});
+/* credit flow */
+flow('flCR','flCRtext','flCRnext','flCRreset',()=>({
+ intro:"<b>クレジットカードには、5人の登場人物がいます</b>。お客・お店・お店と契約する会社・カードを出した会社・その間をつなぐ国際ブランド。「次へ」で流れを追います。",
+ nodes:[{id:'m',label:'お客',sub:'カードを持つ人',x:20,y:10,w:120,h:56},{id:'s',label:'お店',sub:'加盟店',x:20,y:170,w:120,h:56},
+  {id:'a',label:'アクワイアラ',sub:'お店と契約する会社',x:220,y:170,w:150,h:56},{id:'b',label:'国際ブランド',sub:'Visa・JCB など',x:440,y:170,w:130,h:56},
+  {id:'i',label:'イシュア',sub:'カードを出した会社',x:440,y:10,w:130,h:56},{id:'k',label:'お客の銀行',x:600,y:90,w:90,h:56}],
+ steps:[{from:'m',to:'s',title:'カードを出す',text:'お客がカードをタッチします。お店の端末は、カードのICチップから<b>カード番号と有効期限</b>を読みとります。'},
+  {from:'s',to:'a',title:'オーソリ（問い合わせ）',text:'端末が「この番号で1万円、使っていい？」という問い合わせを、<b>暗号化して</b>送ります。日本では、お店とカード会社のあいだを<b>CAFIS</b>（NTTデータ）などのネットワークがつないでいます。'},
+  {from:'a',to:'b',title:'行き先を決める',text:'カード番号の<b>先頭6〜8けた</b>を見ると、どの会社が出したカードか分かります。国際ブランドの通り道を通って、その会社へ届けます。'},
+  {from:'b',to:'i',title:'調べる',text:'カードを出した会社が調べます。①止められていないか ②限度額が残っているか ③<b>いつもとちがう使い方ではないか</b>（不正のうたがい）。'},
+  {from:'i',to:'s',off:0,title:'承認',text:'「OK」と<b>承認番号</b>が同じ道をもどってお店へ。ここまで数秒。この時点では、まだだれのお金も動いていません。'},
+  {from:'a',to:'s',off:-12,title:'売上確定・立替払い',text:'お店はその日の売上をまとめて送ります。あとでアクワイアラが、<b>手数料を引いた</b>代金をお店に払います。'},
+  {from:'i',to:'k',title:'引き落とし',text:'月に1回、イシュアがお客の銀行口座からまとめて引き落とします。ここで初めて、お客のお金が減ります。'}]}));
+$('#feeIn').addEventListener('input',()=>$('#feeGo').disabled=!$('#feeIn').value);
+$('#feeGo').onclick=()=>{const v=+$('#feeIn').value;$('#feeMsg').innerHTML=v===9700?'<b style="color:var(--ok)">正解。</b>10,000 × 0.03 = 300円が手数料。10,000 − 300 = 9,700円':'<b style="color:var(--ng)">ちがいます。</b>まず手数料が何円かを出してみよう';if(v===9700)$('#feeMore').hidden=false};
+/* card number */
+const CN0="4543210123456783";let cn=CN0.split('').map(Number);let chg=-1;
+function luhn(d){let sum=0,rows=[];for(let i=d.length-1,k=0;i>=0;i--,k++){let v=d[i];let x=v;if(k%2===1){x=v*2;if(x>9)x-=9}rows.unshift({v,x,dbl:k%2===1});sum+=x}return{sum,rows,ok:sum%10===0}}
+function drawCN(){const cls=i=>i===0?'c1':i<6?'c2':i<15?'c3':'c4';let h='';for(let g=0;g<4;g++){h+='<div class="g">';for(let j=0;j<4;j++){const i=g*4+j;h+=`<span class="${i===0?'c1':cls(i)}${i===chg?' chg':''}">${cn[i]}</span>`}h+='</div>'}
+ $('#cardNum').innerHTML=h;const r=luhn(cn);$('#cnRes').innerHTML=r.ok?'<span style="color:var(--ok)">チェック：OK（形は正しい番号）</span>':'<span style="color:var(--ng)">チェック：NG（打ちまちがいがある）</span>';if(!$('#cnCalc').hidden)showCalc()}
+function showCalc(){const r=luhn(cn);$('#cnCalc').hidden=false;
+ $('#cnCalc').innerHTML='右から数えて偶数番目の数字を2倍します（2けたになったら9を引く）。全部たして、<b>10で割り切れればOK</b>。<br><span class="mono">'+r.rows.map(o=>o.dbl?`<b>${o.x}</b>`:o.x).join(' + ')+` = ${r.sum}</span> → ${r.ok?'割り切れる → OK':'割り切れない → NG'}`}
+$('#cnChange').onclick=()=>{cn=CN0.split('').map(Number);chg=Math.floor(Math.random()*15);let v;do{v=Math.floor(Math.random()*10)}while(v===cn[chg]);cn[chg]=v;drawCN()};
+$('#cnReset').onclick=()=>{cn=CN0.split('').map(Number);chg=-1;drawCN()};
+$('#cnShow').onclick=showCalc;drawCN();
+/* fraud */
+const FR=[["10/14 08:10","熊本市のコンビニ","¥480",0,"いつもの生活"],["10/14 18:30","熊本市のドラッグストア","¥1,250",0,"いつもの生活"],["10/15 03:12","海外のネットショップ","¥98,000",1,"深夜・海外・高い金額。いつもとちがう"],["10/15 03:15","海外のネットショップ","¥98,000",1,"3分後にまた同じ高い買い物"],["10/15 12:00","熊本市の書店","¥880",0,"いつもの生活"],["10/15 12:05","東京の家電店","¥150,000",1,"5分前は熊本にいた。5分で東京には行けない"]];
+$('#frBody').innerHTML=FR.map((r,k)=>`<tr data-k="${k}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><button type="button">あやしい</button></td></tr>`).join('');
+$$('#frBody tr').forEach(tr=>tr.querySelector('button').onclick=()=>tr.classList.toggle('sel2'));
+$('#frCheck').onclick=()=>{let ok=0;$$('#frBody tr').forEach(tr=>{const r=FR[+tr.dataset.k];const p=tr.classList.contains('sel2');if(p===!!r[3])ok++;
+ tr.querySelector('td:last-child').innerHTML=(r[3]?'<b style="color:var(--ng)">あやしい</b>':'<b style="color:var(--ok)">ふつう</b>')+`<div class="small">${r[4]}</div>`});
+ $('#frMsg').textContent=`6件中 ${ok}件 正しく見分けられました。カード会社のコンピュータは、これを1件ずつ、数秒で調べています。`;$('#frCheck').hidden=true;$('#frToggle').hidden=false};
+$('#frToggle').onclick=()=>{const on=$('#frAns').hidden;$('#frAns').hidden=!on;$('.fraud').hidden=on;$('#frToggle').textContent=on?'記録にもどる':'止めるしくみを見る'};
+$$('.rv').forEach(b=>b.onclick=()=>{const sp=document.createElement('span');sp.innerHTML=b.dataset.ans;b.replaceWith(sp)});
+/* scenarios */
+const SC=[["通信が切れた","○","✕","分散はその場で計算できる。集中は真ん中に届かない"],
+ ["真ん中のコンピュータが止まった","○","✕","分散は改札機だけで動く。記録はあとで送る"],
+ ["カードをなくしたので、すぐ止めたい","✕","○","分散は『止めるカードの一覧』を全部の機械に配るまで時間がかかる。集中は真ん中で止めればすぐ"],
+ ["新しい割引運賃を始めたい","✕","○","分散は全部の改札機の中身を直す。集中は真ん中だけ直せばよい"]];
+$('#scBody').innerHTML=SC.map((r,k)=>`<tr><td>${r[0]}</td><td><select data-sc="${k}-1" aria-label="${r[0]} 分散"><option>？</option><option>○</option><option>✕</option></select></td><td><select data-sc="${k}-2" aria-label="${r[0]} 集中"><option>？</option><option>○</option><option>✕</option></select></td></tr><tr hidden data-why="${k}"><td colspan="3" class="small">${r[3]}</td></tr>`).join('');
+$('#scCheck').onclick=()=>{let ok=0;$$('[data-sc]').forEach(s=>{const [k,c]=s.dataset.sc.split('-');const r=s.value===SC[k][c];if(r)ok++;s.parentElement.className=r?'r':'w';if(!r)s.parentElement.title='正解：'+SC[k][c]});
+ $$('[data-why]').forEach(t=>t.hidden=false);$('#scMsg').textContent=`8つ中 ${ok}つ正解。どちらにも、強いところと弱いところがあります。`};
+/* pick */
+['#pick3','#pick17'].forEach(g=>$$(g+' button').forEach(b=>b.onclick=()=>{$$(g+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}));
+/* quiz */
+const QZ=[
+ ["日本で一番早く始まったキャッシュレス決済は？",["電子マネー","クレジットカード","コード決済"],1],
+ ["Suicaで払ったとき（これまでの方式）、残高が書きかわるのは？",["カードの中のICチップ","改札の中","スマホの中"],0],
+ ["PayPayのアプリに出ている残高は？",["スマホの中に書いてある","会社のコンピュータの数字を見せている","お店のレジにある"],1],
+ ["ICカードが電池なしで動くのは？",["小さな電池がかくれている","改札の電波でコイルに電気が生まれる","太陽の光"],1],
+ ["書きこみ中にカードを離すと？",["半分だけ書きかわる","全部取り消され、もとのまま","カードがこわれる"],1],
+ ["クレジットで払った瞬間、お客の銀行口座は？",["すぐ減る","まだ減らない","ふえる"],1],
+ ["「真ん中だけ直せば、新しい割引を始められる」のは？",["分散処理","集中処理","どちらも同じ"],1],
+ ["Suicaが最初に分散処理を選んだ理由は？",["当時は回線や真ん中のコンピュータが遅かった","カードを安く作るため","電池を長もちさせるため"],0]];
+let score=0;
+QZ.forEach(([q,os,a],qi)=>{const d=document.createElement('div');d.className='q';d.innerHTML=`<p>${qi+1}. ${q}</p><div class="opts"></div>`;
+ os.forEach((o,oi)=>{const b=document.createElement('button');b.type='button';b.textContent=o;b.onclick=()=>{if(d.dataset.done)return;d.dataset.done=1;
+  if(oi===a){b.classList.add('right');score++}else{b.classList.add('wrong');d.querySelectorAll('button')[a].classList.add('right')}
+  $('#quizScore').textContent=`${score} / ${QZ.length}`};d.querySelector('.opts').appendChild(b)});$('#quiz').appendChild(d)});
+show(0);
+</script>
+
+
+</body>
+</html>

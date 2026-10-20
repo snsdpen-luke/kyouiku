@@ -15,6 +15,7 @@
   複線図練習.html     → fukusen/index.html （同上。URL を /fukusen/ で配る）
   速い遅いの正体.html   → speed/index.html  （同上。通信速度・画質・ギガの余談スライド）
   電波はどこまで届くか.html → wifi/index.html （同上。家の間取りで Wi-Fi の電波を試す）
+  残高はどこにある.html → emoney/index.html （同上。電子マネーのしくみ：IC・コード決済・クレジット・集中と分散）
 
   python3 build.py                  上の10を作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
@@ -99,6 +100,11 @@ print("生成: speed/index.html")
 os.makedirs("wifi", exist_ok=True)
 shutil.copyfile(SRC9, "wifi/index.html")
 print("生成: wifi/index.html")
+
+# 1k) 残高はどこにある（電子マネー①）。コンピュータシステム技術・電子マネー単元
+os.makedirs("emoney", exist_ok=True)
+shutil.copyfile("残高はどこにある.html", "emoney/index.html")
+print("生成: emoney/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
