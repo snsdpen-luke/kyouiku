@@ -220,7 +220,8 @@ function judge(W,s){const cx=s.x+1.3*Math.cos(s.th),front=s.y+FO*Math.sin(s.th);
  if(Math.abs(cx-W.gc)>W.st.tol)return {ok:false,t:'枠からずれています'};
  if(front>ENTRY+0.05)return {ok:false,t:'枠からはみ出しています'};
  if(Math.abs(s.th-Math.PI/2)>W.st.ang)return {ok:false,t:'ななめに止まっています'};return {ok:true,t:'駐車成功！'};}
-function onBump(W,s){const c=Math.cos(s.th),n=Math.sin(s.th);let k=0;[0,L].forEach(a=>{const y=s.y+a*n,x=s.x+a*c;if(y>BUMP1&&y<BUMP2&&x>SX&&x<SX+W.sw*NSLOT)k++;});return k;}
+const USE_BUMP=false; // 段差なし
+function onBump(W,s){if(!USE_BUMP)return 0;const c=Math.cos(s.th),n=Math.sin(s.th);let k=0;[0,L].forEach(a=>{const y=s.y+a*n,x=s.x+a*c;if(y>BUMP1&&y<BUMP2&&x>SX&&x<SX+W.sw*NSLOT)k++;});return k;}
 
 /* ===== 記録と学習 ===== */
 // 記録の1行：[時刻, 枠の真ん中からの前後(m), y, 向き(rad), ハンドル(-1左〜1右), 速さ(m/s), シフト, ペダル]
@@ -477,7 +478,7 @@ let SC=30,OX=150,OY=-6;const P=(x,y)=>[OX+x*SC,OY+y*SC];
 function drawLot(c,Wd){const w=968,h=330;const [x1]=P(-4.6,0),[x2]=P(27,0);c.fillStyle=C.ink;c.fillRect(0,0,x1,h);c.fillRect(x2,0,w,h);const [,wy]=P(0,WALL);c.fillRect(0,0,w,wy);
  c.strokeStyle=C.mark;c.lineWidth=3;for(let k=0;k<=NSLOT;k++){const [x,y1]=P(SX+Wd.sw*k,WALL);const [,y2]=P(0,ENTRY);c.beginPath();c.moveTo(x,y1);c.lineTo(x,y2);c.stroke();}
  for(let k=-2;k<=NSLOT+3;k++){const [x,y1]=P(SX+BSW*k,AB-0.5);c.beginPath();c.moveTo(x,y1);c.lineTo(x,h);c.stroke();}
- const y1=P(0,BUMP1)[1],y2=P(0,BUMP2)[1];for(let k=0;k<NSLOT;k++){const a=P(SX+Wd.sw*k,0)[0]+4,b=P(SX+Wd.sw*(k+1),0)[0]-4;c.fillStyle=C.line;c.fillRect(a,y1,b-a,y2-y1);c.strokeStyle=C.sub;c.lineWidth=1.5;c.beginPath();for(let x=a;x<b;x+=8){c.moveTo(x,y2);c.lineTo(x+6,y1);}c.stroke();}
+ const y1=P(0,BUMP1)[1],y2=P(0,BUMP2)[1];if(USE_BUMP)for(let k=0;k<NSLOT;k++){const a=P(SX+Wd.sw*k,0)[0]+4,b=P(SX+Wd.sw*(k+1),0)[0]-4;c.fillStyle=C.line;c.fillRect(a,y1,b-a,y2-y1);c.strokeStyle=C.sub;c.lineWidth=1.5;c.beginPath();for(let x=a;x<b;x+=8){c.moveTo(x,y2);c.lineTo(x+6,y1);}c.stroke();}
  const [e1,ey]=P(SX+Wd.sw*Wd.empty,ENTRY),[e2]=P(SX+Wd.sw*(Wd.empty+1),ENTRY);c.strokeStyle=C.copper;c.setLineDash([8,6]);c.lineWidth=3;c.strokeRect(e1+3,P(0,WALL)[1]+3,e2-e1-6,ey-P(0,WALL)[1]-6);c.setLineDash([]);
  Wd.obs.forEach(o=>{const [a,b]=P(o[0],o[1]),[cc,d]=P(o[2],o[3]);if(o[4]===2){c.fillStyle=C.ink;c.fillRect(a,b,cc-a,d-b);c.strokeStyle=C.danger;c.lineWidth=2;c.strokeRect(a+1,b+1,cc-a-2,d-b-2);return;}
   c.fillStyle=C['steel-soft'];c.beginPath();c.roundRect?c.roundRect(a,b,cc-a,d-b,6):c.rect(a,b,cc-a,d-b);c.fill();c.fillStyle=C.line;c.fillRect(a+6,o[4]?b+24:d-38,cc-a-12,14);});}
@@ -507,7 +508,7 @@ function drawGraph(){const {c,w,h}=X.cvGraph;c.clearRect(0,0,w,h);const x0=34,y0
  const H=m.hist,N=200;H.forEach((p,i)=>{if(p.bump){const x=x0+gw*(i+N-H.length)/N;c.fillStyle='rgba(210,60,50,.15)';c.fillRect(x,y0,gw/N+1,gh);}});
  c.strokeStyle=C.copper;c.setLineDash([5,4]);c.lineWidth=2;c.beginPath();c.moveTo(x0,ys(kmh(P1.vt)));c.lineTo(x0+gw,ys(kmh(P1.vt)));c.stroke();c.setLineDash([]);
  c.strokeStyle=C.sens;c.lineWidth=2.5;c.beginPath();H.forEach((p,i)=>{const x=x0+gw*(i+N-H.length)/N,y=ys(kmh(p.v));i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();
- c.strokeStyle=C.line;c.lineWidth=1;c.strokeRect(x0,y0,gw,gh);c.fillStyle=C.sub;c.font='11px '+FB();c.textAlign='left';c.fillText('— 目標　■ 段差　（最近10秒・km/h）',x0,h-8);}
+ c.strokeStyle=C.line;c.lineWidth=1;c.strokeRect(x0,y0,gw,gh);c.fillStyle=C.sub;c.font='11px '+FB();c.textAlign='left';c.fillText('— 目標　（最近10秒・km/h）',x0,h-8);}
 
 /* ===== データ分析 ===== */
 // 1回の記録から、大事な数字を拾い出す
@@ -518,12 +519,12 @@ function analyze(r){const R=r.rows;const sp=g=>{const a=R.filter(x=>x[6]===g&&Ma
  const stuck=R.filter(x=>x[10]&&Math.abs(x[5])<0.01&&x[6]!=='P').length*0.05;const cs=R.map(x=>x[11]).filter(x=>x!==null&&x!==undefined);
  return {fw:sp('D'),bk:sp('R'),bumpA,bumpT,stuck,brakeD,corner:cs.length?Math.min(...cs):null,time:R[R.length-1][0]};}
 function buildAnal(){const list=stageRuns();const t=$('atbl');
- let h=`<tr><th></th><th>前進の速さ<br>（平均）</th><th>バックの速さ<br>（平均）</th><th>段差で<br>止まった</th><th>段差で<br>アクセル</th><th>ブレーキを<br>踏んだ距離</th><th>となりに一番<br>近づいた</th><th>時間</th></tr>`;
- renderLearned();$('teachBtn').disabled=!list.length;if(!list.length){t.innerHTML=h+`<tr><td colspan="8" style="text-align:left;padding:14px">まだ記録がありません。「手動で運転」で駐車に成功すると、ここに増えます。</td></tr>`;drawA();return;}
+ let h=`<tr><th></th><th>前進の速さ<br>（平均）</th><th>バックの速さ<br>（平均）</th><th>ブレーキを<br>踏んだ距離</th><th>となりに一番<br>近づいた</th><th>時間</th></tr>`;
+ renderLearned();$('teachBtn').disabled=!list.length;if(!list.length){t.innerHTML=h+`<tr><td colspan="6" style="text-align:left;padding:14px">まだ記録がありません。「手動で運転」で駐車に成功すると、ここに増えます。</td></tr>`;drawA();return;}
  const A=list.map(analyze);const avg=k=>{const a=A.map(x=>x[k]).filter(x=>x!==null);return a.length?a.reduce((p,q)=>p+q,0)/a.length:null;};
  const f=(v,u,d=1,mul=1)=>v===null?'—':fmt(v*mul,d)+u;
- list.forEach((r,i)=>{const a=A[i];h+=`<tr class="click${r.id===selRun?' sel':''}" data-id="${r.id}"><td style="text-align:left"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.color}"></span> 記録${i+1}${r.demo?'<small style="color:var(--sub)"> 見本</small>':''}</td><td>${f(a.fw,' km/h',1,3.6)}</td><td>${f(a.bk,' km/h',1,3.6)}</td><td>${f(a.stuck,' 秒')}</td><td>${f(a.bumpA,' 秒')}</td><td>${f(a.brakeD,' cm',0,100)}</td><td>${f(a.corner,' cm',0,100)}</td><td>${f(a.time,' 秒')}</td></tr>`;});
- h+=`<tr class="avg"><td style="text-align:left">平均</td><td>${f(avg('fw'),' km/h',1,3.6)}</td><td>${f(avg('bk'),' km/h',1,3.6)}</td><td>${f(avg('stuck'),' 秒')}</td><td>${f(avg('bumpA'),' 秒')}</td><td>${f(avg('brakeD'),' cm',0,100)}</td><td>${f(minC(A),' cm（最小）',0,100)}</td><td>${f(avg('time'),' 秒')}</td></tr>`;
+ list.forEach((r,i)=>{const a=A[i];h+=`<tr class="click${r.id===selRun?' sel':''}" data-id="${r.id}"><td style="text-align:left"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.color}"></span> 記録${i+1}${r.demo?'<small style="color:var(--sub)"> 見本</small>':''}</td><td>${f(a.fw,' km/h',1,3.6)}</td><td>${f(a.bk,' km/h',1,3.6)}</td><td>${f(a.brakeD,' cm',0,100)}</td><td>${f(a.corner,' cm',0,100)}</td><td>${f(a.time,' 秒')}</td></tr>`;});
+ h+=`<tr class="avg"><td style="text-align:left">平均</td><td>${f(avg('fw'),' km/h',1,3.6)}</td><td>${f(avg('bk'),' km/h',1,3.6)}</td><td>${f(avg('brakeD'),' cm',0,100)}</td><td>${f(minC(A),' cm（最小）',0,100)}</td><td>${f(avg('time'),' 秒')}</td></tr>`;
  t.innerHTML=h;(t.children||[]).forEach?.(()=>{});
  t.onclick=e=>{const tr=e.target.closest&&e.target.closest('tr[data-id]');if(!tr)return;selRun=+tr.dataset.id;buildAnal();};
  const teach=()=>{if(!list.length){say('');return;}const fw=avg('fw'),bk=avg('bk'),bd=avg('brakeD');if(fw!==null)$('pF').value=+(fw*3.6).toFixed(1);if(bk!==null)$('pV').value=+(bk*3.6).toFixed(1);if(bd!==null)$('pS').value=+bd.toFixed(2);
@@ -545,7 +546,7 @@ function drawA(){const {c,w,h}=X.cvA;c.clearRect(0,0,w,h);const r=runs.find(x=>x
  c.strokeStyle=r.color;c.lineWidth=2.5;c.beginPath();R.forEach((x,i)=>{i?c.lineTo(xs(x[0]),ys(x[5])):c.moveTo(xs(x[0]),ys(x[5]));});c.stroke();
  R.forEach((x,i)=>{if(i&&x[7]==='B'&&R[i-1][7]!=='B'){c.fillStyle=C.danger;c.beginPath();c.arc(xs(x[0]),ys(x[5]),4,0,Math.PI*2);c.fill();}if(i&&x[7]==='A'&&R[i-1][7]!=='A'){c.fillStyle=C.good;c.beginPath();c.arc(xs(x[0]),ys(x[5]),4,0,Math.PI*2);c.fill();}});
  c.fillStyle=C.sub;c.font='11px '+FN();c.textAlign='right';[[vm,'+'+fmt(vm*3.6,0)],[0,'0'],[-vm,'-'+fmt(vm*3.6,0)]].forEach(([v,t])=>c.fillText(t,x0-4,ys(v)+4));
- c.textAlign='left';c.font='11px '+FB();c.fillText(`● アクセル　● ブレーキ　■ 段差　（km/h・${fmt(T,0)}秒）`,x0,h-10);
+ c.textAlign='left';c.font='11px '+FB();c.fillText(`● アクセル　● ブレーキ　（km/h・${fmt(T,0)}秒）`,x0,h-10);
  c.fillStyle=C.good;c.fillRect(x0+2,h-17,0,0);}
 $('demoBtn').onclick=()=>{let seed=Date.now()%2147483647;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};let added=0,tries=0;
  while(added<4&&tries<30){tries++;const e=ST.empties[Math.floor(rnd()*ST.empties.length)];const d=demoDrive(ST,e,ST.y0+(rnd()-0.5)*0.4,rnd);if(d){const id=nextId++;runs.push({id,stage:ST.id,empty:d.empty,rows:d.rows,demo:true,color:COLORS[(id-1)%COLORS.length]});added++;}}
