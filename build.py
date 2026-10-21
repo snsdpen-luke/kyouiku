@@ -86,6 +86,10 @@ print("生成: dist/index.html")
 os.makedirs("dist2", exist_ok=True)
 shutil.copyfile(SRC_DIST2, "dist2/index.html")
 print("生成: dist2/index.html")
+# 自動駐車（手動で9ステージ全クリア → 自動制御へ）
+os.makedirs("parking", exist_ok=True)
+shutil.copyfile("自動駐車.html", "parking/index.html")
+print("生成: parking/index.html")
 
 # 1h) 複線図れんしゅう（第二種電気工事士 技能試験の複線図）
 os.makedirs("fukusen", exist_ok=True)
