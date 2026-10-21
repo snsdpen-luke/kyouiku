@@ -137,7 +137,7 @@ tr.click{cursor:pointer}
   </header>
   <div class="steps" id="modes">
     <button data-m="drive" class="sel"><b>①</b> 手動で運転<br><small>データを集める</small></button><span class="ar">→</span>
-    <button data-m="anal"><b>②</b> 車に教える<br><small>自分の運転から</small></button><span class="ar">→</span>
+    <button data-m="anal"><b>②</b> コンピュータに反映<br><small>運転の記録を</small></button><span class="ar">→</span>
     <button data-m="auto"><b>③</b> 自動運転<br><small id="lvName"></small></button><span class="ar">→</span>
     <button data-m="review"><b>④</b> ふりかえり<br><small>止まった理由</small></button>
     <span class="sp"></span>
@@ -153,7 +153,7 @@ tr.click{cursor:pointer}
       <div class="lvsel" id="lvsel" hidden></div>
       <div class="big" id="dStatus"></div>
       <div id="s1box" hidden>
-        <div class="slh">車が覚えた数字 <span class="note" id="fromNote"></span></div>
+        <div class="slh">コンピュータに入った数字 <span class="note" id="fromNote"></span></div>
         <div class="sl">
           <label for="pS">ブレーキ（前・うしろ）</label><input id="pS" type="range" min="0.1" max="1.5" step="0.05" value="0.3"><span class="val" id="pSV"></span>
           <label for="pC">ブレーキ（四すみ）</label><input id="pC" type="range" min="0.05" max="0.8" step="0.01" value="0.3"><span class="val" id="pCV"></span>
@@ -191,7 +191,7 @@ tr.click{cursor:pointer}
       <div class="tblwrap" style="flex:1"><table id="atbl"></table></div>
     </div>
     <div class="teach">
-      <button id="teachBtn" class="go big-btn">自分の運転を車に教える</button>
+      <button id="teachBtn" class="go big-btn">運転の記録を<br>車のコンピュータに反映する</button>
       <div class="learned" id="learned"></div>
       <div class="note" id="gTitle"></div>
       <canvas id="cvA" data-w="300" data-h="120" style="background:var(--panel)"></canvas>
@@ -471,7 +471,7 @@ $('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixe
 /* 運転 */
 function rolesUI(){const lv=m.mode==='lv1'?1:m.mode==='lv2'?2:0;const r=(n,w)=>`<div class="role ${w}">${n}<b>${w==='car'?'車':w==='both'?'車＋あなた':'あなた'}</b></div>`;
  $('roles').innerHTML=`<span class="rt">だれが<br>操作する？</span>`+r('アクセル',lv>=2?'car':'you')+r('ブレーキ',lv>=1?'both':'you')+r('ハンドル','you')+r('シフト','you');}
-function fromUI(){$('fromNote').textContent=P1.from?`（あなたの記録 ${P1.from} 回分から）`:'（まだ教えていません）';}
+function fromUI(){$('fromNote').textContent=P1.from?`（あなたの記録 ${P1.from} 回分から）`:'（まだ反映していません）';}
 function resetDrive(){const cd=randomCond();W=makeWorldC(cd);W.dyn=[];resetTR();buildStages();
  Object.assign(m.s,{x:0,y:cd.y0,th:0,d:0});Object.assign(m.c,{v:0,F:0,meas:0,mt:0});
  Object.assign(m,{gear:'P',wheel:0,hold:false,rows:[],events:[],t:0,at:0,crash:false,done:false,msg:'',msgT:0,last:null,hist:[]});
@@ -537,9 +537,9 @@ function revUI(){const r=RV.run;const tl=X.cvT.c;tl.clearRect(0,0,720,30);if(!r)
  if(ev.type==='brake'){html=`<div class="chain">${box('s','① 測った（センサ）',`${nm(ev.id)}のセンサ<br><b>${cm(ev.d)}</b>`)}${ar}${box('j','② くらべた（コンピュータ）',`決めた距離 <b>${cm(ev.lim)}</b><br>まで近づいた`)}${ar}${box('j','③ 決めた（コンピュータ）','ぶつかるかもしれない<br>→ 止まる')}${ar}${box('a','④ 動かした（アクチュエータ）','ブレーキを踏んだ')}</div>`;
   const src=r.p.src,center=ev.id==='f'||ev.id==='r';let st='';
   if(center){if(src&&src.stop&&src.stop.length&&Math.abs((src.stopAvg||0)-ev.lim)<0.006){st=`<b>${cm(ev.lim)}</b> はどこから来た？　あなたの運転で、バックのときにブレーキを踏んだ距離の<b>平均</b>：`+src.stop.map(x=>`${x.label} ${cm(x.v)}`).join('、');}
-   else st=`<b>${cm(ev.lim)}</b> は、スライダーで決めた数字です（記録から教えた数字とはちがいます）。`;}
-  else{if(src&&src.corner&&Math.abs(src.corner.set-ev.lim)<0.006){st=`<b>${cm(ev.lim)}</b> はどこから来た？　あなたの「${src.corner.label}」で、となりの車に一番近づいたのは <b>${cm(src.corner.v)}</b>。その少し手前（× 0.8）を車に教えました。`;}
-   else st=`<b>${cm(ev.lim)}</b> は、スライダーで決めた数字です（記録から教えた数字とはちがいます）。`;}
+   else st=`<b>${cm(ev.lim)}</b> は、スライダーで決めた数字です（記録から反映した数字とはちがいます）。`;}
+  else{if(src&&src.corner&&Math.abs(src.corner.set-ev.lim)<0.006){st=`<b>${cm(ev.lim)}</b> はどこから来た？　あなたの「${src.corner.label}」で、となりの車に一番近づいたのは <b>${cm(src.corner.v)}</b>。その少し手前（× 0.8）を、車のコンピュータに反映しました。`;}
+   else st=`<b>${cm(ev.lim)}</b> は、スライダーで決めた数字です（記録から反映した数字とはちがいます）。`;}
   html+=`<div class="src">${st}</div>`;}
  else{const seen=ev.seen||{};const lines=Object.keys(seen).map(id=>`${nm(id)}：${seen[id]===null?'何も映っていない':cm(seen[id])}`).join('<br>');const any=Object.values(seen).some(v=>v!==null);
   html=`<div class="chain">${box('s','① 測った（センサ）',lines)}${ar}${box('j','② くらべた（コンピュータ）',any?'決めた距離より近い物は<br>なかった':'近い物は<br>なかった')}${ar}${box('j','③ 決めた（コンピュータ）','止まらなくていい')}${ar}${box('x','④ 結果',`そのまま進んで<br><b>${ev.ped?'歩行者に':''}ぶつかった</b>`)}</div>`;
@@ -619,8 +619,8 @@ function buildAnal(){const list=stageRuns();const t=$('atbl');
   pUI();renderLearned();};
  $('teachBtn').onclick=teach;renderLearned();
  drawA();}
-function renderLearned(){const el=$('learned');if(!P1.from){el.className='learned none';el.innerHTML='車はまだ何も覚えていません。<br>左の記録を見て、ボタンを押すと、あなたの運転が車に伝わります。';return;}
- el.className='learned';el.innerHTML=`<h4>車が覚えたこと（あなたの記録 ${P1.from} 回分から）</h4>`+
+function renderLearned(){const el=$('learned');if(!P1.from){el.className='learned none';el.innerHTML='車のコンピュータには、まだ何も反映されていません。<br>ボタンを押すと、左の記録から計算した数字が、車のコンピュータに入ります。';return;}
+ el.className='learned';el.innerHTML=`<h4>車のコンピュータに入った数字（あなたの記録 ${P1.from} 回分から）</h4>`+
  `<div class="row"><span>前進するときの速さ</span><b>${fmt(P1.vf*3.6,1)} km/h</b></div><div class="row"><span>バックするときの速さ</span><b>${fmt(P1.vt*3.6,1)} km/h</b></div><div class="row"><span>ブレーキを踏むタイミング</span><b>うしろ ${fmt(P1.stop*100)} cm</b></div>`+`<div class="row"><span>となりに近づいたら止まる</span><b>${fmt(P1.corner*100)} cm</b></div>`+(P1.cornerMin?`<div class="note">あなたが一番近づいたのは ${fmt(P1.cornerMin*100)} cm。それより少し手前で止めます。</div>`:'');}
 function drawA(){const {c,w,h}=X.cvA;c.clearRect(0,0,w,h);const r=runs.find(x=>x.id===selRun);if(!r){$('gTitle').textContent='記録をタップすると、速さのグラフが出ます';return;}
  $('gTitle').textContent='速さの変わり方（上：前進／下：バック）';const R=r.rows,T=R[R.length-1][0],x0=34,y0=10,gw=w-44,gh=h-40,vm=2.6,ym=y0+gh/2;
