@@ -74,7 +74,35 @@ tr.avg td{font-weight:700;background:var(--copper-soft)}
 tr.sel td{background:#fff3b0}
 tr.click{cursor:pointer}
 .acol{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
-.lock{font-size:12px}
+.steps{display:flex;align-items:center;gap:6px}
+.steps button{font-size:14px;line-height:1.3;padding:5px 12px;text-align:left;min-height:46px}
+.steps button b{font-size:16px;color:var(--copper)}
+.steps button.sel b{color:#fff}
+.steps button small{font-size:12px}
+.steps .ar{color:var(--sub);font-size:18px}
+.lvs{display:flex;align-items:center;gap:4px}
+.lvs .lvlab{font-size:12px;color:var(--sub);margin-right:2px}
+.lvs i{font-style:normal;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-num);font-size:13px;background:var(--panel);color:var(--sub);border:1px solid var(--line)}
+.lvs i.on{background:var(--sens);color:#fff;border-color:var(--sens)}
+.roles{display:flex;gap:6px;align-items:stretch}
+.roles .rt{font-size:12px;color:var(--sub);align-self:center;margin-right:2px;line-height:1.2}
+.role{flex:1;border-radius:6px;padding:3px 6px;text-align:center;font-size:12px;background:var(--panel);border:2px solid var(--line)}
+.role b{display:block;font-size:14px}
+.role.car{border-color:var(--sens);background:#e3f0fb}.role.car b{color:var(--sens)}
+.role.you b{color:var(--copper)}
+.slh{font-size:13px;font-weight:700;color:var(--sens);margin-top:2px}
+.slh.you{color:var(--copper)}
+.accm{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+.accm b{color:var(--sens);font-size:14px}
+.accbar{width:22px;height:48px;border:2px solid var(--sens);border-radius:6px;position:relative;overflow:hidden;background:var(--paper)}
+.accbar i{position:absolute;left:0;right:0;bottom:0;background:var(--sens);height:0}
+.teach{width:330px;flex:none;display:flex;flex-direction:column;gap:8px}
+.big-btn{font-size:17px;padding:10px 14px}
+.learned{background:#e3f0fb;border:2px solid var(--sens);border-radius:8px;padding:8px 12px;font-size:14px;line-height:1.6}
+.learned h4{margin:0 0 2px;font-size:13px;color:var(--sens)}
+.learned .row{display:flex;justify-content:space-between;gap:8px}
+.learned .row b{font-family:var(--f-num)}
+.learned.none{background:var(--panel);border-color:var(--line);color:var(--sub)}
 </style>
 </head>
 <body>
@@ -85,14 +113,12 @@ tr.click{cursor:pointer}
     <span class="sp"></span>
     <button id="snd">音：ON</button>
   </header>
-  <div class="grp modes" id="modes">
-    <button data-m="drive" class="sel">手動で運転（データ集め）</button>
-    <button data-m="anal">データ分析</button>
-    <button data-m="s1">段階1：速さとブレーキ</button>
-    <button class="lock" disabled>段階2：まわりを見る</button>
-    <button class="lock" disabled>段階3：止まる位置</button>
-    <button class="lock" disabled>段階4：ハンドル</button>
-    <button class="lock" disabled>段階5：完全自動</button>
+  <div class="steps" id="modes">
+    <button data-m="drive" class="sel"><b>①</b> 手動で運転して<br>データを集める</button><span class="ar">→</span>
+    <button data-m="anal"><b>②</b> 自分の運転を<br>車に教える</button><span class="ar">→</span>
+    <button data-m="s1"><b>③</b> 自動運転<br><small id="lvName">レベル1：アクセル・ブレーキを車に任せる</small></button>
+    <span class="sp"></span>
+    <div class="lvs" title="レベル2からは準備中"><span class="lvlab">レベル</span><i class="on">1</i><i>2</i><i>3</i><i>4</i><i>5</i></div>
   </div>
   <div class="cvwrap"><canvas id="cv" data-w="968" data-h="330"></canvas>
     <div class="overlay" id="ov" hidden><div class="ovbox"><div class="ovt" id="ovT"></div><div class="ovs" id="ovS"></div><div class="grp"><button id="ovOk" class="go">OK</button></div></div></div>
@@ -101,13 +127,18 @@ tr.click{cursor:pointer}
   <!-- 運転（手動・段階1 共通） -->
   <div class="panel" id="pDrive">
     <div class="side">
+      <div class="roles" id="roles"></div>
       <div class="big" id="dStatus"></div>
       <div id="s1box" hidden>
+        <div class="slh">車が覚えた数字 <span class="note" id="fromNote"></span></div>
         <div class="sl">
           <label for="pF">前進の速さ</label><input id="pF" type="range" min="0.5" max="9" step="0.1" value="4"><span class="val" id="pFV"></span>
           <label for="pV">バックの速さ</label><input id="pV" type="range" min="0.5" max="5" step="0.1" value="2"><span class="val" id="pVV"></span>
+          <label for="pS">ブレーキの距離</label><input id="pS" type="range" min="0.1" max="1.5" step="0.05" value="0.3"><span class="val" id="pSV"></span>
+        </div>
+        <div class="slh you">あなたが決める数字</div>
+        <div class="sl">
           <label for="pK">直す強さ</label><input id="pK" type="range" min="0" max="20" step="0.5" value="1"><span class="val" id="pKV"></span>
-          <label for="pS">止まる距離</label><input id="pS" type="range" min="0.1" max="1.5" step="0.05" value="0.3"><span class="val" id="pSV"></span>
         </div>
       </div>
       <div class="sensors" id="sens"></div>
@@ -117,19 +148,21 @@ tr.click{cursor:pointer}
     <div class="gate" id="gate"><button data-g="P" class="sel">P</button><button data-g="R">R</button><button data-g="N">N</button><button data-g="D">D</button><small class="gk">↑↓</small></div>
     <div class="wcol">
       <div class="wheelbox"><canvas id="cvWheel" data-w="200" data-h="200" tabindex="0" aria-label="ハンドル"></canvas><div class="wv" id="wheelV">まっすぐ</div></div>
-      <div class="pedals"><button id="brake" class="pedal">ブレーキ <small>Z</small></button><button id="accel" class="pedal acc">アクセル <small>X</small></button></div>
+      <div class="pedals"><button id="brake" class="pedal">ブレーキ <small>Z</small></button><button id="accel" class="pedal acc">アクセル <small>X</small></button><div class="accm" id="accMeter" hidden><div class="accbar"><i id="accFill"></i></div><span>アクセル<br><b>車</b></span></div></div>
     </div>
   </div>
 
-  <!-- データ分析 -->
+  <!-- 車に教える -->
   <div class="panel" id="pAnal" hidden>
     <div class="acol">
-      <div class="grp"><span class="big">手動の運転の記録</span><span class="sp"></span><button id="demoBtn">見本データを入れる</button><button id="useBtn" class="go">データから学習する</button></div>
+      <div class="grp"><span class="big">あなたの運転の記録</span><span class="note">（成功した運転だけ）</span><span class="sp"></span><button id="demoBtn">見本データを入れる</button></div>
       <div class="tblwrap" style="flex:1"><table id="atbl"></table></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;width:330px;flex:none">
-      <div class="note" id="gTitle">記録をえらぶと、速さのグラフが出ます</div>
-      <canvas id="cvA" data-w="330" data-h="250" style="background:var(--panel)"></canvas>
+    <div class="teach">
+      <button id="teachBtn" class="go big-btn">自分の運転を車に教える</button>
+      <div class="learned" id="learned"></div>
+      <div class="note" id="gTitle"></div>
+      <canvas id="cvA" data-w="320" data-h="120" style="background:var(--panel)"></canvas>
     </div>
   </div>
 </div></div>
@@ -259,7 +292,7 @@ function buildStages(){const g=$('stgs');g.innerHTML='';STAGES.forEach(st=>{cons
 const modeBtns=[...document.querySelectorAll('#modes button[data-m]')];
 function setMode(k){mode=k;modeBtns.forEach(b=>b.classList.toggle('sel',b.dataset.m===k));$('pDrive').hidden=k==='anal';$('pAnal').hidden=k!=='anal';
  m.mode=k==='s1'?'s1':'manual';$('s1box').hidden=k!=='s1';$('cvGraph').hidden=k!=='s1';
- ac.hidden=k==='s1';br.classList.toggle('auto',k==='s1');resetDrive();if(k==='anal'){buildAnal();}}
+ ac.hidden=k==='s1';$('accMeter').hidden=k!=='s1';br.innerHTML=k==='s1'?'非常ブレーキ <small>Z</small>':'ブレーキ <small>Z</small>';resetDrive();rolesUI();if(k==='s1')fromUI();if(k==='anal'){buildAnal();}}
 modeBtns.forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 
 /* 操作 */
@@ -294,6 +327,9 @@ function pUI(){P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1
 $('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.stop;pUI();
 
 /* 運転 */
+function rolesUI(){const auto=m.mode==='s1';const r=(n,car)=>`<div class="role ${car?'car':'you'}">${n}<b>${car?'車':'あなた'}</b></div>`;
+ $('roles').innerHTML=`<span class="rt">だれが<br>操作する？</span>`+r('アクセル',auto)+r('ブレーキ',auto)+r('ハンドル',false)+r('シフト',false);}
+function fromUI(){$('fromNote').textContent=P1.from?`（${P1.fromStage||''} の記録 ${P1.from} 回分から）`:'（まだ教えていません）';}
 function resetDrive(){const e=ST.empties[Math.floor(Math.random()*ST.empties.length)];W=makeWorld(ST,e);
  Object.assign(m.s,{x:0,y:ST.y0+(Math.random()-0.5)*0.4,th:0,d:0});Object.assign(m.c,{v:0,F:0,meas:0,mt:0});
  Object.assign(m,{gear:'P',wheel:0,hold:false,rows:[],t:0,at:0,crash:false,done:false,msg:'',msgT:0,last:null,hist:[]});
@@ -315,14 +351,14 @@ function tickDrive(dt){if(!m.crash&&!m.done){m.at+=dt;while(m.at>=FIX){m.at-=FIX
     else if(m.msgT<=0)say(j.t);}}}
  m.msgT-=dt;const st=$('dStatus');
  if(m.msgT>0){st.textContent=m.msg;st.style.color=C.danger;}
- else if(m.mode==='s1'&&m.hold){st.textContent='自動ブレーキで止まりました';st.style.color=C.sens;}
- else{st.textContent=ST.name+'　'+{P:'P',R:'R：バック',N:'N',D:'D：前進'}[m.gear]+(m.mode==='manual'&&m.rows.length?`　（記録中 ${m.rows.length} 行）`:'');st.style.color=C.ink;}
+ else if(m.mode==='s1'&&m.hold){st.textContent='車がブレーキを踏みました（Pに入れて完了）';st.style.color=C.sens;}
+ else{st.textContent=(m.mode==='s1'?'レベル1　':'')+ST.name+'　'+{P:'P',R:'R：バック',N:'N',D:'D：前進'}[m.gear]+(m.mode==='manual'&&m.rows.length?`　（記録中 ${m.rows.length} 行）`:'');st.style.color=C.ink;}
  sensUI();draw();drawWheel();if(m.mode==='s1')drawGraph();}
 function sensUI(){const r=m.last||{son:sonar(W,m.s),bump:false};const s1=m.mode==='s1';const on=b=>b?' on':'';
  $('sens').innerHTML=`<span class="k">車輪速センサ</span><span class="v${on(s1)}">${fmt(kmh(m.c.meas),1)} km/h</span>`+
  `<span class="k">前の超音波センサ</span><span class="v${on(s1&&m.gear==='D')}">${r.son.f===null?'—（2.5m以上）':fmt(r.son.f*100)+' cm'}</span>`+
  `<span class="k">うしろの超音波センサ</span><span class="v${on(s1&&m.gear==='R')}">${r.son.r===null?'—（2.5m以上）':fmt(r.son.r*100)+' cm'}</span>`+
- (s1?`<span class="k">自動のアクセル</span><span class="v">${r.auto?fmt(r.auto.u*100)+' %':'—'}${r.auto&&r.auto.b>0?'　ブレーキ '+fmt(r.auto.b*100)+' %':''}</span>`:'');}
+ '';if(s1&&r.auto){$('accFill').style.height=fmt(r.auto.u*100)+'%';}}
 
 /* 描画 */
 let SC=30,OX=150,OY=-6;const P=(x,y)=>[OX+x*SC,OY+y*SC];
@@ -366,17 +402,21 @@ function analyze(r){const R=r.rows;const sp=g=>{const a=R.filter(x=>x[6]===g&&Ma
  return {fw:sp('D'),bk:sp('R'),bumpA,bumpT,stuck,brakeD,time:R[R.length-1][0]};}
 function buildAnal(){const list=stageRuns();const t=$('atbl');
  let h=`<tr><th></th><th>前進の速さ<br>（平均）</th><th>バックの速さ<br>（平均）</th><th>段差で止まった<br>時間</th><th>段差で踏んだ<br>アクセル</th><th>バックでブレーキを<br>踏んだ うしろの距離</th><th>かかった<br>時間</th></tr>`;
- if(!list.length){t.innerHTML=h+`<tr><td colspan="7" style="text-align:left;padding:14px">まだ記録がありません。「手動で運転」で駐車に成功すると、ここに増えます。</td></tr>`;drawA();return;}
+ renderLearned();$('teachBtn').disabled=!list.length;if(!list.length){t.innerHTML=h+`<tr><td colspan="7" style="text-align:left;padding:14px">まだ記録がありません。「手動で運転」で駐車に成功すると、ここに増えます。</td></tr>`;drawA();return;}
  const A=list.map(analyze);const avg=k=>{const a=A.map(x=>x[k]).filter(x=>x!==null);return a.length?a.reduce((p,q)=>p+q,0)/a.length:null;};
  const f=(v,u,d=1,mul=1)=>v===null?'—':fmt(v*mul,d)+u;
  list.forEach((r,i)=>{const a=A[i];h+=`<tr class="click${r.id===selRun?' sel':''}" data-id="${r.id}"><td style="text-align:left"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.color}"></span> 記録${i+1}${r.demo?'（見本）':''}</td><td>${f(a.fw,' km/h',1,3.6)}</td><td>${f(a.bk,' km/h',1,3.6)}</td><td>${f(a.stuck,' 秒')}</td><td>${f(a.bumpA,' 秒')}</td><td>${f(a.brakeD,' cm',0,100)}</td><td>${f(a.time,' 秒')}</td></tr>`;});
  h+=`<tr class="avg"><td style="text-align:left">平均</td><td>${f(avg('fw'),' km/h',1,3.6)}</td><td>${f(avg('bk'),' km/h',1,3.6)}</td><td>${f(avg('stuck'),' 秒')}</td><td>${f(avg('bumpA'),' 秒')}</td><td>${f(avg('brakeD'),' cm',0,100)}</td><td>${f(avg('time'),' 秒')}</td></tr>`;
  t.innerHTML=h;(t.children||[]).forEach?.(()=>{});
  t.onclick=e=>{const tr=e.target.closest&&e.target.closest('tr[data-id]');if(!tr)return;selRun=+tr.dataset.id;buildAnal();};
- $('useBtn').onclick=()=>{const fw=avg('fw'),bk=avg('bk'),bd=avg('brakeD');if(fw!==null)$('pF').value=+(fw*3.6).toFixed(1);if(bk!==null)$('pV').value=+(bk*3.6).toFixed(1);if(bd!==null)$('pS').value=+bd.toFixed(2);pUI();
-  $('useBtn').textContent='学習しました';setTimeout(()=>$('useBtn').textContent='データから学習する',1600);say(`学習：前進 ${fmt(fw*3.6,1)} km/h・バック ${fmt(bk*3.6,1)} km/h・止まる距離 ${fmt(bd*100)} cm`);};
+ const teach=()=>{if(!list.length){say('');return;}const fw=avg('fw'),bk=avg('bk'),bd=avg('brakeD');if(fw!==null)$('pF').value=+(fw*3.6).toFixed(1);if(bk!==null)$('pV').value=+(bk*3.6).toFixed(1);if(bd!==null)$('pS').value=+bd.toFixed(2);
+  P1.from=list.length;P1.fromStage=ST.name;pUI();renderLearned();};
+ $('teachBtn').onclick=teach;renderLearned();
  drawA();}
-function drawA(){const {c,w,h}=X.cvA;c.clearRect(0,0,w,h);const r=runs.find(x=>x.id===selRun&&x.stage===ST.id);if(!r){$('gTitle').textContent='記録をえらぶと、速さのグラフが出ます';return;}
+function renderLearned(){const el=$('learned');if(!P1.from){el.className='learned none';el.innerHTML='車はまだ何も覚えていません。<br>左の記録を見て、ボタンを押すと、あなたの運転が車に伝わります。';return;}
+ el.className='learned';el.innerHTML=`<h4>車が覚えたこと（${P1.fromStage} の記録 ${P1.from} 回分の平均）</h4>`+
+ `<div class="row"><span>前進するときの速さ</span><b>${fmt(P1.vf*3.6,1)} km/h</b></div><div class="row"><span>バックするときの速さ</span><b>${fmt(P1.vt*3.6,1)} km/h</b></div><div class="row"><span>ブレーキを踏むタイミング</span><b>うしろ ${fmt(P1.stop*100)} cm</b></div>`;}
+function drawA(){const {c,w,h}=X.cvA;c.clearRect(0,0,w,h);const r=runs.find(x=>x.id===selRun&&x.stage===ST.id);if(!r){$('gTitle').textContent='記録をタップすると、速さのグラフが出ます';return;}
  $('gTitle').textContent='速さの変わり方（上：前進／下：バック）';const R=r.rows,T=R[R.length-1][0],x0=34,y0=10,gw=w-44,gh=h-40,vm=2.6,ym=y0+gh/2;
  const xs=t=>x0+gw*t/T,ys=v=>ym-(gh/2)*v/vm;
  R.forEach(x=>{if(x[10]){c.fillStyle='rgba(210,60,50,.15)';c.fillRect(xs(x[0]),y0,gw/R.length+1,gh);}});
