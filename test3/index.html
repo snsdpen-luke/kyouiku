@@ -111,7 +111,8 @@ tr.click{cursor:pointer}
 .lvsel button b{font-family:var(--f-num)}
 .role.both{border-color:var(--sens);background:linear-gradient(90deg,#e3f0fb 55%,#f8ebe0 55%)}.role.both b{color:var(--sens)}
 .sensors .hit{color:var(--danger);font-weight:700}
-.sl{grid-template-columns:8.6em 1fr 6.4em!important}
+.sl{grid-template-columns:6.2em 1fr 7.6em!important}
+.sl .val{white-space:nowrap;font-size:13px}
 .sl small{color:var(--sub);font-size:11px}
 .rv{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .rv #rSlider{flex:1;accent-color:var(--sens)}
@@ -185,7 +186,7 @@ tr.click{cursor:pointer}
       </div>
       <div class="grp"><button id="dReset">はじめから</button><span class="note" id="dCount"></span></div>
     </div>
-    <div class="gcol"><canvas id="cvGraph" data-w="250" data-h="170" hidden style="background:var(--panel)"></canvas><div class="sensors" id="sens"></div></div>
+    <div class="gcol"><canvas id="cvGraph" data-w="250" data-h="150" hidden style="background:var(--panel)"></canvas><div class="sensors" id="sens"></div></div>
     <div class="gate" id="gate"><button data-g="P" class="sel">P</button><button data-g="R">R</button><button data-g="N">N</button><button data-g="D">D</button><small class="gk">↑↓</small></div>
     <div class="wcol">
       <div class="wheelbox"><canvas id="cvWheel" data-w="200" data-h="200" tabindex="0" aria-label="ハンドル"></canvas><div class="wv" id="wheelV">まっすぐ</div></div>
