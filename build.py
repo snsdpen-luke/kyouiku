@@ -94,6 +94,10 @@ print("生成: parking/index.html")
 os.makedirs("parking2", exist_ok=True)
 shutil.copyfile("駐車を学習する車.html", "parking2/index.html")
 print("生成: parking2/index.html")
+# 自動運転への階段（手動データ集め→分析→段階ごとに自動制御。段階1：速さとブレーキ）
+os.makedirs("parking3", exist_ok=True)
+shutil.copyfile("自動運転への階段.html", "parking3/index.html")
+print("生成: parking3/index.html")
 
 # 1h) 複線図れんしゅう（第二種電気工事士 技能試験の複線図）
 os.makedirs("fukusen", exist_ok=True)

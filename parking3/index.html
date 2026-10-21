@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>自動運転への階段</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* 4:3 固定ステージ（1024x768）。上：駐車場の地図、下：モードごとのパネル。ライト固定 */
+:root{color-scheme:light;
+  --bg:#e9edf1; --paper:#fbfcfd; --ink:#18212b; --sub:#5a6672; --line:#cfd6dd;
+  --copper:#b8642a; --copper-soft:#f3e2d4; --steel:#3d5a73; --steel-soft:#cdd8e2;
+  --lot:#e3e7ea; --mark:#fbfcfd; --good:#2c8a4f; --danger:#d23c32; --panel:#f1f4f7; --sens:#2f8fd8;
+  --f-disp:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Consolas,monospace;}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;overflow:hidden;box-sizing:border-box;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+[hidden]{display:none!important}
+#vp{position:relative;width:100%;height:100%}
+#stage{position:absolute;left:50%;top:50%;width:1024px;height:768px;background:var(--paper);border-radius:6px;box-shadow:0 2px 18px rgba(0,0,0,.12);overflow:hidden;display:flex;flex-direction:column;padding:10px 28px 12px;box-sizing:border-box;gap:8px}
+header{display:flex;align-items:center;gap:12px}
+header h1{margin:0;font-family:var(--f-disp);font-weight:400;font-size:22px;white-space:nowrap}
+.grp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-size:15px;border:2px solid var(--steel);background:var(--paper);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;user-select:none;-webkit-user-select:none}
+button:hover{background:var(--panel)}
+button.sel{background:var(--steel);color:var(--paper)}
+button.go{background:var(--copper);border-color:var(--copper);color:#fff;font-weight:700}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--copper);outline-offset:2px}
+.modes button{font-size:14px;padding:5px 10px}
+.sp{flex:1}
+canvas{display:block;border-radius:6px;background:var(--lot);touch-action:none}
+.cvwrap{position:relative}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);border-radius:6px}
+.ovbox{background:var(--paper);border-radius:10px;padding:18px 28px;display:flex;flex-direction:column;gap:10px;align-items:center;min-width:300px}
+.ovt{font-family:var(--f-disp);font-size:32px}
+.overlay.win .ovt{color:var(--good)}.overlay.lose .ovt{color:var(--danger)}
+.ovs{font-size:16px;color:var(--sub);text-align:center}
+.panel{flex:1;min-height:0;display:flex;gap:20px;align-items:stretch}
+.big{font-size:18px;font-weight:700}
+.note{font-size:13px;color:var(--sub)}
+.side{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;justify-content:center}
+.gate{display:flex;flex-direction:column;gap:4px;background:var(--ink);padding:8px;border-radius:10px;align-self:center}
+.gate button{width:54px;padding:3px 0;font-family:var(--f-num);font-size:19px;font-weight:700;background:transparent;border:2px solid transparent;color:var(--line)}
+.gate button.sel{background:var(--copper);border-color:var(--copper);color:#fff}
+.gate .gk{color:var(--line);text-align:center;font-family:var(--f-num);font-size:12px}
+.wcol{display:flex;flex-direction:column;align-items:center;gap:6px;align-self:center}
+.wheelbox{position:relative;width:200px;height:200px}
+#cvWheel{background:transparent;cursor:grab;border-radius:50%}
+.wv{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-family:var(--f-num);font-size:15px;font-weight:700;pointer-events:none}
+.pedals{display:flex;gap:10px}
+.pedal{width:100px;height:44px;padding:0;border-radius:10px;font-weight:700;background:var(--panel);touch-action:none}
+.pedal.acc{width:92px;height:48px}
+.pedal.sel:not(.acc){background:var(--danger);border-color:var(--danger);color:#fff}
+.pedal.acc.sel{background:var(--good);border-color:var(--good);color:#fff}
+.pedal.auto{border-style:dashed;color:var(--sub)}
+.sensors{display:grid;grid-template-columns:auto auto;gap:2px 10px;font-size:14px}
+.sensors .k{color:var(--sub)}
+.sensors .v{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.sensors .on{color:var(--sens);font-weight:700}
+.sl{display:grid;grid-template-columns:7.5em 1fr 5.2em;gap:4px 8px;align-items:center;font-size:14px}
+.sl input{width:100%;accent-color:var(--copper)}
+.sl .val{font-family:var(--f-num);text-align:right}
+/* 分析 */
+.runs{width:200px;flex:none;display:flex;flex-direction:column;gap:6px;overflow:auto}
+.tblwrap{overflow:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);font-size:12px;color:var(--sub);text-align:center}
+tr.avg td{font-weight:700;background:var(--copper-soft)}
+tr.sel td{background:#fff3b0}
+tr.click{cursor:pointer}
+.acol{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.lock{font-size:12px}
+</style>
+</head>
+<body>
+<div id="vp"><div id="stage">
+  <header>
+    <h1>自動運転への階段</h1>
+    <div class="grp" id="stgs"></div>
+    <span class="sp"></span>
+    <button id="snd">音：ON</button>
+  </header>
+  <div class="grp modes" id="modes">
+    <button data-m="drive" class="sel">手動で運転（データ集め）</button>
+    <button data-m="anal">データ分析</button>
+    <button data-m="s1">段階1：速さとブレーキ</button>
+    <button class="lock" disabled>段階2：まわりを見る</button>
+    <button class="lock" disabled>段階3：止まる位置</button>
+    <button class="lock" disabled>段階4：ハンドル</button>
+    <button class="lock" disabled>段階5：完全自動</button>
+  </div>
+  <div class="cvwrap"><canvas id="cv" data-w="968" data-h="330"></canvas>
+    <div class="overlay" id="ov" hidden><div class="ovbox"><div class="ovt" id="ovT"></div><div class="ovs" id="ovS"></div><div class="grp"><button id="ovOk" class="go">OK</button></div></div></div>
+  </div>
+
+  <!-- 運転（手動・段階1 共通） -->
+  <div class="panel" id="pDrive">
+    <div class="side">
+      <div class="big" id="dStatus"></div>
+      <div id="s1box" hidden>
+        <div class="sl">
+          <label for="pV">目標の速さ</label><input id="pV" type="range" min="0.5" max="8" step="0.1" value="2"><span class="val" id="pVV"></span>
+          <label for="pK">直す強さ</label><input id="pK" type="range" min="0" max="20" step="0.5" value="1"><span class="val" id="pKV"></span>
+          <label for="pS">止まる距離</label><input id="pS" type="range" min="0.1" max="1.5" step="0.05" value="0.3"><span class="val" id="pSV"></span>
+        </div>
+      </div>
+      <div class="sensors" id="sens"></div>
+      <div class="grp"><button id="dReset">はじめから</button><span class="note" id="dCount"></span></div>
+    </div>
+    <canvas id="cvGraph" data-w="230" data-h="200" hidden style="align-self:center;background:var(--panel)"></canvas>
+    <div class="gate" id="gate"><button data-g="P" class="sel">P</button><button data-g="R">R</button><button data-g="N">N</button><button data-g="D">D</button><small class="gk">↑↓</small></div>
+    <div class="wcol">
+      <div class="wheelbox"><canvas id="cvWheel" data-w="200" data-h="200" tabindex="0" aria-label="ハンドル"></canvas><div class="wv" id="wheelV">まっすぐ</div></div>
+      <div class="pedals"><button id="brake" class="pedal">ブレーキ <small>Z</small></button><button id="accel" class="pedal acc">アクセル <small>X</small></button></div>
+    </div>
+  </div>
+
+  <!-- データ分析 -->
+  <div class="panel" id="pAnal" hidden>
+    <div class="acol">
+      <div class="grp"><span class="big">手動の運転の記録</span><span class="sp"></span><button id="demoBtn">見本データを入れる</button><button id="useBtn" class="go">平均を段階1に入れる</button></div>
+      <div class="tblwrap" style="flex:1"><table id="atbl"></table></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;width:330px;flex:none">
+      <div class="note" id="gTitle">記録をえらぶと、速さのグラフが出ます</div>
+      <canvas id="cvA" data-w="330" data-h="250" style="background:var(--panel)"></canvas>
+    </div>
+  </div>
+</div></div>
+
+<script>
+/* ===== 車と駐車場のモデル（単位 m） ===== */
+const L=2.6,DMAX=35*Math.PI/180,RO=0.9,FO=3.5,HW=0.875;
+const WALL=0.3,SX=1.0,ENTRY=5.8,AB=10.8,BSW=2.7,BUMP1=5.4,BUMP2=5.75,NSLOT=9;
+const STAGES=[
+ {id:'E',name:'イージー',sw:2.6,y0:8.3,empties:[2,3,4],tol:0.45,ang:0.10},
+ {id:'N',name:'ノーマル',sw:2.3,y0:9.6,empties:[4,5,6],tol:0.30,ang:0.07},
+ {id:'H',name:'ハード',  sw:2.2,y0:9.6,empties:[4,5,6],tol:0.20,ang:0.05,pillar:true}];
+function makeWorld(st,empty){const sw=st.sw,o=[];
+ for(let k=0;k<NSLOT;k++){if(k===empty)continue;const cx=SX+sw*k+sw/2;o.push([cx-HW,0.8,cx+HW,5.2,0]);}
+ for(let k=-2;k<NSLOT+3;k++){const cx=SX+BSW*k+BSW/2;o.push([cx-HW,AB,cx+HW,AB+4.4,1]);}
+ const sl=SX+sw*empty;if(st.pillar)o.push([sl-0.4,BUMP2+0.05,sl+0.08,BUMP2+0.6,2]);
+ return {st,obs:o,empty,sw,gc:sl+sw/2};}
+function corners(s){const c=Math.cos(s.th),n=Math.sin(s.th);return [[-RO,-HW],[FO,-HW],[FO,HW],[-RO,HW]].map(([a,b])=>[s.x+a*c-b*n,s.y+a*n+b*c]);}
+function hit(W,s){const Cs=corners(s);for(let i=0;i<4;i++){const a=Cs[i],b=Cs[(i+1)%4];for(let t=0;t<1;t+=0.1){const x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t;
+ if(y<WALL||x<-4.6||x>27||y>13.5)return true;for(const o of W.obs)if(x>o[0]&&x<o[2]&&y>o[1]&&y<o[3])return true;}}return false;}
+function move(s,v,dt){s.x+=v*Math.cos(s.th)*dt;s.y+=v*Math.sin(s.th)*dt;s.th+=v*Math.tan(s.d)/L*dt;}
+function rearDist(s){return s.y-RO*Math.sin(s.th)-WALL;}
+function judge(W,s){const cx=s.x+1.3*Math.cos(s.th),front=s.y+FO*Math.sin(s.th);
+ if(s.y>ENTRY)return {ok:false,t:'まだ枠に入っていません'};
+ if(Math.abs(cx-W.gc)>W.st.tol)return {ok:false,t:'枠からずれています'};
+ if(front>ENTRY+0.05)return {ok:false,t:'枠からはみ出しています'};
+ if(Math.abs(s.th-Math.PI/2)>W.st.ang)return {ok:false,t:'ななめに止まっています'};return {ok:true,t:'駐車成功！'};}
+function onBump(W,s){const c=Math.cos(s.th),n=Math.sin(s.th);let k=0;[0,L].forEach(a=>{const y=s.y+a*n,x=s.x+a*c;if(y>BUMP1&&y<BUMP2&&x>SX&&x<SX+W.sw*NSLOT)k++;});return k;}
+
+/* ===== 記録と学習 ===== */
+// 記録の1行：[時刻, 枠の真ん中からの前後(m), y, 向き(rad), ハンドル(-1左〜1右), 速さ(m/s), シフト, ペダル]
+const DT=0.05,AHEAD=2,AHEADV=8,K=3;
+function rowFeat(r){return [r[1]/3,(r[2]-7)/1.5,r[3]/0.6,r[4]*0.6,r[5]*0.2];}
+function stateFeat(W,s){return [(s.x+1.3*Math.cos(s.th)-W.gc)/3,(s.y-7)/1.5,s.th/0.6,s.wh*0.6,s.v*0.2];}
+// 学習：記録した全部の行を「状況 → そのあとの操作」の組にして覚える
+function learn(runs){const mem=[];runs.forEach((run,ri)=>{const R=run.rows;for(let i=0;i<R.length;i++){const j=Math.min(R.length-1,i+AHEAD),jv=Math.min(R.length-1,i+AHEADV);
+  if(Math.abs(R[i][5])<0.02&&Math.abs(R[jv][5])<0.02&&Math.abs(R[j][4]-R[i][4])<0.02&&i<R.length-1)continue; // 止まっているだけの行は使わない
+  mem.push({f:rowFeat(R[i]),w:R[j][4],v:R[jv][5],ri,i});}});return mem;}
+// 自動運転：今の状況にいちばん近い記録を K 個さがして、その操作をまねる
+function decide(mem,f){const best=[];for(const m of mem){let d=0;for(let i=0;i<5;i++){const q=f[i]-m.f[i];d+=q*q;}
+ if(best.length<K||d<best[best.length-1].d){best.push({d,m});best.sort((a,b)=>a.d-b.d);if(best.length>K)best.pop();}}
+ if(!best.length)return {w:0,v:0,near:null};const w=best.reduce((a,b)=>a+b.m.w,0)/best.length,v=best.reduce((a,b)=>a+b.m.v,0)/best.length;return {w,v,near:best[0].m,dist:Math.sqrt(best[0].d)};}
+function autoStep(s,c){s.wh+=Math.max(-DT*5,Math.min(DT*5,c.w-s.wh));s.d=s.wh*DMAX;s.v+=(c.v-s.v)*Math.min(1,DT*3);move(s,s.v,DT);}
+
+/* ===== 前後の動き（段階1） ===== */
+// アクセル u(0〜1)・ブレーキ b(0〜1)。クリープは手動のときだけ。モーターの力は少し遅れて出る。車輪速センサは0.1秒ごとに測る。
+const LON={amax:3.0,drag:1.2,creep:0.72,bump:1.6,brake:5.0,lag:0.25,sample:0.1};
+function lonStep(c,u,b,creep,bump,dt){c.F+=((u*LON.amax)-c.F)*Math.min(1,dt/LON.lag);
+ let a=c.F+(creep&&b===0?LON.creep:0)-LON.drag*c.v-(bump?LON.bump:0)-b*LON.brake;
+ if(c.v<=0&&a<0)c.v=0;else c.v=Math.max(0,c.v+a*dt);
+ c.mt+=dt;if(c.mt>=LON.sample){c.mt=0;c.meas=c.v;}}
+function pctl(meas,target,kp){const o=kp*(target-meas);return o>=0?{u:Math.min(1,o),b:0}:{u:0,b:Math.min(1,-o)};}
+// 超音波センサ（前・うしろ）：いちばん近い物までの距離。2.5mより遠いと測れない
+function rectDist(x,y,o){const dx=Math.max(o[0]-x,0,x-o[2]),dy=Math.max(o[1]-y,0,y-o[3]);return Math.hypot(dx,dy);}
+function sonar(W,s){const c=Math.cos(s.th),n=Math.sin(s.th);
+ // 前・うしろの真ん中から、その向き（左右 約30°）にある物だけを測る
+ const one=(a,dirSign)=>{const px=s.x+a*c,py=s.y+a*n;let best=null;
+  const cand=[];W.obs.forEach(o=>{const qx=Math.max(o[0],Math.min(px,o[2])),qy=Math.max(o[1],Math.min(py,o[3]));cand.push([qx,qy]);
+   for(let k=0;k<=8;k++){cand.push([o[0]+(o[2]-o[0])*k/8,o[3]],[o[0]+(o[2]-o[0])*k/8,o[1]],[o[0],o[1]+(o[3]-o[1])*k/8],[o[2],o[1]+(o[3]-o[1])*k/8]);}});
+  for(let k=-6;k<=6;k++)cand.push([px+k*0.2,WALL]);
+  cand.forEach(([qx,qy])=>{const dx=qx-px,dy=qy-py;const fwd=(dx*c+dy*n)*dirSign,side=-dx*n+dy*c;if(fwd<=0)return;if(Math.abs(side)>HW+fwd*0.58)return;const d=Math.hypot(dx,dy);if(best===null||d<best)best=d;});
+  return best!==null&&best<=2.5?best:null;};
+ return {f:one(FO,1),r:one(-RO,-1)};}
+
+/* ===== 運転の1コマ分（手動・段階1 共通） ===== */
+// m: {s:{x,y,th,d}, c:{v,F,meas,mt}, gear, wheel(-540〜540), brake, acc, mode:'manual'|'s1', p:{vt(m/s),kp,stop(m)}, hold}
+const WMAX=540;
+function gearDir(g){return g==='D'?1:g==='R'?-1:0;}
+function physStep(m,W,dt){const s=m.s;s.d=m.wheel/WMAX*DMAX;const dir=gearDir(m.gear);const bump=onBump(W,s)>0;let u=0,b=0,creep=false,auto=null;
+ const son=sonar(W,s);
+ if(m.gear==='P'){b=1;}
+ else if(m.mode==='manual'){u=m.acc&&dir?1:0;b=m.brake?1:0;creep=dir!==0;}
+ else{ // 段階1：速さを車輪速センサで測り、目標に合わせてアクセル・ブレーキを自動で決める
+  if(dir){const ctl=pctl(m.c.meas,m.p.vt,m.p.kp);u=ctl.u;b=ctl.b;
+   const d=dir>0?son.f:son.r;if(d!==null&&d<=m.p.stop)m.hold=true;if(m.hold){u=0;b=1;}}
+  if(m.brake){u=0;b=1;}auto={u,b};}
+ if(dir===0&&m.gear==='N'){u=0;}
+ lonStep(m.c,u,b,creep,bump&&dir!==0,dt);
+ const v=m.c.v*(dir||m.lastDir||1);if(dir)m.lastDir=dir;
+ let crash=false;if(m.c.v>0){const n=6;for(let i=0;i<n;i++){move(s,v,dt/n);if(hit(W,s)){crash=true;m.c.v=0;m.c.F=0;break;}}}
+ return {crash,bump,son,auto,v};}
+
+/* ===== 記録の1行 ===== */
+// [時刻, 枠の真ん中から前後, y, 向き, ハンドル(-1〜1), 速さ(向きつき m/s), シフト, ペダル, うしろの距離(m or null), 前の距離, 段差]
+function makeRow(t,m,W,r){const s=m.s;return [+t.toFixed(2),+(s.x+1.3*Math.cos(s.th)-W.gc).toFixed(2),+s.y.toFixed(2),+s.th.toFixed(3),+(m.wheel/WMAX).toFixed(2),+r.v.toFixed(2),m.gear,m.brake?'B':m.acc?'A':'-',r.son.r===null?null:+r.son.r.toFixed(2),r.son.f===null?null:+r.son.f.toFixed(2),r.bump?1:0];}
+
+/* ===== 見本の運転（ボクが手で運転したのと同じ操作を、決まった手順で行う） ===== */
+function demoDrive(st,empty,y0,rnd){const W=makeWorld(st,empty);const m={s:{x:0,y:y0,th:0,d:0},c:{v:0,F:0,meas:0,mt:0},gear:'D',wheel:0,brake:false,acc:true,mode:'manual'};
+ const ty=7.75+rnd()*0.2,A=4.75+rnd()*0.1,stopD=0.35+rnd()*0.25;const rows=[];let ph=0,t=0,accT=0,wait=0;const DTD=0.05;
+ const turnTo=(w,rate)=>{m.wheel+=Math.max(-rate*DTD,Math.min(rate*DTD,w-m.wheel));};
+ while(t<120){const s=m.s,cx=s.x+1.3*Math.cos(s.th);
+  if(ph===0){turnTo(Math.max(-1,Math.min(1,-(s.y-ty)*1.4-s.th*4))*WMAX,900);m.acc=cx<W.gc+A-2;if(cx>=W.gc+A){ph=1;m.acc=false;m.brake=true;}}
+  else if(ph===1){turnTo(0,900);if(m.c.v===0){wait+=DTD;if(wait>0.4){m.gear='R';m.brake=false;ph=2;wait=0;}}}
+  else if(ph===2){turnTo(-WMAX,900);if(m.wheel<=-WMAX+1)ph=3;else m.brake=true;if(ph===3)m.brake=false;}
+  else if(ph===3){if(m.c.v<0.08&&!m.acc){accT=0.5;}m.acc=accT>0;accT-=DTD;if(s.th>=Math.PI/2-0.03)ph=4;}
+  else if(ph===4){turnTo(0,900);if(m.c.v<0.08&&!m.acc)accT=0.5;m.acc=accT>0;accT-=DTD;const r=sonar(W,s).r;if(r!==null&&r<=stopD){m.acc=false;m.brake=true;ph=5;}}
+  else if(ph===5){if(m.c.v===0){m.gear='P';m.brake=false;}}
+  const r=physStep(m,W,DTD);if(r.crash)return null;rows.push(makeRow(t,m,W,r));t+=DTD;
+  if(ph===5&&m.gear==='P')break;}
+ const j=judge(W,m.s);return j.ok?{empty,rows}:null;}
+
+(()=>{
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C={};['ink','sub','line','copper','steel','steel-soft','lot','mark','good','danger','panel','paper','sens'].forEach(k=>C[k]=css('--'+k));
+const FB=()=>css('--f-body'),FN=()=>css('--f-num');
+const fmt=(x,d=0)=>(+x).toLocaleString('ja-JP',{minimumFractionDigits:d,maximumFractionDigits:d});
+const kmh=v=>v*3.6;
+const COLORS=['#2f6fd0','#2c8a4f','#c0392b','#8e44ad','#d68910','#16a085','#7f8c8d','#b8642a','#1f3a93','#c2185b'];
+const stage=$('stage'),vp=$('vp');const fit=()=>{const s=Math.min(vp.clientWidth/1024,vp.clientHeight/768);stage.style.transform=`translate(-50%,-50%) scale(${s})`;};addEventListener('resize',fit);fit();
+const X={};document.querySelectorAll('canvas[data-w]').forEach(cv=>{const w=+cv.dataset.w,h=+cv.dataset.h;cv.width=w*2;cv.height=h*2;cv.style.width=w+'px';cv.style.height=h+'px';const c=cv.getContext('2d');c.setTransform(2,0,0,2,0,0);X[cv.id]={c,w,h};});
+
+/* 保存 */
+const KEY='stairs-v1';let runs=[];try{runs=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}if(!Array.isArray(runs))runs=[];
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(runs))}catch(e){}};
+let nextId=runs.reduce((a,r)=>Math.max(a,r.id||0),0)+1;
+const PKEY='stairs-p1';let P1={vt:2/3.6,kp:1,stop:0.3};try{Object.assign(P1,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
+const saveP=()=>{try{localStorage.setItem(PKEY,JSON.stringify(P1))}catch(e){}};
+
+let ST=STAGES[0],mode='drive',W=null,selRun=null;
+const m={s:{x:0,y:8.3,th:0,d:0},c:{v:0,F:0,meas:0,mt:0},gear:'P',wheel:0,brake:false,acc:false,mode:'manual',p:P1,hold:false,rows:[],t:0,at:0,crash:false,done:false,msg:'',msgT:0,last:null,hist:[]};
+const stageRuns=()=>runs.filter(r=>r.stage===ST.id);
+function say(t){m.msg=t;m.msgT=2.4;}
+
+/* 画面の切り替え */
+function buildStages(){const g=$('stgs');g.innerHTML='';STAGES.forEach(st=>{const b=document.createElement('button');b.textContent=st.name;b.classList.toggle('sel',st===ST);b.onclick=()=>{ST=st;selRun=null;buildStages();resetDrive();if(mode==='anal')buildAnal();};g.appendChild(b);});}
+const modeBtns=[...document.querySelectorAll('#modes button[data-m]')];
+function setMode(k){mode=k;modeBtns.forEach(b=>b.classList.toggle('sel',b.dataset.m===k));$('pDrive').hidden=k==='anal';$('pAnal').hidden=k!=='anal';
+ m.mode=k==='s1'?'s1':'manual';$('s1box').hidden=k!=='s1';$('cvGraph').hidden=k!=='s1';
+ ac.hidden=k==='s1';br.classList.toggle('auto',k==='s1');resetDrive();if(k==='anal'){buildAnal();}}
+modeBtns.forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+
+/* 操作 */
+const gb=[...document.querySelectorAll('#gate button')],GEARS=['P','R','N','D'];
+function setGear(g){if(g===m.gear)return;if(m.c.v>0.05){say('止まってからシフトを入れてください');return;}m.gear=g;m.hold=false;gb.forEach(x=>x.classList.toggle('sel',x.dataset.g===g));}
+gb.forEach(b=>b.onclick=()=>setGear(b.dataset.g));
+const br=$('brake'),ac=$('accel');
+const bOn=e=>{e&&e.preventDefault&&e.preventDefault();m.brake=true;br.classList.add('sel');},bOff=()=>{m.brake=false;br.classList.remove('sel');};
+const aOn=e=>{e&&e.preventDefault&&e.preventDefault();if(m.mode!=='manual')return;m.acc=true;ac.classList.add('sel');},aOff=()=>{m.acc=false;ac.classList.remove('sel');};
+br.addEventListener('pointerdown',bOn);['pointerup','pointerleave','pointercancel'].forEach(t=>br.addEventListener(t,bOff));
+ac.addEventListener('pointerdown',aOn);['pointerup','pointerleave','pointercancel'].forEach(t=>ac.addEventListener(t,aOff));
+const keyPed=(e,down)=>{if(mode==='anal'||(e.repeat&&down))return;const k=(e.key||'').toLowerCase();if(k==='z'){down?bOn(e):bOff();}if(k==='x'){down?aOn(e):aOff();}};
+addEventListener('keydown',e=>keyPed(e,true));addEventListener('keyup',e=>keyPed(e,false));
+addEventListener('keydown',e=>{if(mode==='anal'||(e.target&&e.target.tagName==='INPUT'))return;
+ if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();const i=GEARS.indexOf(m.gear)+(e.key==='ArrowUp'?-1:1);setGear(GEARS[Math.max(0,Math.min(3,i))]);}
+ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();m.wheel=Math.max(-WMAX,Math.min(WMAX,m.wheel+(e.key==='ArrowLeft'?-45:45)));}});
+const wc=$('cvWheel');let wLast=null;
+const wAng=e=>{const r=wc.getBoundingClientRect();return Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))*180/Math.PI;};
+wc.addEventListener('pointerdown',e=>{e.preventDefault();wc.setPointerCapture(e.pointerId);wLast=wAng(e);});
+wc.addEventListener('pointermove',e=>{if(wLast===null)return;const r=wc.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+ if(dx*dx+dy*dy<(r.width*0.12)**2){wLast=wAng(e);return;}const a=wAng(e);let d=a-wLast;if(d>180)d-=360;if(d<-180)d+=360;wLast=a;m.wheel=Math.max(-WMAX,Math.min(WMAX,m.wheel+d));});
+['pointerup','pointercancel'].forEach(t=>wc.addEventListener(t,()=>{wLast=null;}));
+let snd=true,actx=null;const ensureAudio=()=>{try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume().catch(()=>{});}catch(e){}};
+addEventListener('pointerdown',ensureAudio);addEventListener('keydown',ensureAudio);
+$('snd').onclick=()=>{snd=!snd;$('snd').textContent='音：'+(snd?'ON':'OFF');};
+function tone(fs,dur,vol,type){if(!snd||!actx)return;try{const t=actx.currentTime,g=actx.createGain();g.connect(actx.destination);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.01);g.gain.setValueAtTime(vol,t+dur);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+0.04);
+ fs.forEach(f=>{const o=actx.createOscillator();o.type=type;o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+dur+0.06);});}catch(e){}}
+
+/* 段階1の数字 */
+function pUI(){P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;P1.stop=+$('pS').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('pKV').textContent=fmt(P1.kp,1);$('pSV').textContent=fmt(P1.stop*100)+' cm';saveP();}
+['pV','pK','pS'].forEach(i=>$(i).oninput=pUI);
+$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.stop;pUI();
+
+/* 運転 */
+function resetDrive(){const e=ST.empties[Math.floor(Math.random()*ST.empties.length)];W=makeWorld(ST,e);
+ Object.assign(m.s,{x:0,y:ST.y0+(Math.random()-0.5)*0.4,th:0,d:0});Object.assign(m.c,{v:0,F:0,meas:0,mt:0});
+ Object.assign(m,{gear:'P',wheel:0,hold:false,rows:[],t:0,at:0,crash:false,done:false,msg:'',msgT:0,last:null,hist:[]});
+ gb.forEach(x=>x.classList.toggle('sel',x.dataset.g==='P'));$('ov').hidden=true;$('dCount').textContent=`${ST.name}の記録：${stageRuns().length} 回分`;}
+$('dReset').onclick=resetDrive;
+function showOv(kind,t,s){$('ov').hidden=false;$('ov').className='overlay '+kind;$('ovT').textContent=t;$('ovS').textContent=s;}
+$('ovOk').onclick=()=>{$('ov').hidden=true;resetDrive();};
+const FIX=0.05;
+function tickDrive(dt){if(!m.crash&&!m.done){m.at+=dt;while(m.at>=FIX){m.at-=FIX;const r=physStep(m,W,FIX);m.last=r;
+   if(m.gear!=='P'||m.rows.length){m.t+=FIX;if(m.mode==='manual')m.rows.push(makeRow(m.t,m,W,r));}
+   m.hist.push({t:m.t,v:m.c.meas,bump:r.bump,u:r.auto?r.auto.u:0});if(m.hist.length>220)m.hist.shift();
+   if(r.crash){m.crash=true;tone([180],0.35,0.12,'sawtooth');showOv('lose','ぶつかった！',m.mode==='manual'?'この運転は記録に入れません':'数字を見直してみよう');break;}
+   if(r.bump&&m.c.v===0&&m.gear!=='P'&&m.gear!=='N'&&!m.brake&&!m.acc&&m.msgT<=0)say('段差で止まっています');
+   if(m.gear==='P'&&m.c.v===0&&m.rows.length+(m.mode==='s1'?1:0)&&m.t>0){const j=judge(W,m.s);
+    if(j.ok){m.done=true;tone([523,659,784],0.25,0.07,'triangle');
+     if(m.mode==='manual'){const id=nextId++;runs.push({id,stage:ST.id,empty:W.empty,rows:m.rows,demo:false,color:COLORS[(id-1)%COLORS.length]});save();selRun=id;showOv('win','駐車成功！',`記録として保存しました（${stageRuns().length} 回目・${fmt(m.t,1)} 秒）`);}
+     else showOv('win','駐車成功！','段階1（速さとブレーキが自動）でクリアしました');break;}
+    else if(m.msgT<=0)say(j.t);}}}
+ m.msgT-=dt;const st=$('dStatus');
+ if(m.msgT>0){st.textContent=m.msg;st.style.color=C.danger;}
+ else if(m.mode==='s1'&&m.hold){st.textContent='自動ブレーキで止まりました';st.style.color=C.sens;}
+ else{st.textContent=ST.name+'　'+{P:'P',R:'R：バック',N:'N',D:'D：前進'}[m.gear]+(m.mode==='manual'&&m.rows.length?`　（記録中 ${m.rows.length} 行）`:'');st.style.color=C.ink;}
+ sensUI();draw();drawWheel();if(m.mode==='s1')drawGraph();}
+function sensUI(){const r=m.last||{son:sonar(W,m.s),bump:false};const s1=m.mode==='s1';const on=b=>b?' on':'';
+ $('sens').innerHTML=`<span class="k">車輪速センサ</span><span class="v${on(s1)}">${fmt(kmh(m.c.meas),1)} km/h</span>`+
+ `<span class="k">前の超音波センサ</span><span class="v${on(s1&&m.gear==='D')}">${r.son.f===null?'—（2.5m以上）':fmt(r.son.f*100)+' cm'}</span>`+
+ `<span class="k">うしろの超音波センサ</span><span class="v${on(s1&&m.gear==='R')}">${r.son.r===null?'—（2.5m以上）':fmt(r.son.r*100)+' cm'}</span>`+
+ (s1?`<span class="k">自動のアクセル</span><span class="v">${r.auto?fmt(r.auto.u*100)+' %':'—'}${r.auto&&r.auto.b>0?'　ブレーキ '+fmt(r.auto.b*100)+' %':''}</span>`:'');}
+
+/* 描画 */
+let SC=30,OX=150,OY=-6;const P=(x,y)=>[OX+x*SC,OY+y*SC];
+function drawLot(c,Wd){const w=968,h=330;const [x1]=P(-4.6,0),[x2]=P(27,0);c.fillStyle=C.ink;c.fillRect(0,0,x1,h);c.fillRect(x2,0,w,h);const [,wy]=P(0,WALL);c.fillRect(0,0,w,wy);
+ c.strokeStyle=C.mark;c.lineWidth=3;for(let k=0;k<=NSLOT;k++){const [x,y1]=P(SX+Wd.sw*k,WALL);const [,y2]=P(0,ENTRY);c.beginPath();c.moveTo(x,y1);c.lineTo(x,y2);c.stroke();}
+ for(let k=-2;k<=NSLOT+3;k++){const [x,y1]=P(SX+BSW*k,AB-0.5);c.beginPath();c.moveTo(x,y1);c.lineTo(x,h);c.stroke();}
+ const y1=P(0,BUMP1)[1],y2=P(0,BUMP2)[1];for(let k=0;k<NSLOT;k++){const a=P(SX+Wd.sw*k,0)[0]+4,b=P(SX+Wd.sw*(k+1),0)[0]-4;c.fillStyle=C.line;c.fillRect(a,y1,b-a,y2-y1);c.strokeStyle=C.sub;c.lineWidth=1.5;c.beginPath();for(let x=a;x<b;x+=8){c.moveTo(x,y2);c.lineTo(x+6,y1);}c.stroke();}
+ const [e1,ey]=P(SX+Wd.sw*Wd.empty,ENTRY),[e2]=P(SX+Wd.sw*(Wd.empty+1),ENTRY);c.strokeStyle=C.copper;c.setLineDash([8,6]);c.lineWidth=3;c.strokeRect(e1+3,P(0,WALL)[1]+3,e2-e1-6,ey-P(0,WALL)[1]-6);c.setLineDash([]);
+ Wd.obs.forEach(o=>{const [a,b]=P(o[0],o[1]),[cc,d]=P(o[2],o[3]);if(o[4]===2){c.fillStyle=C.ink;c.fillRect(a,b,cc-a,d-b);c.strokeStyle=C.danger;c.lineWidth=2;c.strokeRect(a+1,b+1,cc-a-2,d-b-2);return;}
+  c.fillStyle=C['steel-soft'];c.beginPath();c.roundRect?c.roundRect(a,b,cc-a,d-b,6):c.rect(a,b,cc-a,d-b);c.fill();c.fillStyle=C.line;c.fillRect(a+6,o[4]?b+24:d-38,cc-a-12,14);});}
+function drawCar(c,s,crash){const Cs=corners(s).map(p=>P(...p));c.fillStyle=crash?C.danger:C.copper;c.beginPath();Cs.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fill();
+ const ct=Math.cos(s.th),sn=Math.sin(s.th);const wp=[[2.2,-0.7],[2.9,-0.6],[2.9,0.6],[2.2,0.7]].map(([a,b])=>P(s.x+a*ct-b*sn,s.y+a*sn+b*ct));c.fillStyle=C.paper;c.globalAlpha=.8;c.beginPath();wp.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fill();c.globalAlpha=1;
+ const glow=m.mode==='s1'&&m.c.v>0.02;
+ [[L,-HW+0.15,1],[L,HW-0.15,1],[0,-HW+0.15,0],[0,HW-0.15,0]].forEach(([a,b,f])=>{const [x,y]=P(s.x+a*ct-b*sn,s.y+a*sn+b*ct);c.save();c.translate(x,y);c.rotate(s.th+(f?s.d:0));c.fillStyle=glow&&!f?C.sens:C.ink;c.fillRect(-11,-4,22,8);c.restore();});}
+function drawSonar(c,s,r){[[FO,r.son.f,s.th,m.gear==='D'],[-RO,r.son.r,s.th+Math.PI,m.gear==='R']].forEach(([a,d,ang,act])=>{if(d===null)return;const ct=Math.cos(s.th),sn=Math.sin(s.th);const [px,py]=P(s.x+a*ct,s.y+a*sn);
+  const k=Math.max(0,1-d/2.5);c.strokeStyle=act&&m.mode==='s1'?C.sens:`hsl(${240-240*k},70%,55%)`;c.globalAlpha=act?1:0.5;c.lineWidth=3;
+  for(let i=1;i<=3;i++){c.beginPath();c.arc(px,py,8+i*7,ang-0.8,ang+0.8);c.stroke();}c.globalAlpha=1;
+  if(act){c.fillStyle=C.ink;c.font='bold 13px '+FN();c.textAlign='center';c.fillText(fmt(d*100)+'cm',px+Math.cos(ang)*40,py+Math.sin(ang)*40+4);}});}
+function guide(c,s){const g={...s};const A=[],B=[];for(let i=0;i<=60;i++){const ct=Math.cos(g.th),sn=Math.sin(g.th);const rx=g.x-RO*ct,ry=g.y-RO*sn;A.push(P(rx+HW*sn,ry-HW*ct));B.push(P(rx-HW*sn,ry+HW*ct));move(g,-1,0.05);}
+ c.strokeStyle=C.good;c.lineWidth=3;c.setLineDash([6,5]);[A,B].forEach(a=>{c.beginPath();a.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.stroke();});c.setLineDash([]);}
+function draw(){const {c}=X.cv;c.clearRect(0,0,968,330);drawLot(c,W);if(m.gear==='R'&&!m.crash)guide(c,m.s);drawCar(c,m.s,m.crash);drawSonar(c,m.s,m.last||{son:sonar(W,m.s)});}
+function drawWheel(){const {c,w,h}=X.cvWheel;c.clearRect(0,0,w,h);const R=86;c.save();c.translate(w/2,h/2);c.rotate(m.wheel*Math.PI/180);
+ c.strokeStyle=C.ink;c.lineWidth=20;c.beginPath();c.arc(0,0,R,0,Math.PI*2);c.stroke();c.strokeStyle=C.sub;c.lineWidth=3;c.beginPath();c.arc(0,0,R+10,0,Math.PI*2);c.stroke();c.beginPath();c.arc(0,0,R-10,0,Math.PI*2);c.stroke();
+ c.strokeStyle=C.ink;c.lineWidth=13;c.lineCap='round';c.beginPath();c.moveTo(-R+8,10);c.lineTo(-30,10);c.moveTo(R-8,10);c.lineTo(30,10);c.moveTo(0,34);c.lineTo(0,R-8);c.stroke();
+ c.fillStyle=C.panel;c.strokeStyle=C.ink;c.lineWidth=3;c.beginPath();c.arc(0,0,34,0,Math.PI*2);c.fill();c.stroke();c.fillStyle=C.copper;c.fillRect(-7,-R-10,14,20);c.restore();
+ $('wheelV').textContent=Math.abs(m.wheel)<3?'まっすぐ':(m.wheel<0?'左 ':'右 ')+fmt(Math.abs(m.wheel))+'°';}
+function drawGraph(){const {c,w,h}=X.cvGraph;c.clearRect(0,0,w,h);const x0=34,y0=18,gw=w-42,gh=h-44,vmax=Math.max(6,kmh(P1.vt)*1.8);
+ const ys=v=>y0+gh-gh*Math.min(1,v/vmax);c.fillStyle=C.sub;c.font='12px '+FB();c.textAlign='left';c.fillText('速さ（車輪速センサ）',x0,12);
+ c.textAlign='right';c.font='11px '+FN();[0,vmax/2,vmax].forEach(v=>c.fillText(fmt(v,0),x0-4,ys(v)+4));
+ const H=m.hist,N=200;H.forEach((p,i)=>{if(p.bump){const x=x0+gw*(i+N-H.length)/N;c.fillStyle='rgba(210,60,50,.15)';c.fillRect(x,y0,gw/N+1,gh);}});
+ c.strokeStyle=C.copper;c.setLineDash([5,4]);c.lineWidth=2;c.beginPath();c.moveTo(x0,ys(kmh(P1.vt)));c.lineTo(x0+gw,ys(kmh(P1.vt)));c.stroke();c.setLineDash([]);
+ c.strokeStyle=C.sens;c.lineWidth=2.5;c.beginPath();H.forEach((p,i)=>{const x=x0+gw*(i+N-H.length)/N,y=ys(kmh(p.v));i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();
+ c.strokeStyle=C.line;c.lineWidth=1;c.strokeRect(x0,y0,gw,gh);c.fillStyle=C.sub;c.font='11px '+FB();c.textAlign='left';c.fillText('— 目標　■ 段差　（最近10秒・km/h）',x0,h-8);}
+
+/* ===== データ分析 ===== */
+// 1回の記録から、大事な数字を拾い出す
+function analyze(r){const R=r.rows;const sp=g=>{const a=R.filter(x=>x[6]===g&&Math.abs(x[5])>0.05).map(x=>Math.abs(x[5]));return a.length?a.reduce((p,q)=>p+q,0)/a.length:null;};
+ const bumpA=R.filter(x=>x[10]&&x[7]==='A').length*0.05;const bumpT=R.filter(x=>x[10]).length*0.05;
+ let brakeD=null;for(let i=R.length-1;i>0;i--){if(R[i][6]==='R'&&R[i][7]==='B'&&R[i-1][7]!=='B'){brakeD=R[i][8];break;}}
+ const stuck=R.filter(x=>x[10]&&Math.abs(x[5])<0.01&&x[6]!=='P').length*0.05;
+ return {fw:sp('D'),bk:sp('R'),bumpA,bumpT,stuck,brakeD,time:R[R.length-1][0]};}
+function buildAnal(){const list=stageRuns();const t=$('atbl');
+ let h=`<tr><th></th><th>前進の速さ<br>（平均）</th><th>バックの速さ<br>（平均）</th><th>段差で止まった<br>時間</th><th>段差で踏んだ<br>アクセル</th><th>バックでブレーキを<br>踏んだ うしろの距離</th><th>かかった<br>時間</th></tr>`;
+ if(!list.length){t.innerHTML=h+`<tr><td colspan="7" style="text-align:left;padding:14px">まだ記録がありません。「手動で運転」で駐車に成功すると、ここに増えます。</td></tr>`;drawA();return;}
+ const A=list.map(analyze);const avg=k=>{const a=A.map(x=>x[k]).filter(x=>x!==null);return a.length?a.reduce((p,q)=>p+q,0)/a.length:null;};
+ const f=(v,u,d=1,mul=1)=>v===null?'—':fmt(v*mul,d)+u;
+ list.forEach((r,i)=>{const a=A[i];h+=`<tr class="click${r.id===selRun?' sel':''}" data-id="${r.id}"><td style="text-align:left"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.color}"></span> 記録${i+1}${r.demo?'（見本）':''}</td><td>${f(a.fw,' km/h',1,3.6)}</td><td>${f(a.bk,' km/h',1,3.6)}</td><td>${f(a.stuck,' 秒')}</td><td>${f(a.bumpA,' 秒')}</td><td>${f(a.brakeD,' cm',0,100)}</td><td>${f(a.time,' 秒')}</td></tr>`;});
+ h+=`<tr class="avg"><td style="text-align:left">平均</td><td>${f(avg('fw'),' km/h',1,3.6)}</td><td>${f(avg('bk'),' km/h',1,3.6)}</td><td>${f(avg('stuck'),' 秒')}</td><td>${f(avg('bumpA'),' 秒')}</td><td>${f(avg('brakeD'),' cm',0,100)}</td><td>${f(avg('time'),' 秒')}</td></tr>`;
+ t.innerHTML=h;(t.children||[]).forEach?.(()=>{});
+ t.onclick=e=>{const tr=e.target.closest&&e.target.closest('tr[data-id]');if(!tr)return;selRun=+tr.dataset.id;buildAnal();};
+ $('useBtn').onclick=()=>{const bk=avg('bk'),bd=avg('brakeD');if(bk!==null){$('pV').value=+(bk*3.6).toFixed(1);}if(bd!==null){$('pS').value=+bd.toFixed(2);}pUI();$('useBtn').textContent='入れました';setTimeout(()=>$('useBtn').textContent='平均を段階1に入れる',1500);};
+ drawA();}
+function drawA(){const {c,w,h}=X.cvA;c.clearRect(0,0,w,h);const r=runs.find(x=>x.id===selRun&&x.stage===ST.id);if(!r){$('gTitle').textContent='記録をえらぶと、速さのグラフが出ます';return;}
+ $('gTitle').textContent='速さの変わり方（上：前進／下：バック）';const R=r.rows,T=R[R.length-1][0],x0=34,y0=10,gw=w-44,gh=h-40,vm=2.6,ym=y0+gh/2;
+ const xs=t=>x0+gw*t/T,ys=v=>ym-(gh/2)*v/vm;
+ R.forEach(x=>{if(x[10]){c.fillStyle='rgba(210,60,50,.15)';c.fillRect(xs(x[0]),y0,gw/R.length+1,gh);}});
+ c.strokeStyle=C.line;c.beginPath();c.moveTo(x0,ym);c.lineTo(x0+gw,ym);c.stroke();c.strokeRect(x0,y0,gw,gh);
+ c.strokeStyle=r.color;c.lineWidth=2.5;c.beginPath();R.forEach((x,i)=>{i?c.lineTo(xs(x[0]),ys(x[5])):c.moveTo(xs(x[0]),ys(x[5]));});c.stroke();
+ R.forEach((x,i)=>{if(i&&x[7]==='B'&&R[i-1][7]!=='B'){c.fillStyle=C.danger;c.beginPath();c.arc(xs(x[0]),ys(x[5]),4,0,Math.PI*2);c.fill();}if(i&&x[7]==='A'&&R[i-1][7]!=='A'){c.fillStyle=C.good;c.beginPath();c.arc(xs(x[0]),ys(x[5]),4,0,Math.PI*2);c.fill();}});
+ c.fillStyle=C.sub;c.font='11px '+FN();c.textAlign='right';[[vm,'+'+fmt(vm*3.6,0)],[0,'0'],[-vm,'-'+fmt(vm*3.6,0)]].forEach(([v,t])=>c.fillText(t,x0-4,ys(v)+4));
+ c.textAlign='left';c.font='11px '+FB();c.fillText(`● アクセル　● ブレーキ　■ 段差　（km/h・${fmt(T,0)}秒）`,x0,h-10);
+ c.fillStyle=C.good;c.fillRect(x0+2,h-17,0,0);}
+$('demoBtn').onclick=()=>{let seed=Date.now()%2147483647;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};let added=0,tries=0;
+ while(added<4&&tries<30){tries++;const e=ST.empties[Math.floor(rnd()*ST.empties.length)];const d=demoDrive(ST,e,ST.y0+(rnd()-0.5)*0.4,rnd);if(d){const id=nextId++;runs.push({id,stage:ST.id,empty:d.empty,rows:d.rows,demo:true,color:COLORS[(id-1)%COLORS.length]});added++;}}
+ save();buildAnal();};
+
+/* ループ */
+buildStages();resetDrive();setMode('drive');
+let last=performance.now();
+function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(mode!=='anal')tickDrive(dt);requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+window.__T={m,runs:()=>runs,setMode,W:()=>W,P1,analyze};
+})();
+</script>
+</body>
+</html>
