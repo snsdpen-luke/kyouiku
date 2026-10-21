@@ -91,6 +91,12 @@ tr.click{cursor:pointer}
 .role b{display:block;font-size:14px}
 .role.car{border-color:var(--sens);background:#e3f0fb}.role.car b{color:var(--sens)}
 .role.you b{color:var(--copper)}
+.lvsel{display:flex;gap:4px;flex-wrap:wrap}
+.lvsel button{font-size:12px;padding:3px 8px;border-width:1.5px}
+.lvsel button b{font-family:var(--f-num)}
+.role.both{border-color:var(--sens);background:linear-gradient(90deg,#e3f0fb 55%,#f8ebe0 55%)}.role.both b{color:var(--sens)}
+.sensors .hit{color:var(--danger);font-weight:700}
+.sl{grid-template-columns:9.5em 1fr 4.6em!important}
 .slh{font-size:13px;font-weight:700;color:var(--sens);margin-top:2px}
 .slh.you{color:var(--copper)}
 .accm{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
@@ -117,7 +123,7 @@ tr.click{cursor:pointer}
   <div class="steps" id="modes">
     <button data-m="drive" class="sel"><b>①</b> 手動で運転して<br>データを集める</button><span class="ar">→</span>
     <button data-m="anal"><b>②</b> 自分の運転を<br>車に教える</button><span class="ar">→</span>
-    <button data-m="s1"><b>③</b> 自動運転 レベル1<br><small id="lvName">アクセル・ブレーキを車に任せる</small></button>
+    <button data-m="auto"><b>③</b> 自動運転<br><small id="lvName"></small></button>
     <span class="sp"></span>
     <div class="roles" id="roles"></div>
   </div>
@@ -128,16 +134,18 @@ tr.click{cursor:pointer}
   <!-- 運転（手動・段階1 共通） -->
   <div class="panel" id="pDrive">
     <div class="side">
+      <div class="lvsel" id="lvsel" hidden></div>
       <div class="big" id="dStatus"></div>
       <div id="s1box" hidden>
         <div class="slh">車が覚えた数字 <span class="note" id="fromNote"></span></div>
         <div class="sl">
-          <label for="pF">前進の速さ</label><input id="pF" type="range" min="0.5" max="9" step="0.1" value="4"><span class="val" id="pFV"></span>
-          <label for="pV">バックの速さ</label><input id="pV" type="range" min="0.5" max="5" step="0.1" value="2"><span class="val" id="pVV"></span>
-          <label for="pS">ブレーキの距離</label><input id="pS" type="range" min="0.1" max="1.5" step="0.05" value="0.3"><span class="val" id="pSV"></span>
+          <label for="pS">ブレーキ（前・うしろ）</label><input id="pS" type="range" min="0.1" max="1.5" step="0.05" value="0.3"><span class="val" id="pSV"></span>
+          <label for="pC">ブレーキ（四すみ）</label><input id="pC" type="range" min="0.05" max="0.8" step="0.01" value="0.3"><span class="val" id="pCV"></span>
+          <div class="lv2" style="display:contents"><label for="pF">前進の速さ</label><input id="pF" type="range" min="0.5" max="9" step="0.1" value="4"><span class="val" id="pFV"></span>
+          <label for="pV">バックの速さ</label><input id="pV" type="range" min="0.5" max="5" step="0.1" value="2"><span class="val" id="pVV"></span></div>
         </div>
-        <div class="slh you">あなたが決める数字</div>
-        <div class="sl">
+        <div class="slh you lv2">あなたが決める数字</div>
+        <div class="sl lv2">
           <label for="pK">直す強さ</label><input id="pK" type="range" min="0" max="20" step="0.5" value="1"><span class="val" id="pKV"></span>
         </div>
       </div>
@@ -226,27 +234,48 @@ function sonar(W,s){const c=Math.cos(s.th),n=Math.sin(s.th);
   return best!==null&&best<=2.5?best:null;};
  return {f:one(FO,1),r:one(-RO,-1)};}
 
+/* ===== 6つの超音波センサ（前・うしろ・四すみ） ===== */
+// a:前後の位置, b:左右(負=左), dir:向き(進む向きからの角度), half:見える範囲(左右), range:測れる距離
+const SENSORS=[
+ {id:'f', name:'前',       a:FO, b:0,        dir:0,            half:0.5, range:2.5,face:1},
+ {id:'fl',name:'前の左すみ',a:FO, b:-HW+0.1, dir:-0.75,        half:0.6, range:1.0,face:1},
+ {id:'fr',name:'前の右すみ',a:FO, b:HW-0.1,  dir:0.75,         half:0.6, range:1.0,face:1},
+ {id:'r', name:'うしろ',     a:-RO,b:0,       dir:Math.PI,      half:0.5, range:2.5,face:-1},
+ {id:'rl',name:'うしろの左すみ',a:-RO,b:-HW+0.1,dir:-Math.PI+0.75,half:0.6,range:1.0,face:-1},
+ {id:'rr',name:'うしろの右すみ',a:-RO,b:HW-0.1, dir:Math.PI-0.75, half:0.6,range:1.0,face:-1}];
+function obstaclePoints(W){if(W._pts)return W._pts;const P=[];W.obs.forEach(o=>{for(let k=0;k<=10;k++){const tx=o[0]+(o[2]-o[0])*k/10,ty=o[1]+(o[3]-o[1])*k/10;P.push([tx,o[1]],[tx,o[3]],[o[0],ty],[o[2],ty]);}});
+ for(let x=-5;x<=28;x+=0.2)P.push([x,WALL]);W._pts=P;return P;}
+function senseAll(W,s,extra){const c=Math.cos(s.th),n=Math.sin(s.th);const pts=obstaclePoints(W).concat(extra||[]);const out={};
+ SENSORS.forEach(S=>{const px=s.x+S.a*c-S.b*n,py=s.y+S.a*n+S.b*c,ang=s.th+S.dir;let best=null;
+  for(const [qx,qy] of pts){const dx=qx-px,dy=qy-py;const d=Math.hypot(dx,dy);if(d>S.range||(best!==null&&d>=best))continue;let da=Math.atan2(dy,dx)-ang;da=Math.atan2(Math.sin(da),Math.cos(da));if(Math.abs(da)<=S.half)best=d;}
+  out[S.id]=best;});return out;}
+
 /* ===== 運転の1コマ分（手動・段階1 共通） ===== */
 // m: {s:{x,y,th,d}, c:{v,F,meas,mt}, gear, wheel(-540〜540), brake, acc, mode:'manual'|'s1', p:{vt(m/s),kp,stop(m)}, hold}
 const WMAX=540;
 function gearDir(g){return g==='D'?1:g==='R'?-1:0;}
-function physStep(m,W,dt){const s=m.s;s.d=m.wheel/WMAX*DMAX;const dir=gearDir(m.gear);const bump=onBump(W,s)>0;let u=0,b=0,creep=false,auto=null;
- const son=sonar(W,s);
+function physStep(m,W,dt){const s=m.s;s.d=m.wheel/WMAX*DMAX;const dir=gearDir(m.gear);const bump=onBump(W,s)>0;let u=0,b=0,creep=false,auto=null,trig=null;
+ const sens=senseAll(W,s);const son={f:sens.f,r:sens.r};
+ const lv=m.mode==='lv1'?1:m.mode==='lv2'?2:0;
  if(m.gear==='P'){b=1;}
- else if(m.mode==='manual'){u=m.acc&&dir?1:0;b=m.brake?1:0;creep=dir!==0;}
- else{ // 段階1：速さを車輪速センサで測り、目標に合わせてアクセル・ブレーキを自動で決める
-  if(dir){const ctl=pctl(m.c.meas,dir>0?(m.p.vf||m.p.vt):m.p.vt,m.p.kp);u=ctl.u;b=ctl.b;
-   const d=dir>0?son.f:son.r;if(d!==null&&d<=m.p.stop)m.hold=true;if(m.hold){u=0;b=1;}}
-  if(m.brake){u=0;b=1;}auto={u,b};}
- if(dir===0&&m.gear==='N'){u=0;}
+ else{
+  if(lv>=2&&dir){const ctl=pctl(m.c.meas,dir>0?(m.p.vf||m.p.vt):m.p.vt,m.p.kp);u=ctl.u;b=ctl.b;}
+  else{u=m.acc&&dir?1:0;creep=dir!==0;}
+  if(lv>=1&&dir){ // レベル1：進む向きのセンサが、決めた距離より近い物を見つけたらブレーキ
+   const ids=dir>0?['f','fl','fr']:['r','rl','rr'];
+   for(const id of ids){const d=sens[id];if(d===null)continue;const lim=(id==='f'||id==='r')?m.p.stop:m.p.corner;if(d<=lim){m.hold=true;m.trig=id;break;}}
+   if(m.hold){u=0;b=1;creep=false;}}
+  if(m.brake){u=0;b=1;}
+  if(lv)auto={u,b};}
  lonStep(m.c,u,b,creep,bump&&dir!==0,dt);
  const v=m.c.v*(dir||m.lastDir||1);if(dir)m.lastDir=dir;
  let crash=false;if(m.c.v>0){const n=6;for(let i=0;i<n;i++){move(s,v,dt/n);if(hit(W,s)){crash=true;m.c.v=0;m.c.F=0;break;}}}
- return {crash,bump,son,auto,v};}
+ return {crash,bump,son,sens,auto,v,dir};}
 
 /* ===== 記録の1行 ===== */
 // [時刻, 枠の真ん中から前後, y, 向き, ハンドル(-1〜1), 速さ(向きつき m/s), シフト, ペダル, うしろの距離(m or null), 前の距離, 段差]
-function makeRow(t,m,W,r){const s=m.s;return [+t.toFixed(2),+(s.x+1.3*Math.cos(s.th)-W.gc).toFixed(2),+s.y.toFixed(2),+s.th.toFixed(3),+(m.wheel/WMAX).toFixed(2),+r.v.toFixed(2),m.gear,m.brake?'B':m.acc?'A':'-',r.son.r===null?null:+r.son.r.toFixed(2),r.son.f===null?null:+r.son.f.toFixed(2),r.bump?1:0];}
+function makeRow(t,m,W,r){const s=m.s;return [+t.toFixed(2),+(s.x+1.3*Math.cos(s.th)-W.gc).toFixed(2),+s.y.toFixed(2),+s.th.toFixed(3),+(m.wheel/WMAX).toFixed(2),+r.v.toFixed(2),m.gear,m.brake?'B':m.acc?'A':'-',r.son.r===null?null:+r.son.r.toFixed(2),r.son.f===null?null:+r.son.f.toFixed(2),r.bump?1:0,cornerMin(r)];}
+function cornerMin(r){const ids=r.v>0.01?['fl','fr']:r.v<-0.01?['rl','rr']:[];let d=null;ids.forEach(id=>{const x=r.sens[id];if(x!==null&&(d===null||x<d))d=x;});return d===null?null:+d.toFixed(2);}
 
 /* ===== 見本の運転（ボクが手で運転したのと同じ操作を、決まった手順で行う） ===== */
 function demoDrive(st,empty,y0,rnd){const W=makeWorld(st,empty);const m={s:{x:0,y:y0,th:0,d:0},c:{v:0,F:0,meas:0,mt:0},gear:'D',wheel:0,brake:false,acc:true,mode:'manual'};
@@ -257,7 +286,7 @@ function demoDrive(st,empty,y0,rnd){const W=makeWorld(st,empty);const m={s:{x:0,
   else if(ph===1){turnTo(0,900);if(m.c.v===0){wait+=DTD;if(wait>0.4){m.gear='R';m.brake=false;ph=2;wait=0;}}}
   else if(ph===2){turnTo(-WMAX,900);if(m.wheel<=-WMAX+1)ph=3;else m.brake=true;if(ph===3)m.brake=false;}
   else if(ph===3){if(m.c.v<0.08&&!m.acc){accT=0.5;}m.acc=accT>0;accT-=DTD;if(s.th>=Math.PI/2-0.03)ph=4;}
-  else if(ph===4){turnTo(0,900);if(m.c.v<0.08&&!m.acc)accT=0.5;m.acc=accT>0;accT-=DTD;const r=sonar(W,s).r;if(r!==null&&r<=stopD){m.acc=false;m.brake=true;ph=5;}}
+  else if(ph===4){turnTo(0,900);if(m.c.v<0.08&&!m.acc)accT=0.5;m.acc=accT>0;accT-=DTD;const r=senseAll(W,s).r;if(r!==null&&r<=stopD){m.acc=false;m.brake=true;ph=5;}}
   else if(ph===5){if(m.c.v===0){m.gear='P';m.brake=false;}}
   const r=physStep(m,W,DTD);if(r.crash)return null;rows.push(makeRow(t,m,W,r));t+=DTD;
   if(ph===5&&m.gear==='P')break;}
@@ -278,10 +307,11 @@ const X={};document.querySelectorAll('canvas[data-w]').forEach(cv=>{const w=+cv.
 const KEY='stairs-v1';let runs=[];try{runs=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}if(!Array.isArray(runs))runs=[];
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(runs))}catch(e){}};
 let nextId=runs.reduce((a,r)=>Math.max(a,r.id||0),0)+1;
-const PKEY='stairs-p1';let P1={vf:4/3.6,vt:2/3.6,kp:1,stop:0.3};try{Object.assign(P1,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
+const PKEY='stairs-p1';let P1={vf:4/3.6,vt:2/3.6,kp:1,stop:0.3,corner:0.3};try{Object.assign(P1,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
 const saveP=()=>{try{localStorage.setItem(PKEY,JSON.stringify(P1))}catch(e){}};
 
-let ST=STAGES[0],mode='drive',W=null,selRun=null;
+let ST=STAGES[0],mode='drive',W=null,selRun=null,LV=1;
+const LVS=[['ブレーキ','ブレーキを車に任せる'],['アクセル','アクセルも車に任せる'],['シフト',''],['ハンドル',''],['全部','']];
 const m={s:{x:0,y:8.3,th:0,d:0},c:{v:0,F:0,meas:0,mt:0},gear:'P',wheel:0,brake:false,acc:false,mode:'manual',p:P1,hold:false,rows:[],t:0,at:0,crash:false,done:false,msg:'',msgT:0,last:null,hist:[]};
 const stageRuns=()=>runs.filter(r=>r.stage===ST.id);
 function say(t){m.msg=t;m.msgT=2.4;}
@@ -289,9 +319,12 @@ function say(t){m.msg=t;m.msgT=2.4;}
 /* 画面の切り替え */
 function buildStages(){const g=$('stgs');g.innerHTML='';STAGES.forEach(st=>{const b=document.createElement('button');b.textContent=st.name;b.classList.toggle('sel',st===ST);b.onclick=()=>{ST=st;selRun=null;buildStages();resetDrive();if(mode==='anal')buildAnal();};g.appendChild(b);});}
 const modeBtns=[...document.querySelectorAll('#modes button[data-m]')];
+function buildLv(){const g=$('lvsel');g.innerHTML='';LVS.forEach(([n],i)=>{const b=document.createElement('button');b.innerHTML=`<b>${i+1}</b> ${n}`;b.disabled=i>1;b.title=i>1?'準備中':'';b.classList.toggle('sel',LV===i+1);b.onclick=()=>{LV=i+1;setMode('auto');};g.appendChild(b);});
+ $('lvName').textContent=`レベル${LV}：${LVS[LV-1][1]}`;}
 function setMode(k){mode=k;modeBtns.forEach(b=>b.classList.toggle('sel',b.dataset.m===k));$('pDrive').hidden=k==='anal';$('pAnal').hidden=k!=='anal';
- m.mode=k==='s1'?'s1':'manual';$('s1box').hidden=k!=='s1';$('cvGraph').hidden=k!=='s1';
- ac.hidden=k==='s1';$('accMeter').hidden=k!=='s1';br.innerHTML=k==='s1'?'非常ブレーキ <small>Z</small>':'ブレーキ <small>Z</small>';resetDrive();rolesUI();if(k==='s1')fromUI();if(k==='anal'){buildAnal();}}
+ const au=k==='auto';m.mode=au?'lv'+LV:'manual';$('s1box').hidden=!au;$('lvsel').hidden=!au;$('cvGraph').hidden=!(au&&LV>=2);
+ document.querySelectorAll('.lv2').forEach(e=>e.hidden=!(au&&LV>=2));
+ ac.hidden=au&&LV>=2;$('accMeter').hidden=!(au&&LV>=2);buildLv();resetDrive();rolesUI();if(au)fromUI();if(k==='anal'){buildAnal();}}
 modeBtns.forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 
 /* 操作 */
@@ -300,7 +333,7 @@ function setGear(g){if(g===m.gear)return;if(m.c.v>0.05){say('止まってから�
 gb.forEach(b=>b.onclick=()=>setGear(b.dataset.g));
 const br=$('brake'),ac=$('accel');
 const bOn=e=>{e&&e.preventDefault&&e.preventDefault();m.brake=true;br.classList.add('sel');},bOff=()=>{m.brake=false;br.classList.remove('sel');};
-const aOn=e=>{e&&e.preventDefault&&e.preventDefault();if(m.mode!=='manual')return;m.acc=true;ac.classList.add('sel');},aOff=()=>{m.acc=false;ac.classList.remove('sel');};
+const aOn=e=>{e&&e.preventDefault&&e.preventDefault();if(m.mode==='lv2')return;m.acc=true;ac.classList.add('sel');},aOff=()=>{m.acc=false;ac.classList.remove('sel');};
 br.addEventListener('pointerdown',bOn);['pointerup','pointerleave','pointercancel'].forEach(t=>br.addEventListener(t,bOff));
 ac.addEventListener('pointerdown',aOn);['pointerup','pointerleave','pointercancel'].forEach(t=>ac.addEventListener(t,aOff));
 const keyPed=(e,down)=>{if(mode==='anal'||(e.repeat&&down))return;const k=(e.key||'').toLowerCase();if(k==='z'){down?bOn(e):bOff();}if(k==='x'){down?aOn(e):aOff();}};
@@ -321,13 +354,13 @@ function tone(fs,dur,vol,type){if(!snd||!actx)return;try{const t=actx.currentTim
  fs.forEach(f=>{const o=actx.createOscillator();o.type=type;o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+dur+0.06);});}catch(e){}}
 
 /* 段階1の数字 */
-function pUI(){P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;P1.stop=+$('pS').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('pKV').textContent=fmt(P1.kp,1);$('pSV').textContent=fmt(P1.stop*100)+' cm';saveP();}
-['pF','pV','pK','pS'].forEach(i=>$(i).oninput=pUI);
-$('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.stop;pUI();
+function pUI(){P1.corner=+$('pC').value;$('pCV').textContent=fmt(P1.corner*100)+' cm';P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;P1.stop=+$('pS').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('pKV').textContent=fmt(P1.kp,1);$('pSV').textContent=fmt(P1.stop*100)+' cm';saveP();}
+['pF','pV','pK','pS','pC'].forEach(i=>$(i).oninput=pUI);
+$('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.stop;$('pC').value=P1.corner||0.3;pUI();
 
 /* 運転 */
-function rolesUI(){const auto=m.mode==='s1';const r=(n,car)=>`<div class="role ${car?'car':'you'}">${n}<b>${car?'車':'あなた'}</b></div>`;
- $('roles').innerHTML=`<span class="rt">だれが<br>操作する？</span>`+r('アクセル',auto)+r('ブレーキ',auto)+r('ハンドル',false)+r('シフト',false);}
+function rolesUI(){const lv=m.mode==='lv1'?1:m.mode==='lv2'?2:0;const r=(n,w)=>`<div class="role ${w}">${n}<b>${w==='car'?'車':w==='both'?'車＋あなた':'あなた'}</b></div>`;
+ $('roles').innerHTML=`<span class="rt">だれが<br>操作する？</span>`+r('アクセル',lv>=2?'car':'you')+r('ブレーキ',lv>=1?'both':'you')+r('ハンドル','you')+r('シフト','you');}
 function fromUI(){$('fromNote').textContent=P1.from?`（${P1.fromStage||''} の記録 ${P1.from} 回分から）`:'（まだ教えていません）';}
 function resetDrive(){const e=ST.empties[Math.floor(Math.random()*ST.empties.length)];W=makeWorld(ST,e);
  Object.assign(m.s,{x:0,y:ST.y0+(Math.random()-0.5)*0.4,th:0,d:0});Object.assign(m.c,{v:0,F:0,meas:0,mt:0});
@@ -342,22 +375,22 @@ function tickDrive(dt){if(!m.crash&&!m.done){m.at+=dt;while(m.at>=FIX){m.at-=FIX
    m.hist.push({t:m.t,v:m.c.meas,bump:r.bump,u:r.auto?r.auto.u:0});if(m.hist.length>220)m.hist.shift();
    if(r.crash){m.crash=true;tone([180],0.35,0.12,'sawtooth');showOv('lose','ぶつかった！',m.mode==='manual'?'この運転は記録に入れません':'数字を見直してみよう');break;}
    if(r.bump&&m.c.v===0&&m.gear!=='P'&&m.gear!=='N'&&!m.brake&&!m.acc&&m.msgT<=0)say('段差で止まっています');
-   if(m.gear==='P'&&m.c.v===0&&m.rows.length+(m.mode==='s1'?1:0)&&m.t>0){const j=judge(W,m.s);
+   if(m.gear==='P'&&m.c.v===0&&(m.rows.length||m.mode!=='manual')&&m.t>0){const j=judge(W,m.s);
     if(j.ok){m.done=true;tone([523,659,784],0.25,0.07,'triangle');
      if(m.mode==='manual'){const id=nextId++;runs.push({id,stage:ST.id,empty:W.empty,rows:m.rows,demo:false,color:COLORS[(id-1)%COLORS.length]});save();selRun=id;showOv('win','駐車成功！',`記録として保存しました（${stageRuns().length} 回目・${fmt(m.t,1)} 秒）`);}
-     else{const k='stairs-best-'+ST.id;let b=null;try{b=+localStorage.getItem(k)||null}catch(e){}const nb=!b||m.t<b;if(nb){try{localStorage.setItem(k,m.t.toFixed(1))}catch(e){}}
-      showOv('win','駐車成功！',`${fmt(m.t,1)} 秒${nb?'（いちばん速い記録！）':`（いちばん速い記録は ${fmt(b,1)} 秒）`}`);}break;}
+     else{const k='stairs-best-'+LV+ST.id;let b=null;try{b=+localStorage.getItem(k)||null}catch(e){}const nb=!b||m.t<b;if(nb){try{localStorage.setItem(k,m.t.toFixed(1))}catch(e){}}
+      showOv('win','駐車成功！',`レベル${LV}　${fmt(m.t,1)} 秒${nb?'（いちばん速い記録！）':`（いちばん速い記録は ${fmt(b,1)} 秒）`}`);}break;}
     else if(m.msgT<=0)say(j.t);}}}
  m.msgT-=dt;const st=$('dStatus');
  if(m.msgT>0){st.textContent=m.msg;st.style.color=C.danger;}
- else if(m.mode==='s1'&&m.hold){st.textContent='車がブレーキを踏みました（Pに入れて完了）';st.style.color=C.sens;}
- else{st.textContent=(m.mode==='s1'?'レベル1　':'')+ST.name+'　'+{P:'P',R:'R：バック',N:'N',D:'D：前進'}[m.gear]+(m.mode==='manual'&&m.rows.length?`　（記録中 ${m.rows.length} 行）`:'');st.style.color=C.ink;}
- sensUI();draw();drawWheel();if(m.mode==='s1')drawGraph();}
-function sensUI(){const r=m.last||{son:sonar(W,m.s),bump:false};const s1=m.mode==='s1';const on=b=>b?' on':'';
- $('sens').innerHTML=`<span class="k">車輪速センサ</span><span class="v${on(s1)}">${fmt(kmh(m.c.meas),1)} km/h</span>`+
- `<span class="k">前の超音波センサ</span><span class="v${on(s1&&m.gear==='D')}">${r.son.f===null?'—（2.5m以上）':fmt(r.son.f*100)+' cm'}</span>`+
- `<span class="k">うしろの超音波センサ</span><span class="v${on(s1&&m.gear==='R')}">${r.son.r===null?'—（2.5m以上）':fmt(r.son.r*100)+' cm'}</span>`+
- '';if(s1&&r.auto){$('accFill').style.height=fmt(r.auto.u*100)+'%';}}
+ else if(m.mode!=='manual'&&m.hold){const S=SENSORS.find(x=>x.id===m.trig);st.textContent=`${S?S.name:''}のセンサが反応 → 車がブレーキ`;st.style.color=C.sens;}
+ else{st.textContent=(m.mode!=='manual'?`レベル${LV}　`:'')+ST.name+'　'+{P:'P',R:'R：バック',N:'N',D:'D：前進'}[m.gear]+(m.mode==='manual'&&m.rows.length?`　（記録中 ${m.rows.length} 行）`:'');st.style.color=C.ink;}
+ sensUI();draw();drawWheel();if(m.mode==='lv2')drawGraph();}
+function sensUI(){const r=m.last||{sens:senseAll(W,m.s),bump:false,dir:0};const auto=m.mode!=='manual';const dir=gearDir(m.gear);
+ const face=id=>(dir>0&&id[0]==='f')||(dir<0&&id[0]==='r');
+ let h=`<span class="k">車輪速センサ</span><span class="v${m.mode==='lv2'?' on':''}">${fmt(kmh(m.c.meas),1)} km/h</span>`;
+ SENSORS.forEach(S=>{const d=r.sens[S.id];const cls=m.hold&&m.trig===S.id?' hit':(auto&&face(S.id)?' on':'');h+=`<span class="k">${S.name}</span><span class="v${cls}">${d===null?'—':fmt(d*100)+' cm'}</span>`;});
+ $('sens').innerHTML=h;if(m.mode==='lv2'&&r.auto){$('accFill').style.height=fmt(r.auto.u*100)+'%';}}
 
 /* 描画 */
 let SC=30,OX=150,OY=-6;const P=(x,y)=>[OX+x*SC,OY+y*SC];
@@ -370,15 +403,19 @@ function drawLot(c,Wd){const w=968,h=330;const [x1]=P(-4.6,0),[x2]=P(27,0);c.fil
   c.fillStyle=C['steel-soft'];c.beginPath();c.roundRect?c.roundRect(a,b,cc-a,d-b,6):c.rect(a,b,cc-a,d-b);c.fill();c.fillStyle=C.line;c.fillRect(a+6,o[4]?b+24:d-38,cc-a-12,14);});}
 function drawCar(c,s,crash){const Cs=corners(s).map(p=>P(...p));c.fillStyle=crash?C.danger:C.copper;c.beginPath();Cs.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fill();
  const ct=Math.cos(s.th),sn=Math.sin(s.th);const wp=[[2.2,-0.7],[2.9,-0.6],[2.9,0.6],[2.2,0.7]].map(([a,b])=>P(s.x+a*ct-b*sn,s.y+a*sn+b*ct));c.fillStyle=C.paper;c.globalAlpha=.8;c.beginPath();wp.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fill();c.globalAlpha=1;
- const glow=m.mode==='s1'&&m.c.v>0.02;
+ const glow=m.mode==='lv2'&&m.c.v>0.02;
  [[L,-HW+0.15,1],[L,HW-0.15,1],[0,-HW+0.15,0],[0,HW-0.15,0]].forEach(([a,b,f])=>{const [x,y]=P(s.x+a*ct-b*sn,s.y+a*sn+b*ct);c.save();c.translate(x,y);c.rotate(s.th+(f?s.d:0));c.fillStyle=glow&&!f?C.sens:C.ink;c.fillRect(-11,-4,22,8);c.restore();});}
-function drawSonar(c,s,r){[[FO,r.son.f,s.th,m.gear==='D'],[-RO,r.son.r,s.th+Math.PI,m.gear==='R']].forEach(([a,d,ang,act])=>{if(d===null)return;const ct=Math.cos(s.th),sn=Math.sin(s.th);const [px,py]=P(s.x+a*ct,s.y+a*sn);
-  const k=Math.max(0,1-d/2.5);c.strokeStyle=act&&m.mode==='s1'?C.sens:`hsl(${240-240*k},70%,55%)`;c.globalAlpha=act?1:0.5;c.lineWidth=3;
-  for(let i=1;i<=3;i++){c.beginPath();c.arc(px,py,8+i*7,ang-0.8,ang+0.8);c.stroke();}c.globalAlpha=1;
-  if(act){c.fillStyle=C.ink;c.font='bold 13px '+FN();c.textAlign='center';c.fillText(fmt(d*100)+'cm',px+Math.cos(ang)*40,py+Math.sin(ang)*40+4);}});}
+function drawSonar(c,s,r){const dir=gearDir(m.gear);const auto=m.mode!=='manual';const ct=Math.cos(s.th),sn=Math.sin(s.th);
+ SENSORS.forEach(S=>{const face=(dir>0&&S.face>0)||(dir<0&&S.face<0);if(!face)return;
+  const px=s.x+S.a*ct-S.b*sn,py=s.y+S.a*sn+S.b*ct;const [X0,Y0]=P(px,py);const ang=s.th+S.dir,R=S.range*SC;const d=r.sens?r.sens[S.id]:null;
+  const lim=(S.id==='f'||S.id==='r')?P1.stop:P1.corner;
+  c.fillStyle=auto?'rgba(47,143,216,.13)':'rgba(90,102,114,.08)';c.beginPath();c.moveTo(X0,Y0);c.arc(X0,Y0,R,ang-S.half,ang+S.half);c.closePath();c.fill();
+  if(auto){c.strokeStyle='rgba(47,143,216,.6)';c.setLineDash([3,3]);c.lineWidth=1;c.beginPath();c.arc(X0,Y0,lim*SC,ang-S.half,ang+S.half);c.stroke();c.setLineDash([]);}
+  if(d!==null){const close=auto&&d<=lim;c.strokeStyle=close?C.danger:C.sens;c.lineWidth=2.5;c.beginPath();c.arc(X0,Y0,d*SC,ang-S.half,ang+S.half);c.stroke();
+   if(S.id==='f'||S.id==='r'||close){c.fillStyle=close?C.danger:C.ink;c.font='bold 12px '+FN();c.textAlign='center';c.fillText(fmt(d*100)+'cm',X0+Math.cos(ang)*(d*SC+14),Y0+Math.sin(ang)*(d*SC+14)+4);}}});}
 function guide(c,s){const g={...s};const A=[],B=[];for(let i=0;i<=60;i++){const ct=Math.cos(g.th),sn=Math.sin(g.th);const rx=g.x-RO*ct,ry=g.y-RO*sn;A.push(P(rx+HW*sn,ry-HW*ct));B.push(P(rx-HW*sn,ry+HW*ct));move(g,-1,0.05);}
  c.strokeStyle=C.good;c.lineWidth=3;c.setLineDash([6,5]);[A,B].forEach(a=>{c.beginPath();a.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.stroke();});c.setLineDash([]);}
-function draw(){const {c}=X.cv;c.clearRect(0,0,968,330);drawLot(c,W);if(m.gear==='R'&&!m.crash)guide(c,m.s);drawCar(c,m.s,m.crash);drawSonar(c,m.s,m.last||{son:sonar(W,m.s)});}
+function draw(){const {c}=X.cv;c.clearRect(0,0,968,330);drawLot(c,W);if(m.gear==='R'&&!m.crash)guide(c,m.s);drawCar(c,m.s,m.crash);drawSonar(c,m.s,m.last||{sens:senseAll(W,m.s)});}
 function drawWheel(){const {c,w,h}=X.cvWheel;c.clearRect(0,0,w,h);const R=86;c.save();c.translate(w/2,h/2);c.rotate(m.wheel*Math.PI/180);
  c.strokeStyle=C.ink;c.lineWidth=20;c.beginPath();c.arc(0,0,R,0,Math.PI*2);c.stroke();c.strokeStyle=C.sub;c.lineWidth=3;c.beginPath();c.arc(0,0,R+10,0,Math.PI*2);c.stroke();c.beginPath();c.arc(0,0,R-10,0,Math.PI*2);c.stroke();
  c.strokeStyle=C.ink;c.lineWidth=13;c.lineCap='round';c.beginPath();c.moveTo(-R+8,10);c.lineTo(-30,10);c.moveTo(R-8,10);c.lineTo(30,10);c.moveTo(0,34);c.lineTo(0,R-8);c.stroke();
@@ -394,27 +431,29 @@ function drawGraph(){const {c,w,h}=X.cvGraph;c.clearRect(0,0,w,h);const x0=34,y0
 
 /* ===== データ分析 ===== */
 // 1回の記録から、大事な数字を拾い出す
+function minC(A){const c=A.map(x=>x.corner).filter(x=>x!==null);return c.length?Math.min(...c):null;}
 function analyze(r){const R=r.rows;const sp=g=>{const a=R.filter(x=>x[6]===g&&Math.abs(x[5])>0.05).map(x=>Math.abs(x[5]));return a.length?a.reduce((p,q)=>p+q,0)/a.length:null;};
  const bumpA=R.filter(x=>x[10]&&x[7]==='A').length*0.05;const bumpT=R.filter(x=>x[10]).length*0.05;
  let brakeD=null;for(let i=R.length-1;i>0;i--){if(R[i][6]==='R'&&R[i][7]==='B'&&R[i-1][7]!=='B'){brakeD=R[i][8];break;}}
- const stuck=R.filter(x=>x[10]&&Math.abs(x[5])<0.01&&x[6]!=='P').length*0.05;
- return {fw:sp('D'),bk:sp('R'),bumpA,bumpT,stuck,brakeD,time:R[R.length-1][0]};}
+ const stuck=R.filter(x=>x[10]&&Math.abs(x[5])<0.01&&x[6]!=='P').length*0.05;const cs=R.map(x=>x[11]).filter(x=>x!==null&&x!==undefined);
+ return {fw:sp('D'),bk:sp('R'),bumpA,bumpT,stuck,brakeD,corner:cs.length?Math.min(...cs):null,time:R[R.length-1][0]};}
 function buildAnal(){const list=stageRuns();const t=$('atbl');
- let h=`<tr><th></th><th>前進の速さ<br>（平均）</th><th>バックの速さ<br>（平均）</th><th>段差で<br>止まった</th><th>段差で<br>アクセル</th><th>ブレーキを<br>踏んだ距離</th><th>時間</th></tr>`;
- renderLearned();$('teachBtn').disabled=!list.length;if(!list.length){t.innerHTML=h+`<tr><td colspan="7" style="text-align:left;padding:14px">まだ記録がありません。「手動で運転」で駐車に成功すると、ここに増えます。</td></tr>`;drawA();return;}
+ let h=`<tr><th></th><th>前進の速さ<br>（平均）</th><th>バックの速さ<br>（平均）</th><th>段差で<br>止まった</th><th>段差で<br>アクセル</th><th>ブレーキを<br>踏んだ距離</th><th>となりに一番<br>近づいた</th><th>時間</th></tr>`;
+ renderLearned();$('teachBtn').disabled=!list.length;if(!list.length){t.innerHTML=h+`<tr><td colspan="8" style="text-align:left;padding:14px">まだ記録がありません。「手動で運転」で駐車に成功すると、ここに増えます。</td></tr>`;drawA();return;}
  const A=list.map(analyze);const avg=k=>{const a=A.map(x=>x[k]).filter(x=>x!==null);return a.length?a.reduce((p,q)=>p+q,0)/a.length:null;};
  const f=(v,u,d=1,mul=1)=>v===null?'—':fmt(v*mul,d)+u;
- list.forEach((r,i)=>{const a=A[i];h+=`<tr class="click${r.id===selRun?' sel':''}" data-id="${r.id}"><td style="text-align:left"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.color}"></span> 記録${i+1}${r.demo?'<small style="color:var(--sub)"> 見本</small>':''}</td><td>${f(a.fw,' km/h',1,3.6)}</td><td>${f(a.bk,' km/h',1,3.6)}</td><td>${f(a.stuck,' 秒')}</td><td>${f(a.bumpA,' 秒')}</td><td>${f(a.brakeD,' cm',0,100)}</td><td>${f(a.time,' 秒')}</td></tr>`;});
- h+=`<tr class="avg"><td style="text-align:left">平均</td><td>${f(avg('fw'),' km/h',1,3.6)}</td><td>${f(avg('bk'),' km/h',1,3.6)}</td><td>${f(avg('stuck'),' 秒')}</td><td>${f(avg('bumpA'),' 秒')}</td><td>${f(avg('brakeD'),' cm',0,100)}</td><td>${f(avg('time'),' 秒')}</td></tr>`;
+ list.forEach((r,i)=>{const a=A[i];h+=`<tr class="click${r.id===selRun?' sel':''}" data-id="${r.id}"><td style="text-align:left"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.color}"></span> 記録${i+1}${r.demo?'<small style="color:var(--sub)"> 見本</small>':''}</td><td>${f(a.fw,' km/h',1,3.6)}</td><td>${f(a.bk,' km/h',1,3.6)}</td><td>${f(a.stuck,' 秒')}</td><td>${f(a.bumpA,' 秒')}</td><td>${f(a.brakeD,' cm',0,100)}</td><td>${f(a.corner,' cm',0,100)}</td><td>${f(a.time,' 秒')}</td></tr>`;});
+ h+=`<tr class="avg"><td style="text-align:left">平均</td><td>${f(avg('fw'),' km/h',1,3.6)}</td><td>${f(avg('bk'),' km/h',1,3.6)}</td><td>${f(avg('stuck'),' 秒')}</td><td>${f(avg('bumpA'),' 秒')}</td><td>${f(avg('brakeD'),' cm',0,100)}</td><td>${f(minC(A),' cm（最小）',0,100)}</td><td>${f(avg('time'),' 秒')}</td></tr>`;
  t.innerHTML=h;(t.children||[]).forEach?.(()=>{});
  t.onclick=e=>{const tr=e.target.closest&&e.target.closest('tr[data-id]');if(!tr)return;selRun=+tr.dataset.id;buildAnal();};
  const teach=()=>{if(!list.length){say('');return;}const fw=avg('fw'),bk=avg('bk'),bd=avg('brakeD');if(fw!==null)$('pF').value=+(fw*3.6).toFixed(1);if(bk!==null)$('pV').value=+(bk*3.6).toFixed(1);if(bd!==null)$('pS').value=+bd.toFixed(2);
+  const mc=minC(A);if(mc!==null){$('pC').value=+Math.max(0.05,Math.min(0.8,mc*0.8)).toFixed(2);P1.cornerMin=mc;}
   P1.from=list.length;P1.fromStage=ST.name;pUI();renderLearned();};
  $('teachBtn').onclick=teach;renderLearned();
  drawA();}
 function renderLearned(){const el=$('learned');if(!P1.from){el.className='learned none';el.innerHTML='車はまだ何も覚えていません。<br>左の記録を見て、ボタンを押すと、あなたの運転が車に伝わります。';return;}
  el.className='learned';el.innerHTML=`<h4>車が覚えたこと（${P1.fromStage} の記録 ${P1.from} 回分の平均）</h4>`+
- `<div class="row"><span>前進するときの速さ</span><b>${fmt(P1.vf*3.6,1)} km/h</b></div><div class="row"><span>バックするときの速さ</span><b>${fmt(P1.vt*3.6,1)} km/h</b></div><div class="row"><span>ブレーキを踏むタイミング</span><b>うしろ ${fmt(P1.stop*100)} cm</b></div>`;}
+ `<div class="row"><span>前進するときの速さ</span><b>${fmt(P1.vf*3.6,1)} km/h</b></div><div class="row"><span>バックするときの速さ</span><b>${fmt(P1.vt*3.6,1)} km/h</b></div><div class="row"><span>ブレーキを踏むタイミング</span><b>うしろ ${fmt(P1.stop*100)} cm</b></div>`+`<div class="row"><span>となりに近づいたら止まる</span><b>${fmt(P1.corner*100)} cm</b></div>`+(P1.cornerMin?`<div class="note">あなたが一番近づいたのは ${fmt(P1.cornerMin*100)} cm。それより少し手前で止めます。</div>`:'');}
 function drawA(){const {c,w,h}=X.cvA;c.clearRect(0,0,w,h);const r=runs.find(x=>x.id===selRun&&x.stage===ST.id);if(!r){$('gTitle').textContent='記録をタップすると、速さのグラフが出ます';return;}
  $('gTitle').textContent='速さの変わり方（上：前進／下：バック）';const R=r.rows,T=R[R.length-1][0],x0=34,y0=10,gw=w-44,gh=h-40,vm=2.6,ym=y0+gh/2;
  const xs=t=>x0+gw*t/T,ys=v=>ym-(gh/2)*v/vm;
@@ -434,7 +473,7 @@ buildStages();resetDrive();setMode('drive');
 let last=performance.now();
 function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(mode!=='anal')tickDrive(dt);requestAnimationFrame(loop);}
 requestAnimationFrame(loop);
-window.__T={m,runs:()=>runs,setMode,W:()=>W,P1,analyze};
+window.__T={m,runs:()=>runs,setMode,W:()=>W,P1,analyze,setLV:v=>{LV=v;}};
 })();
 </script>
 </body>
