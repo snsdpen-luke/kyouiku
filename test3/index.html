@@ -488,8 +488,7 @@ function drawTraffic(c){TR.list.forEach(t=>{const [x1,y1]=P(t.x-2.2,t.y-HW),[x2,
 /* 段階1の数字 */
 const sgn=v=>(v>=0?'+':'−')+fmt(Math.abs(v)*100)+'cm';
 function pUI(){P1.mR=+$('pS').value;P1.mC=+$('pC').value;if(P1.baseR==null)P1.baseR=0.45;if(P1.baseC==null)P1.baseC=0.3;P1.stop=Math.max(0.05,P1.baseR+P1.mR);P1.corner=Math.max(0.03,P1.baseC+P1.mC);
- $('pSB').textContent=`記録 ${fmt(P1.baseR*100)}cm${P1.src?'':'（仮）'}`;$('pCB').textContent=`記録 ${fmt(P1.baseC*100)}cm${P1.src&&P1.src.corner?'':'（仮）'}`;
- $('baseBox').textContent=`前・うしろ ${fmt(P1.baseR*100)}cm　四すみ ${fmt(P1.baseC*100)}cm`+(m.mode==='lv2'?`　前進 ${fmt(P1.vf*3.6,1)}・バック ${fmt(P1.vt*3.6,1)} km/h`:'')+(P1.src?'':'（仮の数字）');{const pv=[...tlog].reverse().find(e=>e.lv===(m.mode==='lv2'?2:1));if(pv)$('baseBox').innerHTML=$('baseBox').textContent+`<br><span style="color:var(--copper)">前回：前・うしろ ${sgn(pv.mR)}・四すみ ${sgn(pv.mC)} → ${pv.result==='成功'?pv.score+' 点':pv.result}</span>`;}
+ $('baseBox').textContent=`前・うしろ ${fmt(P1.baseR*100)}cm　四すみ ${fmt(P1.baseC*100)}cm`+(P1.src?'':'（仮）');{const pv=[...tlog].reverse().find(e=>e.lv===(m.mode==='lv2'?2:1));if(pv)$('baseBox').innerHTML=$('baseBox').textContent+`<br><span style="color:var(--copper)">前回：前・うしろ ${sgn(pv.mR)}・四すみ ${sgn(pv.mC)} → ${pv.result==='成功'?pv.score+' 点':pv.result}</span>`;}
  $('pSV').textContent=`${sgn(P1.mR)} → ${fmt(P1.stop*100)}cm`;$('pCV').textContent=`${sgn(P1.mC)} → ${fmt(P1.corner*100)}cm`;P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('pKV').textContent=fmt(P1.kp,1);saveP();}
 ['pF','pV','pK','pS','pC'].forEach(i=>$(i).oninput=pUI);
 $('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.mR||0;$('pC').value=P1.mC||0;pUI();
@@ -557,7 +556,7 @@ function tickRev(dt){if(RV.play&&RV.run){RV.acc+=dt;while(RV.acc>=FIX){RV.acc-=F
   const ev=RV.run.events.find(e=>e.i===RV.i);if(ev){RV.play=false;$('rPlay').textContent='▶ 再生';}}$('rSlider').value=RV.i;revUI();}
  drawRev();}
 function stopDist(v){const c={v,F:0,meas:v,mt:0};let d=0,hT=0,t=0;while(c.v>0&&t<5){hT+=0.01;const b=hT>=BRAKE_DELAY?Math.min(1,(hT-BRAKE_DELAY)/BRAKE_RAMP)*0.8:0;lonStep(c,0,b,hT<BRAKE_DELAY,false,0.01);d+=c.v*0.01;t+=0.01;}return d;}
-function logHTML(){const L=tlog.slice(-7);if(!L.length)return '';const lv2=L.some(e=>e.lv>=2);
+function logHTML(){const L=tlog.slice(-6);if(!L.length)return '';const lv2=L.some(e=>e.lv>=2);
  return `<div class="slh you" style="margin-top:4px">余裕を変えたら、どうなった？（調整の記録）</div><table class="logt"><tr><th>回</th><th>レベル</th><th>前・うしろ</th><th>四すみ</th>${lv2?'<th>前進／バック km/h</th>':''}<th>結果</th><th>時間</th><th>点数</th></tr>`+
  L.map((e,i)=>`<tr${i===L.length-1?' class="last"':''}><td>${e.n}</td><td>${e.lv}</td><td>${sgn(e.mR)}</td><td>${sgn(e.mC)}</td>${lv2?`<td>${e.lv>=2?fmt(e.vf*3.6,1)+'／'+fmt(e.vt*3.6,1):'—'}</td>`:''}<td>${e.result}</td><td>${fmt(e.time,1)} 秒</td><td><span class="bar" style="width:${e.score*0.6}px"></span>${e.score}</td></tr>`).join('')+'</table>';}
 $('rTune').onclick=()=>{if(RV.run)LV=RV.run.level;setMode('auto');const b=$('s1box');b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),1600);};
