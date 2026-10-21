@@ -75,7 +75,7 @@ tr.sel td{background:#fff3b0}
 tr.click{cursor:pointer}
 .acol{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
 .steps{display:flex;align-items:center;gap:6px}
-.steps button{font-size:13px;line-height:1.3;padding:4px 9px;text-align:left;min-height:46px}
+.steps button{font-size:13px;line-height:1.3;padding:4px 9px;white-space:nowrap;text-align:left;min-height:46px}
 .steps button b{font-size:16px;color:var(--copper)}
 .steps button.sel b{color:#fff}
 .steps button small{font-size:12px}
@@ -134,10 +134,10 @@ tr.click{cursor:pointer}
     <button id="snd">音：ON</button>
   </header>
   <div class="steps" id="modes">
-    <button data-m="drive" class="sel"><b>①</b> 手動で運転して<br>データを集める</button><span class="ar">→</span>
-    <button data-m="anal"><b>②</b> 自分の運転を<br>車に教える</button><span class="ar">→</span>
+    <button data-m="drive" class="sel"><b>①</b> 手動で運転<br><small>データを集める</small></button><span class="ar">→</span>
+    <button data-m="anal"><b>②</b> 車に教える<br><small>自分の運転から</small></button><span class="ar">→</span>
     <button data-m="auto"><b>③</b> 自動運転<br><small id="lvName"></small></button><span class="ar">→</span>
-    <button data-m="review"><b>④</b> ふりかえり<br><small>止まった理由を見る</small></button>
+    <button data-m="review"><b>④</b> ふりかえり<br><small>止まった理由</small></button>
     <span class="sp"></span>
     <div class="roles" id="roles"></div>
   </div>
@@ -345,7 +345,7 @@ function say(t){m.msg=t;m.msgT=2.4;}
 function buildStages(){const g=$('stgs');g.innerHTML='';STAGES.forEach(st=>{const b=document.createElement('button');b.textContent=st.name;b.classList.toggle('sel',st===ST);b.onclick=()=>{ST=st;selRun=null;buildStages();resetDrive();if(mode==='anal')buildAnal();};g.appendChild(b);});}
 const modeBtns=[...document.querySelectorAll('#modes button[data-m]')];
 function buildLv(){const g=$('lvsel');g.innerHTML='';LVS.forEach(([n],i)=>{const b=document.createElement('button');b.innerHTML=`<b>${i+1}</b> ${n}`;b.disabled=i>1;b.title=i>1?'準備中':'';b.classList.toggle('sel',LV===i+1);b.onclick=()=>{LV=i+1;setMode('auto');};g.appendChild(b);});
- $('lvName').textContent=`レベル${LV}：${LVS[LV-1][1]}`;}
+ $('lvName').textContent=`レベル${LV}：${LVS[LV-1][0]}`;}
 function setMode(k){mode=k;modeBtns.forEach(b=>b.classList.toggle('sel',b.dataset.m===k));$('pDrive').hidden=k==='anal'||k==='review';$('pAnal').hidden=k!=='anal';$('pRev').hidden=k!=='review';
  const au=k==='auto';m.mode=au?'lv'+LV:'manual';$('s1box').hidden=!au;$('lvsel').hidden=!au;$('cvGraph').hidden=!(au&&LV>=2);
  document.querySelectorAll('.lv2').forEach(e=>e.hidden=!(au&&LV>=2));
