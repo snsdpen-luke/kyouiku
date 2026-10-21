@@ -90,6 +90,10 @@ print("生成: dist2/index.html")
 os.makedirs("parking", exist_ok=True)
 shutil.copyfile("自動駐車.html", "parking/index.html")
 print("生成: parking/index.html")
+# 駐車を学習する車（手動の記録を集めて、まねる学習で自動駐車。試作）
+os.makedirs("parking2", exist_ok=True)
+shutil.copyfile("駐車を学習する車.html", "parking2/index.html")
+print("生成: parking2/index.html")
 
 # 1h) 複線図れんしゅう（第二種電気工事士 技能試験の複線図）
 os.makedirs("fukusen", exist_ok=True)

@@ -32,6 +32,7 @@
 | 距離センサ 第1時 | <https://snsdpen-luke.github.io/kyouiku/dist/> （超音波・駐車センサ） |
 | 距離センサ 第2時 | <https://snsdpen-luke.github.io/kyouiku/dist2/> （ミリ波レーダー・ACCへの橋） |
 | 自動駐車をつくろう | <https://snsdpen-luke.github.io/kyouiku/parking/> （手動駐車9ステージ。全クリアで自動制御のページへ） |
+| 駐車を学習する車 | <https://snsdpen-luke.github.io/kyouiku/parking2/> （試作：手動の記録を集める→表で見る→学習して自動運転） |
 | 複線図れんしゅう | <https://snsdpen-luke.github.io/kyouiku/fukusen/> |
 | 速い・遅いの正体 | <https://snsdpen-luke.github.io/kyouiku/speed/> |
 | 電波はどこまで届くか | <https://snsdpen-luke.github.io/kyouiku/wifi/> |
