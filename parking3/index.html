@@ -104,7 +104,8 @@ tr.click{cursor:pointer}
       <div class="big" id="dStatus"></div>
       <div id="s1box" hidden>
         <div class="sl">
-          <label for="pV">目標の速さ</label><input id="pV" type="range" min="0.5" max="8" step="0.1" value="2"><span class="val" id="pVV"></span>
+          <label for="pF">前進の速さ</label><input id="pF" type="range" min="0.5" max="9" step="0.1" value="4"><span class="val" id="pFV"></span>
+          <label for="pV">バックの速さ</label><input id="pV" type="range" min="0.5" max="5" step="0.1" value="2"><span class="val" id="pVV"></span>
           <label for="pK">直す強さ</label><input id="pK" type="range" min="0" max="20" step="0.5" value="1"><span class="val" id="pKV"></span>
           <label for="pS">止まる距離</label><input id="pS" type="range" min="0.1" max="1.5" step="0.05" value="0.3"><span class="val" id="pSV"></span>
         </div>
@@ -123,7 +124,7 @@ tr.click{cursor:pointer}
   <!-- データ分析 -->
   <div class="panel" id="pAnal" hidden>
     <div class="acol">
-      <div class="grp"><span class="big">手動の運転の記録</span><span class="sp"></span><button id="demoBtn">見本データを入れる</button><button id="useBtn" class="go">平均を段階1に入れる</button></div>
+      <div class="grp"><span class="big">手動の運転の記録</span><span class="sp"></span><button id="demoBtn">見本データを入れる</button><button id="useBtn" class="go">データから学習する</button></div>
       <div class="tblwrap" style="flex:1"><table id="atbl"></table></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;width:330px;flex:none">
@@ -202,7 +203,7 @@ function physStep(m,W,dt){const s=m.s;s.d=m.wheel/WMAX*DMAX;const dir=gearDir(m.
  if(m.gear==='P'){b=1;}
  else if(m.mode==='manual'){u=m.acc&&dir?1:0;b=m.brake?1:0;creep=dir!==0;}
  else{ // 段階1：速さを車輪速センサで測り、目標に合わせてアクセル・ブレーキを自動で決める
-  if(dir){const ctl=pctl(m.c.meas,m.p.vt,m.p.kp);u=ctl.u;b=ctl.b;
+  if(dir){const ctl=pctl(m.c.meas,dir>0?(m.p.vf||m.p.vt):m.p.vt,m.p.kp);u=ctl.u;b=ctl.b;
    const d=dir>0?son.f:son.r;if(d!==null&&d<=m.p.stop)m.hold=true;if(m.hold){u=0;b=1;}}
   if(m.brake){u=0;b=1;}auto={u,b};}
  if(dir===0&&m.gear==='N'){u=0;}
@@ -245,7 +246,7 @@ const X={};document.querySelectorAll('canvas[data-w]').forEach(cv=>{const w=+cv.
 const KEY='stairs-v1';let runs=[];try{runs=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}if(!Array.isArray(runs))runs=[];
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(runs))}catch(e){}};
 let nextId=runs.reduce((a,r)=>Math.max(a,r.id||0),0)+1;
-const PKEY='stairs-p1';let P1={vt:2/3.6,kp:1,stop:0.3};try{Object.assign(P1,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
+const PKEY='stairs-p1';let P1={vf:4/3.6,vt:2/3.6,kp:1,stop:0.3};try{Object.assign(P1,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
 const saveP=()=>{try{localStorage.setItem(PKEY,JSON.stringify(P1))}catch(e){}};
 
 let ST=STAGES[0],mode='drive',W=null,selRun=null;
@@ -288,9 +289,9 @@ function tone(fs,dur,vol,type){if(!snd||!actx)return;try{const t=actx.currentTim
  fs.forEach(f=>{const o=actx.createOscillator();o.type=type;o.frequency.value=f;o.connect(g);o.start(t);o.stop(t+dur+0.06);});}catch(e){}}
 
 /* 段階1の数字 */
-function pUI(){P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;P1.stop=+$('pS').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('pKV').textContent=fmt(P1.kp,1);$('pSV').textContent=fmt(P1.stop*100)+' cm';saveP();}
-['pV','pK','pS'].forEach(i=>$(i).oninput=pUI);
-$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.stop;pUI();
+function pUI(){P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;P1.stop=+$('pS').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('pKV').textContent=fmt(P1.kp,1);$('pSV').textContent=fmt(P1.stop*100)+' cm';saveP();}
+['pF','pV','pK','pS'].forEach(i=>$(i).oninput=pUI);
+$('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.stop;pUI();
 
 /* 運転 */
 function resetDrive(){const e=ST.empties[Math.floor(Math.random()*ST.empties.length)];W=makeWorld(ST,e);
@@ -309,7 +310,8 @@ function tickDrive(dt){if(!m.crash&&!m.done){m.at+=dt;while(m.at>=FIX){m.at-=FIX
    if(m.gear==='P'&&m.c.v===0&&m.rows.length+(m.mode==='s1'?1:0)&&m.t>0){const j=judge(W,m.s);
     if(j.ok){m.done=true;tone([523,659,784],0.25,0.07,'triangle');
      if(m.mode==='manual'){const id=nextId++;runs.push({id,stage:ST.id,empty:W.empty,rows:m.rows,demo:false,color:COLORS[(id-1)%COLORS.length]});save();selRun=id;showOv('win','駐車成功！',`記録として保存しました（${stageRuns().length} 回目・${fmt(m.t,1)} 秒）`);}
-     else showOv('win','駐車成功！','段階1（速さとブレーキが自動）でクリアしました');break;}
+     else{const k='stairs-best-'+ST.id;let b=null;try{b=+localStorage.getItem(k)||null}catch(e){}const nb=!b||m.t<b;if(nb){try{localStorage.setItem(k,m.t.toFixed(1))}catch(e){}}
+      showOv('win','駐車成功！',`${fmt(m.t,1)} 秒${nb?'（いちばん速い記録！）':`（いちばん速い記録は ${fmt(b,1)} 秒）`}`);}break;}
     else if(m.msgT<=0)say(j.t);}}}
  m.msgT-=dt;const st=$('dStatus');
  if(m.msgT>0){st.textContent=m.msg;st.style.color=C.danger;}
@@ -371,7 +373,8 @@ function buildAnal(){const list=stageRuns();const t=$('atbl');
  h+=`<tr class="avg"><td style="text-align:left">平均</td><td>${f(avg('fw'),' km/h',1,3.6)}</td><td>${f(avg('bk'),' km/h',1,3.6)}</td><td>${f(avg('stuck'),' 秒')}</td><td>${f(avg('bumpA'),' 秒')}</td><td>${f(avg('brakeD'),' cm',0,100)}</td><td>${f(avg('time'),' 秒')}</td></tr>`;
  t.innerHTML=h;(t.children||[]).forEach?.(()=>{});
  t.onclick=e=>{const tr=e.target.closest&&e.target.closest('tr[data-id]');if(!tr)return;selRun=+tr.dataset.id;buildAnal();};
- $('useBtn').onclick=()=>{const bk=avg('bk'),bd=avg('brakeD');if(bk!==null){$('pV').value=+(bk*3.6).toFixed(1);}if(bd!==null){$('pS').value=+bd.toFixed(2);}pUI();$('useBtn').textContent='入れました';setTimeout(()=>$('useBtn').textContent='平均を段階1に入れる',1500);};
+ $('useBtn').onclick=()=>{const fw=avg('fw'),bk=avg('bk'),bd=avg('brakeD');if(fw!==null)$('pF').value=+(fw*3.6).toFixed(1);if(bk!==null)$('pV').value=+(bk*3.6).toFixed(1);if(bd!==null)$('pS').value=+bd.toFixed(2);pUI();
+  $('useBtn').textContent='学習しました';setTimeout(()=>$('useBtn').textContent='データから学習する',1600);say(`学習：前進 ${fmt(fw*3.6,1)} km/h・バック ${fmt(bk*3.6,1)} km/h・止まる距離 ${fmt(bd*100)} cm`);};
  drawA();}
 function drawA(){const {c,w,h}=X.cvA;c.clearRect(0,0,w,h);const r=runs.find(x=>x.id===selRun&&x.stage===ST.id);if(!r){$('gTitle').textContent='記録をえらぶと、速さのグラフが出ます';return;}
  $('gTitle').textContent='速さの変わり方（上：前進／下：バック）';const R=r.rows,T=R[R.length-1][0],x0=34,y0=10,gw=w-44,gh=h-40,vm=2.6,ym=y0+gh/2;
