@@ -129,6 +129,7 @@ tr.click{cursor:pointer}
 .src b{font-family:var(--f-num)}
 .cond{font-size:14px;background:var(--panel);border-radius:6px;padding:4px 10px}
 .cond b{color:var(--copper)}
+.cond .same{margin-left:8px;background:var(--copper);color:#fff;border-radius:10px;padding:1px 9px;font-size:13px;font-weight:700}
 .slh{font-size:13px;font-weight:700;color:var(--sens);margin-top:2px}
 .slh.you{color:var(--copper)}
 .accm{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
@@ -161,7 +162,7 @@ tr.click{cursor:pointer}
     <div class="roles" id="roles"></div>
   </div>
   <div class="cvwrap"><canvas id="cv" data-w="968" data-h="330"></canvas>
-    <div class="overlay" id="ov" hidden><div class="ovbox"><div class="ovt" id="ovT"></div><div class="ovs" id="ovS"></div><div class="ovx" id="ovX"></div><div class="grp"><button id="ovOk" class="go">OK</button><button id="ovRev" hidden>④ ふりかえりへ</button></div></div></div>
+    <div class="overlay" id="ov" hidden><div class="ovbox"><div class="ovt" id="ovT"></div><div class="ovs" id="ovS"></div><div class="ovx" id="ovX"></div><div class="grp"><button id="ovSame" class="go" hidden>同じ条件でもう一回</button><button id="ovOk">OK</button><button id="ovRev" hidden>④ ふりかえりへ</button></div></div></div>
   </div>
 
   <!-- 運転（手動・段階1 共通） -->
@@ -198,7 +199,7 @@ tr.click{cursor:pointer}
   <div class="panel" id="pRev" hidden>
     <div class="runs" id="rlist"></div>
     <div class="rv">
-      <div class="grp"><button id="rPlay">▶ 再生</button><input id="rSlider" type="range" min="0" max="0" value="0" aria-label="時間"><span class="count" id="rTime"></span><span class="sp"></span><button id="rTune" class="go">余裕を直して ③へ →</button></div>
+      <div class="grp"><button id="rPlay">▶ 再生</button><input id="rSlider" type="range" min="0" max="0" value="0" aria-label="時間"><span class="count" id="rTime"></span><span class="sp"></span><button id="rTune" class="go">余裕を直して 同じ条件で ③へ →</button></div>
       <canvas id="cvT" data-w="720" data-h="30" style="background:var(--panel);cursor:pointer"></canvas>
       <div class="why" id="why"></div>
     </div>
@@ -398,7 +399,7 @@ const stageRuns=()=>runs.filter(r=>r.cond);
 function say(t){m.msg=t;m.msgT=2.4;}
 
 /* 画面の切り替え */
-function buildStages(){$('condTxt').innerHTML='今回の条件：<b>'+condText(W.cd)+'</b>';}
+function buildStages(){$('condTxt').innerHTML='今回の条件：<b>'+condText(W.cd)+'</b>'+(W.cd.rep>1?`<span class="same">同じ条件 ${W.cd.rep} 回目</span>`:'');}
 const modeBtns=[...document.querySelectorAll('#modes button[data-m]')];
 function buildLv(){const g=$('lvsel');g.innerHTML='';LVS.forEach(([n],i)=>{const b=document.createElement('button');b.innerHTML=`<b>${i+1}</b> ${n}`;b.disabled=i>1;b.title=i>1?'準備中':'';b.classList.toggle('sel',LV===i+1);b.onclick=()=>{LV=i+1;setMode('auto');};g.appendChild(b);});
  $('lvName').textContent=`レベル${LV}：${LVS[LV-1][0]}`;}
@@ -439,10 +440,11 @@ function tone(fs,dur,vol,type){if(!snd||!actx)return;try{const t=actx.currentTim
 const TCFG=[null,{first:25,every:20,onc:null,wait:90},{first:15,every:12,onc:35,wait:75},{first:10,every:8,onc:20,wait:60}];
 const LANE_B=9.55,LANE_O=7.35;
 const TR={list:[],peds:[],pedT:[],t:0,irr:0,over:false,started:false,nb:0,no:0,honkT:0};
-function resetTR(){const tm=TCFG[W.cd.cars];const pt=[];for(let k=0;k<W.cd.peds*2;k++)pt.push(4+Math.random()*50);pt.sort((a,b)=>a-b);
+function seedRnd(a){a=a>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
+function resetTR(){const tm=TCFG[W.cd.cars];TR.rnd=seedRnd(W.cd.seed||1);const pt=[];for(let k=0;k<W.cd.peds*2;k++)pt.push(4+TR.rnd()*50);pt.sort((a,b)=>a-b);
  Object.assign(TR,{list:[],peds:[],pedT:pt,t:0,irr:0,over:false,started:false,nb:tm?tm.first:1e9,no:tm&&tm.onc!==null?tm.onc:1e9,honkT:0});W.dyn=[];W.peds=TR.peds;}
 function inCar(s,x,y,pad){const c=Math.cos(s.th),n=Math.sin(s.th),dx=x-s.x,dy=y-s.y;const a=dx*c+dy*n,b=-dx*n+dy*c;return a>-RO-pad&&a<FO+pad&&b>-HW-pad&&b<HW+pad;}
-function spawnPed(){const k=1+Math.floor(Math.random()*(NSLOT-1));const down=Math.random()<0.6;const x=(k===W.empty||k===W.empty+1)&&Math.random()<0.5?W.gc:SX+W.sw*k;
+function spawnPed(){const R=TR.rnd||Math.random;const k=1+Math.floor(R()*(NSLOT-1));const down=R()<0.6;const x=(k===W.empty||k===W.empty+1)&&R()<0.5?W.gc:SX+W.sw*k;
  TR.peds.push({x,y:down?4.4:10.7,to:down?10.7:4.4,dir:down?1:-1,wait:false,ph:0});}
 const honk=long=>tone([392,494],long?0.6:0.22,0.09,'square');
 function carRim(s){const Cs=corners(s),P2=[];for(let i=0;i<4;i++){const a=Cs[i],b=Cs[(i+1)%4];for(let t=0;t<1;t+=0.125)P2.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}return P2;}
@@ -498,13 +500,15 @@ $('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixe
 function rolesUI(){const lv=m.mode==='lv1'?1:m.mode==='lv2'?2:0;const r=(n,w)=>`<div class="role ${w}">${n}<b>${w==='car'?'車':w==='both'?'車＋あなた':'あなた'}</b></div>`;
  $('roles').innerHTML=`<span class="rt">だれが<br>操作する？</span>`+r('アクセル',lv>=2?'car':'you')+r('ブレーキ',lv>=1?'both':'you')+r('ハンドル','you')+r('シフト','you');}
 function fromUI(){$('fromNote').textContent=P1.from?`（あなたの記録 ${P1.from} 回分から）`:'（まだ反映していません）';}
-function resetDrive(){const cd=randomCond();W=makeWorldC(cd);W.dyn=[];resetTR();buildStages();
+let keepCond=null;
+function resetDrive(){const cd=keepCond?Object.assign({},keepCond,{rep:(keepCond.rep||1)+1}):randomCond();keepCond=null;if(cd.seed==null)cd.seed=1+Math.floor(Math.random()*1e9);W=makeWorldC(cd);W.dyn=[];resetTR();buildStages();
  Object.assign(m.s,{x:0,y:cd.y0,th:0,d:0});Object.assign(m.c,{v:0,F:0,meas:0,mt:0});
  Object.assign(m,{gear:'P',wheel:0,hold:false,rows:[],events:[],t:0,at:0,crash:false,done:false,msg:'',msgT:0,last:null,hist:[]});
  gb.forEach(x=>x.classList.toggle('sel',x.dataset.g==='P'));$('ov').hidden=true;$('dCount').textContent=`あなたの記録：${stageRuns().length} 回分`;}
 $('dReset').onclick=()=>{if(m.mode!=='manual'&&m.rows.length>20&&!m.done&&!m.crash)saveAuto('途中でやめた');resetDrive();};
-function showOv(kind,t,s,x){$('ov').hidden=false;$('ov').className='overlay '+kind;$('ovT').textContent=t;$('ovS').textContent=s;$('ovX').innerHTML=x||'';$('ovRev').hidden=m.mode==='manual';$('ovOk').textContent=m.mode==='manual'?'OK':'もう一回';
+function showOv(kind,t,s,x){$('ov').hidden=false;$('ov').className='overlay '+kind;$('ovT').textContent=t;$('ovS').textContent=s;$('ovX').innerHTML=x||'';$('ovRev').hidden=$('ovSame').hidden=m.mode==='manual';$('ovOk').textContent=m.mode==='manual'?'OK':'新しい条件で';$('ovOk').classList.toggle('go',m.mode==='manual');
  const pe=$('ovX').querySelector('[data-to]');if(pe){const to=+pe.dataset.to;let k=0;const n=20;clearInterval(showOv.tm);showOv.tm=setInterval(()=>{k++;pe.firstChild.textContent=Math.round(to*k/n);if(k%4===0)tone([600+k*20],0.03,0.03,'square');if(k>=n){clearInterval(showOv.tm);if(pe.dataset.best)tone([784,988,1175,1568],0.18,0.08,'triangle');}},40);}}
+$('ovSame').onclick=()=>{$('ov').hidden=true;keepCond=W.cd;resetDrive();};
 $('ovRev').onclick=()=>{$('ov').hidden=true;setMode('review');};
 function usedTxt(e){return `前・うしろ <b>${sgn(e.mR)}</b>　四すみ <b>${sgn(e.mC)}</b>`+(e.lv>=2?`　前進 <b>${fmt(e.vf*3.6,1)}</b>・バック <b>${fmt(e.vt*3.6,1)}</b> km/h　直す強さ <b>${fmt(e.kp,1)}</b>`:'');}
 function scoreHTML(sc,e,best){if(!sc.total)return `<div class="scr"><div class="rank X">✕</div><div><div class="pts">0<small> 点</small></div><div class="sub3"><span>安全</span><b>✕</b></div></div></div><div class="used">今回の余裕：${usedTxt(e)}</div><div class="note">④で、なぜそうなったか見てみよう</div>`;
@@ -537,7 +541,7 @@ function sensUI(){const r=m.last||{sens:senseAll(W,m.s),bump:false,dir:0};const 
 /* ===== ④ ふりかえり ===== */
 function scoreRun(ok){if(!ok)return {total:0,acc:0,spd:0,rank:'X'};const s=m.s,cx=s.x+1.3*Math.cos(s.th);const off=Math.abs(cx-W.gc)/W.st.tol,an=Math.abs(s.th-Math.PI/2)/W.st.ang;
  const acc=Math.round(50*Math.max(0,Math.min(1,1-0.6*off-0.4*an))),spd=Math.round(50*Math.max(0,Math.min(1,(45-m.t)/30))),total=acc+spd;return {total,acc,spd,rank:total>=90?'S':total>=75?'A':total>=55?'B':'C'};}
-function saveAuto(result){if(!m.rows.length)return null;const sc=scoreRun(result==='成功');const e={n:(tlog.length?tlog[tlog.length-1].n:0)+1,lv:LV,mR:P1.mR,mC:P1.mC,vf:P1.vf,vt:P1.vt,kp:P1.kp,result,time:+m.t.toFixed(1),score:sc.total,rank:sc.rank};
+function saveAuto(result){if(!m.rows.length)return null;const sc=scoreRun(result==='成功');const e={n:(tlog.length?tlog[tlog.length-1].n:0)+1,lv:LV,seed:W.cd.seed,mR:P1.mR,mC:P1.mC,vf:P1.vf,vt:P1.vt,kp:P1.kp,result,time:+m.t.toFixed(1),score:sc.total,rank:sc.rank};
  tlog.push(e);if(tlog.length>40)tlog=tlog.slice(-40);saveL();m.lastLog={sc,e};
  aruns.push({id:Date.now(),cond:W.cd,level:LV,result,score:sc.total,rank:sc.rank,time:+m.t.toFixed(1),rows:m.rows,events:m.events,
   p:{stop:P1.stop,corner:P1.corner,baseR:P1.baseR,baseC:P1.baseC,mR:P1.mR,mC:P1.mC,vf:P1.vf,vt:P1.vt,kp:P1.kp,src:P1.src||null}});if(aruns.length>8)aruns=aruns.slice(-8);saveA();return m.lastLog;}
@@ -557,10 +561,10 @@ function tickRev(dt){if(RV.play&&RV.run){RV.acc+=dt;while(RV.acc>=FIX){RV.acc-=F
   const ev=RV.run.events.find(e=>e.i===RV.i);if(ev){RV.play=false;$('rPlay').textContent='▶ 再生';}}$('rSlider').value=RV.i;revUI();}
  drawRev();}
 function stopDist(v){const c={v,F:0,meas:v,mt:0};let d=0,hT=0,t=0;while(c.v>0&&t<5){hT+=0.01;const b=hT>=BRAKE_DELAY?Math.min(1,(hT-BRAKE_DELAY)/BRAKE_RAMP)*0.8:0;lonStep(c,0,b,hT<BRAKE_DELAY,false,0.01);d+=c.v*0.01;t+=0.01;}return d;}
-function logHTML(){const L=tlog.slice(-6);if(!L.length)return '';const lv2=L.some(e=>e.lv>=2);
- return `<div class="slh you" style="margin-top:4px">余裕を変えたら、どうなった？（調整の記録）</div><table class="logt"><tr><th>回</th><th>レベル</th><th>前・うしろ</th><th>四すみ</th>${lv2?'<th>前進／バック km/h</th>':''}<th>結果</th><th>時間</th><th>点数</th></tr>`+
- L.map((e,i)=>`<tr${i===L.length-1?' class="last"':''}><td>${e.n}</td><td>${e.lv}</td><td>${sgn(e.mR)}</td><td>${sgn(e.mC)}</td>${lv2?`<td>${e.lv>=2?fmt(e.vf*3.6,1)+'／'+fmt(e.vt*3.6,1):'—'}</td>`:''}<td>${e.result}</td><td>${fmt(e.time,1)} 秒</td><td><span class="bar" style="width:${e.score*0.6}px"></span>${e.score}</td></tr>`).join('')+'</table>';}
-$('rTune').onclick=()=>{if(RV.run)LV=RV.run.level;setMode('auto');const b=$('s1box');b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),1600);};
+function logHTML(){const L=tlog.slice(-6);if(!L.length)return '';const lv2=L.some(e=>e.lv>=2);const ids=[];const cl=e=>{let i=ids.indexOf(e.seed);if(i<0){ids.push(e.seed);i=ids.length-1;}return 'ABCDEF'[i];};
+ return `<div class="slh you" style="margin-top:4px">余裕を変えたら、どうなった？（調整の記録）</div><div class="note" style="font-size:12px">条件の文字が同じ回どうしなら、余裕のちがいだけをくらべられます。</div><table class="logt"><tr><th>回</th><th>条件</th><th>レベル</th><th>前・うしろ</th><th>四すみ</th>${lv2?'<th>前進／バック km/h</th>':''}<th>結果</th><th>時間</th><th>点数</th></tr>`+
+ L.map((e,i)=>`<tr${i===L.length-1?' class="last"':''}><td>${e.n}</td><td><b>${e.seed?cl(e):'—'}</b></td><td>${e.lv}</td><td>${sgn(e.mR)}</td><td>${sgn(e.mC)}</td>${lv2?`<td>${e.lv>=2?fmt(e.vf*3.6,1)+'／'+fmt(e.vt*3.6,1):'—'}</td>`:''}<td>${e.result}</td><td>${fmt(e.time,1)} 秒</td><td><span class="bar" style="width:${e.score*0.6}px"></span>${e.score}</td></tr>`).join('')+'</table>';}
+$('rTune').onclick=()=>{if(RV.run){LV=RV.run.level;keepCond=RV.run.cond;}setMode('auto');const b=$('s1box');b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),1600);};
 function revWorld(r){return makeWorldC(r.cond);}
 function rowState(Wd,row){const th=row[3];return {x:Wd.gc+row[1]-1.3*Math.cos(th),y:row[2],th,d:row[4]*DMAX};}
 function revUI(){const r=RV.run;const tl=X.cvT.c;tl.clearRect(0,0,720,30);if(!r){$('why').innerHTML='';$('rTime').textContent='';return;}
