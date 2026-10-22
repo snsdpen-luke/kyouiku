@@ -158,7 +158,7 @@ const TYPES={
 /* goods: id -> {n, price, cost, keep(false = thrown away at closing)} ; blocks.goods: [id, weight] */
 const SHOPS=[
  {n:'駅前のコンビニ',open:7,close:23,scan:0.4,maxQ:6,start:25000,goal:7000,rateGoal:4.5,taskT:'行列で帰ったお客が0人（1日中）',
-  intro:'駅の前のコンビニ。時間帯によって、来るお客も、売れる商品も大きく変わる。',
+  intro:'駅の前のコンビニ。朝7時から夜11時まで開いている。',
   goods:{bread:{n:'パンとコーヒー',price:400,cost:250,keep:false},bento:{n:'お弁当',price:600,cost:400,keep:false},daily:{n:'日用品',price:1500,cost:1050,keep:true},snack:{n:'お菓子・飲み物',price:250,cost:150,keep:true}},
   blocks:[
    {n:'朝',from:7,to:10,gap:0.85,mix:{worker:55,student:40,elder:5},goods:[['bread',8],['snack',2]]},
@@ -166,14 +166,14 @@ const SHOPS=[
    {n:'夕方',from:15,to:19,gap:0.85,mix:{student:70,family:20,worker:10},goods:[['snack',8],['bread',2]]},
    {n:'夜',from:19,to:23,gap:1.7,mix:{worker:65,student:15,elder:20},goods:[['bento',6],['snack',4]]}]},
  {n:'家電店',open:10,close:20,scan:2.6,maxQ:5,start:300000,goal:95000,rateGoal:4.6,stockCap:300000,taskT:'2万円以上の買い物で、逃したお客が0人',
-  intro:'電池から大型テレビまで売る店。高い商品は、現金を持って来る人が少ない。払い方ごとに上限もある。',
+  intro:'電池から大型テレビ・パソコンまで売る家電の店。',
   goods:{batt:{n:'電池・電球',price:800,cost:500,keep:true},dryer:{n:'ドライヤー',price:6000,cost:4500,keep:true},phones:{n:'イヤホン',price:8000,cost:6000,keep:true},game:{n:'ゲーム機',price:40000,cost:33000,keep:true},tv:{n:'テレビ',price:100000,cost:84000,keep:true},pc:{n:'パソコン',price:120000,cost:100000,keep:true}},
   blocks:[
    {n:'午前',from:10,to:13,gap:4.2,mix:{elder:45,family:25,worker:30},goods:[['batt',6],['dryer',3],['tv',1]]},
    {n:'昼すぎ',from:13,to:17,gap:3.0,mix:{family:65,worker:35},goods:[['game',4],['tv',3],['batt',2],['phones',1]]},
    {n:'夕方',from:17,to:20,gap:3.6,mix:{worker:70,family:30},goods:[['phones',5],['pc',3],['batt',2]]}]},
  {n:'熊本城前のおみやげ店',open:9,close:18,scan:1.3,maxQ:7,start:45000,goal:32000,rateGoal:4.5,taskT:'海外からのお客で、帰った人が0人',alwaysOutage:true,outLen:15,
-  intro:'観光バスが着くと、海外からのお客が一気に来る。海外のお客は、日本のQRやICを持っていないことが多い。',
+  intro:'熊本城の前のおみやげ店。観光バスが着く。',
   goods:{kuma:{n:'くまモングッズ',price:1500,cost:900,keep:true},sweets:{n:'お菓子の箱',price:1600,cost:1000,keep:true},key:{n:'キーホルダー',price:500,cost:250,keep:true},renkon:{n:'からしれんこん',price:2500,cost:1600,keep:false}},
   blocks:[
    {n:'朝',from:9,to:11,gap:1.3,mix:{asia:45,west:30,elder:25},goods:[['kuma',6],['sweets',4]]},
@@ -190,7 +190,7 @@ class Day{
   const S0=this.S;if(this.dayNo>=2&&(S0.alwaysOutage||this.rng()<0.7)){const f=DAY*(0.3+this.rng()*0.4);this.out={from:f,to:f+(S0.outLen||8)}}
   this.events=[];this.st=this.newStats();this.done=false}
  newStats(){const b=this.S.blocks.map(x=>({n:x.n,came:{},served:0,leftQ:0,leftP:0,leftD:0,leftS:0,want:{},wantMiss:{}}));const g={};for(const k in this.S.goods)g[k]={sold:0,out:0,waste:0,demand:0};
-  return{blocks:b,goods:g,sales:0,gross:0,fee:0,cogs:0,waste:0,wasteN:0,served:0,came:0,left:0,byPay:{},inc:{},devFee:{},reviews:[],maxQ:0,hiMiss:0,inbMiss:0,leftDown:0,outageHit:false}}
+  return{blocks:b,goods:g,sales:0,gross:0,fee:0,cogs:0,waste:0,wasteN:0,served:0,came:0,left:0,byPay:{},paySales:{},inc:{},devFee:{},reviews:[],maxQ:0,hiMiss:0,inbMiss:0,leftDown:0,outageHit:false}}
  has(k){return k==='cash'||this.cfg.dev.includes(k)}
  fac(k){return this.cfg.fac.includes(k)}
  regs(){return this.fac('reg2')?2:1}
@@ -237,7 +237,7 @@ class Day{
     c.pay=m;c.forced=!!this.cfg.rec&&m===this.cfg.rec&&this.natural(c)!==m;if(c.forced)this.st.forced=(this.st.forced||0)+1;c.st='pay';c.stT=0;c.dur=S.scan+(m==='cash'&&this.fac('changer')?0.9:PAY[m].t)+(m==='card'&&c.amt>=30000?2:0)}
    else if(c.st==='pay'&&c.stT>=c.dur){const P=PAY[c.pay],G=S.goods[c.gid];const fee=c.amt*P.fee;const prof=c.amt-G.cost*c.q-fee;
     this.inv[c.gid]-=c.q;this.pend[c.gid]-=c.q;
-    const alt=this.choose(c,c.pay);const st=this.st;st.sales+=c.amt;st.cogs+=G.cost*c.q;st.gross+=prof;st.fee+=fee;st.served++;st.byPay[c.pay]=(st.byPay[c.pay]||0)+1;st.devFee[c.pay]=(st.devFee[c.pay]||0)+fee;st.goods[c.gid].sold+=c.q;
+    const alt=this.choose(c,c.pay);const st=this.st;st.sales+=c.amt;st.cogs+=G.cost*c.q;st.gross+=prof;st.fee+=fee;st.served++;st.byPay[c.pay]=(st.byPay[c.pay]||0)+1;st.paySales[c.pay]=(st.paySales[c.pay]||0)+c.amt;st.devFee[c.pay]=(st.devFee[c.pay]||0)+fee;st.goods[c.gid].sold+=c.q;
     if(!alt)st.inc[c.pay]=(st.inc[c.pay]||0)+prof;
     st.blocks[c.bi].served++;
     const wb=Math.max(4,S.scan*3);let stars=c.wait>wb*1.8?3:c.wait>wb?4:5;const grumble=c.forced&&this.rng()<RECPEN;if(grumble)stars=Math.max(1,stars-1);
@@ -378,7 +378,7 @@ const WHYTXT={pay:'払い方がない',queue:'行列が長い',down:'ネット�
 function handleEvents(){for(const e of D.events){
   if(e.k==='leave'){const c=e.c;ghosts.push({ty:c.ty,age:0,msg:e.why==='soldout'?`${SHOPS[G.shop].goods[c.gid].n}…売り切れ`:e.why==='pay'?`${PAY[c.want].ask}…ない`:e.why==='queue'?'行列が長い…':'ネット障害…'});addLog(`${TYPES[c.ty].n}が帰った（${e.why==='pay'?PAY[c.want].n+'がない':WHYTXT[e.why]}）`);
    if(e.why==='pay'&&!G.firsts['m'+c.want]){G.firsts['m'+c.want]=1;toast(`<b>${TYPES[c.ty].n}は「${PAY[c.want].n}」で払いたかった。</b>その払い方がないと、買わずに帰ります。ただし、ほかの払い方も持っている人は、そちらで払います。`)}
-   if(e.why==='queue'&&!G.firsts.q){G.firsts.q=1;toast('<b>行列が長くて帰った！</b>　混む時間帯に、会計が速くなる工夫（ICや顔・つり銭機・レジ2台目）が効きます。')}}
+   if(e.why==='queue'&&!G.firsts.q){G.firsts.q=1;toast(`<b>行列が長くて帰った！</b>　行列が${SHOPS[G.shop].maxQ}人をこえると、来たお客は並ばずに帰ります。`)}}
   else if(e.k==='paid'){const c=e.c;const p=c._ex||{x:200,y:330};pops.push({x:p.x,y:p.y-40,t:1.3,txt:'+¥'+yen(c.amt),col:'#b77d00'});if(e.fee>=1)pops.push({x:p.x+10,y:p.y-18,t:1.3,txt:'手数料 −'+yen(e.fee),col:'#d23c1e',small:true});G.coins+=c.amt-e.fee;
    if(e.fee>=1&&!G.firsts.fee){G.firsts.fee=1;toast(`<b>手数料</b>　キャッシュレスで払われると、金額の数%を決済の会社にはらいます（${PAY[c.pay].n}は${(PAY[c.pay].fee*100).toFixed(1).replace('.0','')}%）。`)}}
   else if(e.k==='review'){showReview(e.rv)}
@@ -404,7 +404,7 @@ function openStock(first){const S=SHOPS[G.shop],inv=G.inv[G.shop];const lg=G.las
  const total=()=>Object.entries(order).reduce((a,[k,n])=>a+n*S.goods[k].cost,0);
  const render=()=>{const t=total();
   $('#ovCard').innerHTML=`<h2>仕入れ　<small style="font-size:15px;color:var(--sub)">${G.day}日目に売る商品</small></h2>
-  <p style="font-size:14px">${first?'1日目はデータがありません。どの時間に何が売れそうか、店の説明から考えて仕入れよう。':'きのうのデータを見て、今日の数を決めよう。<b>売り切れ</b>はお客が帰る。<b>捨てる</b>と仕入れ値が損になる。'}</p>
+  <p style="font-size:14px">${first?'1日目はデータがありません。':'<b>売り切れ</b>るとお客は帰る。売れ残った生ものは閉店時に<b>捨てる</b>。'}</p>
   <table class="wt stock"><tr><th>商品</th><th>売値／仕入れ値</th><th>いまの在庫</th>${lg?'<th>きのう<br>売れた</th><th>売り切れで<br>帰った</th><th>捨てた</th>':''}<th>仕入れる数</th></tr>
   ${Object.entries(S.goods).map(([k,g])=>`<tr><td><b>${g.n}</b><br><small style="color:${g.keep?'var(--sub)':'var(--ng)'}">${g.keep?'次の日に持ちこせる':'その日に捨てる'}</small></td><td class="n">¥${yen(g.price)}<br><small>¥${yen(g.cost)}</small></td><td class="n">${inv[k]||0}</td>${lg?`<td class="n">${lg[k].sold}</td><td class="n" style="color:${lg[k].out?'var(--ng)':''}">${lg[k].out}</td><td class="n" style="color:${lg[k].waste?'var(--ng)':''}">${lg[k].waste}</td>`:''}
    <td style="white-space:nowrap"><button class="st" data-k="${k}" data-d="-10">−10</button><button class="st" data-k="${k}" data-d="-1">−</button><b class="ord">${order[k]}</b><button class="st" data-k="${k}" data-d="1">＋</button><button class="st" data-k="${k}" data-d="10">＋10</button></td></tr>`).join('')}</table>
@@ -423,11 +423,11 @@ function endDay(){const st=D.st;const S=SHOPS[G.shop];G.coins+=-st.up;/* sales m
  <div class="kp"><div><small>利益</small><b style="color:${st.profit>=0?'var(--ok)':'var(--ng)'}">${yen(st.profit)}</b></div><div><small>買ったお客</small><b>${st.served}</b></div><div><small>帰ったお客</small><b style="color:var(--ng)">${st.left}</b></div><div><small>口コミ</small><b>★${st.rating.toFixed(1)}</b></div></div>
  <p style="font-size:13px">売上 ¥${yen(st.sales)} − 売れた分の仕入れ値 ¥${yen(st.cogs)} − 捨てた分 ¥${yen(st.waste)} − 手数料 ¥${yen(st.fee)} − 維持費 ¥${yen(st.up)} ＝ 利益 ¥${yen(st.profit)}<br>所持金 ¥${yen(G.coins)}</p>
  <div class="dcard"><h4>クリア条件<span>3つ以上で次の店へ</span></h4>${condHTML(cs)}</div>`;
- if(!wasOpen)h+=`<p style="background:#fffbe6;border:2px solid var(--mark);border-radius:10px;padding:7px 12px;font-size:14px"><b>「経営データ」が見られるようになりました。</b>だれが・いつ・何を買いに来て、何で払いたかったのか。データを見てから仕入れと道具を決めよう。</p>`;
+ if(!wasOpen)h+=`<p style="background:#fffbe6;border:2px solid var(--mark);border-radius:10px;padding:7px 12px;font-size:14px"><b>「経営データ」が見られるようになりました。</b>だれが・いつ・何を買いに来て、何で払いたかったのかが分かります。</p>`;
  const broke=G.coins<0,over=n<3&&dayNo>=LIMIT;
  if(n>=3){if(G.shop<SHOPS.length-1){const nx=SHOPS[G.shop+1];h+=`<p style="background:var(--oks);border-radius:10px;padding:8px 12px"><b>クリア！（${dayNo}日目・${n}/5）</b><br>次の店：<b>${nx.n}</b>　${nx.intro}</p><button class="big" id="ovNext">${nx.n}を開く</button>`}
   else{G.cleared=true;h+=`<p style="background:var(--oks);border-radius:10px;padding:8px 12px"><b>3つの店、すべてクリア！</b></p><ul><li>時間帯と商品で、お客も払い方も変わる</li><li>データを見て<b>仕入れる数</b>を決める。売り切れも、捨てるのも損</li><li>決済の道具は、<b>手数料と維持費</b>で元が取れるかを見る</li><li>ネット障害に強い払い方を残しておく</li></ul><p><b>考えよう：</b>熊本で新しい店を開くなら、どんなデータを最初に集める？</p><button class="big" id="ovRe">最初の店からもう一度</button>`}}
- else if(broke||over){h+=`<p style="background:var(--ngs);border:2px solid var(--ng);border-radius:10px;padding:8px 12px"><b style="color:var(--ng)">経営破綻…</b>　${broke?'お金がマイナスになりました。':`${LIMIT}日以内に条件を3つそろえられませんでした。`}<br>この店の1日目からやり直します。こんどは、どのデータを先に見る？</p><button class="big" id="ovRetry">${S.n}をやり直す</button>`}
+ else if(broke||over){h+=`<p style="background:var(--ngs);border:2px solid var(--ng);border-radius:10px;padding:8px 12px"><b style="color:var(--ng)">経営破綻…</b>　${broke?'お金がマイナスになりました。':`${LIMIT}日以内に条件を3つそろえられませんでした。`}<br>この店の1日目からやり直します。</p><button class="big" id="ovRetry">${S.n}をやり直す</button>`}
  else h+=`<p style="font-size:13.5px;color:var(--sub)">のこり ${LIMIT-dayNo}日。道具を変えるなら、先に右の「道具」で。</p><button class="big" id="ovStock">次の日の仕入れへ</button>`;
  showOv(h);
  const nb=$('#ovNext');if(nb)nb.onclick=()=>{resetShop(G.shop+1);renderAll();toast(`<b>${SHOPS[G.shop].n}</b>　${SHOPS[G.shop].intro}`,9);save();openStock(true)};
@@ -447,7 +447,7 @@ function renderPanel(){const p=$('#panel');const S=SHOPS[G.shop];const C=cfg();c
  $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
  if(tab==='tools'){
   let h=`<div class="dcard"><h4>クリア条件（きのうの結果）<span>3つ以上で次の店へ</span></h4>${condHTML(lastConds())}</div><div class="sec">レジ横の決済端末（3つまで）</div><div class="slots">${[0,1,2].map(i=>{const k=C.dev[i];return k?`<div class="slot f" style="background:${PAY[k].col};border-color:${PAY[k].col}">${PAY[k].n}</div>`:'<div class="slot">あき</div>'}).join('')}</div><div class="note">現金は最初からある（枠は使わない）。端末は買ったあと、置く・外すを自由に変えられます。</div>`;
-  const recOpts=['cash',...C.dev];h+=`<div class="sec">レジの掲示「◯◯でのお支払いがおすすめです」</div><div class="recs"><button type="button" data-rec="" class="${!C.rec?'on':''}">なし</button>${recOpts.map(k=>`<button type="button" data-rec="${k}" class="${C.rec===k?'on':''}" style="--c:${PAY[k].col}">${PAY[k].n}</button>`).join('')}</div><div class="pc"><div class="pro"><b>よい点</b>その払い方を持っているお客は、おすすめの方で払う。速い払い方や、手数料の安い払い方へ変えてもらえる（無料）</div><div class="con"><b>悪い点</b>いつもの払い方を変えさせられたお客は、2人に1人が口コミを★1つ下げる</div></div><div class="sec">決済端末</div>`;
+  const recOpts=['cash',...C.dev];h+=`<div class="sec">レジの掲示「◯◯でのお支払いがおすすめです」</div><div class="recs"><button type="button" data-rec="" class="${!C.rec?'on':''}">なし</button>${recOpts.map(k=>`<button type="button" data-rec="${k}" class="${C.rec===k?'on':''}" style="--c:${PAY[k].col}">${PAY[k].n}</button>`).join('')}</div><div class="pc"><div class="pro"><b>よい点</b>その払い方を持っているお客は、おすすめの方で払う（無料）</div><div class="con"><b>悪い点</b>いつもの払い方を変えさせられたお客は、2人に1人が口コミを★1つ下げる</div></div><div class="sec">決済端末</div>`;
   h+=DEVICES.map(k=>{const P=PAY[k];const o=own.includes(k),pl=C.dev.includes(k);
    const btn=!o?`<button class="buy" data-buy="${k}" ${G.coins<P.buy?'disabled':''}>¥${yen(P.buy)}</button>`:pl?`<button class="on" data-tog="${k}">置いている</button>`:`<button class="off" data-tog="${k}" ${C.dev.length>=3?'disabled':''}>置く</button>`;
    return `<div class="item ${pl?'placed':''}"><div class="ic" style="background:${P.col}">${ICON[k]}</div><span class="nm">${P.n}${k==='card'?'端末':k==='qr'?'スタンド':k==='gqr'?'（Alipayなど）':k==='ic'?'読み取り機':'認証カメラ'}</span>${btn}<span class="ds">手数料${(P.fee*100).toFixed(1).replace('.0','')}%・維持費 ¥${yen(P.up)}/日・会計${P.t}秒${P.net?'・ネットが必要':'・ネットなしでOK'}${P.limit?`・1回${P.limit/10000}万円まで`:''}${k==='card'?'・3万円以上はカード会社の確認で+2秒':''}${k==='gqr'?'・海外のアプリ専用':''}${k==='face'?'・顔を登録している人は15%':''}</span></div>`}).join('');
@@ -480,26 +480,16 @@ function dataHTML(){const L=G.last;if(!L||L.shop!==G.shop)return'<div class="not
  let c=`<svg viewBox="0 0 320 ${B.length*26+6}">`;B.forEach((b,i)=>{let x=56;const y=4+i*26;c+=`<text x="0" y="${y+15}" font-size="11.5" fill="var(--ink)">${b.n}</text>`;
   for(const [n,col] of [[b.served,'#1f8a57'],[b.leftQ,'#e08a1f'],[b.leftP,'#d23c1e'],[b.leftS,'#8c7a5a'],[b.leftD,'#7b3fa0']]){const w=n/maxO*250;if(n){c+=`<rect x="${x}" y="${y}" width="${w}" height="20" fill="${col}"/>`;if(w>16)c+=`<text x="${x+w/2}" y="${y+14}" font-size="10" fill="#fff" text-anchor="middle">${n}</text>`}x+=w}});c+='</svg>';
  /* D: return on each tool */
- const rows=L.cfg.dev.map(k=>{const inc=st.inc[k]||0,up=st.upkeep[k]||0,used=st.byPay[k]||0,fee=st.devFee[k]||0;const net=inc-up;return`<tr><td><span class="chip" style="background:${PAY[k].col}">${PAY[k].n}</span></td><td class="n">${used}人</td><td class="n">${yen(inc)}</td><td class="n">${yen(up)}</td><td class="${net>=0?'o':'x'}">${net>=0?'○ 元が取れた':'✕ 赤字'}</td></tr>`}).join('');
- const frows=L.cfg.fac.map(k=>`<tr><td><span class="chip" style="background:${FCOL[k]}">${FAC[k].n}</span></td><td class="n" colspan="2">—</td><td class="n">${yen(st.upkeep[k]||0)}</td><td style="font-size:11px">効果は③の行列で見る</td></tr>`).join('');
+ const rows=['cash',...L.cfg.dev].map(k=>{const used=st.byPay[k]||0,fee=st.devFee[k]||0,up=st.upkeep[k]||0,sal=st.paySales&&st.paySales[k]||0;return`<tr><td><span class="chip" style="background:${PAY[k].col}">${PAY[k].n}</span></td><td class="n">${used}人</td><td class="n">${yen(sal)}</td><td class="n">${yen(fee)}</td><td class="n">${yen(up)}</td></tr>`}).join('');
+ const frows=L.cfg.fac.map(k=>`<tr><td><span class="chip" style="background:${FCOL[k]}">${FAC[k].n}</span></td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">${yen(st.upkeep[k]||0)}</td></tr>`).join('');
  const totLQ=B.reduce((a,b)=>a+b.leftQ,0),totLP=B.reduce((a,b)=>a+b.leftP,0);
- const hints=[];const missAll={};B.forEach(b=>{for(const k in b.wantMiss)missAll[k]=(missAll[k]||0)+b.wantMiss[k]});const topMiss=Object.entries(missAll).sort((x,y)=>y[1]-x[1])[0];
- if(topMiss)hints.push(`「${PAY[topMiss[0]].n}がない」で${topMiss[1]}人帰った。②でどの時間帯に多いか見よう。`);
- const qb=B.reduce((m,b)=>b.leftQ>m.leftQ?b:m,B[0]);if(qb.leftQ>=3)hints.push(`行列で帰ったのは「${qb.n}」が一番多い（${qb.leftQ}人）。その時間に来るお客と、会計の速さを考えよう。`);
- const so=Object.entries(st.goods).sort((x,y)=>y[1].out-x[1].out)[0];if(so&&so[1].out>=3)hints.push(`「${S.goods[so[0]].n}」が売り切れて${so[1].out}人帰った。⑤を見て、仕入れる数を考えよう。`);const ws=Object.entries(st.goods).find(([k,g])=>g.waste>0);if(ws)hints.push(`「${S.goods[ws[0]].n}」を${ws[1].waste}個捨てた。仕入れすぎかも。`);
- if(st.forced)hints.push(`掲示で払い方を変えたお客は${st.forced}人。そのうち何人かは口コミを下げた。「口コミ」タブで確かめよう。`);
- if(G.shop===1&&st.sales){const fr=st.fee/st.sales*100;if(fr>2.5)hints.push(`手数料が売上の${fr.toFixed(2)}%。手数料は 現金0%・QR2%・カード3.3%。高い商品ほど、手数料の差が大きくなる。`)}
- if(G.shop===1){const hm=st.hiMiss;if(hm)hints.push(`2万円以上の買い物で${hm}人逃した。高い商品は現金を持たない人が多い。ICは2万円、QRは5万円まで。それより高い物は何で払う？`)}
- if(G.shop===2&&st.leftDown)hints.push(`ネット障害で${st.leftDown}人帰った。ネットを使う払い方は、障害の間はすべて止まる。`);
- if(G.shop===2){const ib=st.inbMiss;if(ib)hints.push(`海外のお客を${ib}人逃した。①で海外のお客が来る時間帯、②で使いたかった払い方を見よう。海外のお客は1人で2〜3個買う。`)}
- const loser=L.cfg.dev.find(k=>(st.inc[k]||0)-(st.upkeep[k]||0)<0);if(loser)hints.push(`${PAY[loser].n}は赤字。お客はほかの払い方でも払えていたのかも。外すと、枠が1つあく。`);
  return `<div class="note">${L.day}日目（${S.n}）のデータ</div>
  <div class="dcard"><h4>① 時間帯別の客層<span>色＝お客の種類</span></h4>${a}</div>
  <div class="dcard"><h4>② 使いたかった払い方<span>お客の希望の1位</span></h4>${bt}</div>
  <div class="dcard"><h4>③ 時間帯別の結果<span><b style="color:#1f8a57">買った</b> <b style="color:#e08a1f">行列で帰った</b> <b style="color:#d23c1e">払い方がない</b> <b style="color:#8c7a5a">売り切れ</b> <b style="color:#7b3fa0">障害</b></span></h4>${c}</div>
- <div class="dcard"><h4>④ 道具の成績表<span>その道具がないと買えなかったお客の利益 − 維持費</span></h4><table class="wt roi"><tr><th></th><th>使った</th><th>おかげの利益</th><th>維持費</th><th></th></tr>${rows}${frows}</table></div>
+ <div class="dcard"><h4>④ 払い方ごとの数字<span>1日分</span></h4><table class="wt roi"><tr><th></th><th>使った人</th><th>売上</th><th>手数料</th><th>維持費</th></tr>${rows}${frows}</table></div>
  <div class="dcard"><h4>⑤ 商品ごとの売れ行き<span>売り切れ・捨てた数は赤</span></h4><table class="wt roi"><tr><th>商品</th><th>ほしかった人</th><th>売れた</th><th>売り切れで帰った</th><th>捨てた</th></tr>${Object.entries(st.goods).map(([k,g])=>`<tr><td>${S.goods[k].n}</td><td class="n">${g.demand}</td><td class="n">${g.sold}</td><td class="n" style="color:${g.out?'var(--ng)':''}">${g.out}</td><td class="n" style="color:${g.waste?'var(--ng)':''}">${g.waste}</td></tr>`).join('')}</table></div>
- ${hints.length?`<div class="keyhint"><b>データから分かること</b><br>${hints.join('<br>')}</div>`:''}`}
+ `}
 
 /* ---------- loop ---------- */
 function setSpeed(s){speed=s;$$('.speed button').forEach(x=>x.classList.toggle('on',+x.dataset.s===s))}
@@ -519,7 +509,7 @@ function loop(ts){const dt=Math.min(0.05,(ts-(lastTs||ts))/1000);lastTs=ts;
 /* ---------- start ---------- */
 const cont=G.day>1;
 showOv(`<h1>キャッシュレス商店</h1><p>きみは店のオーナー。お客は、頭の上に<b>使いたい払い方</b>を出して入ってきます。</p>
-<ul><li>払い方がないと買わずに帰り、<b>口コミ</b>で悪く書かれる。口コミが悪いとお客がへる</li><li>決済の端末は<b>レジ横に3つまで</b>。手数料と毎日の維持費がかかる</li><li>時間帯で、来るお客も買う物もかわる</li><li>1日目が終わると<b>経営データ</b>が見られる。データを読んで、むだのない組み合わせを見つけよう</li><li>レジに「◯◯がおすすめ」と<b>掲示</b>すると、お客の払い方を変えられる</li><li>商品は<b>前の日に仕入れる</b>。売り切れるとお客は帰り、売れ残った生ものは捨てる</li><li>店ごとに5つのクリア条件。<b>3つ以上</b>を同じ日にそろえると次の店へ。<b>14日</b>でできないと経営破綻</li></ul>
+<ul><li>払い方がないと買わずに帰り、<b>口コミ</b>で悪く書かれる。口コミが悪いとお客がへる</li><li>決済の端末は<b>レジ横に3つまで</b>。手数料と毎日の維持費がかかる</li><li>時間帯で、来るお客も買う物もかわる</li><li>1日目が終わると<b>経営データ</b>が見られる</li><li>レジに「◯◯がおすすめ」と<b>掲示</b>すると、お客の払い方を変えられる</li><li>商品は<b>前の日に仕入れる</b>。売り切れるとお客は帰り、売れ残った生ものは捨てる</li><li>店ごとに5つのクリア条件。<b>3つ以上</b>を同じ日にそろえると次の店へ。<b>14日</b>でできないと経営破綻</li></ul>
 ${cont?`<p style="font-size:14px;color:var(--sub)">前回のつづき：${SHOPS[G.shop].n}・${G.day}日目</p>`:''}
 <button class="big" id="ovGo">${cont?'つづきから':'開店する'}</button>${cont?'<button class="ghost" id="ovNew">最初から</button>':''}`);
 $('#ovGo').onclick=()=>{if(!cont){resetShop(0);toast(`<b>${SHOPS[0].n}</b>　${SHOPS[0].intro}　最初は現金だけ。`,9)}renderAll();openStock(!cont||!G.last)};
