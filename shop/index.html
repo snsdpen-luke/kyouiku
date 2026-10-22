@@ -86,6 +86,7 @@ canvas{display:block;width:100%;height:100%}
 .st{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:3px 6px;font-size:12px;margin:0 1px;font-weight:700}
 .ord{display:inline-block;min-width:30px;text-align:center;font-family:var(--f-led);font-size:16px}
 .big:disabled{opacity:.45;cursor:not-allowed}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 4px;font-size:12px;line-height:1.5}.pc>div{border-radius:8px;padding:5px 8px}.pc b{display:block;font-size:12.5px}.pro{background:var(--oks,#e6f6ec);border:1.5px solid var(--ok,#1e9e5a)}.con{background:var(--ngs,#fde8e3);border:1.5px solid var(--ng,#d23c1e)}
 .recs{display:flex;gap:4px;flex-wrap:wrap}.recs button{border:2px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700}.recs button.on{border-color:var(--c,var(--ink));background:var(--c,var(--ink));color:#fff}
 .keyhint{background:#fffbe6;border:2px solid var(--mark);border-radius:10px;padding:6px 9px;font-size:12px;line-height:1.55}
 .logl{font-size:12.5px;line-height:1.55;color:var(--sub)}
@@ -179,6 +180,7 @@ const SHOPS=[
    {n:'昼',from:11,to:14,gap:1.6,mix:{student:55,family:30,asia:15},goods:[['key',7],['kuma',3]]},
    {n:'午後',from:14,to:18,gap:2.0,mix:{family:45,elder:40,west:15},goods:[['sweets',5],['renkon',5]]}]}];
 const DAY=72;
+const RECPEN=(typeof process!=='undefined'&&process.env&&process.env.RECPEN)?+process.env.RECPEN:0.5;
 function mkRng(seed){let s=seed>>>0||1;return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 
 class Day{
@@ -202,6 +204,7 @@ class Day{
  choose(c,ex){const dn=this.down();const rec=this.cfg.rec;
   if(rec&&rec!==ex&&c.prefs.includes(rec)&&this.has(rec)&&!(dn&&PAY[rec].net))return rec;
   for(const k of c.prefs){if(k===ex)continue;if(!this.has(k))continue;if(dn&&PAY[k].net)continue;return k}return null}
+ natural(c){const dn=this.down();for(const k of c.prefs){if(!this.has(k))continue;if(dn&&PAY[k].net)continue;return k}return null}
  spawn(){const bi=this.blockIdx(),B=this.S.blocks[bi],r=this.rng;const ty=this.pickObj(B.mix),T=TYPES[ty];
   const gid=this.pick(B.goods);const G=this.S.goods[gid];const avail=(this.inv[gid]||0)-(this.pend[gid]||0);const q=Math.max(1,Math.min(T.qty||1,avail));const amt=G.price*q;
   const hasCash=r()<T.cash&&!(amt>=30000&&r()<0.75);const face=!T.inb&&r()<0.15;
@@ -231,14 +234,14 @@ class Day{
    const q=this.cust.filter(c=>c.st==='queue').sort((a,b)=>a.id-b.id)[0];if(q){q.st='toreg';q.stT=0;q.reg=r}}
   for(const c of this.cust){
    if(c.st==='toreg'&&c.stT>=0.5){const m=this.choose(c);if(!m){c.reg=-1;this.leave(c,'down');continue}
-    c.pay=m;c.st='pay';c.stT=0;c.dur=S.scan+(m==='cash'&&this.fac('changer')?0.9:PAY[m].t)+(m==='card'&&c.amt>=30000?2:0)}
+    c.pay=m;c.forced=!!this.cfg.rec&&m===this.cfg.rec&&this.natural(c)!==m;if(c.forced)this.st.forced=(this.st.forced||0)+1;c.st='pay';c.stT=0;c.dur=S.scan+(m==='cash'&&this.fac('changer')?0.9:PAY[m].t)+(m==='card'&&c.amt>=30000?2:0)}
    else if(c.st==='pay'&&c.stT>=c.dur){const P=PAY[c.pay],G=S.goods[c.gid];const fee=c.amt*P.fee;const prof=c.amt-G.cost*c.q-fee;
     this.inv[c.gid]-=c.q;this.pend[c.gid]-=c.q;
     const alt=this.choose(c,c.pay);const st=this.st;st.sales+=c.amt;st.cogs+=G.cost*c.q;st.gross+=prof;st.fee+=fee;st.served++;st.byPay[c.pay]=(st.byPay[c.pay]||0)+1;st.devFee[c.pay]=(st.devFee[c.pay]||0)+fee;st.goods[c.gid].sold+=c.q;
     if(!alt)st.inc[c.pay]=(st.inc[c.pay]||0)+prof;
     st.blocks[c.bi].served++;
-    const wb=Math.max(4,S.scan*3);const stars=c.wait>wb*1.8?3:c.wait>wb?4:5;
-    this.rate(stars,stars===5?(P.t<=0.7?'会計があっという間！':'スムーズに買えた'):stars===4?'少し待った':'けっこう待たされた',c.ty,0.18);
+    const wb=Math.max(4,S.scan*3);let stars=c.wait>wb*1.8?3:c.wait>wb?4:5;const grumble=c.forced&&this.rng()<RECPEN;if(grumble)stars=Math.max(1,stars-1);
+    this.rate(stars,grumble?`いつもの${PAY[this.natural(c)||'cash'].n}で払いたかった`:stars===5?(P.t<=0.7?'会計があっという間！':'スムーズに買えた'):stars===4?'少し待った':'けっこう待たされた',c.ty,grumble?0.4:0.18);
     c.st='exit';c.stT=0;c.reg=-1;c.prof=prof;c.fee=fee;this.events.push({k:'paid',c,prof,fee})}
    else if(c.st==='exit'&&c.stT>=1)c.st='gone'}
   this.cust=this.cust.filter(c=>c.st!=='gone');
@@ -444,7 +447,7 @@ function renderPanel(){const p=$('#panel');const S=SHOPS[G.shop];const C=cfg();c
  $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
  if(tab==='tools'){
   let h=`<div class="dcard"><h4>クリア条件（きのうの結果）<span>3つ以上で次の店へ</span></h4>${condHTML(lastConds())}</div><div class="sec">レジ横の決済端末（3つまで）</div><div class="slots">${[0,1,2].map(i=>{const k=C.dev[i];return k?`<div class="slot f" style="background:${PAY[k].col};border-color:${PAY[k].col}">${PAY[k].n}</div>`:'<div class="slot">あき</div>'}).join('')}</div><div class="note">現金は最初からある（枠は使わない）。端末は買ったあと、置く・外すを自由に変えられます。</div>`;
-  const recOpts=['cash',...C.dev];h+=`<div class="sec">レジの掲示「◯◯でのお支払いがおすすめです」</div><div class="recs"><button type="button" data-rec="" class="${!C.rec?'on':''}">なし</button>${recOpts.map(k=>`<button type="button" data-rec="${k}" class="${C.rec===k?'on':''}" style="--c:${PAY[k].col}">${PAY[k].n}</button>`).join('')}</div><div class="note">その払い方を持っているお客は、おすすめの方で払います（無料）。速い払い方や、手数料の安い払い方をすすめると…？</div><div class="sec">決済端末</div>`;
+  const recOpts=['cash',...C.dev];h+=`<div class="sec">レジの掲示「◯◯でのお支払いがおすすめです」</div><div class="recs"><button type="button" data-rec="" class="${!C.rec?'on':''}">なし</button>${recOpts.map(k=>`<button type="button" data-rec="${k}" class="${C.rec===k?'on':''}" style="--c:${PAY[k].col}">${PAY[k].n}</button>`).join('')}</div><div class="pc"><div class="pro"><b>よい点</b>その払い方を持っているお客は、おすすめの方で払う。速い払い方や、手数料の安い払い方へ変えてもらえる（無料）</div><div class="con"><b>悪い点</b>いつもの払い方を変えさせられたお客は、2人に1人が口コミを★1つ下げる</div></div><div class="sec">決済端末</div>`;
   h+=DEVICES.map(k=>{const P=PAY[k];const o=own.includes(k),pl=C.dev.includes(k);
    const btn=!o?`<button class="buy" data-buy="${k}" ${G.coins<P.buy?'disabled':''}>¥${yen(P.buy)}</button>`:pl?`<button class="on" data-tog="${k}">置いている</button>`:`<button class="off" data-tog="${k}" ${C.dev.length>=3?'disabled':''}>置く</button>`;
    return `<div class="item ${pl?'placed':''}"><div class="ic" style="background:${P.col}">${ICON[k]}</div><span class="nm">${P.n}${k==='card'?'端末':k==='qr'?'スタンド':k==='gqr'?'（Alipayなど）':k==='ic'?'読み取り機':'認証カメラ'}</span>${btn}<span class="ds">手数料${(P.fee*100).toFixed(1).replace('.0','')}%・維持費 ¥${yen(P.up)}/日・会計${P.t}秒${P.net?'・ネットが必要':'・ネットなしでOK'}${P.limit?`・1回${P.limit/10000}万円まで`:''}${k==='card'?'・3万円以上はカード会社の確認で+2秒':''}${k==='gqr'?'・海外のアプリ専用':''}${k==='face'?'・顔を登録している人は15%':''}</span></div>`}).join('');
@@ -484,6 +487,7 @@ function dataHTML(){const L=G.last;if(!L||L.shop!==G.shop)return'<div class="not
  if(topMiss)hints.push(`「${PAY[topMiss[0]].n}がない」で${topMiss[1]}人帰った。②でどの時間帯に多いか見よう。`);
  const qb=B.reduce((m,b)=>b.leftQ>m.leftQ?b:m,B[0]);if(qb.leftQ>=3)hints.push(`行列で帰ったのは「${qb.n}」が一番多い（${qb.leftQ}人）。その時間に来るお客と、会計の速さを考えよう。`);
  const so=Object.entries(st.goods).sort((x,y)=>y[1].out-x[1].out)[0];if(so&&so[1].out>=3)hints.push(`「${S.goods[so[0]].n}」が売り切れて${so[1].out}人帰った。⑤を見て、仕入れる数を考えよう。`);const ws=Object.entries(st.goods).find(([k,g])=>g.waste>0);if(ws)hints.push(`「${S.goods[ws[0]].n}」を${ws[1].waste}個捨てた。仕入れすぎかも。`);
+ if(st.forced)hints.push(`掲示で払い方を変えたお客は${st.forced}人。そのうち何人かは口コミを下げた。「口コミ」タブで確かめよう。`);
  if(G.shop===1&&st.sales){const fr=st.fee/st.sales*100;if(fr>2.5)hints.push(`手数料が売上の${fr.toFixed(2)}%。手数料は 現金0%・QR2%・カード3.3%。高い商品ほど、手数料の差が大きくなる。`)}
  if(G.shop===1){const hm=st.hiMiss;if(hm)hints.push(`2万円以上の買い物で${hm}人逃した。高い商品は現金を持たない人が多い。ICは2万円、QRは5万円まで。それより高い物は何で払う？`)}
  if(G.shop===2&&st.leftDown)hints.push(`ネット障害で${st.leftDown}人帰った。ネットを使う払い方は、障害の間はすべて止まる。`);
