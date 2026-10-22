@@ -38,6 +38,7 @@
 | 速い・遅いの正体 | <https://snsdpen-luke.github.io/kyouiku/speed/> |
 | 電波はどこまで届くか | <https://snsdpen-luke.github.io/kyouiku/wifi/> |
 | 残高はどこにある | <https://snsdpen-luke.github.io/kyouiku/emoney/> |
+| キャッシュレス商店 | <https://snsdpen-luke.github.io/kyouiku/shop/> |
 
 Google Classroom にはこのリンクを貼る。ファイルは配らない
 （古い版を開いてしまう事故が起きるため）。

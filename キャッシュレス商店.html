@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>[hidden]{display:none!important}</style>
+<title>キャッシュレス商店</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=DotGothic16&display=swap">
+<style>
+/* 4:3 stage (1024x768) scaled to the visible screen. Top: money / reviews / clock / goal. Left: shop floor on one canvas. Right: tabs for tools, business data, reviews, log. Light only; casual tycoon palette (lawn, warm floor, coin gold). */
+[hidden]{display:none!important}
+:root{
+  color-scheme:light;
+  --paper:#eef3e6; --panel:#ffffff; --ink:#1d2330; --sub:#5d6574; --line:#d8dccf;
+  --head:#24303f; --coin:#f3b31b; --star:#f59e0b; --accent:#1677c9; --accent-soft:#e0eefb;
+  --ok:#1f8a57; --oks:#e0f3e8; --ng:#d23c1e; --ngs:#fbe3dc; --mark:#ffd84a;
+  --f-body:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  --f-led:"DotGothic16","BIZ UDPGothic",monospace;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);overflow:hidden;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
+#fit{position:fixed;inset:0;overflow:hidden;background:var(--paper)}
+.stage{position:absolute;left:0;top:0;width:1024px;height:768px;transform-origin:0 0;background:var(--paper);display:grid;grid-template-rows:56px 1fr;overflow:hidden}
+button{font:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.top{display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
+.pill{display:flex;align-items:center;gap:6px;background:var(--paper);border-radius:20px;padding:5px 12px 5px 6px;font-family:var(--f-led);font-size:19px;white-space:nowrap}
+.pill i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:700;color:#fff}
+.pill .cn{background:var(--coin)}.pill .st{background:var(--star)}
+.pill small{font-family:var(--f-body);font-size:11px;color:var(--sub)}
+.stars{color:var(--star);font-size:14px;letter-spacing:1px;font-family:var(--f-body)}
+.goal{margin-left:auto;font-size:11.5px;line-height:1.45;text-align:right;color:var(--sub);white-space:nowrap}
+.goal b{color:var(--ink)}
+.main{display:grid;grid-template-columns:1fr 344px;gap:10px;padding:10px;min-height:0}
+.floor{position:relative;border-radius:14px;overflow:hidden;background:#bfe3a6}
+canvas{display:block;width:100%;height:100%}
+.toast{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(36,48,63,.93);color:#fff;border-radius:12px;padding:9px 14px;font-size:14px;line-height:1.55;transition:opacity .3s}
+.toast b{color:var(--mark)}
+.toast.hide{opacity:0;pointer-events:none}
+.speed{position:absolute;top:10px;right:10px;z-index:2;display:flex;gap:4px}
+.speed button{border:0;border-radius:8px;background:rgba(255,255,255,.92);padding:4px 10px;font-size:13px;font-weight:700}
+.speed button.on{background:var(--head);color:#fff}
+.revs{position:absolute;top:44px;right:10px;width:200px;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.rv{background:rgba(255,255,255,.95);border-radius:9px;padding:5px 8px;font-size:12px;line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,.12);animation:rin .4s}
+.rv b{color:var(--star);font-size:11px}
+.rv.bad{border-left:4px solid var(--ng)}.rv.good{border-left:4px solid var(--ok)}
+@keyframes rin{from{transform:translateX(20px);opacity:0}}
+.side{display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;gap:3px}
+.tabs button{flex:1;border:0;border-radius:10px 10px 0 0;background:#dfe6d6;padding:7px 2px;font-size:13px;font-weight:700;color:var(--sub);position:relative}
+.tabs button.on{background:var(--panel);color:var(--ink)}
+.tabs button.new::after{content:"NEW";position:absolute;top:-6px;right:2px;background:var(--ng);color:#fff;font-size:9px;border-radius:6px;padding:1px 4px}
+.tabs button:disabled{opacity:.5;cursor:not-allowed}
+.panel{background:var(--panel);border-radius:0 0 12px 12px;flex:1;min-height:0;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+.sec{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.06em;margin-top:2px}
+.slots{display:flex;gap:5px}
+.slot{flex:1;height:44px;border:2px dashed var(--line);border-radius:9px;display:grid;place-items:center;font-size:11px;color:var(--sub);text-align:center;line-height:1.2}
+.slot.f{border-style:solid;color:#fff;font-weight:700;font-size:13px}
+.item{display:grid;grid-template-columns:40px 1fr auto;gap:2px 8px;align-items:center;border:2px solid var(--line);border-radius:10px;padding:5px 8px}
+.item .ic{grid-row:1/3;width:38px;height:38px;border-radius:9px;display:grid;place-items:center;font-weight:700;font-size:11.5px;color:#fff;text-align:center;line-height:1.1}
+.item .nm{font-weight:700;font-size:13.5px}
+.item .ds{font-size:11px;color:var(--sub);line-height:1.4;grid-column:2/4}
+.item button{border:0;border-radius:8px;font-weight:700;font-size:12.5px;padding:5px 8px;white-space:nowrap}
+.item button.buy{background:var(--coin);color:#3a2a00;font-family:var(--f-led)}
+.item button.on{background:var(--ok);color:#fff}
+.item button.off{background:#e8ebe4;color:var(--ink)}
+.item button:disabled{background:#e4e4de;color:#9a9a92;cursor:not-allowed}
+.item.placed{border-color:var(--ok);background:var(--oks)}
+.note{font-size:11.5px;color:var(--sub);line-height:1.5}
+/* data */
+.dcard{border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.dcard h4{margin:0 0 4px;font-size:13px;display:flex;justify-content:space-between;gap:6px}
+.dcard h4 span{font-weight:400;font-size:11px;color:var(--sub)}
+.dcard svg{width:100%;height:auto;display:block}
+.dcard svg text{font-family:var(--f-body)}
+.wt{border-collapse:collapse;width:100%;font-size:11.5px}
+.wt td,.wt th{padding:2px 3px;border-bottom:1px dashed var(--line);text-align:left;vertical-align:top}
+.wt th{font-size:11px;color:var(--sub);font-weight:400}
+.chip{display:inline-block;border-radius:8px;padding:0 5px;margin:1px 2px 1px 0;color:#fff;font-size:11px;font-weight:700}
+.chip.miss{outline:2px solid var(--ng);outline-offset:-1px}
+.roi td.n{text-align:right;font-family:var(--f-led);font-size:12.5px}
+.roi td.o{color:var(--ok);font-weight:700}.roi td.x{color:var(--ng);font-weight:700}
+.stock td,.stock th{font-size:12.5px;padding:4px 5px}.stock td.n{text-align:center;font-family:var(--f-led);font-size:14px}
+.st{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:3px 6px;font-size:12px;margin:0 1px;font-weight:700}
+.ord{display:inline-block;min-width:30px;text-align:center;font-family:var(--f-led);font-size:16px}
+.big:disabled{opacity:.45;cursor:not-allowed}
+.recs{display:flex;gap:4px;flex-wrap:wrap}.recs button{border:2px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700}.recs button.on{border-color:var(--c,var(--ink));background:var(--c,var(--ink));color:#fff}
+.keyhint{background:#fffbe6;border:2px solid var(--mark);border-radius:10px;padding:6px 9px;font-size:12px;line-height:1.55}
+.logl{font-size:12.5px;line-height:1.55;color:var(--sub)}
+.logl div:first-child{color:var(--ink)}
+.rvl .rv{animation:none;box-shadow:none;border:1px solid var(--line)}
+/* overlays */
+.ov{position:absolute;inset:0;background:rgba(20,26,36,.62);display:grid;place-items:center;z-index:5}
+.card{background:var(--panel);border-radius:18px;padding:18px 24px;width:720px;max-height:720px;overflow:auto;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.card h1{margin:0;font-size:34px}
+.card h2{margin:0;font-size:25px}
+.card p{margin:0;font-size:15.5px;line-height:1.7}
+.card ul{margin:0;padding-left:20px;font-size:15px;line-height:1.7}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.kp div{background:var(--paper);border-radius:10px;padding:6px}
+.kp b{display:block;font-family:var(--f-led);font-weight:400;font-size:21px}
+.kp small{font-size:11.5px;color:var(--sub)}
+.big{border:0;border-radius:12px;background:var(--accent);color:#fff;font-size:18px;font-weight:700;padding:12px}
+.ghost{border:2px solid var(--accent);border-radius:12px;background:#fff;color:var(--accent);font-size:15px;font-weight:700;padding:9px}
+</style>
+</head>
+<body>
+
+
+<div id="fit"><div class="stage" id="stage">
+  <div class="top">
+    <div class="pill"><i class="cn">¥</i><span id="coins">0</span></div>
+    <div class="pill"><i class="st">★</i><span id="rate">3.0</span><span class="stars" id="rstars"></span><small>口コミ</small></div>
+    <div class="pill" style="font-size:16px"><span id="day">1日目</span><span id="clock">7:00</span><small id="block">朝</small></div>
+    <b id="shopname" style="font-size:14px;white-space:nowrap"></b>
+    <div class="goal" id="goal"></div>
+  </div>
+  <div class="main">
+    <div class="floor">
+      <canvas id="cv" width="650" height="680"></canvas>
+      <div class="speed"><button data-s="0">止める</button><button data-s="1" class="on">×1</button><button data-s="2">×2</button><button data-s="4">×4</button></div>
+      <div class="revs" id="revs"></div>
+      <div class="toast hide" id="toast"></div>
+    </div>
+    <div class="side">
+      <div class="tabs" id="tabs"><button data-t="tools" class="on">道具</button><button data-t="data" disabled>経営データ</button><button data-t="rev">口コミ</button><button data-t="log">できごと</button></div>
+      <div class="panel" id="panel"></div>
+    </div>
+  </div>
+  <div class="ov" id="ov"><div class="card" id="ovCard"></div></div>
+</div></div>
+
+<script>
+/* キャッシュレス商店 v3 — ゲームの中身（画面なし）。仕入れ・在庫・廃棄つき */
+const PAY={
+ cash:{n:'現金',ask:'現金で',fee:0,t:2.2,net:false,col:'#7a8a5a'},
+ qr:{n:'QR',ask:'QRある？',fee:0.02,t:1.3,net:true,col:'#e0457b',buy:4000,up:0,limit:50000},
+ gqr:{n:'海外QR',ask:'Alipay OK?',fee:0.03,t:1.3,net:true,col:'#d9480f',buy:8000,up:300},
+ ic:{n:'IC',ask:'ICで！',fee:0.03,t:0.3,net:false,col:'#1677c9',limit:20000,buy:8000,up:500},
+ card:{n:'カード',ask:'カードで',fee:0.033,t:0.7,net:true,col:'#6b4fc8',buy:6000,up:300},
+ face:{n:'顔',ask:'顔で払う',fee:0.03,t:0.3,net:true,col:'#0f9488',buy:25000,up:1500}};
+const DEVICES=['qr','ic','card','gqr','face'];
+const FAC={
+ reg2:{n:'レジ2台目',buy:5000,up:2500,d:'同時に2人会計できる。店員さんの給料が毎日かかる'},
+ changer:{n:'自動つり銭機',buy:4000,up:200,d:'現金の会計が2.2秒→0.9秒になる'},
+ backup:{n:'予備の回線',buy:6000,up:400,d:'ネット障害でも、ネットを使う決済が止まらない'},
+ ad:{n:'チラシで宣伝',buy:0,up:1500,d:'来るお客が1.25倍。毎日チラシ代がかかる'}};
+const TYPES={
+ worker:{n:'会社員',pref:['ic','card','qr','cash'],cash:0.45,col:'#3b6fb6'},
+ student:{n:'高校生',pref:['qr','ic','cash'],cash:0.55,col:'#2f9e6b'},
+ elder:{n:'お年寄り',pref:['cash','ic','card'],cash:0.97,col:'#a06a35'},
+ family:{n:'家族づれ',pref:['qr','card','cash'],cash:0.7,col:'#c2559b'},
+ asia:{n:'アジアの旅行者',pref:['gqr','card','cash'],cash:0.3,cardP:0.35,qty:3,col:'#e07b16',inb:true},
+ west:{n:'欧米の旅行者',pref:['card','cash'],cash:0.3,qty:2,col:'#c0392b',inb:true}};
+/* goods: id -> {n, price, cost, keep(false = thrown away at closing)} ; blocks.goods: [id, weight] */
+const SHOPS=[
+ {n:'駅前のコンビニ',open:7,close:23,scan:0.4,maxQ:6,start:25000,goal:7000,rateGoal:4.5,taskT:'行列で帰ったお客が0人（1日中）',
+  intro:'駅の前のコンビニ。時間帯によって、来るお客も、売れる商品も大きく変わる。',
+  goods:{bread:{n:'パンとコーヒー',price:400,cost:250,keep:false},bento:{n:'お弁当',price:600,cost:400,keep:false},daily:{n:'日用品',price:1500,cost:1050,keep:true},snack:{n:'お菓子・飲み物',price:250,cost:150,keep:true}},
+  blocks:[
+   {n:'朝',from:7,to:10,gap:0.85,mix:{worker:55,student:40,elder:5},goods:[['bread',8],['snack',2]]},
+   {n:'昼',from:10,to:15,gap:2.1,mix:{elder:45,family:35,worker:20},goods:[['bento',5],['daily',4],['snack',1]]},
+   {n:'夕方',from:15,to:19,gap:0.85,mix:{student:70,family:20,worker:10},goods:[['snack',8],['bread',2]]},
+   {n:'夜',from:19,to:23,gap:1.7,mix:{worker:65,student:15,elder:20},goods:[['bento',6],['snack',4]]}]},
+ {n:'家電店',open:10,close:20,scan:2.6,maxQ:5,start:300000,goal:95000,rateGoal:4.6,stockCap:300000,taskT:'2万円以上の買い物で、逃したお客が0人',
+  intro:'電池から大型テレビまで売る店。高い商品は、現金を持って来る人が少ない。払い方ごとに上限もある。',
+  goods:{batt:{n:'電池・電球',price:800,cost:500,keep:true},dryer:{n:'ドライヤー',price:6000,cost:4500,keep:true},phones:{n:'イヤホン',price:8000,cost:6000,keep:true},game:{n:'ゲーム機',price:40000,cost:33000,keep:true},tv:{n:'テレビ',price:100000,cost:84000,keep:true},pc:{n:'パソコン',price:120000,cost:100000,keep:true}},
+  blocks:[
+   {n:'午前',from:10,to:13,gap:4.2,mix:{elder:45,family:25,worker:30},goods:[['batt',6],['dryer',3],['tv',1]]},
+   {n:'昼すぎ',from:13,to:17,gap:3.0,mix:{family:65,worker:35},goods:[['game',4],['tv',3],['batt',2],['phones',1]]},
+   {n:'夕方',from:17,to:20,gap:3.6,mix:{worker:70,family:30},goods:[['phones',5],['pc',3],['batt',2]]}]},
+ {n:'熊本城前のおみやげ店',open:9,close:18,scan:1.3,maxQ:7,start:45000,goal:32000,rateGoal:4.5,taskT:'海外からのお客で、帰った人が0人',alwaysOutage:true,outLen:15,
+  intro:'観光バスが着くと、海外からのお客が一気に来る。海外のお客は、日本のQRやICを持っていないことが多い。',
+  goods:{kuma:{n:'くまモングッズ',price:1500,cost:900,keep:true},sweets:{n:'お菓子の箱',price:1600,cost:1000,keep:true},key:{n:'キーホルダー',price:500,cost:250,keep:true},renkon:{n:'からしれんこん',price:2500,cost:1600,keep:false}},
+  blocks:[
+   {n:'朝',from:9,to:11,gap:1.3,mix:{asia:45,west:30,elder:25},goods:[['kuma',6],['sweets',4]]},
+   {n:'昼',from:11,to:14,gap:1.6,mix:{student:55,family:30,asia:15},goods:[['key',7],['kuma',3]]},
+   {n:'午後',from:14,to:18,gap:2.0,mix:{family:45,elder:40,west:15},goods:[['sweets',5],['renkon',5]]}]}];
+const DAY=72;
+function mkRng(seed){let s=seed>>>0||1;return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+class Day{
+ /* inv: {id: count} — this object is changed by the day (sales, waste) */
+ constructor(shopIdx,cfg,review,inv,rng,dayNo){this.S=SHOPS[shopIdx];this.cfg=cfg;this.inv=inv;
+  this.rng=rng||Math.random;this.review=review;this.dayNo=dayNo||1;this.t=0;this.cust=[];this.spawnT=0.5;this.idc=0;this.outage=0;this.out={from:-1,to:-1};this.pend={};
+  const S0=this.S;if(this.dayNo>=2&&(S0.alwaysOutage||this.rng()<0.7)){const f=DAY*(0.3+this.rng()*0.4);this.out={from:f,to:f+(S0.outLen||8)}}
+  this.events=[];this.st=this.newStats();this.done=false}
+ newStats(){const b=this.S.blocks.map(x=>({n:x.n,came:{},served:0,leftQ:0,leftP:0,leftD:0,leftS:0,want:{},wantMiss:{}}));const g={};for(const k in this.S.goods)g[k]={sold:0,out:0,waste:0,demand:0};
+  return{blocks:b,goods:g,sales:0,gross:0,fee:0,cogs:0,waste:0,wasteN:0,served:0,came:0,left:0,byPay:{},inc:{},devFee:{},reviews:[],maxQ:0,hiMiss:0,inbMiss:0,leftDown:0,outageHit:false}}
+ has(k){return k==='cash'||this.cfg.dev.includes(k)}
+ fac(k){return this.cfg.fac.includes(k)}
+ regs(){return this.fac('reg2')?2:1}
+ hour(){return this.S.open+(this.S.close-this.S.open)*Math.min(1,this.t/DAY)}
+ blockIdx(){const h=this.hour();const i=this.S.blocks.findIndex(b=>h>=b.from&&h<b.to);return i<0?this.S.blocks.length-1:i}
+ down(){return this.t>=this.out.from&&this.t<this.out.to&&!this.fac('backup')}
+ rating(){const r=this.review;return r.length?r.reduce((a,b)=>a+b,0)/r.length:3}
+ rate(stars,text,ty,p){if(this.rng()<p){this.review.push(stars);const rv={stars,text,ty,h:this.hour()};this.st.reviews.push(rv);this.events.push({k:'review',rv})}else this.review.push(stars);if(this.review.length>30)this.review.shift()}
+ pick(arr){const tot=arr.reduce((a,b)=>a+b[1],0);let x=this.rng()*tot;for(const [k,w] of arr){if(x<w)return k;x-=w}return arr[0][0]}
+ pickObj(obj){return this.pick(Object.entries(obj))}
+ choose(c,ex){const dn=this.down();const rec=this.cfg.rec;
+  if(rec&&rec!==ex&&c.prefs.includes(rec)&&this.has(rec)&&!(dn&&PAY[rec].net))return rec;
+  for(const k of c.prefs){if(k===ex)continue;if(!this.has(k))continue;if(dn&&PAY[k].net)continue;return k}return null}
+ spawn(){const bi=this.blockIdx(),B=this.S.blocks[bi],r=this.rng;const ty=this.pickObj(B.mix),T=TYPES[ty];
+  const gid=this.pick(B.goods);const G=this.S.goods[gid];const avail=(this.inv[gid]||0)-(this.pend[gid]||0);const q=Math.max(1,Math.min(T.qty||1,avail));const amt=G.price*q;
+  const hasCash=r()<T.cash&&!(amt>=30000&&r()<0.75);const face=!T.inb&&r()<0.15;
+  const hasCard=!T.cardP||r()<T.cardP;
+  let prefs=T.pref.filter(k=>!(k==='cash'&&!hasCash)&&!(k==='card'&&!hasCard)&&!(PAY[k].limit&&amt>PAY[k].limit));if(face)prefs=['face',...prefs];
+  const want=prefs.find(k=>k!=='face')||prefs[0]||'cash';
+  const c={id:++this.idc,ty,amt,q,gid,prefs,want,bi,st:'walk',stT:0,wait:0,reg:-1,pay:null};
+  const st=this.st,bs=st.blocks[bi];st.came++;bs.came[ty]=(bs.came[ty]||0)+1;bs.want[want]=(bs.want[want]||0)+1;st.goods[gid].demand+=(T.qty||1);
+  if(avail<=0){st.goods[gid].out+=(T.qty||1);this.leave(c,'soldout');return}
+  const m=this.choose(c);
+  if(!m){const dn=this.down()&&c.prefs.some(k=>this.has(k));this.leave(c,dn?'down':'pay');return}
+  if(this.queueLen()>=this.S.maxQ){this.leave(c,'queue');return}
+  this.pend[gid]=(this.pend[gid]||0)+q;c.inStore=true;c.pay=m;this.cust.push(c);this.events.push({k:'enter',c})}
+ queueLen(){return this.cust.filter(c=>c.st==='walk'||c.st==='queue').length}
+ leave(c,why){const st=this.st,bs=st.blocks[c.bi];st.left++;if(c.amt>=20000)st.hiMiss++;if(TYPES[c.ty].inb)st.inbMiss++;
+  if(why==='queue')bs.leftQ++;else if(why==='down'){bs.leftD++;st.leftDown++}else if(why==='soldout')bs.leftS++;else{bs.leftP++;bs.wantMiss[c.want]=(bs.wantMiss[c.want]||0)+1}
+  if(c.inStore&&this.pend[c.gid])this.pend[c.gid]-=c.q;
+  c.st='gone';c.why=why;this.events.push({k:'leave',c,why});
+  const g=this.S.goods[c.gid].n;
+  this.rate(why==='queue'?2:why==='soldout'?2:1,why==='pay'?`${PAY[c.want].n}が使えなかった`:why==='queue'?'レジが長蛇の列…':why==='soldout'?`${g}が売り切れだった`:'ネットの不具合で払えなかった',c.ty,0.45)}
+ step(dt){const S=this.S;this.t+=dt;
+  if(this.t>=this.out.from&&this.t<this.out.to){if(!this.outage){this.outage=1;this.st.outageHit=true;this.events.push({k:'outage',on:true})}}else if(this.outage){this.outage=0;this.events.push({k:'outage',on:false})}
+  if(this.t<DAY-3){this.spawnT-=dt;if(this.spawnT<=0){this.spawn();const B=S.blocks[this.blockIdx()];const mul=(0.55+0.2*this.rating())*(this.fac('ad')?1.25:1);this.spawnT=B.gap/mul*(0.5+this.rng())}}
+  const ql=this.queueLen();if(ql>this.st.maxQ)this.st.maxQ=ql;
+  for(const c of this.cust){c.stT+=dt;if(c.st==='walk'&&c.stT>=0.9){c.st='queue';c.stT=0}if(c.st==='queue')c.wait+=dt}
+  for(let r=0;r<this.regs();r++){if(this.cust.some(c=>c.reg===r&&(c.st==='toreg'||c.st==='pay')))continue;
+   const q=this.cust.filter(c=>c.st==='queue').sort((a,b)=>a.id-b.id)[0];if(q){q.st='toreg';q.stT=0;q.reg=r}}
+  for(const c of this.cust){
+   if(c.st==='toreg'&&c.stT>=0.5){const m=this.choose(c);if(!m){c.reg=-1;this.leave(c,'down');continue}
+    c.pay=m;c.st='pay';c.stT=0;c.dur=S.scan+(m==='cash'&&this.fac('changer')?0.9:PAY[m].t)+(m==='card'&&c.amt>=30000?2:0)}
+   else if(c.st==='pay'&&c.stT>=c.dur){const P=PAY[c.pay],G=S.goods[c.gid];const fee=c.amt*P.fee;const prof=c.amt-G.cost*c.q-fee;
+    this.inv[c.gid]-=c.q;this.pend[c.gid]-=c.q;
+    const alt=this.choose(c,c.pay);const st=this.st;st.sales+=c.amt;st.cogs+=G.cost*c.q;st.gross+=prof;st.fee+=fee;st.served++;st.byPay[c.pay]=(st.byPay[c.pay]||0)+1;st.devFee[c.pay]=(st.devFee[c.pay]||0)+fee;st.goods[c.gid].sold+=c.q;
+    if(!alt)st.inc[c.pay]=(st.inc[c.pay]||0)+prof;
+    st.blocks[c.bi].served++;
+    const wb=Math.max(4,S.scan*3);const stars=c.wait>wb*1.8?3:c.wait>wb?4:5;
+    this.rate(stars,stars===5?(P.t<=0.7?'会計があっという間！':'スムーズに買えた'):stars===4?'少し待った':'けっこう待たされた',c.ty,0.18);
+    c.st='exit';c.stT=0;c.reg=-1;c.prof=prof;c.fee=fee;this.events.push({k:'paid',c,prof,fee})}
+   else if(c.st==='exit'&&c.stT>=1)c.st='gone'}
+  this.cust=this.cust.filter(c=>c.st!=='gone');
+  if(this.t>=DAY&&!this.cust.length)this.finish()}
+ finish(){if(this.done)return;this.done=true;const st=this.st,S=this.S;
+  for(const k in S.goods){if(!S.goods[k].keep&&this.inv[k]>0){st.goods[k].waste=this.inv[k];st.wasteN+=this.inv[k];st.waste+=this.inv[k]*S.goods[k].cost;this.inv[k]=0}}
+  st.stockValue=0;for(const k in S.goods)st.stockValue+=(this.inv[k]||0)*S.goods[k].cost;
+  st.upkeep={};let up=0;for(const k of this.cfg.dev){st.upkeep[k]=PAY[k].up;up+=PAY[k].up}for(const k of this.cfg.fac){st.upkeep[k]=FAC[k].up;up+=FAC[k].up}
+  st.up=up;st.profit=Math.round(st.gross-st.waste-up);st.rating=this.rating();st.leftRate=st.came?st.left/st.came:0}
+ run(){while(!this.done)this.step(0.05);return this.st}}
+
+/* the 5 clear conditions; need 3 or more on the same day */
+const FEECAP=(typeof process!=='undefined'&&process.env&&process.env.FEECAP)?+process.env.FEECAP:0.025;
+function conditions(si,st){const S=SHOPS[si];
+ const task=si===0?st.blocks.reduce((a,b)=>a+b.leftQ,0):si===1?st.hiMiss:st.inbMiss;
+ return[
+  {t:`1日の利益が ¥${S.goal.toLocaleString()} 以上`,ok:st.profit>=S.goal,v:'¥'+Math.round(st.profit).toLocaleString()},
+  {t:`口コミが ★${S.rateGoal.toFixed(1)} 以上`,ok:st.rating>=S.rateGoal,v:'★'+st.rating.toFixed(1)},
+  {t:'帰ったお客が 5% 以下',ok:st.leftRate<=0.05,v:(st.leftRate*100).toFixed(1)+'%'},
+  si===0?(()=>{const so=Object.values(st.goods).reduce((a,g)=>a+g.out,0);return{t:'捨てた商品と売り切れが 合わせて5以下',ok:st.wasteN+so<=5,v:`捨て${st.wasteN}＋売切${so}`}})():
+  si===1?(()=>{const r=st.sales?st.fee/st.sales:0;return{t:`手数料が売上の ${(FEECAP*100).toFixed(1)}% 以下`,ok:st.sales>0&&r<=FEECAP,v:(r*100).toFixed(2)+'%'}})():
+  {t:'ネット障害で帰ったお客が 0人',ok:st.leftDown===0,v:st.leftDown+'人'},
+  {t:S.taskT,ok:task===0,v:task+'人'}]}
+
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function fit(){const v=window.visualViewport;const w=v?v.width:innerWidth,h=v?v.height:innerHeight;const s=Math.min(w/1024,h/768);$('#stage').style.transform=`translate(${(w-1024*s)/2}px,${(h-768*s)/2}px) scale(${s})`}
+addEventListener('resize',fit);if(window.visualViewport)visualViewport.addEventListener('resize',fit);fit();
+const yen=n=>(n<0?'−':'')+Math.abs(Math.round(n)).toLocaleString();
+const ICON={qr:'QR',gqr:'海外',ic:'IC',card:'カード',face:'顔',reg2:'レジ',changer:'つり銭',backup:'予備',ad:'宣伝'};
+const FCOL={reg2:'#24303f',changer:'#7a8a5a',backup:'#c0392b',ad:'#f59e0b'};
+
+/* ---------- save state ---------- */
+function fresh(){const inv=SHOPS.map(S=>{const o={};for(const k in S.goods)o[k]=0;return o});return{v:4,inv,lastOrder:[{},{},{}],shop:0,coins:SHOPS[0].start,day:1,owned:[[],[],[]],cfg:[{dev:[],fac:[]},{dev:[],fac:[]},{dev:[],fac:[]}],review:Array(10).fill(3),profits:[[],[],[]],firsts:{},log:[],last:null,dataOpen:false,cleared:false,revList:[]}}
+let G=fresh();
+try{const s=JSON.parse(localStorage.getItem('cashless-shop-v5')||'null');if(s&&s.v===4)G=Object.assign(fresh(),s)}catch(e){}
+function save(){try{localStorage.setItem('cashless-shop-v5',JSON.stringify(G))}catch(e){}}
+const cfg=()=>G.cfg[G.shop];
+let D=null;let speed=1;let tab='tools';let lastTs=0;let pops=[];let prevBlock=-1;
+function startDay(){D=new Day(G.shop,cfg(),G.review,G.inv[G.shop],Math.random,G.day);prevBlock=-1;pops=[]}
+
+/* ---------- canvas ---------- */
+const cv=$('#cv'),cx=cv.getContext('2d');const W=650,H=680;
+const DOOR={x:585,y:615};const REG=[{x:150,y:300},{x:150,y:450}];
+const qpos=i=>({x:265+i*50,y:375});
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+const lerp=(a,b,k)=>a+(b-a)*Math.max(0,Math.min(1,k));
+function posOf(c,order){if(c.st==='walk'){const q=qpos(order);return{x:lerp(DOOR.x,q.x,c.stT/0.9),y:lerp(DOOR.y,q.y,c.stT/0.9)}}
+ if(c.st==='queue'){const q=qpos(order);c._x=c._x==null?q.x:c._x+(q.x-c._x)*0.2;return{x:c._x,y:q.y}}
+ if(c.st==='toreg'){const R=REG[c.reg];return{x:lerp(c._x??qpos(0).x,R.x+60,c.stT/0.5),y:lerp(375,R.y,c.stT/0.5)}}
+ if(c.st==='pay'){const R=REG[c.reg]||REG[0];return{x:R.x+60,y:R.y}}
+ if(c.st==='exit'){const R=c._ex||{x:DOOR.x,y:DOOR.y};return{x:lerp(R.x,DOOR.x,c.stT),y:lerp(R.y,DOOR.y+30,c.stT)}}
+ return{x:DOOR.x,y:DOOR.y}}
+/* ---------- each shop has its own look ---------- */
+function tree(x,y,a='#7cbf5f',b='#62a64a'){cx.fillStyle=a;cx.beginPath();cx.arc(x,y,22,0,7);cx.fill();cx.fillStyle=b;cx.beginPath();cx.arc(x+6,y-6,12,0,7);cx.fill()}
+function board(S,bg,fg){cx.fillStyle=bg;rr(200,96,250,34,8);cx.fill();cx.fillStyle=fg;cx.font='bold 16px "BIZ UDPGothic",sans-serif';cx.textAlign='center';cx.fillText(S.n,325,119)}
+function drawScene(si,S){const T=performance.now()/1000;
+ if(si===0){/* station-front convenience store */
+  cx.fillStyle='#c9ced4';cx.fillRect(0,0,W,H);cx.fillStyle='#b4bac1';for(let x=0;x<W;x+=44)cx.fillRect(x,0,2,H);
+  cx.fillStyle='#8d949c';cx.fillRect(0,0,W,48);cx.fillStyle='#fff';for(let x=10;x<W;x+=60)cx.fillRect(x,22,30,4);
+  cx.fillStyle='#2f6fb2';rr(470,58,150,26,6);cx.fill();cx.fillStyle='#fff';cx.font='bold 13px "BIZ UDPGothic",sans-serif';cx.textAlign='center';cx.fillText('駅 →　改札口',545,76);
+  cx.fillStyle='#fafbfc';cx.fillRect(40,150,575,470);cx.strokeStyle='#e3e7eb';cx.lineWidth=1;for(let i=0;i<=10;i++){cx.beginPath();cx.moveTo(40+i*57.5,150);cx.lineTo(40+i*57.5,620);cx.stroke()}for(let j=0;j<=8;j++){cx.beginPath();cx.moveTo(40,150+j*59);cx.lineTo(615,150+j*59);cx.stroke()}
+  cx.fillStyle='#ffffff';cx.fillRect(40,130,575,22);cx.fillStyle='#1f9e6e';cx.fillRect(40,130,575,7);cx.fillStyle='#f39c12';cx.fillRect(40,137,575,5);cx.fillStyle='#d1495b';cx.fillRect(40,142,575,4);
+  cx.fillStyle='#9aa4ad';cx.fillRect(40,130,14,490);cx.fillRect(601,130,14,440);
+  /* drink fridge along the top wall */
+  cx.fillStyle='#bfe4f7';cx.fillRect(250,152,340,26);cx.strokeStyle='#7fb8d6';cx.lineWidth=2;for(let x=250;x+48<=592;x+=48)cx.strokeRect(x,152,48,26);
+  const dc=['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6'];for(let x=256;x<584;x+=12){cx.fillStyle=dc[(x/12|0)%5];cx.fillRect(x,158,6,14)}
+  board(S,'#1f9e6e','#fff');
+  for(const [x,y] of [[390,215],[490,215],[390,500],[490,500]]){cx.fillStyle='#e6e9ec';rr(x,y,80,28,4);cx.fill();for(let k=0;k<6;k++){cx.fillStyle=['#f6b26b','#e06666','#93c47d','#ffd966','#6fa8dc','#c27ba0'][k];cx.fillRect(x+5+k*12.5,y+5,9,18)}}
+  cx.fillStyle='#9ed0ef';cx.fillRect(555,580,60,40);cx.fillStyle='#24303f';cx.font='12px "BIZ UDPGothic",sans-serif';cx.textAlign='center';cx.fillText('自動ドア',585,636)}
+ else if(si===1){/* electronics store */
+  cx.fillStyle='#5b636b';cx.fillRect(0,0,W,H);cx.strokeStyle='#e8e8e8';cx.lineWidth=3;for(let x=20;x<W;x+=70){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,44);cx.stroke();cx.beginPath();cx.moveTo(x,642);cx.lineTo(x,690);cx.stroke()}
+  cx.fillStyle='#e9edf1';cx.fillRect(40,150,575,470);cx.fillStyle='#dde3e9';for(let i=0;i<10;i++)for(let j=0;j<8;j++)if((i+j)%2)cx.fillRect(40+i*57.5,150+j*59,57.5,59);
+  cx.fillStyle='#22272e';cx.fillRect(40,130,575,22);cx.fillStyle='#f5c400';cx.fillRect(40,146,575,4);cx.fillStyle='#22272e';cx.fillRect(40,130,14,490);cx.fillRect(601,130,14,440);
+  /* TV wall */
+  for(let i=0;i<6;i++){const x=250+i*57;cx.fillStyle='#111';rr(x,156,50,32,3);cx.fill();const g=cx.createLinearGradient(x,158,x+46,186);g.addColorStop(0,`hsl(${(T*40+i*50)%360},70%,55%)`);g.addColorStop(1,'#1b2a4a');cx.fillStyle=g;cx.fillRect(x+3,159,44,26)}
+  board(S,'#f5c400','#22272e');
+  for(const [x,y] of [[390,215],[490,215],[390,500],[490,500]]){cx.fillStyle='#ffffff';rr(x,y,80,28,4);cx.fill();cx.strokeStyle='#b8c0c8';cx.lineWidth=1.5;cx.stroke();cx.fillStyle='#2b2f36';cx.fillRect(x+6,y+6,30,16);cx.fillStyle='#8fb3d9';cx.fillRect(x+8,y+8,26,12);cx.fillStyle='#cfd6dd';cx.fillRect(x+42,y+6,14,16);cx.fillRect(x+60,y+6,14,16);cx.fillStyle='#d23c1e';cx.font='bold 9px sans-serif';cx.textAlign='center';cx.fillText('¥',x+49,y+18);cx.fillText('¥',x+67,y+18)}
+  cx.fillStyle='#d23c1e';rr(470,56,140,30,6);cx.fill();cx.fillStyle='#fff';cx.font='bold 14px "BIZ UDPGothic",sans-serif';cx.textAlign='center';cx.fillText('大型テレビ 入荷',540,77);
+  cx.fillStyle='#9ed0ef';cx.fillRect(555,580,60,40);cx.fillStyle='#fff';cx.font='12px "BIZ UDPGothic",sans-serif';cx.fillText('入口',585,636)}
+ else{/* souvenir shop in front of the castle */
+  cx.fillStyle='#bfe3a6';cx.fillRect(0,0,W,H);
+  tree(40,120);tree(610,120);tree(30,600);
+  /* castle on a stone wall (ishigaki), above the shop sign */
+  cx.fillStyle='#9a958c';cx.beginPath();cx.moveTo(170,96);cx.quadraticCurveTo(230,90,255,58);cx.lineTo(395,58);cx.quadraticCurveTo(420,90,480,96);cx.fill();
+  cx.strokeStyle='#7d786f';cx.lineWidth=1;for(let y=62;y<96;y+=8)for(let x=200+(y/8%2)*10;x<450;x+=20)cx.strokeRect(x,y,20,8);
+  cx.fillStyle='#f4f1ea';cx.fillRect(285,40,80,18);cx.fillStyle='#2b2b2b';for(let x=292;x<360;x+=16)cx.fillRect(x,44,8,8);
+  cx.beginPath();cx.moveTo(268,42);cx.lineTo(325,22);cx.lineTo(382,42);cx.fill();cx.fillStyle='#f4f1ea';cx.fillRect(300,14,50,10);cx.fillStyle='#2b2b2b';cx.beginPath();cx.moveTo(292,16);cx.lineTo(325,2);cx.lineTo(358,16);cx.fill();
+  cx.fillStyle='#d7b98a';cx.fillRect(40,150,575,470);cx.strokeStyle='#c4a370';cx.lineWidth=1;for(let y=150;y<620;y+=24){cx.beginPath();cx.moveTo(40,y);cx.lineTo(615,y);cx.stroke()}
+  cx.fillStyle='#4a2f1f';cx.fillRect(40,130,575,22);cx.fillRect(40,130,14,490);cx.fillRect(601,130,14,440);
+  cx.fillStyle='#b32a2a';cx.fillRect(250,152,340,22);cx.fillStyle='#fff';cx.font='bold 12px "BIZ UDPGothic",sans-serif';cx.textAlign='center';cx.fillText('熊本みやげ　WELCOME ・ 欢迎 ・ 환영',420,168);
+  board(S,'#4a2f1f','#f7e7c6');
+  for(const [x,y] of [[390,215],[490,215],[390,500],[490,500]]){cx.fillStyle='#8b5a35';rr(x,y,80,28,4);cx.fill();for(let k=0;k<4;k++){const bx=x+5+k*18.5;cx.fillStyle=k%2?'#c0392b':'#1d1d1d';cx.fillRect(bx,y+5,15,18);cx.fillStyle=k%2?'#f1c40f':'#e74c3c';cx.fillRect(bx,y+12,15,3)}}
+  /* noren curtain at the door */
+  cx.fillStyle='#1f3b6e';cx.fillRect(555,566,60,20);cx.fillStyle='#fff';cx.fillRect(569,566,2,20);cx.fillRect(584,566,2,20);cx.fillRect(599,566,2,20);
+  cx.fillStyle='#9ed0ef';cx.fillRect(555,586,60,34);cx.fillStyle='#24303f';cx.font='12px "BIZ UDPGothic",sans-serif';cx.fillText('入口',585,636)}
+ cx.textAlign='center'}
+const ghosts=[];/* customers who turned back at the door */
+function draw(){const S=SHOPS[G.shop];cx.clearRect(0,0,W,H);
+ drawScene(G.shop,S);
+ const dn=D&&D.outage;const bk=cfg().fac.includes('backup');
+ cx.fillStyle=dn&&!bk?'#d23c1e':'#2f3b4b';rr(64,166,90,40,8);cx.fill();cx.fillStyle='#fff';cx.font='bold 12px "BIZ UDPGothic",sans-serif';cx.fillText('ネット回線',109,183);
+ cx.fillStyle=dn?'#ffd84a':'#3ddc84';cx.beginPath();cx.arc(109,197,5,0,7);cx.fill();
+ if(bk){cx.fillStyle='#c0392b';rr(64,210,90,18,5);cx.fill();cx.fillStyle='#fff';cx.font='11px "BIZ UDPGothic",sans-serif';cx.fillText('予備の回線',109,223)}
+ if(dn){cx.fillStyle='#d23c1e';cx.beginPath();cx.arc(160,162,13,0,7);cx.fill();cx.fillStyle='#fff';cx.font='bold 17px sans-serif';cx.fillText('!',160,168);cx.fillStyle='#d23c1e';cx.font='bold 12px "BIZ UDPGothic",sans-serif';cx.textAlign='left';cx.fillText(bk?'障害！予備の回線で動いている':'障害！QR・カード・顔が止まる',178,190);cx.textAlign='center'}
+ const regs=cfg().fac.includes('reg2')?2:1;
+ for(let r=0;r<regs;r++){const R=REG[r];cx.fillStyle='#fafafa';rr(R.x-82,R.y-38,152,76,10);cx.fill();cx.strokeStyle='#24303f';cx.lineWidth=2;cx.stroke();
+  cx.fillStyle='#24303f';cx.font='bold 13px "BIZ UDPGothic",sans-serif';cx.fillText('レジ'+(r+1),R.x-5,R.y-20);
+  cx.fillStyle='#24303f';cx.beginPath();cx.arc(R.x-54,R.y+6,13,0,7);cx.fill();cx.fillStyle='#f2c9a0';cx.beginPath();cx.arc(R.x-54,R.y-10,9,0,7);cx.fill();
+  ['cash',...cfg().dev].forEach((k,i)=>{const x=R.x-34+i*24,y=R.y+10;const off=PAY[k].net&&dn&&!bk;cx.fillStyle=off?'#bbb':PAY[k].col;rr(x,y,22,22,4);cx.fill();cx.fillStyle='#fff';cx.font='bold 9px "BIZ UDPGothic",sans-serif';cx.fillText(k==='cash'?(cfg().fac.includes('changer')?'自動':'¥'):ICON[k].slice(0,2),x+11,y+14);if(off){cx.strokeStyle='#d23c1e';cx.lineWidth=2;cx.beginPath();cx.moveTo(x,y);cx.lineTo(x+22,y+22);cx.stroke()}})}
+ if(cfg().rec){const P=PAY[cfg().rec];cx.font='bold 13px "BIZ UDPGothic",sans-serif';const tx=`おすすめ：${P.n}`;const tw=cx.measureText(tx).width+20;cx.fillStyle='#fffbe6';rr(154-tw/2,416,tw,28,6);cx.fill();cx.strokeStyle=P.col;cx.lineWidth=2;cx.stroke();cx.fillStyle=P.col;const ta=cx.textAlign;cx.textAlign='center';cx.fillText(tx,154,435);cx.textAlign=ta}
+ cx.setLineDash([5,5]);cx.strokeStyle='#b99a6d';cx.lineWidth=2;cx.beginPath();cx.moveTo(245,345);cx.lineTo(560,345);cx.moveTo(245,405);cx.lineTo(560,405);cx.stroke();cx.setLineDash([]);
+ cx.fillStyle='#8a6a3d';cx.font='12px "BIZ UDPGothic",sans-serif';cx.textAlign='left';cx.fillText(`行列（${S.maxQ}人をこえると、来た人は帰る）`,250,338);cx.textAlign='center';
+ if(D){const B=S.blocks[D.blockIdx()];const tx=`いま：${B.n}　よく売れる：${B.goods.map(g=>S.goods[g[0]].n).join('・')}`;cx.font='bold 13px "BIZ UDPGothic",sans-serif';const tw=Math.min(420,cx.measureText(tx).width+20);cx.fillStyle='rgba(36,48,63,.85)';rr(14,10,tw,30,8);cx.fill();cx.fillStyle='#fff';cx.textAlign='left';cx.fillText(tx,24,30,tw-20);cx.textAlign='center'}
+ /* people */
+ const list=D?D.cust:[];const qorder=list.filter(c=>c.st==='walk'||c.st==='queue').sort((a,b)=>a.id-b.id);
+ const items=[];for(const c of list){const p=posOf(c,qorder.indexOf(c));if(c.st==='pay')c._ex=p;items.push({c,p})}
+ for(const g of ghosts)items.push({c:g,p:{x:lerp(DOOR.x-20,DOOR.x+10,g.age),y:lerp(DOOR.y-40,DOOR.y+30,g.age)},ghost:true});
+ items.sort((a,b)=>a.p.y-b.p.y);
+ for(const {c,p,ghost} of items){const col=TYPES[c.ty].col;cx.globalAlpha=ghost?Math.max(0,1-g2(c.age)):1;
+  cx.fillStyle='rgba(0,0,0,.12)';cx.beginPath();cx.ellipse(p.x,p.y+16,14,5,0,0,7);cx.fill();
+  cx.fillStyle=col;rr(p.x-12,p.y-6,24,24,9);cx.fill();cx.fillStyle='#f2c9a0';cx.beginPath();cx.arc(p.x,p.y-15,10,0,7);cx.fill();cx.fillStyle='#3a2a1a';cx.beginPath();cx.arc(p.x,p.y-19,10,Math.PI,0);cx.fill();
+  let bub=null,bad=false,bc='#999';
+  if(ghost){bub=c.msg;bad=true}else if(c.st==='walk'||c.st==='queue'||c.st==='toreg'||c.st==='pay'){bub=PAY[c.pay].ask;bc=PAY[c.pay].col}
+  if(bub){cx.font='bold 12px "BIZ UDPGothic",sans-serif';const tw=cx.measureText(bub).width+14;const bx=p.x-tw/2,by=p.y-56;cx.fillStyle=bad?'#fde4dc':'#fff';rr(bx,by,tw,22,10);cx.fill();cx.strokeStyle=bad?'#d23c1e':bc;cx.lineWidth=2;cx.stroke();cx.fillStyle=bad?'#d23c1e':'#1d2330';cx.fillText(bub,p.x,by+15)}
+  if(c.st==='pay'&&!ghost){cx.fillStyle='#24303f';cx.fillRect(p.x-14,p.y+22,28,4);cx.fillStyle='#3ddc84';cx.fillRect(p.x-14,p.y+22,28*Math.min(1,c.stT/c.dur),4)}
+  cx.globalAlpha=1}
+ for(const p of pops){cx.globalAlpha=Math.min(1,p.t);cx.fillStyle=p.col;cx.font=`bold ${p.small?11:15}px "BIZ UDPGothic",sans-serif`;cx.fillText(p.txt,p.x,p.y);cx.globalAlpha=1}
+ cx.textAlign='left';let lx=14;cx.font='12px "BIZ UDPGothic",sans-serif';const here=[...new Set(S.blocks.flatMap(b=>Object.keys(b.mix)))];cx.fillStyle='rgba(255,255,255,.85)';rr(8,648,here.reduce((w,k)=>w+cx.measureText(TYPES[k].n).width+30,12),24,6);cx.fill();for(const k of here){cx.fillStyle=TYPES[k].col;cx.fillRect(lx,654,12,12);cx.fillStyle='#1d2330';cx.fillText(TYPES[k].n,lx+16,665);lx+=cx.measureText(TYPES[k].n).width+30}cx.textAlign='center'}
+const g2=a=>a*a;
+
+/* ---------- events from the engine ---------- */
+const WHYTXT={pay:'払い方がない',queue:'行列が長い',down:'ネット障害',soldout:'売り切れ'};
+function handleEvents(){for(const e of D.events){
+  if(e.k==='leave'){const c=e.c;ghosts.push({ty:c.ty,age:0,msg:e.why==='soldout'?`${SHOPS[G.shop].goods[c.gid].n}…売り切れ`:e.why==='pay'?`${PAY[c.want].ask}…ない`:e.why==='queue'?'行列が長い…':'ネット障害…'});addLog(`${TYPES[c.ty].n}が帰った（${e.why==='pay'?PAY[c.want].n+'がない':WHYTXT[e.why]}）`);
+   if(e.why==='pay'&&!G.firsts['m'+c.want]){G.firsts['m'+c.want]=1;toast(`<b>${TYPES[c.ty].n}は「${PAY[c.want].n}」で払いたかった。</b>その払い方がないと、買わずに帰ります。ただし、ほかの払い方も持っている人は、そちらで払います。`)}
+   if(e.why==='queue'&&!G.firsts.q){G.firsts.q=1;toast('<b>行列が長くて帰った！</b>　混む時間帯に、会計が速くなる工夫（ICや顔・つり銭機・レジ2台目）が効きます。')}}
+  else if(e.k==='paid'){const c=e.c;const p=c._ex||{x:200,y:330};pops.push({x:p.x,y:p.y-40,t:1.3,txt:'+¥'+yen(c.amt),col:'#b77d00'});if(e.fee>=1)pops.push({x:p.x+10,y:p.y-18,t:1.3,txt:'手数料 −'+yen(e.fee),col:'#d23c1e',small:true});G.coins+=c.amt-e.fee;
+   if(e.fee>=1&&!G.firsts.fee){G.firsts.fee=1;toast(`<b>手数料</b>　キャッシュレスで払われると、金額の数%を決済の会社にはらいます（${PAY[c.pay].n}は${(PAY[c.pay].fee*100).toFixed(1).replace('.0','')}%）。`)}}
+  else if(e.k==='review'){showReview(e.rv)}
+  else if(e.k==='outage'){if(e.on){addLog('ネット障害が起きた');if(!G.firsts.out){G.firsts.out=1;toast(cfg().fac.includes('backup')?'<b>ネット障害！</b>　予備の回線があるので、決済は止まりません。':'<b>ネット障害！</b>　QR・カード・顔認証は、会社のコンピュータにつながらないと使えない。<b>現金とICは動いています</b>（ICはカードの中で計算する）。',9)}}else addLog('ネットがもどった')}}
+ D.events.length=0}
+function showReview(rv){G.revList.unshift(rv);if(G.revList.length>40)G.revList.pop();const box=$('#revs');const d=document.createElement('div');d.className='rv '+(rv.stars>=4?'good':rv.stars<=2?'bad':'');d.innerHTML=`${starHTML(rv.stars)} ${TYPES[rv.ty].n}<br>${rv.text}`;box.prepend(d);while(box.children.length>3)box.lastChild.remove();setTimeout(()=>d.remove(),6000);if(tab==='rev')renderPanel()}
+function starHTML(n){return `<b>${'★'.repeat(n)}</b><b style="color:#d0d4cc">${'★'.repeat(5-n)}</b>`}
+function addLog(t){G.log.unshift(`${G.day}日目 ${clock()}　${t}`);if(G.log.length>60)G.log.pop();if(tab==='log')renderPanel()}
+function clock(){if(!D)return'';const h=D.hour();return`${Math.floor(h)}:${String(Math.floor((h%1)*60)).padStart(2,'0')}`}
+let toastT=0;function toast(h,s=8){const t=$('#toast');t.innerHTML=h;t.classList.remove('hide');toastT=s}
+
+/* ---------- clear conditions ---------- */
+const LIMIT=14;
+function condHTML(cs){if(!cs)return'<div class="note">1日が終わると、ここに結果が出ます。</div>';const n=cs.filter(c=>c.ok).length;
+ return `<table class="wt">${cs.map(c=>`<tr><td>${c.t}</td><td style="white-space:nowrap;color:var(--sub)">${c.v}</td><td style="font-weight:700;color:${c.ok?'var(--ok)':'var(--ng)'}">${c.ok?'○':'✕'}</td></tr>`).join('')}</table><div style="font-size:12.5px;margin-top:3px"><b style="color:${n>=3?'var(--ok)':'var(--ng)'}">${n} / 5 クリア</b>（3つ以上で次の店へ）</div>`}
+function lastConds(){const L=G.last;return L&&L.shop===G.shop?conditions(G.shop,L.st):null}
+function resetShop(si){G.shop=si;G.coins=SHOPS[si].start;G.day=1;G.owned[si]=[];G.cfg[si]={dev:[],fac:[]};G.review=Array(10).fill(3);G.inv[si]={};for(const k in SHOPS[si].goods)G.inv[si][k]=0;G.revList=[];G.log=[];G.last=null;G.lastGoods=null}
+
+/* ---------- stocking ---------- */
+let order={};
+function openStock(first){const S=SHOPS[G.shop],inv=G.inv[G.shop];const lg=G.last&&G.last.shop===G.shop?G.last.st.goods:null;
+ if(!Object.keys(order).length||first)for(const k in S.goods)order[k]=G.lastOrder&&G.lastOrder[G.shop]&&G.lastOrder[G.shop][k]!=null?G.lastOrder[G.shop][k]:0;
+ const total=()=>Object.entries(order).reduce((a,[k,n])=>a+n*S.goods[k].cost,0);
+ const render=()=>{const t=total();
+  $('#ovCard').innerHTML=`<h2>仕入れ　<small style="font-size:15px;color:var(--sub)">${G.day}日目に売る商品</small></h2>
+  <p style="font-size:14px">${first?'1日目はデータがありません。どの時間に何が売れそうか、店の説明から考えて仕入れよう。':'きのうのデータを見て、今日の数を決めよう。<b>売り切れ</b>はお客が帰る。<b>捨てる</b>と仕入れ値が損になる。'}</p>
+  <table class="wt stock"><tr><th>商品</th><th>売値／仕入れ値</th><th>いまの在庫</th>${lg?'<th>きのう<br>売れた</th><th>売り切れで<br>帰った</th><th>捨てた</th>':''}<th>仕入れる数</th></tr>
+  ${Object.entries(S.goods).map(([k,g])=>`<tr><td><b>${g.n}</b><br><small style="color:${g.keep?'var(--sub)':'var(--ng)'}">${g.keep?'次の日に持ちこせる':'その日に捨てる'}</small></td><td class="n">¥${yen(g.price)}<br><small>¥${yen(g.cost)}</small></td><td class="n">${inv[k]||0}</td>${lg?`<td class="n">${lg[k].sold}</td><td class="n" style="color:${lg[k].out?'var(--ng)':''}">${lg[k].out}</td><td class="n" style="color:${lg[k].waste?'var(--ng)':''}">${lg[k].waste}</td>`:''}
+   <td style="white-space:nowrap"><button class="st" data-k="${k}" data-d="-10">−10</button><button class="st" data-k="${k}" data-d="-1">−</button><b class="ord">${order[k]}</b><button class="st" data-k="${k}" data-d="1">＋</button><button class="st" data-k="${k}" data-d="10">＋10</button></td></tr>`).join('')}</table>
+  <p style="font-size:15px">仕入れの合計 <b>¥${yen(t)}</b>　／　所持金 ¥${yen(G.coins)}　→　のこり <b style="color:${G.coins-t<0?'var(--ng)':'var(--ink)'}">¥${yen(G.coins-t)}</b></p>
+  <button class="big" id="stGo" ${G.coins-t<0?'disabled':''}>この数で仕入れて、開店</button>`;
+  $$('#ovCard .st').forEach(b=>b.onclick=()=>{order[b.dataset.k]=Math.max(0,order[b.dataset.k]+(+b.dataset.d));render()});
+  $('#stGo').onclick=()=>{const t=total();if(G.coins-t<0)return;G.coins-=t;for(const k in order)inv[k]=(inv[k]||0)+order[k];G.lastOrder=G.lastOrder||[{},{},{}];G.lastOrder[G.shop]={...order};addLog(`仕入れ ¥${yen(t)}`);order={};hideOv();startDay();renderAll();save();setSpeed(1)}};
+ render();$('#ov').hidden=false;setSpeed(0)}
+
+/* ---------- day end ---------- */
+function endDay(){const st=D.st;const S=SHOPS[G.shop];G.coins+=-st.up;/* sales minus fees were added during the day */
+ G.last={shop:G.shop,day:G.day,st:JSON.parse(JSON.stringify(st)),cfg:JSON.parse(JSON.stringify(cfg()))};
+ const cs=conditions(G.shop,st);const n=cs.filter(c=>c.ok).length;
+ const wasOpen=G.dataOpen;G.dataOpen=true;const dayNo=G.day;G.day++;save();setSpeed(0);
+ let h=`<h2>${dayNo}日目の決算</h2>
+ <div class="kp"><div><small>利益</small><b style="color:${st.profit>=0?'var(--ok)':'var(--ng)'}">${yen(st.profit)}</b></div><div><small>買ったお客</small><b>${st.served}</b></div><div><small>帰ったお客</small><b style="color:var(--ng)">${st.left}</b></div><div><small>口コミ</small><b>★${st.rating.toFixed(1)}</b></div></div>
+ <p style="font-size:13px">売上 ¥${yen(st.sales)} − 売れた分の仕入れ値 ¥${yen(st.cogs)} − 捨てた分 ¥${yen(st.waste)} − 手数料 ¥${yen(st.fee)} − 維持費 ¥${yen(st.up)} ＝ 利益 ¥${yen(st.profit)}<br>所持金 ¥${yen(G.coins)}</p>
+ <div class="dcard"><h4>クリア条件<span>3つ以上で次の店へ</span></h4>${condHTML(cs)}</div>`;
+ if(!wasOpen)h+=`<p style="background:#fffbe6;border:2px solid var(--mark);border-radius:10px;padding:7px 12px;font-size:14px"><b>「経営データ」が見られるようになりました。</b>だれが・いつ・何を買いに来て、何で払いたかったのか。データを見てから仕入れと道具を決めよう。</p>`;
+ const broke=G.coins<0,over=n<3&&dayNo>=LIMIT;
+ if(n>=3){if(G.shop<SHOPS.length-1){const nx=SHOPS[G.shop+1];h+=`<p style="background:var(--oks);border-radius:10px;padding:8px 12px"><b>クリア！（${dayNo}日目・${n}/5）</b><br>次の店：<b>${nx.n}</b>　${nx.intro}</p><button class="big" id="ovNext">${nx.n}を開く</button>`}
+  else{G.cleared=true;h+=`<p style="background:var(--oks);border-radius:10px;padding:8px 12px"><b>3つの店、すべてクリア！</b></p><ul><li>時間帯と商品で、お客も払い方も変わる</li><li>データを見て<b>仕入れる数</b>を決める。売り切れも、捨てるのも損</li><li>決済の道具は、<b>手数料と維持費</b>で元が取れるかを見る</li><li>ネット障害に強い払い方を残しておく</li></ul><p><b>考えよう：</b>熊本で新しい店を開くなら、どんなデータを最初に集める？</p><button class="big" id="ovRe">最初の店からもう一度</button>`}}
+ else if(broke||over){h+=`<p style="background:var(--ngs);border:2px solid var(--ng);border-radius:10px;padding:8px 12px"><b style="color:var(--ng)">経営破綻…</b>　${broke?'お金がマイナスになりました。':`${LIMIT}日以内に条件を3つそろえられませんでした。`}<br>この店の1日目からやり直します。こんどは、どのデータを先に見る？</p><button class="big" id="ovRetry">${S.n}をやり直す</button>`}
+ else h+=`<p style="font-size:13.5px;color:var(--sub)">のこり ${LIMIT-dayNo}日。道具を変えるなら、先に右の「道具」で。</p><button class="big" id="ovStock">次の日の仕入れへ</button>`;
+ showOv(h);
+ const nb=$('#ovNext');if(nb)nb.onclick=()=>{resetShop(G.shop+1);renderAll();toast(`<b>${SHOPS[G.shop].n}</b>　${SHOPS[G.shop].intro}`,9);save();openStock(true)};
+ const rt=$('#ovRetry');if(rt)rt.onclick=()=>{resetShop(G.shop);renderAll();save();openStock(true)};
+ const re=$('#ovRe');if(re)re.onclick=()=>{resetShop(0);renderAll();save();openStock(true)};
+ const go=$('#ovStock');if(go)go.onclick=()=>{openStock(false)};
+ $('#tabs [data-t=data]').disabled=false;if(!wasOpen)$('#tabs [data-t=data]').classList.add('new');renderAll()}
+
+/* ---------- panel ---------- */
+function renderAll(){renderPanel();hud()}
+function hud(){$('#coins').textContent=yen(G.coins);const r=D?D.rating():3;$('#rate').textContent=r.toFixed(1);$('#rstars').textContent='★'.repeat(Math.round(r))+'☆'.repeat(5-Math.round(r));
+ $('#day').textContent=G.day+'日目';$('#clock').textContent=clock();$('#block').textContent=D?SHOPS[G.shop].blocks[D.blockIdx()].n:'';$('#shopname').textContent=SHOPS[G.shop].n;
+ const cs=lastConds();const n=cs?cs.filter(c=>c.ok).length:0;
+ $('#goal').innerHTML=`クリア条件 <b style="font-size:16px;color:${n>=3?'var(--ok)':'var(--ink)'}">${n}/5</b>（3つで次の店へ）<br>のこり <b>${Math.max(0,LIMIT-G.day+1)}日</b>（${LIMIT}日で経営破綻）`;
+ $('#tabs [data-t=data]').disabled=!G.dataOpen}
+function renderPanel(){const p=$('#panel');const S=SHOPS[G.shop];const C=cfg();const own=G.owned[G.shop];
+ $$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+ if(tab==='tools'){
+  let h=`<div class="dcard"><h4>クリア条件（きのうの結果）<span>3つ以上で次の店へ</span></h4>${condHTML(lastConds())}</div><div class="sec">レジ横の決済端末（3つまで）</div><div class="slots">${[0,1,2].map(i=>{const k=C.dev[i];return k?`<div class="slot f" style="background:${PAY[k].col};border-color:${PAY[k].col}">${PAY[k].n}</div>`:'<div class="slot">あき</div>'}).join('')}</div><div class="note">現金は最初からある（枠は使わない）。端末は買ったあと、置く・外すを自由に変えられます。</div>`;
+  const recOpts=['cash',...C.dev];h+=`<div class="sec">レジの掲示「◯◯でのお支払いがおすすめです」</div><div class="recs"><button type="button" data-rec="" class="${!C.rec?'on':''}">なし</button>${recOpts.map(k=>`<button type="button" data-rec="${k}" class="${C.rec===k?'on':''}" style="--c:${PAY[k].col}">${PAY[k].n}</button>`).join('')}</div><div class="note">その払い方を持っているお客は、おすすめの方で払います（無料）。速い払い方や、手数料の安い払い方をすすめると…？</div><div class="sec">決済端末</div>`;
+  h+=DEVICES.map(k=>{const P=PAY[k];const o=own.includes(k),pl=C.dev.includes(k);
+   const btn=!o?`<button class="buy" data-buy="${k}" ${G.coins<P.buy?'disabled':''}>¥${yen(P.buy)}</button>`:pl?`<button class="on" data-tog="${k}">置いている</button>`:`<button class="off" data-tog="${k}" ${C.dev.length>=3?'disabled':''}>置く</button>`;
+   return `<div class="item ${pl?'placed':''}"><div class="ic" style="background:${P.col}">${ICON[k]}</div><span class="nm">${P.n}${k==='card'?'端末':k==='qr'?'スタンド':k==='gqr'?'（Alipayなど）':k==='ic'?'読み取り機':'認証カメラ'}</span>${btn}<span class="ds">手数料${(P.fee*100).toFixed(1).replace('.0','')}%・維持費 ¥${yen(P.up)}/日・会計${P.t}秒${P.net?'・ネットが必要':'・ネットなしでOK'}${P.limit?`・1回${P.limit/10000}万円まで`:''}${k==='card'?'・3万円以上はカード会社の確認で+2秒':''}${k==='gqr'?'・海外のアプリ専用':''}${k==='face'?'・顔を登録している人は15%':''}</span></div>`}).join('');
+  h+=`<div class="sec">店の設備（毎日の維持費がかかる）</div>`;
+  h+=Object.entries(FAC).map(([k,F])=>{const o=own.includes(k)||F.buy===0,pl=C.fac.includes(k);
+   const btn=!o?`<button class="buy" data-buy="${k}" ${G.coins<F.buy?'disabled':''}>¥${yen(F.buy)}</button>`:pl?`<button class="on" data-ftog="${k}">使っている</button>`:`<button class="off" data-ftog="${k}">使う</button>`;
+   return `<div class="item ${pl?'placed':''}"><div class="ic" style="background:${FCOL[k]}">${ICON[k]}</div><span class="nm">${F.n}</span>${btn}<span class="ds">${F.d}・維持費 ¥${yen(F.up)}/日</span></div>`}).join('');
+  h+=`<div class="note">維持費は、その日の終わりに「置いている・使っている」ものの分を払います。</div>`;
+  p.innerHTML=h;
+  $$('[data-buy]').forEach(b=>b.onclick=()=>{const k=b.dataset.buy;const cost=(PAY[k]||FAC[k]).buy;if(G.coins<cost)return;G.coins-=cost;own.push(k);if(PAY[k]&&C.dev.length<3)C.dev.push(k);else if(FAC[k])C.fac.push(k);addLog(`${(PAY[k]||FAC[k]).n}を買った`);save();renderAll()});
+  $$('[data-rec]').forEach(b=>b.onclick=()=>{C.rec=b.dataset.rec||null;addLog(C.rec?`掲示を「${PAY[C.rec].n}がおすすめ」にした`:'掲示をはずした');save();renderAll()});
+  $$('[data-tog]').forEach(b=>b.onclick=()=>{const k=b.dataset.tog;const i=C.dev.indexOf(k);if(i>=0){C.dev.splice(i,1);if(C.rec===k)C.rec=null}else if(C.dev.length<3)C.dev.push(k);save();renderAll()});
+  $$('[data-ftog]').forEach(b=>b.onclick=()=>{const k=b.dataset.ftog;const i=C.fac.indexOf(k);if(i>=0)C.fac.splice(i,1);else{C.fac.push(k);if(!own.includes(k))own.push(k)}save();renderAll()})}
+ else if(tab==='data'){$('#tabs [data-t=data]').classList.remove('new');p.innerHTML=dataHTML()}
+ else if(tab==='rev'){const rv=G.revList;const avg=D?D.rating():3;p.innerHTML=`<div class="dcard"><h4>口コミの平均 ★${avg.toFixed(1)}<span>新しい30件の平均。高いほどお客がふえる</span></h4></div><div class="rvl" style="display:flex;flex-direction:column;gap:4px">${rv.map(r=>`<div class="rv ${r.stars>=4?'good':r.stars<=2?'bad':''}">${starHTML(r.stars)} ${TYPES[r.ty].n}（${Math.floor(r.h)}時ごろ）<br>${r.text}</div>`).join('')||'<div class="note">まだ口コミはありません。</div>'}</div>`}
+ else p.innerHTML=`<div class="logl">${G.log.map(x=>`<div>${x}</div>`).join('')||'まだ何も起きていません。'}</div>`}
+$$('#tabs button').forEach(b=>b.onclick=()=>{if(b.disabled)return;tab=b.dataset.t;renderPanel()});
+
+/* ---------- business data ---------- */
+function dataHTML(){const L=G.last;if(!L||L.shop!==G.shop)return'<div class="note">この店で1日が終わると、ここにデータが出ます。</div>';
+ const S=SHOPS[L.shop],st=L.st;const B=st.blocks;
+ /* A: customers by time block */
+ const maxC=Math.max(1,...B.map(b=>Object.values(b.came).reduce((a,c)=>a+c,0)));
+ let a=`<svg viewBox="0 0 320 ${B.length*26+6}">`;B.forEach((b,i)=>{let x=56;const y=4+i*26;a+=`<text x="0" y="${y+15}" font-size="11.5" fill="var(--ink)">${b.n}</text>`;
+  for(const [t,n] of Object.entries(b.came)){const w=n/maxC*250;a+=`<rect x="${x}" y="${y}" width="${w}" height="20" fill="${TYPES[t].col}"/>`;if(w>18)a+=`<text x="${x+w/2}" y="${y+14}" font-size="10" fill="#fff" text-anchor="middle">${n}</text>`;x+=w}});a+='</svg>';
+ /* B: wanted payment per block */
+ let bt=`<table class="wt"><tr><th></th><th>使いたかった払い方（赤わく＝断った）</th></tr>${B.map(b=>`<tr><td>${b.n}</td><td>${Object.entries(b.want).sort((x,y)=>y[1]-x[1]).map(([k,n])=>`<span class="chip ${b.wantMiss[k]?'miss':''}" style="background:${PAY[k].col}">${PAY[k].n} ${n}${b.wantMiss[k]?`（断${b.wantMiss[k]}）`:''}</span>`).join('')}</td></tr>`).join('')}</table>`;
+ /* C: outcome per block */
+ const maxO=Math.max(1,...B.map(b=>b.served+b.leftQ+b.leftP+b.leftS+b.leftD));
+ let c=`<svg viewBox="0 0 320 ${B.length*26+6}">`;B.forEach((b,i)=>{let x=56;const y=4+i*26;c+=`<text x="0" y="${y+15}" font-size="11.5" fill="var(--ink)">${b.n}</text>`;
+  for(const [n,col] of [[b.served,'#1f8a57'],[b.leftQ,'#e08a1f'],[b.leftP,'#d23c1e'],[b.leftS,'#8c7a5a'],[b.leftD,'#7b3fa0']]){const w=n/maxO*250;if(n){c+=`<rect x="${x}" y="${y}" width="${w}" height="20" fill="${col}"/>`;if(w>16)c+=`<text x="${x+w/2}" y="${y+14}" font-size="10" fill="#fff" text-anchor="middle">${n}</text>`}x+=w}});c+='</svg>';
+ /* D: return on each tool */
+ const rows=L.cfg.dev.map(k=>{const inc=st.inc[k]||0,up=st.upkeep[k]||0,used=st.byPay[k]||0,fee=st.devFee[k]||0;const net=inc-up;return`<tr><td><span class="chip" style="background:${PAY[k].col}">${PAY[k].n}</span></td><td class="n">${used}人</td><td class="n">${yen(inc)}</td><td class="n">${yen(up)}</td><td class="${net>=0?'o':'x'}">${net>=0?'○ 元が取れた':'✕ 赤字'}</td></tr>`}).join('');
+ const frows=L.cfg.fac.map(k=>`<tr><td><span class="chip" style="background:${FCOL[k]}">${FAC[k].n}</span></td><td class="n" colspan="2">—</td><td class="n">${yen(st.upkeep[k]||0)}</td><td style="font-size:11px">効果は③の行列で見る</td></tr>`).join('');
+ const totLQ=B.reduce((a,b)=>a+b.leftQ,0),totLP=B.reduce((a,b)=>a+b.leftP,0);
+ const hints=[];const missAll={};B.forEach(b=>{for(const k in b.wantMiss)missAll[k]=(missAll[k]||0)+b.wantMiss[k]});const topMiss=Object.entries(missAll).sort((x,y)=>y[1]-x[1])[0];
+ if(topMiss)hints.push(`「${PAY[topMiss[0]].n}がない」で${topMiss[1]}人帰った。②でどの時間帯に多いか見よう。`);
+ const qb=B.reduce((m,b)=>b.leftQ>m.leftQ?b:m,B[0]);if(qb.leftQ>=3)hints.push(`行列で帰ったのは「${qb.n}」が一番多い（${qb.leftQ}人）。その時間に来るお客と、会計の速さを考えよう。`);
+ const so=Object.entries(st.goods).sort((x,y)=>y[1].out-x[1].out)[0];if(so&&so[1].out>=3)hints.push(`「${S.goods[so[0]].n}」が売り切れて${so[1].out}人帰った。⑤を見て、仕入れる数を考えよう。`);const ws=Object.entries(st.goods).find(([k,g])=>g.waste>0);if(ws)hints.push(`「${S.goods[ws[0]].n}」を${ws[1].waste}個捨てた。仕入れすぎかも。`);
+ if(G.shop===1&&st.sales){const fr=st.fee/st.sales*100;if(fr>2.5)hints.push(`手数料が売上の${fr.toFixed(2)}%。手数料は 現金0%・QR2%・カード3.3%。高い商品ほど、手数料の差が大きくなる。`)}
+ if(G.shop===1){const hm=st.hiMiss;if(hm)hints.push(`2万円以上の買い物で${hm}人逃した。高い商品は現金を持たない人が多い。ICは2万円、QRは5万円まで。それより高い物は何で払う？`)}
+ if(G.shop===2&&st.leftDown)hints.push(`ネット障害で${st.leftDown}人帰った。ネットを使う払い方は、障害の間はすべて止まる。`);
+ if(G.shop===2){const ib=st.inbMiss;if(ib)hints.push(`海外のお客を${ib}人逃した。①で海外のお客が来る時間帯、②で使いたかった払い方を見よう。海外のお客は1人で2〜3個買う。`)}
+ const loser=L.cfg.dev.find(k=>(st.inc[k]||0)-(st.upkeep[k]||0)<0);if(loser)hints.push(`${PAY[loser].n}は赤字。お客はほかの払い方でも払えていたのかも。外すと、枠が1つあく。`);
+ return `<div class="note">${L.day}日目（${S.n}）のデータ</div>
+ <div class="dcard"><h4>① 時間帯別の客層<span>色＝お客の種類</span></h4>${a}</div>
+ <div class="dcard"><h4>② 使いたかった払い方<span>お客の希望の1位</span></h4>${bt}</div>
+ <div class="dcard"><h4>③ 時間帯別の結果<span><b style="color:#1f8a57">買った</b> <b style="color:#e08a1f">行列で帰った</b> <b style="color:#d23c1e">払い方がない</b> <b style="color:#8c7a5a">売り切れ</b> <b style="color:#7b3fa0">障害</b></span></h4>${c}</div>
+ <div class="dcard"><h4>④ 道具の成績表<span>その道具がないと買えなかったお客の利益 − 維持費</span></h4><table class="wt roi"><tr><th></th><th>使った</th><th>おかげの利益</th><th>維持費</th><th></th></tr>${rows}${frows}</table></div>
+ <div class="dcard"><h4>⑤ 商品ごとの売れ行き<span>売り切れ・捨てた数は赤</span></h4><table class="wt roi"><tr><th>商品</th><th>ほしかった人</th><th>売れた</th><th>売り切れで帰った</th><th>捨てた</th></tr>${Object.entries(st.goods).map(([k,g])=>`<tr><td>${S.goods[k].n}</td><td class="n">${g.demand}</td><td class="n">${g.sold}</td><td class="n" style="color:${g.out?'var(--ng)':''}">${g.out}</td><td class="n" style="color:${g.waste?'var(--ng)':''}">${g.waste}</td></tr>`).join('')}</table></div>
+ ${hints.length?`<div class="keyhint"><b>データから分かること</b><br>${hints.join('<br>')}</div>`:''}`}
+
+/* ---------- loop ---------- */
+function setSpeed(s){speed=s;$$('.speed button').forEach(x=>x.classList.toggle('on',+x.dataset.s===s))}
+$$('.speed button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.s));
+function showOv(h){$('#ovCard').innerHTML=h;$('#ov').hidden=false}
+function hideOv(){$('#ov').hidden=true}
+let hudT=0;
+function loop(ts){const dt=Math.min(0.05,(ts-(lastTs||ts))/1000);lastTs=ts;
+ if(D&&speed>0&&$('#ov').hidden&&!D.done){for(let i=0;i<speed;i++){D.step(dt);handleEvents();if(D.done)break}
+  if(D.done)endDay()}
+ pops.forEach(p=>{p.t-=dt;p.y-=30*dt});pops=pops.filter(p=>p.t>0);for(let i=ghosts.length-1;i>=0;i--){ghosts[i].age+=dt*speed/2;if(ghosts[i].age>1)ghosts.splice(i,1)}
+ if(toastT>0){toastT-=dt;if(toastT<=0)$('#toast').classList.add('hide')}
+ if(D){const bi=D.blockIdx();if(bi!==prevBlock){prevBlock=bi}}
+ draw();hudT-=dt;if(hudT<=0){hud();hudT=0.25;if(tab==='tools')$$('[data-buy]').forEach(b=>{const k=b.dataset.buy;b.disabled=G.coins<(PAY[k]||FAC[k]).buy})}
+ requestAnimationFrame(loop)}
+
+/* ---------- start ---------- */
+const cont=G.day>1;
+showOv(`<h1>キャッシュレス商店</h1><p>きみは店のオーナー。お客は、頭の上に<b>使いたい払い方</b>を出して入ってきます。</p>
+<ul><li>払い方がないと買わずに帰り、<b>口コミ</b>で悪く書かれる。口コミが悪いとお客がへる</li><li>決済の端末は<b>レジ横に3つまで</b>。手数料と毎日の維持費がかかる</li><li>時間帯で、来るお客も買う物もかわる</li><li>1日目が終わると<b>経営データ</b>が見られる。データを読んで、むだのない組み合わせを見つけよう</li><li>レジに「◯◯がおすすめ」と<b>掲示</b>すると、お客の払い方を変えられる</li><li>商品は<b>前の日に仕入れる</b>。売り切れるとお客は帰り、売れ残った生ものは捨てる</li><li>店ごとに5つのクリア条件。<b>3つ以上</b>を同じ日にそろえると次の店へ。<b>14日</b>でできないと経営破綻</li></ul>
+${cont?`<p style="font-size:14px;color:var(--sub)">前回のつづき：${SHOPS[G.shop].n}・${G.day}日目</p>`:''}
+<button class="big" id="ovGo">${cont?'つづきから':'開店する'}</button>${cont?'<button class="ghost" id="ovNew">最初から</button>':''}`);
+$('#ovGo').onclick=()=>{if(!cont){resetShop(0);toast(`<b>${SHOPS[0].n}</b>　${SHOPS[0].intro}　最初は現金だけ。`,9)}renderAll();openStock(!cont||!G.last)};
+const nw=$('#ovNew');if(nw)nw.onclick=()=>{try{localStorage.removeItem('cashless-shop-v5')}catch(e){}G=fresh();resetShop(0);renderAll();openStock(true)};
+/* ---------- teacher mode (hidden): tap the shop name 5 times, or type "teacher" ---------- */
+let tapN=0,tapT=0,keyBuf='';
+function teacher(){setSpeed(0);
+ showOv(`<h2>教師モード</h2><p style="font-size:13px;color:var(--sub)">授業の準備用。生徒には見せない画面です。</p>
+ <div class="sec">店を選んで、1日目から始める</div>
+ <div style="display:flex;flex-direction:column;gap:6px">${SHOPS.map((S,i)=>`<button class="big" data-tj="${i}" style="margin:0">${i+1}. ${S.n}</button>`).join('')}</div>
+ <div class="sec">いまの店で</div>
+ <div style="display:flex;gap:6px;flex-wrap:wrap">
+  <button class="ghost" id="tMoney">お金 +¥100,000</button>
+  <button class="ghost" id="tOwn">端末と設備をすべて持たせる</button>
+  <button class="ghost" id="tSkip">今日を一気に終える</button>
+ </div>
+ <button class="ghost" id="tClose" style="margin-top:12px">閉じる</button>`);
+ $$('[data-tj]').forEach(b=>b.onclick=()=>{const i=+b.dataset.tj;resetShop(i);renderAll();save();toast(`<b>教師モード</b>　${SHOPS[i].n}　${SHOPS[i].intro}`,6);openStock(true)});
+ $('#tMoney').onclick=()=>{G.coins+=100000;save();renderAll();toast('お金を ¥100,000 ふやしました',3)};
+ $('#tOwn').onclick=()=>{const o=G.owned[G.shop];for(const k of [...DEVICES,...Object.keys(FAC)])if(!o.includes(k))o.push(k);save();renderAll();toast('端末と設備をすべて持たせました（置く・使うは道具タブで）',4)};
+ $('#tSkip').onclick=()=>{$('#ov').hidden=true;if(!D||D.done){toast('いまは営業中ではありません',3);return}let g=0;while(!D.done&&g++<20000){D.step(0.05);handleEvents()}endDay()};
+ $('#tClose').onclick=()=>{$('#ov').hidden=true}}
+$('#shopname').addEventListener('click',()=>{const now=performance.now();tapN=now-tapT<700?tapN+1:1;tapT=now;if(tapN>=5){tapN=0;teacher()}});
+window.addEventListener('keydown',e=>{if(e.key.length!==1)return;keyBuf=(keyBuf+e.key.toLowerCase()).slice(-7);if(keyBuf==='teacher'){keyBuf='';teacher()}});
+renderAll();requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
