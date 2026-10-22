@@ -144,7 +144,7 @@ const PAY={
  face:{n:'顔',ask:'顔で払う',fee:0.03,t:0.3,net:true,col:'#0f9488',buy:25000,up:1500}};
 const DEVICES=['qr','ic','card','gqr','face'];
 const FAC={
- reg2:{n:'レジ2台目',buy:5000,up:2500,d:'同時に2人会計できる。店員さんの給料が毎日かかる'},
+ reg2:{n:'レジ2台目',buy:12000,up:4000,d:'同時に2人会計できる。店員さんの給料が毎日かかる'},
  changer:{n:'自動つり銭機',buy:4000,up:200,d:'現金の会計が2.2秒→0.9秒になる'},
  backup:{n:'予備の回線',buy:6000,up:400,d:'ネット障害でも、ネットを使う決済が止まらない'},
  ad:{n:'チラシで宣伝',buy:0,up:1500,d:'来るお客が1.25倍。毎日チラシ代がかかる'}};
@@ -157,13 +157,13 @@ const TYPES={
  west:{n:'欧米の旅行者',pref:['card','cash'],cash:0.3,qty:2,col:'#c0392b',inb:true}};
 /* goods: id -> {n, price, cost, keep(false = thrown away at closing)} ; blocks.goods: [id, weight] */
 const SHOPS=[
- {n:'駅前のコンビニ',open:7,close:23,scan:0.4,maxQ:6,start:25000,goal:7000,rateGoal:4.5,taskT:'行列で帰ったお客が0人（1日中）',
+ {n:'駅前のコンビニ',open:7,close:23,scan:0.4,maxQ:6,start:25000,goal:6000,rateGoal:4.5,taskT:'行列で帰ったお客が0人（1日中）',
   intro:'駅の前のコンビニ。朝7時から夜11時まで開いている。',
   goods:{bread:{n:'パンとコーヒー',price:400,cost:250,keep:false},bento:{n:'お弁当',price:600,cost:400,keep:false},daily:{n:'日用品',price:1500,cost:1050,keep:true},snack:{n:'お菓子・飲み物',price:250,cost:150,keep:true}},
   blocks:[
-   {n:'朝',from:7,to:10,gap:0.85,mix:{worker:55,student:40,elder:5},goods:[['bread',8],['snack',2]]},
+   {n:'朝',from:7,to:10,gap:1.3,mix:{worker:55,student:40,elder:5},goods:[['bread',8],['snack',2]]},
    {n:'昼',from:10,to:15,gap:2.1,mix:{elder:45,family:35,worker:20},goods:[['bento',5],['daily',4],['snack',1]]},
-   {n:'夕方',from:15,to:19,gap:0.85,mix:{student:70,family:20,worker:10},goods:[['snack',8],['bread',2]]},
+   {n:'夕方',from:15,to:19,gap:1.3,mix:{student:70,family:20,worker:10},goods:[['snack',8],['bread',2]]},
    {n:'夜',from:19,to:23,gap:1.7,mix:{worker:65,student:15,elder:20},goods:[['bento',6],['snack',4]]}]},
  {n:'家電店',open:10,close:20,scan:2.6,maxQ:5,start:300000,goal:95000,rateGoal:4.6,stockCap:300000,taskT:'2万円以上の買い物で、逃したお客が0人',
   intro:'電池から大型テレビ・パソコンまで売る家電の店。',
@@ -172,13 +172,13 @@ const SHOPS=[
    {n:'午前',from:10,to:13,gap:4.2,mix:{elder:45,family:25,worker:30},goods:[['batt',6],['dryer',3],['tv',1]]},
    {n:'昼すぎ',from:13,to:17,gap:3.0,mix:{family:65,worker:35},goods:[['game',4],['tv',3],['batt',2],['phones',1]]},
    {n:'夕方',from:17,to:20,gap:3.6,mix:{worker:70,family:30},goods:[['phones',5],['pc',3],['batt',2]]}]},
- {n:'熊本城前のおみやげ店',open:9,close:18,scan:1.3,maxQ:7,start:45000,goal:32000,rateGoal:4.5,taskT:'海外からのお客で、帰った人が0人',alwaysOutage:true,outLen:15,
+ {n:'熊本城前のおみやげ店',open:9,close:18,scan:0.9,maxQ:7,start:45000,goal:26000,rateGoal:4.5,taskT:'海外からのお客で、帰った人が0人',alwaysOutage:true,outLen:15,
   intro:'熊本城の前のおみやげ店。観光バスが着く。',
   goods:{kuma:{n:'くまモングッズ',price:1500,cost:900,keep:true},sweets:{n:'お菓子の箱',price:1600,cost:1000,keep:true},key:{n:'キーホルダー',price:500,cost:250,keep:true},renkon:{n:'からしれんこん',price:2500,cost:1600,keep:false}},
   blocks:[
-   {n:'朝',from:9,to:11,gap:1.3,mix:{asia:45,west:30,elder:25},goods:[['kuma',6],['sweets',4]]},
-   {n:'昼',from:11,to:14,gap:1.6,mix:{student:55,family:30,asia:15},goods:[['key',7],['kuma',3]]},
-   {n:'午後',from:14,to:18,gap:2.0,mix:{family:45,elder:40,west:15},goods:[['sweets',5],['renkon',5]]}]}];
+   {n:'朝',from:9,to:11,gap:1.8,mix:{asia:45,west:30,elder:25},goods:[['kuma',6],['sweets',4]]},
+   {n:'昼',from:11,to:14,gap:2.0,mix:{student:55,family:30,asia:15},goods:[['key',7],['kuma',3]]},
+   {n:'午後',from:14,to:18,gap:2.3,mix:{family:45,elder:40,west:15},goods:[['sweets',5],['renkon',5]]}]}];
 const DAY=72;
 const RECPEN=(typeof process!=='undefined'&&process.env&&process.env.RECPEN)?+process.env.RECPEN:0.5;
 function mkRng(seed){let s=seed>>>0||1;return function(){s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
