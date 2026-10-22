@@ -396,12 +396,13 @@ const LIMIT=14;
 function condHTML(cs){if(!cs)return'<div class="note">1日が終わると、ここに結果が出ます。</div>';const n=cs.filter(c=>c.ok).length;
  return `<table class="wt">${cs.map(c=>`<tr><td>${c.t}</td><td style="white-space:nowrap;color:var(--sub)">${c.v}</td><td style="font-weight:700;color:${c.ok?'var(--ok)':'var(--ng)'}">${c.ok?'○':'✕'}</td></tr>`).join('')}</table><div style="font-size:12.5px;margin-top:3px"><b style="color:${n>=3?'var(--ok)':'var(--ng)'}">${n} / 5 クリア</b>（3つ以上で次の店へ）</div>`}
 function lastConds(){const L=G.last;return L&&L.shop===G.shop?conditions(G.shop,L.st):null}
-function resetShop(si){G.shop=si;G.coins=SHOPS[si].start;G.day=1;G.owned[si]=[];G.cfg[si]={dev:[],fac:[]};G.review=Array(10).fill(3);G.inv[si]={};for(const k in SHOPS[si].goods)G.inv[si][k]=0;G.revList=[];G.log=[];G.last=null;G.lastGoods=null}
+function resetShop(si){D=null;order={};ghosts.length=0;G.shop=si;G.coins=SHOPS[si].start;G.day=1;G.owned[si]=[];G.cfg[si]={dev:[],fac:[]};G.review=Array(10).fill(3);G.inv[si]={};for(const k in SHOPS[si].goods)G.inv[si][k]=0;G.revList=[];G.log=[];G.last=null;G.lastGoods=null}
 
 /* ---------- stocking ---------- */
 let order={};
 function openStock(first){const S=SHOPS[G.shop],inv=G.inv[G.shop];const lg=G.last&&G.last.shop===G.shop?G.last.st.goods:null;
- if(!Object.keys(order).length||first)for(const k in S.goods)order[k]=G.lastOrder&&G.lastOrder[G.shop]&&G.lastOrder[G.shop][k]!=null?G.lastOrder[G.shop][k]:0;
+ if(first||Object.keys(order).some(k=>!S.goods[k]))order={};
+ if(!Object.keys(order).length)for(const k in S.goods)order[k]=G.lastOrder&&G.lastOrder[G.shop]&&G.lastOrder[G.shop][k]!=null?G.lastOrder[G.shop][k]:0;
  const total=()=>Object.entries(order).reduce((a,[k,n])=>a+n*S.goods[k].cost,0);
  const render=()=>{const t=total();
   $('#ovCard').innerHTML=`<h2>仕入れ　<small style="font-size:15px;color:var(--sub)">${G.day}日目に売る商品</small></h2>
@@ -440,7 +441,7 @@ function endDay(){const st=D.st;const S=SHOPS[G.shop];G.coins+=-st.up;/* sales m
 /* ---------- panel ---------- */
 function renderAll(){renderPanel();hud()}
 function hud(){$('#coins').textContent=yen(G.coins);const r=D?D.rating():3;$('#rate').textContent=r.toFixed(1);$('#rstars').textContent='★'.repeat(Math.round(r))+'☆'.repeat(5-Math.round(r));
- $('#day').textContent=G.day+'日目';$('#clock').textContent=clock();$('#block').textContent=D?SHOPS[G.shop].blocks[D.blockIdx()].n:'';$('#shopname').textContent=SHOPS[G.shop].n;
+ $('#day').textContent=G.day+'日目';$('#clock').textContent=clock();$('#block').textContent=D&&D.S===SHOPS[G.shop]?D.S.blocks[D.blockIdx()].n:'';$('#shopname').textContent=SHOPS[G.shop].n;
  const cs=lastConds();const n=cs?cs.filter(c=>c.ok).length:0;
  $('#goal').innerHTML=`クリア条件 <b style="font-size:16px;color:${n>=3?'var(--ok)':'var(--ink)'}">${n}/5</b>（3つで次の店へ）<br>のこり <b>${Math.max(0,LIMIT-G.day+1)}日</b>（${LIMIT}日で経営破綻）`;
  $('#tabs [data-t=data]').disabled=!G.dataOpen}
@@ -509,10 +510,12 @@ function loop(ts){const dt=Math.min(0.05,(ts-(lastTs||ts))/1000);lastTs=ts;
 
 /* ---------- start ---------- */
 const cont=G.day>1;
+const pendNext=cont&&G.last&&G.last.shop===G.shop&&G.shop<SHOPS.length-1&&conditions(G.shop,G.last.st).filter(c=>c.ok).length>=3;
 showOv(`<h1>キャッシュレス商店</h1><p>きみは店のオーナー。お客は、頭の上に<b>使いたい払い方</b>を出して入ってきます。</p>
 <ul><li>払い方がないと買わずに帰り、<b>口コミ</b>で悪く書かれる。口コミが悪いとお客がへる</li><li>決済の端末は<b>レジ横に3つまで</b>。手数料と毎日の維持費がかかる</li><li>時間帯で、来るお客も買う物もかわる</li><li>1日目が終わると<b>経営データ</b>が見られる</li><li>レジに「◯◯がおすすめ」と<b>掲示</b>すると、お客の払い方を変えられる</li><li>商品は<b>前の日に仕入れる</b>。売り切れるとお客は帰り、売れ残った生ものは捨てる</li><li>店ごとに5つのクリア条件。<b>3つ以上</b>を同じ日にそろえると次の店へ。<b>14日</b>でできないと経営破綻</li></ul>
 ${cont?`<p style="font-size:14px;color:var(--sub)">前回のつづき：${SHOPS[G.shop].n}・${G.day}日目</p>`:''}
-<button class="big" id="ovGo">${cont?'つづきから':'開店する'}</button>${cont?'<button class="ghost" id="ovNew">最初から</button>':''}`);
+${pendNext?`<p style="background:var(--oks);border-radius:10px;padding:8px 12px"><b>${SHOPS[G.shop].n}はクリアしています。</b></p><button class="big" id="ovGoNext">${SHOPS[G.shop+1].n}へ進む</button>`:''}<button class="big" id="ovGo">${cont?'つづきから':'開店する'}</button>${cont?'<button class="ghost" id="ovNew">最初から</button>':''}`);
+const gn=$('#ovGoNext');if(gn)gn.onclick=()=>{resetShop(G.shop+1);renderAll();toast(`<b>${SHOPS[G.shop].n}</b>　${SHOPS[G.shop].intro}`,9);save();openStock(true)};
 $('#ovGo').onclick=()=>{if(!cont){resetShop(0);toast(`<b>${SHOPS[0].n}</b>　${SHOPS[0].intro}　最初は現金だけ。`,9)}renderAll();openStock(!cont||!G.last)};
 const nw=$('#ovNew');if(nw)nw.onclick=()=>{try{localStorage.removeItem('cashless-shop-v5')}catch(e){}G=fresh();resetShop(0);renderAll();openStock(true)};
 /* ---------- teacher mode (hidden): tap the shop name 5 times, or type "teacher" ---------- */
