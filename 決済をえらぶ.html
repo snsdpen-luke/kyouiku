@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>なぜ勝てた？ 決済をえらぶ</title>
+<style>
+/* 電子マネー②。キャッシュレス商店のふりかえり → トレードオフ → 設計 → 次への問い。
+   4:3 の舞台（1024x768）を画面に合わせて縮める。左が本文、右が用語、下が送り。見た目は「残高はどこにある」にそろえる */
+:root{
+  --paper:#f6f7f4; --panel:#ffffff; --ink:#1c2331; --sub:#5a6374; --line:#d3d8dd;
+  --accent:#0d6b86; --accent-soft:#dcecf1; --mark:#ffd84a; --ok:#23845a; --ok-soft:#dff1e7; --ng:#c24414; --ng-soft:#f8e2d8;
+  --led-bg:#121720; --led:#ffae1f;
+  --f-body:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+}
+:root{color-scheme:light}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);overflow:hidden}
+#fit{position:fixed;inset:0;overflow:hidden;background:var(--paper)}
+.stage{position:absolute;left:0;top:0;width:1024px;height:768px;transform-origin:0 0;display:grid;grid-template-columns:1fr 240px;grid-template-rows:1fr 56px;background:var(--paper);border:1px solid var(--line)}
+main{position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:22px 30px 16px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box}
+.eyebrow{font-size:14px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+h1{font-size:44px;line-height:1.25;margin:0}
+h2{font-size:25px;line-height:1.35;margin:0}
+p{margin:0;font-size:17px;line-height:1.65}
+.sub{color:var(--sub)}
+.small{font-size:13.5px;color:var(--sub);line-height:1.55}
+aside{border-left:1px solid var(--line);background:var(--panel);padding:20px 16px;overflow:auto}
+aside h3{margin:0 0 12px;font-size:13px;letter-spacing:.12em;color:var(--sub)}
+.term{margin-bottom:13px}
+.term b{display:block;font-size:15px;margin-bottom:2px;color:var(--accent)}
+.term span{font-size:13.5px;line-height:1.55}
+nav{grid-column:1/3;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:var(--panel)}
+.ladder{display:flex;gap:4px}
+.ladder i{width:34px;height:8px;border-radius:2px;background:var(--line)}
+.ladder i.on{background:var(--accent)}
+#pageNo{font-size:16px;color:var(--sub);font-variant-numeric:tabular-nums}
+#ver{font-size:11px;color:var(--sub)}
+.btn{font:inherit;font-size:15px;font-weight:700;border:2px solid var(--accent);background:var(--accent);color:var(--panel);border-radius:8px;padding:7px 16px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.answer{border-left:5px solid var(--mark);background:var(--panel);padding:10px 14px;border-radius:0 8px 8px 0;display:flex;flex-direction:column;gap:4px}
+.answer p{font-size:16px}
+.hl{background:linear-gradient(transparent 55%,var(--mark) 55%);font-weight:700}
+.think{display:flex;flex-direction:column;gap:6px;border:2px dashed var(--accent);border-radius:10px;padding:10px 12px;background:var(--accent-soft)}
+.think label{font-weight:700;font-size:14.5px}
+textarea{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;background:var(--panel);color:var(--ink);resize:none;height:52px}
+.seg{display:inline-flex;flex-wrap:wrap;border:2px solid var(--accent);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:14.5px;font-weight:700;border:0;border-right:1px solid var(--accent-soft);background:var(--panel);color:var(--accent);padding:7px 12px;cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:var(--panel)}
+svg text{font-family:var(--f-body)}
+.fig{width:100%;height:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;display:block}
+table{border-collapse:collapse;width:100%;background:var(--panel)}
+th,td{border:1px solid var(--line);padding:8px 10px;font-size:15px;text-align:left;vertical-align:middle}
+th{background:var(--accent-soft)}
+/* 表紙 */
+.cover{justify-content:center;gap:20px}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.levels div{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:10px 12px;font-size:15px}
+.levels b{display:block;color:var(--accent);font-size:13px}
+/* 行列 */
+.meters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.meter{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:8px 12px}
+.meter span{font-size:13px;color:var(--sub);display:block}
+.meter b{font-size:28px;font-variant-numeric:tabular-nums}
+.meter.bad b{color:var(--ng)}
+/* 障害 */
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tile{border:2px solid var(--ok);background:var(--ok-soft);border-radius:10px;padding:10px 6px;text-align:center;transition:all .3s}
+.tile b{display:block;font-size:18px}
+.tile span{font-size:13.5px;font-weight:700;color:var(--ok)}
+.tile.stop{border-color:var(--ng);background:var(--ng-soft)}
+.tile.stop span{color:var(--ng)}
+/* 費用 */
+.devs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.dev{font:inherit;text-align:left;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 10px;cursor:pointer}
+.dev b{display:block;font-size:15.5px}
+.dev span{font-size:12.5px;color:var(--sub);line-height:1.45;display:block}
+.dev.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+/* トレードオフ表 */
+.tt td{text-align:center;padding:0;height:64px}
+.tt th:first-child,.tt td:first-child{width:90px}
+.cell{font:inherit;width:100%;height:100%;border:0;background:var(--paper);color:var(--accent);font-size:22px;font-weight:700;cursor:pointer}
+.cell.open{background:var(--panel);color:var(--ink);font-size:14px;font-weight:400;cursor:default;line-height:1.4;padding:4px}
+.cell.open b{font-size:20px;display:block}
+.big{font-size:30px;line-height:1.5;font-weight:700}
+.axes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.axes div{border:2px solid var(--accent);border-radius:12px;background:var(--panel);padding:14px 8px;text-align:center;font-size:19px;font-weight:700}
+.axes div small{display:block;font-size:12.5px;color:var(--sub);font-weight:400;margin-top:4px}
+/* 設計 */
+.shops{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.shopc{font:inherit;text-align:left;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:10px 12px;cursor:pointer}
+.shopc b{font-size:17px;display:block;margin-bottom:4px}
+.shopc span{font-size:13.5px;line-height:1.55;display:block}
+.shopc.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font:inherit;font-size:14.5px;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:20px;padding:5px 13px;cursor:pointer}
+.chip.on{border-color:var(--accent);background:var(--accent);color:var(--panel)}
+.steps4{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:start;font-size:15px}
+.steps4 i{font-style:normal;font-weight:700;color:var(--panel);background:var(--accent);border-radius:50%;width:24px;height:24px;display:inline-grid;place-items:center;font-size:13px}
+/* 先生用メモ */
+#memo{position:absolute;left:12px;right:252px;bottom:64px;background:var(--led-bg);color:#f3f0e6;border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.6;z-index:5;max-height:300px;overflow:auto}
+#memo b{color:var(--led)}
+</style>
+</head>
+<body>
+<div id="fit"><div class="stage" id="stage">
+<main id="main">
+
+<!-- 1 表紙 -->
+<section class="slide cover" data-lv="0" data-terms="キャッシュレス決済,決済端末"
+ data-note="「前回、コンビニをクリアした人？」と手をあげさせる。<br>「今日はゲームをしません。なぜ勝てたのかを、技術のことばで説明できるようにする日です」とだけ言って次へ。">
+  <div class="eyebrow">コンピュータシステム技術　電子マネー ②</div>
+  <h1>キャッシュレス商店、<br>なぜ勝てた？</h1>
+  <p class="sub">ゲームの中で起きたことには、ぜんぶ技術の理由があります。今日はそれを説明できるようにして、最後は自分で決済を選びます。</p>
+  <div class="levels">
+    <div><b>1</b>ふりかえり</div>
+    <div><b>2</b>トレードオフ</div>
+    <div><b>3</b>決済を設計する</div>
+    <div><b>4</b>次への問い</div>
+  </div>
+</section>
+
+<!-- 2 行列 -->
+<section class="slide" data-lv="1" data-terms="処理時間,自動つり銭機"
+ data-note="<b>問い1</b>「朝のコンビニで、行列を減らすために何をした？」と先に聞く。答え（IC・つり銭機・レジ2台）が出てから、払い方を押して見せる。<br>現金→行列がのびて帰る人が出る。IC→行列ができない。<br><b>板書</b>：処理時間。1人を何秒でさばけるかで、行列ができるかが決まる。電子マネー①の「朝の駅に3,000人、改札5台」と同じ話。<br>レジ2台は速いが、店員さんの給料が毎日かかる（次の話につながる）。">
+  <div class="eyebrow">ふりかえり 1</div>
+  <h2>朝のコンビニ。行列を減らすには？</h2>
+  <p class="small">お客が 1.0 秒ごとに1人来るとします。1人の会計にかかる時間は、ゲームの中の数字です。行列が6人をこえると、来たお客は並ばずに帰ります。</p>
+  <div class="seg" id="qSeg"></div>
+  <svg class="fig" viewBox="0 0 720 200" id="qFig" aria-label="レジの行列"></svg>
+  <div class="meters">
+    <div class="meter"><span>1人の会計にかかる時間</span><b id="qT">-</b></div>
+    <div class="meter"><span>会計できた人</span><b id="qDone">0</b></div>
+    <div class="meter" id="qLeftBox"><span>行列で帰った人</span><b id="qLeft">0</b></div>
+  </div>
+</section>
+
+<!-- 3 ネット障害 -->
+<section class="slide" data-lv="1" data-terms="ネット障害,予備の回線"
+ data-note="<b>問い2</b>「ネット障害のとき、止まった払い方と止まらなかった払い方は？」と先に聞く。コンビニでも2日目から、7割の日に障害が起きる設定なので、ほぼ全員が見ている。<br>答えが出たら「ネット障害」を押して確かめる。<br>続けて「<b>なぜ？</b>」と聞いて少し待つ。出なければ「ICカードの残高は、どこに書いてあった？」。答えは次のページ。">
+  <div class="eyebrow">ふりかえり 2</div>
+  <h2>ネット障害のとき、止まった払い方は？</h2>
+  <div class="row">
+    <button class="btn" id="netBtn">ネット障害を起こす</button>
+    <button class="btn ghost" id="bkBtn">予備の回線：なし</button>
+  </div>
+  <svg class="fig" viewBox="0 0 720 210" id="netFig" aria-label="レジと会社のコンピュータのつながり"></svg>
+  <div class="tiles" id="tiles"></div>
+  <p class="small" id="netMsg">いまはネットがつながっています。</p>
+</section>
+
+<!-- 4 なぜ止まる -->
+<section class="slide" data-lv="1" data-terms="残高,ICカード型,サーバ型,分散処理,集中処理,冗長化"
+ data-note="電子マネー①の「残高はどこにある？」の答え合わせ。前回は説明で終わったところを、今日はゲームの体験から回収する。<br><b>板書</b>：IC＝残高はカードの中（分散）／QR・カード・顔＝会社のコンピュータ（集中）／予備の回線＝冗長化。">
+  <div class="eyebrow">ふりかえり 2　なぜ？</div>
+  <h2>止まるかどうかは、「残高の記録がどこにあるか」で決まる</h2>
+  <div class="row"><button class="btn" id="cutBtn">ネットを切る</button></div>
+  <svg class="fig" viewBox="0 0 720 240" id="whyFig" aria-label="ICカードとQRの残高の置き場所"></svg>
+  <div class="answer" id="whyAns" hidden>
+    <p><b>IC</b>：残高は<span class="hl">カードの中</span>。レジとカードだけで計算できるので、ネットがなくても払える（<b>分散処理</b>）。</p>
+    <p><b>QR・カード・顔</b>：残高や記録は<span class="hl">会社のコンピュータ</span>。問い合わせないと払えないので、ネットが切れると止まる（<b>集中処理</b>）。</p>
+    <p><b>予備の回線</b>：線を2本にしておけば、1本が切れても止まらない。これを<b>冗長化</b>といいます。</p>
+  </div>
+</section>
+
+<!-- 5 全部置けば勝てる？ -->
+<section class="slide" data-lv="1" data-terms="決済手数料,維持費,決済端末"
+ data-note="<b>問い3</b>「端末を全部置いたら、勝てた？」。答え：維持費と手数料でもうからなかった。<br>全部押して合計を見せる。<br><b>板書</b>：システムを動かすにはお金がかかり、だれかが払っている。手数料は決済の会社の収入になる。">
+  <div class="eyebrow">ふりかえり 3</div>
+  <h2>端末をぜんぶ置けば、勝てる？</h2>
+  <p class="small">押して置いてみよう（数字はゲームの中のもの）。</p>
+  <div class="devs" id="devs"></div>
+  <div class="meters">
+    <div class="meter"><span>買う値段（最初に1回）</span><b id="cBuy">¥0</b></div>
+    <div class="meter"><span>毎日の維持費</span><b id="cUp">¥0</b></div>
+    <div class="meter"><span>14日間の維持費</span><b id="cUp14">¥0</b></div>
+  </div>
+  <div class="answer" id="costAns" hidden><p>置くほどお金がかかる。さらにキャッシュレスで払われるたびに、売上の2〜3.3%を<b>手数料</b>として決済の会社に払う。<br>そのお客が来ないなら、置いても損。<span class="hl">何を置くかは、データを見て決める</span>。</p></div>
+  <div class="row"><button class="btn ghost" id="costBtn">答えを見る</button></div>
+</section>
+
+<!-- 6 トレードオフ表 -->
+<section class="slide" data-lv="2" data-terms="トレードオフ,不正検知,利用者提示型"
+ data-note="空欄を生徒に言わせてから押して開く。「速さ」は前のページの数字、「止まらない」は障害のページ、「安い」は手数料のページから言える。<br>「なくした・盗まれた時」はゲームに出てこない。電子マネー①（コードは数分ごとに書きかわる・不正検知）とパスワードの授業につなげる。時間がなければ口で言うだけ。<br>◎○△×は目安。生徒が別の印をつけても、理由が言えればよい。">
+  <div class="eyebrow">トレードオフ</div>
+  <h2>払い方を、4つのものさしでくらべよう</h2>
+  <table class="tt"><thead><tr><th></th><th>速さ</th><th>ネット障害に強い</th><th>店の負担が安い</th><th>なくした・盗まれた時</th></tr></thead><tbody id="tt"></tbody></table>
+  <p class="small">「？」を押すと開きます。</p>
+</section>
+
+<!-- 7 一文 -->
+<section class="slide" data-lv="2" data-terms="トレードオフ,エンジニア"
+ data-note="今日いちばん大事な一文。板書して、ノートに写させる。<br>「全部◎の払い方はなかった。だから、店に合わせて選ぶ」。ゲームで道具を足しても勝てなかったのは、このため。">
+  <div class="eyebrow">トレードオフ</div>
+  <div class="axes">
+    <div>速さ<small>行列ができない</small></div>
+    <div>止まらない強さ<small>ネット障害でも払える</small></div>
+    <div>安さ<small>手数料・維持費</small></div>
+    <div>安全さ<small>なくした・盗まれた時</small></div>
+  </div>
+  <p class="big">この4つを、ぜんぶ同時に<br>いちばんにはできない。<br><span class="hl">どれを優先するかを決めるのが、エンジニアの仕事。</span></p>
+  <p class="sub">これを <b>トレードオフ</b> といいます。何かをよくすると、別の何かをあきらめることになる関係です。</p>
+</section>
+
+<!-- 8 設計ワーク -->
+<section class="slide" data-lv="3" data-terms="店舗提示型,利用者提示型,予備の回線,自動つり銭機"
+ data-note="1人で8分→となりと5分→2〜3人発表5分。<br>同じ店を選んで答えが違ったら「何を優先したか」をくらべさせる。答えは一つではない。<br>例　A：店舗提示型QR（紙だけで始められる）＋現金。安さ優先、速さをあきらめる／B：IC＋現金（つり銭機）。速さ優先／C：現金＋IC。止まらない強さ優先。観光客がいるので予備の回線＋カードもあり（お金はかかる）。">
+  <div class="eyebrow">決済を設計する</div>
+  <h2>この店のレジに、どの払い方を置く？</h2>
+  <div class="shops" id="shops"></div>
+  <div class="steps4">
+    <i>1</i><span>店を1つ選ぶ</span>
+    <i>2</i><span>置く払い方を選ぶ（3つまで。予備の回線は数に入れない）　<span class="chips" id="pays"></span></span>
+    <i>3</i><span>いちばん優先したこと（あきらめたことは理由に書く）　<span class="chips" id="prio"></span></span>
+    <i>4</i><span>理由（ゲームか、今日の表の数字を1つ使う）</span>
+  </div>
+  <div class="think"><label for="why">理由</label><textarea id="why" placeholder="〜なので、〜を優先した。そのかわり〜はあきらめた"></textarea></div>
+  <p class="small" id="mySum">店を選んでください。</p>
+</section>
+
+<!-- 9 次への問い -->
+<section class="slide" data-lv="4" data-terms="管理者,残高"
+ data-note="まとめ：どの払い方にも、残高の記録を持っている会社がいた。<br>問いを読んで、1行で書かせて回収する。<b>答えは言わない</b>。<br>次回：答えの一つがブロックチェーン（記録をみんなで持ち合う＝分散）。今日の集中と分散がそのまま使える。">
+  <div class="eyebrow">次への問い</div>
+  <h2>どの払い方にも、残高の記録を持つ「会社」がいた</h2>
+  <svg class="fig" viewBox="0 0 720 230" id="lastFig" aria-label="払い方と記録を持つ会社"></svg>
+  <div class="answer"><p class="big" style="font-size:23px">では、<span class="hl">記録を管理する会社がいないお金</span>は、<br>つくれるでしょうか？<br>つくるなら、残高の記録はだれが持ちますか？</p></div>
+  <div class="think"><label for="last">自分の考えを1行で</label><textarea id="last" placeholder="〜が記録を持てばいい。なぜなら〜"></textarea></div>
+</section>
+
+</main>
+<aside><h3>用語</h3><div id="terms"></div></aside>
+<nav>
+  <button class="btn ghost" id="prev">← 前へ</button>
+  <div class="row"><div class="ladder" id="ladder"><i></i><i></i><i></i><i></i></div><span id="pageNo">1 / 9</span><span id="ver"></span></div>
+  <button class="btn" id="next">次へ →</button>
+</nav>
+<div id="memo" hidden></div>
+</div></div>
+
+<script>
+const VER="2026-10-26a";
+const TERMS={
+ "キャッシュレス決済":"現金を使わない払い方。電子マネー・コード決済・クレジットカードなど。",
+ "決済端末":"レジの横に置く、カードやコードを読みとる機械。",
+ "処理時間":"機械や人が、1回の仕事を終えるのにかかる時間。短いほど、たくさんの人をさばける。",
+ "自動つり銭機":"お金を入れると、おつりを自動で出す機械。現金の会計が速くなる。",
+ "ネット障害":"通信がとぎれて、会社のコンピュータとやりとりできなくなること。",
+ "予備の回線":"ふだん使う通信の線とは別に、もう1本用意した線。",
+ "残高":"いま使えるお金の量。電子マネーでは「数字の記録」。",
+ "ICカード型":"残高がカード（やスマホ）のICチップに記録されるタイプ。交通系ICカードなど。",
+ "サーバ型":"残高が会社のコンピュータ（サーバ）に記録されるタイプ。コード決済など。",
+ "分散処理":"たくさんの機械が、それぞれの場所で計算する形。",
+ "集中処理":"真ん中の1台のコンピュータが、まとめて計算する形。",
+ "冗長化":"予備を用意しておき、1つがこわれても全体が止まらないようにすること。",
+ "決済手数料":"キャッシュレスで払われたとき、店が決済の会社に払うお金。売上の数%。",
+ "維持費":"機械を置いておくだけで、毎日かかるお金。",
+ "トレードオフ":"何かをよくすると、別の何かをあきらめることになる関係。",
+ "不正検知":"いつもとちがう使い方を、コンピュータが見つけて止めること。",
+ "利用者提示型":"お客のスマホに出したコードを、店のレジで読む方式。コードは数分ごとに書きかわる。",
+ "店舗提示型":"店が出したQRコードを、お客のスマホで読む方式。QRを印刷した紙だけで始められる。",
+ "エンジニア":"技術を使って、目的に合うしくみを考えてつくる人。",
+ "管理者":"記録を持ち、正しいかどうかに責任をもつ人や会社。"
+};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const yen=n=>'¥'+n.toLocaleString();
+function fit(){const v=window.visualViewport;const w=v?v.width:innerWidth,h=v?v.height:innerHeight;const s=Math.min(w/1024,h/768);const x=(w-1024*s)/2,y=(h-768*s)/2;$('#stage').style.transform=`translate(${x}px,${y}px) scale(${s})`}
+addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,300));if(window.visualViewport)visualViewport.addEventListener('resize',fit);fit();
+$('#ver').textContent='　'+VER;
+
+/* 送り */
+const slides=$$('.slide');let cur=0;
+function show(i){cur=Math.max(0,Math.min(slides.length-1,i));slides.forEach((s,k)=>s.hidden=k!==cur);slides[cur].scrollTop=0;
+ $('#pageNo').textContent=`${cur+1} / ${slides.length}`;$('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1;
+ const lv=+slides[cur].dataset.lv;$$('#ladder i').forEach((x,k)=>x.classList.toggle('on',k<lv));
+ const t=(slides[cur].dataset.terms||'').split(',').filter(Boolean);
+ $('#terms').innerHTML=t.map(k=>`<div class="term"><b>${k}</b><span>${TERMS[k]||''}</span></div>`).join('');
+ $('#memo').innerHTML='<b>先生用メモ（N で閉じる）</b><br>'+(slides[cur].dataset.note||'');
+ if(slides[cur].querySelector('#qFig'))qStart(qPick);else qStop();}
+$('#prev').onclick=()=>show(cur-1);$('#next').onclick=()=>show(cur+1);
+let tx0=null,ty0=null;$('#main').addEventListener('touchstart',e=>{if(e.target.closest('textarea,button,svg'))return;tx0=e.touches[0].clientX;ty0=e.touches[0].clientY},{passive:true});
+$('#main').addEventListener('touchend',e=>{if(tx0===null)return;const dx=e.changedTouches[0].clientX-tx0,dy=e.changedTouches[0].clientY-ty0;tx0=null;if(Math.abs(dx)>80&&Math.abs(dx)>Math.abs(dy)*2)show(cur+(dx<0?1:-1))},{passive:true});
+addEventListener('keydown',e=>{if(e.target.matches('textarea'))return;if(e.key==='ArrowRight')show(cur+1);if(e.key==='ArrowLeft')show(cur-1);if(e.key==='n'||e.key==='N')$('#memo').hidden=!$('#memo').hidden});
+
+/* 2 行列。お客は1.0秒ごとに来る。レジ（1台か2台）が順に会計する。待ちが6人をこえたら帰る */
+const QOPT=[
+ {k:'cash',n:'現金',t:2.2,r:1},{k:'chg',n:'現金＋つり銭機',t:0.9,r:1},{k:'reg2',n:'現金・レジ2台',t:2.2,r:2},
+ {k:'qr',n:'QR',t:1.3,r:1},{k:'card',n:'カード',t:0.7,r:1},{k:'ic',n:'IC',t:0.3,r:1}];
+const QN=30,GAP=1.0,MAXQ=6,SPEED=reduce?8:1.6; // SPEED：1秒あたりに進むゲームの秒
+let qPick='cash',Q=null,qRaf=0;
+$('#qSeg').innerHTML=QOPT.map(o=>`<button data-k="${o.k}">${o.n}</button>`).join('');
+$$('#qSeg button').forEach(b=>b.onclick=()=>qStart(b.dataset.k));
+function qStart(k){qPick=k;const o=QOPT.find(x=>x.k===k);$$('#qSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+ Q={o,t:0,next:0,made:0,wait:[],regs:Array(o.r).fill(-1),done:0,left:0,leaving:[]};$('#qT').textContent=o.t+' 秒';
+ cancelAnimationFrame(qRaf);let last=performance.now();
+ const step=now=>{const dt=Math.min(.1,(now-last)/1000)*SPEED;last=now;qTick(dt);qDraw();if(Q.made<QN||Q.wait.length||Q.regs.some(x=>x>0))qRaf=requestAnimationFrame(step)};
+ qRaf=requestAnimationFrame(step)}
+function qStop(){cancelAnimationFrame(qRaf)}
+function qTick(dt){Q.t+=dt;
+ while(Q.made<QN&&Q.t>=Q.next){Q.made++;Q.next+=GAP;if(Q.wait.length>=MAXQ){Q.left++;Q.leaving.push(1)}else Q.wait.push(1)}
+ for(let i=0;i<Q.regs.length;i++){if(Q.regs[i]>0){Q.regs[i]-=dt;if(Q.regs[i]<=0){Q.regs[i]=-1;Q.done++}}
+  if(Q.regs[i]<0&&Q.wait.length){Q.wait.shift();Q.regs[i]=Q.o.t}}
+ Q.leaving=Q.leaving.map(x=>x+dt*2).filter(x=>x<6)}
+function qDraw(){let s='';const n=Q.regs.length;
+ for(let i=0;i<n;i++){const y=n===1?70:35+i*70;s+=`<rect x="580" y="${y}" width="110" height="56" rx="8" fill="#dcecf1" stroke="#0d6b86" stroke-width="2"/><text x="635" y="${y+22}" text-anchor="middle" font-size="14" font-weight="700" fill="#0d6b86">レジ${n>1?i+1:''}</text>`;
+  if(Q.regs[i]>0){const p=1-Q.regs[i]/Q.o.t;s+=`<circle cx="555" cy="${y+28}" r="14" fill="#1c2331"/><rect x="595" y="${y+34}" width="${80*p}" height="8" rx="3" fill="#23845a"/>`}}
+ s+=`<line x1="90" y1="160" x2="530" y2="160" stroke="#d3d8dd" stroke-width="2" stroke-dasharray="4 4"/><text x="310" y="185" text-anchor="middle" font-size="13" fill="#5a6374">ここまで6人並べる</text>`;
+ Q.wait.forEach((_,i)=>{s+=`<circle cx="${515-i*38}" cy="98" r="14" fill="${i>=4?'#c24414':'#5a6374'}"/>`});
+ Q.leaving.forEach(x=>{s+=`<circle cx="${60-x*10}" cy="${98+x*12}" r="12" fill="#c24414" opacity="${Math.max(0,1-x/6)}"/>`});
+ s+=`<text x="20" y="30" font-size="14" fill="#5a6374">来たお客 ${Q.made} / ${QN} 人</text>`;
+ if(Q.made>=QN&&!Q.wait.length&&!Q.regs.some(x=>x>0))s+=`<text x="20" y="54" font-size="15" font-weight="700" fill="${Q.left?'#c24414':'#23845a'}">${Q.left?'行列があふれた':'行列ができずに終わった'}</text>`;
+ $('#qFig').innerHTML=s;$('#qDone').textContent=Q.done;$('#qLeft').textContent=Q.left;$('#qLeftBox').classList.toggle('bad',Q.left>0)}
+
+/* 3 ネット障害 */
+const PM=[{n:'現金',net:false},{n:'IC',net:false},{n:'QR',net:true},{n:'カード',net:true},{n:'顔',net:true}];
+let down=false,backup=false;
+function netDraw(){const cut=down&&!backup;let s=`<rect x="40" y="70" width="140" height="70" rx="10" fill="#dcecf1" stroke="#0d6b86" stroke-width="2"/><text x="110" y="102" text-anchor="middle" font-size="16" font-weight="700" fill="#0d6b86">店のレジ</text><text x="110" y="124" text-anchor="middle" font-size="12" fill="#5a6374">現金・ICはここで計算</text>`;
+ s+=`<rect x="520" y="60" width="170" height="90" rx="14" fill="#fff" stroke="#1c2331" stroke-width="2"/><text x="605" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="#1c2331">決済の会社の</text><text x="605" y="120" text-anchor="middle" font-size="15" font-weight="700" fill="#1c2331">コンピュータ</text>`;
+ s+=`<path d="M180 95 C 300 60, 400 60, 520 95" fill="none" stroke="${down?'#c24414':'#23845a'}" stroke-width="5" ${down?'stroke-dasharray="10 8"':''}/>`;
+ s+=`<text x="350" y="52" text-anchor="middle" font-size="13" fill="${down?'#c24414':'#23845a'}">${down?'ふだんの回線：とぎれた':'ふだんの回線'}</text>`;
+ if(down)s+=`<text x="350" y="86" text-anchor="middle" font-size="30" font-weight="700" fill="#c24414">×</text>`;
+ if(backup)s+=`<path d="M180 120 C 300 170, 400 170, 520 120" fill="none" stroke="#23845a" stroke-width="5"/><text x="350" y="185" text-anchor="middle" font-size="13" fill="#23845a">予備の回線</text>`;
+ $('#netFig').innerHTML=s;
+ $('#tiles').innerHTML=PM.map(p=>{const st=p.net&&cut;return`<div class="tile${st?' stop':''}"><b>${p.n}</b><span>${st?'止まる':'払える'}</span></div>`}).join('');
+ $('#netMsg').textContent=!down?'いまはネットがつながっています。':backup?'ふだんの回線は切れたが、予備の回線で会社のコンピュータにつながっている。':'QR・カード・顔は会社のコンピュータに問い合わせられない。現金とICは払える。なぜ？';
+ $('#netBtn').textContent=down?'ネットをもどす':'ネット障害を起こす';$('#bkBtn').textContent='予備の回線：'+(backup?'あり':'なし')}
+$('#netBtn').onclick=()=>{down=!down;netDraw()};$('#bkBtn').onclick=()=>{backup=!backup;netDraw()};netDraw();
+
+/* 4 なぜ止まる */
+let cutW=false;
+function whyDraw(){const c=cutW;let s='';
+ s+=`<text x="180" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="#1c2331">IC カード</text><text x="540" y="28" text-anchor="middle" font-size="17" font-weight="700" fill="#1c2331">QR（コード決済）</text><line x1="360" y1="15" x2="360" y2="225" stroke="#d3d8dd" stroke-width="2"/>`;
+ // IC
+ s+=`<rect x="40" y="70" width="130" height="84" rx="10" fill="#1677c9"/><rect x="62" y="96" width="86" height="34" rx="5" fill="#fff"/><text x="105" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#1677c9">残高 ¥1,200</text><text x="105" y="176" text-anchor="middle" font-size="13" fill="#5a6374">残高はカードの中</text>`;
+ s+=`<rect x="220" y="80" width="100" height="64" rx="8" fill="#dcecf1" stroke="#0d6b86" stroke-width="2"/><text x="270" y="117" text-anchor="middle" font-size="14" font-weight="700" fill="#0d6b86">レジ</text>`;
+ s+=`<path d="M172 112 H 218" stroke="#23845a" stroke-width="4" marker-end="url(#a)"/><text x="195" y="100" text-anchor="middle" font-size="11" fill="#23845a">かざす</text>`;
+ s+=`<text x="180" y="215" text-anchor="middle" font-size="16" font-weight="700" fill="#23845a">${c?'ネットがなくても払える':'払える'}</text>`;
+ // QR
+ s+=`<rect x="400" y="66" width="56" height="92" rx="10" fill="#fff" stroke="#1c2331" stroke-width="2"/><rect x="412" y="88" width="32" height="32" fill="#1c2331"/><rect x="418" y="94" width="8" height="8" fill="#fff"/><rect x="430" y="106" width="8" height="8" fill="#fff"/><text x="428" y="176" text-anchor="middle" font-size="13" fill="#5a6374">スマホには残高がない</text>`;
+ s+=`<rect x="590" y="70" width="110" height="84" rx="12" fill="#fff" stroke="#1c2331" stroke-width="2"/><text x="645" y="98" text-anchor="middle" font-size="13" fill="#1c2331">会社の</text><text x="645" y="114" text-anchor="middle" font-size="13" fill="#1c2331">コンピュータ</text><rect x="605" y="122" width="80" height="24" rx="4" fill="#ffd84a"/><text x="645" y="139" text-anchor="middle" font-size="13" font-weight="700" fill="#1c2331">残高 ¥1,200</text>`;
+ s+=`<path d="M460 112 H 586" stroke="${c?'#c24414':'#23845a'}" stroke-width="4" ${c?'stroke-dasharray="8 6"':''}/><text x="523" y="100" text-anchor="middle" font-size="11" fill="${c?'#c24414':'#23845a'}">問い合わせる</text>`;
+ if(c)s+=`<text x="523" y="126" text-anchor="middle" font-size="28" font-weight="700" fill="#c24414">×</text>`;
+ s+=`<text x="540" y="215" text-anchor="middle" font-size="16" font-weight="700" fill="${c?'#c24414':'#23845a'}">${c?'残高を確かめられず、払えない':'払える'}</text>`;
+ s+=`<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#23845a"/></marker></defs>`;
+ $('#whyFig').innerHTML=s;$('#cutBtn').textContent=c?'ネットをもどす':'ネットを切る';if(c)$('#whyAns').hidden=false}
+$('#cutBtn').onclick=()=>{cutW=!cutW;whyDraw()};whyDraw();
+
+/* 5 費用（ゲームの数字） */
+const DEV=[
+ {n:'QR',buy:4000,up:0,d:'手数料 2%'},{n:'IC',buy:8000,up:500,d:'手数料 3%'},{n:'カード',buy:6000,up:300,d:'手数料 3.3%'},{n:'海外QR',buy:8000,up:300,d:'手数料 3%'},
+ {n:'顔',buy:25000,up:1500,d:'手数料 3%'},{n:'レジ2台目',buy:12000,up:4000,d:'店員さんの給料'},{n:'自動つり銭機',buy:4000,up:200,d:'現金が速くなる'},{n:'予備の回線',buy:6000,up:400,d:'障害でも止まらない'}];
+const devOn=new Set();
+$('#devs').innerHTML=DEV.map((d,i)=>`<button class="dev" data-i="${i}"><b>${d.n}</b><span>${yen(d.buy)}・毎日 ${yen(d.up)}<br>${d.d}</span></button>`).join('');
+$$('#devs .dev').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;devOn.has(i)?devOn.delete(i):devOn.add(i);b.classList.toggle('on',devOn.has(i));
+ let buy=0,up=0;devOn.forEach(k=>{buy+=DEV[k].buy;up+=DEV[k].up});$('#cBuy').textContent=yen(buy);$('#cUp').textContent=yen(up);$('#cUp14').textContent=yen(up*14)});
+$('#costBtn').onclick=()=>{$('#costAns').hidden=false;$('#costBtn').hidden=true};
+
+/* 6 トレードオフ表 */
+const TT=[
+ ['現金',['△','2.2秒'],['◎','ネットを使わない'],['◎','手数料なし'],['×','なくしたら戻らない']],
+ ['IC',['◎','0.3秒'],['◎','カードの中で計算'],['○','手数料 3%'],['△','入るのは2万円まで。被害も小さい']],
+ ['QR',['○','1.3秒'],['×','会社に問い合わせる'],['○','手数料 2%・端末が安い'],['○','コードが数分で書きかわる']],
+ ['カード',['○','0.7秒'],['×','会社に問い合わせる'],['△','手数料 3.3%'],['○','不正検知で止められる']]];
+$('#tt').innerHTML=TT.map((r,i)=>`<tr><th>${r[0]}</th>${r.slice(1).map((c,j)=>`<td><button class="cell" data-c="${i}-${j}">？</button></td>`).join('')}</tr>`).join('');
+$$('#tt .cell').forEach(b=>b.onclick=()=>{if(b.classList.contains('open'))return;const[i,j]=b.dataset.c.split('-').map(Number);const c=TT[i][j+1];b.classList.add('open');b.innerHTML=`<b>${c[0]}</b>${c[1]}`});
+
+/* 8 設計ワーク */
+const SHOPS=[{n:'A　文化祭の屋台',d:'1日だけ。お金をかけたくない。お客は生徒と保護者。'},{n:'B　体育祭の昼の売店',d:'12時から20分に、行列が集中する。お客は生徒。'},{n:'C　山の中の道の駅',d:'電波が弱く、ネットがよく切れる。観光客も来る。'}];
+const PAYS=['現金','現金＋つり銭機','IC','QR（店舗提示型）','QR（利用者提示型）','カード','海外QR','顔','＋予備の回線'];
+const BK=PAYS.length-1; // 予備の回線は払い方ではないので、3つの数に入れない
+const PRIO=['速さ','止まらない強さ','安さ','安全さ'];
+let mShop=-1,mPrio=-1;const mPay=new Set();
+const nPay=()=>[...mPay].filter(i=>i!==BK).length;
+$('#shops').innerHTML=SHOPS.map((s,i)=>`<button class="shopc" data-i="${i}"><b>${s.n}</b><span>${s.d}</span></button>`).join('');
+$('#pays').innerHTML=PAYS.map((p,i)=>`<button class="chip" data-i="${i}">${p}</button>`).join('');
+$('#prio').innerHTML=PRIO.map((p,i)=>`<button class="chip" data-i="${i}">${p}</button>`).join('');
+$$('#shops .shopc').forEach(b=>b.onclick=()=>{mShop=+b.dataset.i;$$('#shops .shopc').forEach(x=>x.classList.toggle('on',x===b));mSum()});
+$$('#pays .chip').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(mPay.has(i))mPay.delete(i);else if(i===BK||nPay()<3)mPay.add(i);b.classList.toggle('on',mPay.has(i));mSum()});
+$$('#prio .chip').forEach(b=>b.onclick=()=>{mPrio=+b.dataset.i;$$('#prio .chip').forEach(x=>x.classList.toggle('on',x===b));mSum()});
+function mSum(){if(mShop<0){$('#mySum').textContent='店を選んでください。';return}
+ $('#mySum').textContent=`${SHOPS[mShop].n.replace('　','：')}　置く：${[...mPay].map(i=>PAYS[i]).join('・')||'（まだ）'}　優先：${mPrio<0?'（まだ）':PRIO[mPrio]}`+(nPay()>=3?'　※払い方は3つまで':'')}
+
+/* 9 次への問い */
+(function(){const R=[['ICカード','交通の会社'],['QR','QRの会社'],['カード','カード会社']];let s='';
+ R.forEach((r,i)=>{const y=30+i*68;s+=`<rect x="40" y="${y}" width="140" height="48" rx="8" fill="#dcecf1" stroke="#0d6b86" stroke-width="2"/><text x="110" y="${y+30}" text-anchor="middle" font-size="16" font-weight="700" fill="#0d6b86">${r[0]}</text>`;
+  s+=`<line x1="182" y1="${y+24}" x2="398" y2="${y+24}" stroke="#5a6374" stroke-width="3"/><rect x="400" y="${y}" width="170" height="48" rx="8" fill="#fff" stroke="#1c2331" stroke-width="2"/><text x="485" y="${y+22}" text-anchor="middle" font-size="15" font-weight="700" fill="#1c2331">${r[1]}</text><text x="485" y="${y+40}" text-anchor="middle" font-size="11" fill="#5a6374">残高の記録を持つ</text>`});
+ s+=`<text x="650" y="140" text-anchor="middle" font-size="80" font-weight="700" fill="#ffd84a" stroke="#1c2331" stroke-width="2">？</text>`;
+ $('#lastFig').innerHTML=s})();
+
+show((+location.hash.slice(1)||1)-1);
+</script>
+</body>
+</html>
