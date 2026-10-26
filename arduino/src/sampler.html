@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arduino サンプラー</title>
+<style>
+  :root { --bg:#16181d; --pad:#262a33; --text:#e8eaf0; --sub:#9aa0ad; --on:#ffb43c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font-family: "Yu Gothic UI","Meiryo",sans-serif; padding:24px; }
+  header { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+  h1 { font-size:22px; margin:0; }
+  button { font:inherit; cursor:pointer; border:none; border-radius:8px; padding:10px 18px; }
+  #connect { background:var(--on); color:#000; font-weight:bold; }
+  #status { color:var(--sub); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+  .pad { background:var(--pad); border-radius:14px; padding:20px; min-height:180px;
+         display:flex; flex-direction:column; justify-content:space-between;
+         transition: background .08s, transform .08s; }
+  .pad.hit { background:var(--on); color:#000; transform:scale(0.97); }
+  .num { font-size:48px; font-weight:bold; line-height:1; }
+  .name { font-size:16px; word-break:break-all; }
+  .pad button { background:#3a3f4b; color:var(--text); font-size:14px; padding:6px 12px; }
+  .pad.hit button { background:#0002; color:#000; }
+  .row { display:flex; gap:8px; }
+  footer { margin-top:24px; color:var(--sub); font-size:14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Arduino サンプラー</h1>
+  <button id="connect">Arduino に接続</button>
+  <span id="status">未接続</span>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<footer>キーボードの 1〜4 でも鳴ります（Arduino なしで試せます）。</footer>
+
+<script>
+const N = 4;
+let ctx = null;
+function audio() {
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === "suspended") ctx.resume();
+  return ctx;
+}
+
+// ---- 最初から入っている音（Web Audioで合成） ----
+function noiseBuffer(c, sec) {
+  const b = c.createBuffer(1, Math.floor(c.sampleRate * sec), c.sampleRate);
+  const d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+const builtin = [
+  { name: "キック", play(c) {
+      // 小さいスピーカーでも聞こえるよう、高めの音から下げる＋最初に「コッ」を足す
+      const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+      o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.25);
+      g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.35);
+      const k = c.createOscillator(), kg = c.createGain();
+      k.type = "triangle"; k.frequency.value = 1200;
+      kg.gain.setValueAtTime(0.5, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+      k.connect(kg).connect(c.destination); k.start(t); k.stop(t + 0.03);
+  }},
+  { name: "スネア", play(c) {
+      const t = c.currentTime;
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = noiseBuffer(c, 0.3); f.type = "bandpass"; f.frequency.value = 2500; f.Q.value = 0.7;
+      g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      s.connect(f).connect(g).connect(c.destination); s.start(t);
+      const o = c.createOscillator(), og = c.createGain();
+      o.type = "triangle"; o.frequency.setValueAtTime(330, t); o.frequency.exponentialRampToValueAtTime(180, t + 0.1);
+      og.gain.setValueAtTime(0.6, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      o.connect(og).connect(c.destination); o.start(t); o.stop(t + 0.13);
+  }},
+  { name: "ハイハット", play(c) {
+      const t = c.currentTime, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = noiseBuffer(c, 0.2); f.type = "highpass"; f.frequency.value = 5000;
+      g.gain.setValueAtTime(1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      s.connect(f).connect(g).connect(c.destination); s.start(t);
+  }},
+  { name: "ピコッ", play(c) {
+      const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+      o.type = "square"; o.frequency.setValueAtTime(880, t); o.frequency.setValueAtTime(1320, t + 0.06);
+      g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.2);
+  }},
+];
+
+// ---- パッド ----
+const pads = [];
+const grid = document.getElementById("grid");
+for (let i = 0; i < N; i++) {
+  const el = document.createElement("div");
+  el.className = "pad";
+  el.innerHTML = `
+    <div class="num">${i + 1}</div>
+    <div class="name"></div>
+    <div class="row">
+      <button class="pick">音を選ぶ</button>
+      <button class="reset">元に戻す</button>
+    </div>
+    <input type="file" accept="audio/*" hidden>`;
+  const pad = { el, buffer: null, fileName: null };
+  const nameEl = el.querySelector(".name");
+  const input = el.querySelector("input");
+  const show = () => nameEl.textContent = pad.fileName || builtin[i].name;
+  show();
+  el.querySelector(".pick").onclick = (e) => { e.stopPropagation(); input.click(); };
+  el.querySelector(".reset").onclick = (e) => { e.stopPropagation(); pad.buffer = null; pad.fileName = null; show(); };
+  input.onchange = async () => {
+    const f = input.files[0]; if (!f) return;
+    try {
+      pad.buffer = await audio().decodeAudioData(await f.arrayBuffer());
+      pad.fileName = f.name; show();
+    } catch { alert("この音声ファイルは読めませんでした: " + f.name); }
+    input.value = "";
+  };
+  el.onclick = () => hit(i);
+  grid.appendChild(el);
+  pads.push(pad);
+}
+
+function hit(i) {
+  if (i < 0 || i >= N) return;
+  const c = audio(), pad = pads[i];
+  if (pad.buffer) {
+    const s = c.createBufferSource(); s.buffer = pad.buffer; s.connect(c.destination); s.start();
+  } else {
+    try { builtin[i].play(c); }
+    catch (err) { document.getElementById("status").textContent = "音のエラー: " + err.message; }
+  }
+  pad.el.classList.add("hit");
+  clearTimeout(pad.timer);
+  pad.timer = setTimeout(() => pad.el.classList.remove("hit"), 120);
+}
+
+// ---- キーボードでも鳴らす ----
+document.addEventListener("keydown", (e) => {
+  if (e.repeat) return;
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= N) hit(n - 1);
+});
+
+// ---- Arduino とつなぐ（Web Serial） ----
+const statusEl = document.getElementById("status");
+document.getElementById("connect").onclick = async () => {
+  audio();
+  if (!("serial" in navigator)) {
+    statusEl.textContent = "このブラウザは非対応です。Chrome か Edge で開いてください。";
+    return;
+  }
+  try {
+    const port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 9600 });
+    statusEl.textContent = "接続中";
+    const reader = port.readable.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let idx;
+      while ((idx = buf.indexOf("\n")) >= 0) {
+        const n = parseInt(buf.slice(0, idx).trim(), 10);
+        buf = buf.slice(idx + 1);
+        if (n >= 1 && n <= N) hit(n - 1);
+      }
+    }
+  } catch (err) {
+    statusEl.textContent = "接続できませんでした: " + err.message;
+  }
+};
+</script>
+</body>
+</html>

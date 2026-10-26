@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arduino 教材</title>
+<style>
+  :root {
+    --bg:#15171c; --panel:#20232b; --panel2:#2a2e38; --line:#3a3f4b;
+    --text:#e8eaf0; --sub:#9aa0ad; --on:#ffb43c; --ok:#5fd68a; --ng:#ff6b6b;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font-family:"Yu Gothic UI","Meiryo",sans-serif; font-size:16px; }
+  header { display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+           padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--line); }
+  h1 { font-size:20px; margin:0 12px 0 0; }
+  button { font:inherit; cursor:pointer; border:none; border-radius:8px; padding:8px 16px;
+           background:var(--panel2); color:var(--text); }
+  button:hover { filter:brightness(1.15); }
+  #connect { background:var(--on); color:#000; font-weight:bold; }
+  #disconnect { display:none; }
+  #status { color:var(--sub); }
+  #status.ok { color:var(--ok); }
+  #status.ng { color:var(--ng); }
+  nav { display:flex; gap:8px; padding:12px 20px 0; flex-wrap:wrap; }
+  nav button.active { background:var(--on); color:#000; font-weight:bold; }
+  main { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:16px; padding:16px 20px 24px; }
+  @media (max-width: 1000px) { main { grid-template-columns: minmax(0,1fr); } }
+  section { background:var(--panel); border-radius:12px; padding:16px; min-width:0; }
+  h2 { font-size:17px; margin:0 0 12px; }
+  .goal { color:var(--sub); margin:0 0 12px; }
+  svg.wire { width:100%; height:auto; background:#f4f1e8; border-radius:8px; display:block; }
+  table { border-collapse:collapse; margin-top:12px; width:100%; }
+  th, td { border:1px solid var(--line); padding:6px 10px; text-align:left; }
+  th { background:var(--panel2); font-weight:normal; color:var(--sub); }
+  .dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; vertical-align:-1px; border:1px solid #888; }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:var(--on); }
+  pre { background:#0e1014; border-radius:8px; padding:12px; overflow-x:auto; font-size:14px;
+        line-height:1.5; font-family:Consolas,"BIZ UDGothic",monospace; margin:8px 0 0; }
+  .copy { margin-top:8px; font-size:14px; padding:6px 12px; }
+  canvas { width:100%; height:auto; background:#0e1014; border-radius:8px; display:block; }
+  .simbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px; color:var(--sub); font-size:14px; }
+  .values { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .val { background:var(--panel2); border-radius:6px; padding:4px 10px; font-family:Consolas,monospace; }
+  .val.miss { color:var(--ng); }
+  #log { height:120px; overflow-y:auto; margin-top:8px; font-size:13px; }
+  #log .bad { color:var(--ng); }
+  .note { color:var(--sub); font-size:14px; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Arduino 教材</h1>
+  <button id="connect">UNO に接続</button>
+  <button id="disconnect">切断</button>
+  <span id="status">未接続</span>
+</header>
+
+<nav id="tabs"></nav>
+
+<main>
+  <section>
+    <h2 id="title"></h2>
+    <p class="goal" id="goal"></p>
+    <div id="wiring"></div>
+    <div id="pintable"></div>
+    <details id="codebox">
+      <summary>お手本コードを見る</summary>
+      <pre id="code"></pre>
+      <button class="copy" id="copy">コピー</button>
+    </details>
+  </section>
+
+  <section>
+    <h2>シミュレータ</h2>
+    <canvas id="sim" width="640" height="420"></canvas>
+    <div class="simbar">
+      <label><input type="checkbox" id="flipY"> 上下を反転</label>
+      <label><input type="checkbox" id="flipX"> 左右を反転</label>
+      <button id="reset">やり直し</button>
+    </div>
+    <div class="values" id="values"></div>
+    <h2 style="margin-top:16px">受信した行</h2>
+    <pre id="log"></pre>
+    <p class="note">UNO がなくても、キーボードの矢印キーとスペースキーで試せます。</p>
+  </section>
+</main>
+
+<script>
+// =====================================================================
+// 課題データ
+// =====================================================================
+const SWITCH_CODE = `// 課題1：スイッチでランプ
+const int SW_PIN = 2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(SW_PIN, INPUT_PULLUP);  // 押していないとき HIGH、押すと LOW
+}
+
+void loop() {
+  int sw = 0;
+  if (digitalRead(SW_PIN) == LOW) {
+    sw = 1;
+  }
+  Serial.print("sw=");
+  Serial.println(sw);
+  delay(20);
+}`;
+
+const JOY_CODE = `// 課題2・3：ジョイスティック
+const int X_PIN = A0;
+const int Y_PIN = A1;
+const int SW_PIN = 2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(SW_PIN, INPUT_PULLUP);
+}
+
+void loop() {
+  int x = analogRead(X_PIN);   // 0〜1023
+  int y = analogRead(Y_PIN);   // 0〜1023
+  int sw = 0;
+  if (digitalRead(SW_PIN) == LOW) {
+    sw = 1;
+  }
+  Serial.print("x=");
+  Serial.print(x);
+  Serial.print(",y=");
+  Serial.print(y);
+  Serial.print(",sw=");
+  Serial.println(sw);
+  delay(20);
+}`;
+
+// 配線図（SVG）
+function wiringSwitch() {
+  return `
+<svg class="wire" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg" font-family="Meiryo,sans-serif">
+  <rect x="20" y="30" width="200" height="220" rx="10" fill="#1f6fb2"/>
+  <text x="120" y="70" fill="#fff" font-size="22" text-anchor="middle" font-weight="bold">UNO R3</text>
+  ${pin(220, 120, "D2")}
+  ${pin(220, 190, "GND")}
+  <!-- スイッチ -->
+  <rect x="380" y="110" width="90" height="90" rx="6" fill="#333"/>
+  <circle cx="425" cy="155" r="24" fill="#111" stroke="#666" stroke-width="3"/>
+  <rect x="368" y="116" width="14" height="10" fill="#bbb"/>
+  <rect x="468" y="116" width="14" height="10" fill="#bbb"/>
+  <rect x="368" y="184" width="14" height="10" fill="#bbb"/>
+  <rect x="468" y="184" width="14" height="10" fill="#bbb"/>
+  <text x="425" y="70" font-size="15" text-anchor="middle" fill="#333">タクトスイッチ</text>
+  <text x="425" y="92" font-size="13" text-anchor="middle" fill="#666">対角線の2本の足を使う</text>
+  <!-- 配線 -->
+  <polyline points="240,120 330,120 330,121 368,121" fill="none" stroke="#2b7de9" stroke-width="5" stroke-linecap="round"/>
+  <polyline points="240,190 330,190 330,250 520,250 520,189 482,189" fill="none" stroke="#222" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+}
+
+function wiringJoystick() {
+  const rows = [
+    { u: "GND", m: "GND", c: "#222" },
+    { u: "5V",  m: "+5V", c: "#e23b3b" },
+    { u: "A0",  m: "VRx", c: "#f08a24" },
+    { u: "A1",  m: "VRy", c: "#d4b000" },
+    { u: "D2",  m: "SW",  c: "#2b7de9" },
+  ];
+  let wires = "", upins = "", mpins = "";
+  rows.forEach((r, i) => {
+    const y = 70 + i * 42;
+    upins += pin(220, y, r.u);
+    mpins += `<rect x="372" y="${y - 7}" width="16" height="14" fill="#bbb"/>
+              <text x="398" y="${y + 6}" font-size="16" fill="#fff">${r.m}</text>`;
+    wires += `<line x1="240" y1="${y}" x2="372" y2="${y}" stroke="${r.c}" stroke-width="5" stroke-linecap="round"/>`;
+  });
+  return `
+<svg class="wire" viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" font-family="Meiryo,sans-serif">
+  <rect x="20" y="30" width="200" height="240" rx="10" fill="#1f6fb2"/>
+  <text x="110" y="160" fill="#fff" font-size="22" text-anchor="middle" font-weight="bold">UNO R3</text>
+  ${upins}
+  <rect x="388" y="40" width="150" height="220" rx="8" fill="#2a2a2a"/>
+  <circle cx="490" cy="150" r="34" fill="#111" stroke="#777" stroke-width="3"/>
+  <circle cx="490" cy="150" r="16" fill="#444"/>
+  ${mpins}
+  ${wires}
+  <text x="463" y="285" font-size="15" text-anchor="middle" fill="#333">ジョイスティック</text>
+</svg>`;
+}
+
+function pin(x, y, label) {
+  return `<rect x="${x - 10}" y="${y - 8}" width="30" height="16" fill="#111"/>
+          <text x="${x - 16}" y="${y + 6}" font-size="16" fill="#fff" text-anchor="end">${label}</text>`;
+}
+
+const PIN_SWITCH = [
+  ["#2b7de9", "D2", "スイッチの足（片方）"],
+  ["#222", "GND", "スイッチの足（対角線のもう片方）"],
+];
+const PIN_JOY = [
+  ["#222", "GND", "GND"],
+  ["#e23b3b", "5V", "+5V"],
+  ["#f08a24", "A0", "VRx（左右）"],
+  ["#d4b000", "A1", "VRy（上下）"],
+  ["#2b7de9", "D2", "SW（押しこみ）"],
+];
+
+const LESSONS = [
+  {
+    tab: "課題1 ランプ",
+    title: "課題1：スイッチでランプをつける",
+    goal: "スイッチを押している間だけ、画面のランプがつく。",
+    wiring: wiringSwitch, pins: PIN_SWITCH, code: SWITCH_CODE,
+    keys: ["sw"], init: simLampInit, draw: simLamp,
+  },
+  {
+    tab: "課題2 移動",
+    title: "課題2：ジョイスティックで動かす",
+    goal: "ジョイスティックをたおした方向に、画面の丸が動く。押しこむと色が変わる。",
+    wiring: wiringJoystick, pins: PIN_JOY, code: JOY_CODE,
+    keys: ["x", "y", "sw"], init: simMoveInit, draw: simMove,
+  },
+  {
+    tab: "課題3 ゲーム",
+    title: "課題3：星あつめゲーム",
+    goal: "30秒で星をいくつ取れるか。配線とコードは課題2と同じ。押しこむとスタート。",
+    wiring: wiringJoystick, pins: PIN_JOY, code: JOY_CODE,
+    keys: ["x", "y", "sw"], init: simGameInit, draw: simGame,
+  },
+];
+
+// =====================================================================
+// 入力（UNO から来た値 / キーボード）
+// =====================================================================
+const input = { x: null, y: null, sw: null };
+let lastData = -Infinity;          // 最後に UNO から値が来た時刻
+const keys = {};
+
+function getInput() {
+  // UNO から 1 秒以内に値が来ていればそれを使う。来ていなければキーボード。
+  let x, y, sw;
+  if (performance.now() - lastData < 1000) {
+    x = input.x; y = input.y; sw = input.sw;
+  } else {
+    x = keys.ArrowLeft ? 0 : keys.ArrowRight ? 1023 : 512;
+    y = keys.ArrowUp ? 0 : keys.ArrowDown ? 1023 : 512;
+    sw = keys[" "] ? 1 : 0;
+  }
+  // -1〜1 に直す。真ん中付近は 0 にする（手を離しても少しずれるため）
+  const norm = (v, flip) => {
+    if (v == null) return 0;
+    let n = (v - 512) / 512;
+    if (Math.abs(n) < 0.12) n = 0;
+    n = Math.max(-1, Math.min(1, n));
+    return flip ? -n : n;
+  };
+  return {
+    dx: norm(x, document.getElementById("flipX").checked),
+    dy: norm(y, document.getElementById("flipY").checked),
+    sw: sw === 1,
+  };
+}
+
+addEventListener("keydown", e => {
+  if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key)) {
+    keys[e.key] = true; e.preventDefault();
+  }
+});
+addEventListener("keyup", e => {
+  keys[e.key] = false;
+  if (e.key === " ") e.preventDefault();   // スペースでボタンが押されないように
+});
+
+// 1 行を読む： "x=512,y=300,sw=1" の形
+const logEl = document.getElementById("log");
+function handleLine(line) {
+  line = line.trim();
+  if (!line) return;
+  let ok = false;
+  for (const part of line.split(",")) {
+    const m = part.match(/^\s*([a-zA-Z]+)\s*[=:]\s*(-?\d+)\s*$/);
+    if (m) {
+      const k = m[1].toLowerCase();
+      if (k in input) { input[k] = parseInt(m[2], 10); ok = true; }
+    }
+  }
+  if (ok) lastData = performance.now();
+  addLog(line, ok);
+}
+let logLines = [];
+function addLog(line, ok) {
+  logLines.push(ok ? escapeHtml(line) : `<span class="bad">${escapeHtml(line)}　← 読めない形</span>`);
+  if (logLines.length > 40) logLines.shift();
+}
+setInterval(() => {   // 表示は 1 秒に 5 回だけ更新（重くならないように）
+  logEl.innerHTML = logLines.join("\n");
+  logEl.scrollTop = logEl.scrollHeight;
+  showValues();
+}, 200);
+
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
+}
+
+function showValues() {
+  const need = LESSONS[current].keys;
+  const fresh = performance.now() - lastData < 1000;
+  document.getElementById("values").innerHTML = need.map(k => {
+    const v = input[k];
+    if (!fresh || v == null) return `<span class="val miss">${k} = 来ていない</span>`;
+    return `<span class="val">${k} = ${v}</span>`;
+  }).join("");
+}
+
+// =====================================================================
+// UNO と接続（Web Serial）
+// =====================================================================
+let port = null, reader = null, readClosed = null;
+const statusEl = document.getElementById("status");
+const btnConnect = document.getElementById("connect");
+const btnDisconnect = document.getElementById("disconnect");
+
+function setStatus(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = cls || "";
+}
+
+btnConnect.onclick = async () => {
+  if (!("serial" in navigator)) {
+    setStatus("このブラウザは使えません。Chrome か Edge で開いてください。", "ng");
+    return;
+  }
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (err) {
+    port = null;
+    if (err.name === "NotFoundError") { setStatus("未接続"); return; }   // 一覧で「キャンセル」
+    setStatus(`USB を使えない開き方です。ファイルを Chrome で直接開いてください。（${err.name}）`, "ng");
+    return;
+  }
+  try {
+    if (!port.readable) await port.open({ baudRate: 9600 });   // すでに開いていればそのまま使う
+  } catch (err) {
+    port = null;
+    setStatus(`このポートは、ほかのものが使用中です。Arduino IDE（書き込み中・シリアルプロッタ）や、` +
+              `このページ・サンプラーを開いた別のタブを閉じてから、もう一度。違うCOM番号を選んだ可能性もあります。（${err.name}: ${err.message}）`, "ng");
+    return;
+  }
+  setStatus("接続中", "ok");
+  btnConnect.style.display = "none";
+  btnDisconnect.style.display = "inline-block";
+  readLoop();
+};
+
+async function readLoop() {
+  const decoder = new TextDecoderStream();
+  readClosed = port.readable.pipeTo(decoder.writable).catch(() => {});
+  reader = decoder.readable.getReader();
+  let buf = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        handleLine(buf.slice(0, i));
+        buf = buf.slice(i + 1);
+      }
+      if (buf.length > 1000) buf = "";
+    }
+  } catch (err) {
+    // ケーブルが抜けたときなど
+  }
+  await closePort();
+}
+
+async function closePort() {
+  try { if (reader) await reader.cancel(); } catch {}
+  try { if (readClosed) await readClosed; } catch {}
+  try { if (port) await port.close(); } catch {}
+  reader = null; readClosed = null; port = null;
+  setStatus("未接続");
+  btnConnect.style.display = "inline-block";
+  btnDisconnect.style.display = "none";
+}
+
+btnDisconnect.onclick = () => closePort();
+
+if ("serial" in navigator) {
+  navigator.serial.addEventListener("disconnect", e => {
+    if (port && e.target === port) closePort();
+  });
+}
+
+// =====================================================================
+// シミュレータ
+// =====================================================================
+const cv = document.getElementById("sim");
+const g = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+let sim = {};
+
+// --- 課題1：ランプ ---
+function simLampInit() { sim = { count: 0, prev: false }; }
+function simLamp(inp) {
+  if (inp.sw && !sim.prev) sim.count++;
+  sim.prev = inp.sw;
+  g.fillStyle = "#0e1014"; g.fillRect(0, 0, W, H);
+  const cx = W / 2, cy = 180;
+  if (inp.sw) {
+    const grad = g.createRadialGradient(cx, cy, 10, cx, cy, 200);
+    grad.addColorStop(0, "rgba(255,200,80,0.6)");
+    grad.addColorStop(1, "rgba(255,200,80,0)");
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  }
+  g.beginPath(); g.arc(cx, cy, 80, 0, Math.PI * 2);
+  g.fillStyle = inp.sw ? "#ffd34d" : "#3a3f4b"; g.fill();
+  g.fillStyle = "#777"; g.fillRect(cx - 40, cy + 70, 80, 50);
+  g.fillStyle = "#e8eaf0"; g.font = "bold 28px Meiryo, sans-serif"; g.textAlign = "center";
+  g.fillText(inp.sw ? "ON" : "OFF", cx, 360);
+  g.font = "18px Meiryo, sans-serif"; g.fillStyle = "#9aa0ad";
+  g.fillText(`押した回数：${sim.count}`, cx, 395);
+}
+
+// --- 課題2：移動 ---
+function simMoveInit() { sim = { x: W / 2, y: H / 2, trail: [] }; }
+function simMove(inp, dt) {
+  const speed = 300;
+  sim.x = clamp(sim.x + inp.dx * speed * dt, 30, W - 30);
+  sim.y = clamp(sim.y + inp.dy * speed * dt, 30, H - 30);
+  sim.trail.push([sim.x, sim.y]);
+  if (sim.trail.length > 60) sim.trail.shift();
+  g.fillStyle = "#0e1014"; g.fillRect(0, 0, W, H);
+  drawGrid();
+  g.strokeStyle = "rgba(255,180,60,0.35)"; g.lineWidth = 4; g.beginPath();
+  sim.trail.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+  g.stroke();
+  g.beginPath(); g.arc(sim.x, sim.y, 24, 0, Math.PI * 2);
+  g.fillStyle = inp.sw ? "#5fd68a" : "#ffb43c"; g.fill();
+  // 傾きの表示
+  g.strokeStyle = "#e8eaf0"; g.lineWidth = 3; g.beginPath();
+  g.moveTo(sim.x, sim.y); g.lineTo(sim.x + inp.dx * 40, sim.y + inp.dy * 40); g.stroke();
+}
+
+// --- 課題3：ゲーム ---
+function simGameInit() {
+  sim = { x: W / 2, y: H / 2, star: randStar(), score: 0, time: 30, playing: false, prev: false, best: sim.best || 0 };
+}
+function randStar() { return { x: 40 + Math.random() * (W - 80), y: 70 + Math.random() * (H - 110) }; }
+function simGame(inp, dt) {
+  const pressed = inp.sw && !sim.prev;
+  sim.prev = inp.sw;
+  if (!sim.playing && pressed) {
+    const best = sim.best;
+    simGameInit(); sim.best = best; sim.playing = true; sim.prev = true;
+  }
+  if (sim.playing) {
+    sim.x = clamp(sim.x + inp.dx * 320 * dt, 24, W - 24);
+    sim.y = clamp(sim.y + inp.dy * 320 * dt, 60, H - 24);
+    if (Math.hypot(sim.x - sim.star.x, sim.y - sim.star.y) < 38) {
+      sim.score++; sim.star = randStar();
+    }
+    sim.time -= dt;
+    if (sim.time <= 0) { sim.time = 0; sim.playing = false; sim.best = Math.max(sim.best, sim.score); }
+  }
+  g.fillStyle = "#0e1014"; g.fillRect(0, 0, W, H);
+  drawGrid();
+  drawStar(sim.star.x, sim.star.y, 18);
+  g.beginPath(); g.arc(sim.x, sim.y, 20, 0, Math.PI * 2);
+  g.fillStyle = "#ffb43c"; g.fill();
+  g.fillStyle = "#e8eaf0"; g.font = "bold 22px Meiryo, sans-serif"; g.textAlign = "left";
+  g.fillText(`星：${sim.score}`, 16, 34);
+  g.textAlign = "right";
+  g.fillText(`のこり ${Math.ceil(sim.time)} 秒`, W - 16, 34);
+  if (!sim.playing) {
+    g.fillStyle = "rgba(0,0,0,0.6)"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#e8eaf0"; g.textAlign = "center";
+    g.font = "bold 30px Meiryo, sans-serif";
+    g.fillText(sim.time <= 0 ? `おわり！ 星 ${sim.score} こ` : "星あつめゲーム", W / 2, H / 2 - 20);
+    g.font = "20px Meiryo, sans-serif";
+    g.fillText("ジョイスティックを押しこむとスタート", W / 2, H / 2 + 20);
+    if (sim.best) g.fillText(`最高：${sim.best} こ`, W / 2, H / 2 + 55);
+  }
+}
+
+function drawStar(x, y, r) {
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+    g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  g.closePath(); g.fillStyle = "#ffe066"; g.fill();
+}
+function drawGrid() {
+  g.strokeStyle = "#1c2028"; g.lineWidth = 1;
+  for (let x = 0; x <= W; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y <= H; y += 40) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+}
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+// =====================================================================
+// 画面の切り替え
+// =====================================================================
+let current = 0;
+function showLesson(i) {
+  current = i;
+  const L = LESSONS[i];
+  document.querySelectorAll("#tabs button").forEach((b, j) => b.classList.toggle("active", j === i));
+  document.getElementById("title").textContent = L.title;
+  document.getElementById("goal").textContent = L.goal;
+  document.getElementById("wiring").innerHTML = L.wiring();
+  document.getElementById("pintable").innerHTML =
+    `<table><tr><th>UNO のピン</th><th>つなぐ先</th></tr>` +
+    L.pins.map(([c, u, m]) => `<tr><td><span class="dot" style="background:${c}"></span>${u}</td><td>${m}</td></tr>`).join("") +
+    `</table>`;
+  document.getElementById("code").textContent = L.code;
+  document.getElementById("codebox").open = false;
+  L.init();
+}
+
+const tabs = document.getElementById("tabs");
+LESSONS.forEach((L, i) => {
+  const b = document.createElement("button");
+  b.textContent = L.tab;
+  b.onclick = () => { showLesson(i); b.blur(); };
+  tabs.appendChild(b);
+});
+
+document.getElementById("reset").onclick = (e) => { LESSONS[current].init(); e.target.blur(); };
+document.getElementById("copy").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(LESSONS[current].code);
+    document.getElementById("copy").textContent = "コピーしました";
+  } catch {
+    document.getElementById("copy").textContent = "コピーできませんでした";
+  }
+  setTimeout(() => document.getElementById("copy").textContent = "コピー", 1500);
+};
+
+showLesson(0);
+
+let lastT = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, (t - lastT) / 1000);
+  lastT = t;
+  LESSONS[current].draw(getInput(), dt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
