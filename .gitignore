@@ -1,2 +1,4 @@
 node_modules/
 .DS_Store
+# Arduino 教材の教師用の答え。公開しない（tools/make-kotae.mjs で作る）
+arduino/src/*_kotae.txt
