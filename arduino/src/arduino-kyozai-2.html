@@ -92,6 +92,42 @@
   table.pins th { background:var(--panel2); color:var(--sub); font-weight:normal; }
   table.pins tr.dim td { opacity:0.3; }
   .dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; vertical-align:-1px; border:1px solid #888; }
+
+  /* 考えよう・設計メモ・レポート */
+  .think { background:var(--panel2); border-radius:8px; padding:10px 14px; margin-top:14px; border-left:4px solid var(--sim); }
+  .think > b { color:var(--sim); }
+  .think .q { margin:10px 0 4px; }
+  textarea, .rf input { width:100%; font:inherit; font-size:15px; background:#0e1014; color:var(--text);
+             border:1px solid var(--line); border-radius:8px; padding:8px 10px; resize:vertical; }
+  textarea { min-height:64px; }
+  .ex { color:var(--ok); font-size:14px; margin-top:4px; }
+  .ex::before { content:"答えの例："; font-weight:bold; }
+  nav button.report { border-left:4px solid var(--ok); }
+  #report { grid-column:1 / -1; }
+  #report[hidden] { display:none; }
+  .rf { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; }
+  .rf label, .rblock label { display:block; color:var(--sub); font-size:14px; margin-bottom:4px; }
+  .rblock { margin-top:16px; }
+  .rblock h3 { margin:0 0 6px; color:var(--text); font-weight:bold; }
+  .rans { background:#0e1014; border-radius:8px; padding:8px 12px; margin:4px 0 10px; white-space:pre-wrap; min-height:1.6em; }
+  .rans.empty { color:var(--ng); }
+  .rdone label { display:inline-block; margin:4px 14px 4px 0; color:var(--text); font-size:15px; }
+  .rbtns { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; }
+  #rPrint, #rCopy { background:var(--on); color:#000; font-weight:bold; }
+  #rClear.armed { background:var(--ng); color:#000; font-weight:bold; }
+  .pv { display:none; }
+  @media print {
+    body { background:#fff; color:#000; font-size:12pt; }
+    header, nav, main > section:not(#report), .rbtns, .note.screen { display:none !important; }
+    main { display:block; padding:0; }
+    #report { background:#fff; padding:0; }
+    #report h2, .rblock h3, .rf label, .rblock label { color:#000; }
+    textarea, .rf input { display:none; }
+    .pv { display:block; border-bottom:1px solid #999; min-height:1.4em; padding:2px 4px; white-space:pre-wrap; }
+    .rans { background:#fff; border:1px solid #bbb; color:#000; }
+    .rans.empty { color:#999; }
+    .rblock { break-inside:avoid; }
+  }
 </style>
 </head>
 <body>
@@ -113,12 +149,13 @@
     <p class="goal" id="goal"></p>
     <h3>配線</h3>
     <div id="wiring"></div>
-    <h3>コード（<span style="color:var(--on)">□</span> の中を自分で考えて打つ）</h3>
+    <h3 id="codehead">コード（<span style="color:var(--on)">□</span> の中を自分で考えて打つ）</h3>
     <pre class="code" id="code"></pre>
     <h3>ヒント</h3>
     <ol class="hints" id="hints"></ol>
     <div id="extra"></div>
     <div class="more" id="more"></div>
+    <div id="think"></div>
   </section>
 
   <section>
@@ -134,6 +171,8 @@
     </div>
     <p class="note">UNO がなくても、上の欄に打てば画面の動きを試せます。</p>
   </section>
+
+  <section id="report" hidden></section>
 </main>
 
 <script>
@@ -232,7 +271,7 @@ function wireJoy(add = "") {
 //   課題の番号は 21 から（1回目の 1〜20 の続き）
 // =====================================================================
 const FIRST = 21;
-const KOTAE_HEAD = "Arduino 教材 2回目（ジョイスティック）　教師用 完全コード（課題21〜30）";
+const KOTAE_HEAD = "Arduino 教材 2回目（ジョイスティック）　教師用 完全コード（課題21〜31。課題31 は作品の土台）";
 const KOTAE_WIRE = "課題26〜30の配線：A0 VRx / A1 VRy / D2 SW / D6 LED（220Ω）/ D7 Trig / D8 Echo / D9 サーボ / D10 ブザー";
 
 const LESSONS = [
@@ -796,7 +835,110 @@ void loop() {
     more: "自動のとき、見つけたら相手のほうへ少しずつ追いかけるようにしよう。手動にもどしたときの角度は、そのまま続く？ 確かめよう。",
     sim: "guard",
   },
+  {
+    kind: "both", tab: "31 自分の作品",
+    title: "自分の作品をつくる",
+    goal: "今日の部品（スティック・LED・サーボ・ブザー・超音波）から 2 つ以上を組み合わせて、自分の作品を作る。先に下の設計メモを書いてから、コードを書く。",
+    wiring: () => fullSet(["joy", "led", "sonic", "servo", "buzzer"]),
+    code:
+`#include <Servo.h>
+
+Servo sv;
+const int SW = 2;
+const int LED = 6;
+const int TRIG = 7;
+const int ECHO = 8;
+const int BZ = 10;
+
+` + DIST_FUNC + `
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(SW, INPUT_PULLUP);
+  pinMode(LED, OUTPUT);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+  sv.attach(9);
+}
+
+void loop() {
+  int x = analogRead(A0);        // 左右 0〜1023
+  int y = analogRead(A1);        // 上下 0〜1023
+  int sw = digitalRead(SW) == LOW;   // 押しこみ 1 / 0
+
+  // ここに自分のしくみを書く
+
+  Serial.print("x=");            // 画面に見せたい数を 名前=数 で送る
+  Serial.print(x);
+  Serial.print(",y=");
+  Serial.println(y);
+  delay(50);
+}`,
+    answers: {},
+    hints: {},
+    extra: `<p class="note">この課題に穴はない。上は土台。設計メモを書いてから、「ここに自分のしくみを書く」の所に書き足していく。課題21〜30 のコードを見返してよい。</p>`,
+    more: "アイデアの例：スティックでテンポを変えるメトロノーム（サーボがふれて、ブザーが鳴る）／たおした向きで音が変わる太鼓／近づくとスティックで決めた向きにサーボが逃げる。右の画面には、送った「名前=数」がそのまま出る。",
+    sim: "free",
+  },
 );
+
+// =====================================================================
+// 考えよう（課題が動いたあとに答える）。キーは課題の番号。
+//   [問い, 答えの例（先生モードだけに出る）]
+// =====================================================================
+const THINK = {
+  21: [["さわっていないとき、x と y はいくつだった？ 512 ぴったりにならないのはなぜだと思う？",
+        "例：x=508、y=521。部品の作りに少しずつ差があり、まん中がぴったり同じにはならないから。"],
+       ["analogRead の数は 0〜1023。何段階で電圧を読んでいることになる？",
+        "1024 段階（0 も数える）。5V を 1024 に分けて読んでいる（1 段階は約 0.005V）。"]],
+  22: [["200 と 800 を 400 と 600 に変えたら、使いやすさはどう変わる？ 試してから書こう。",
+        "少したおしただけで反応する。反応は早いが、まん中のブレで勝手に向きが出やすくなる。"],
+       ["このプログラムで、右上にたおすと何番になる？ それはなぜ？",
+        "2（右）。if を上から順に調べて、最初に当てはまった x > 800 で決まるから。"]],
+  23: [["x が 512 のとき、bri はいくつ？ 計算してから、画面の数と比べよう。",
+        "512 × 255 ÷ 1023 ≒ 127。画面も 127 前後になる。"],
+       ["map を使わずに同じことをするには、どんな式にする？",
+        "bri = x / 4（1023 ÷ 4 ≒ 255）。"]],
+  24: [["スティックでサーボが動くしくみを「入力 → 処理 → 出力」で書こう。",
+        "入力：スティックの x（0〜1023）→ 処理：map で 0〜180 に変える → 出力：サーボの角度。"],
+       ["身の回りで、レバーの位置がそのまま動きの位置になるものは？",
+        "例：車のハンドルとタイヤの向き、ラジコンのステアリング、ゲーム機のアナログスティック。"]],
+  25: [["音を 5 つ（ドレミファソ）にするとき、128 をいくつにした？ なぜその数？",
+        "205。1024 ÷ 5 ≒ 205 で、(1023 - y) / 205 が 0〜4 になるから。"],
+       ["押しこみスイッチを INPUT_PULLUP にしないと、どうなると思う？",
+        "押していないときの電圧が決まらず、HIGH と LOW がふらふらして、勝手に鳴ったり止まったりする。"]],
+  26: [["(x - 512) / 100 で、まん中あたりが 0 になるのはなぜ？ 0 にならないと何が困る？",
+        "整数のわり算は小数を切り捨てるので、-99〜99 は 0 になる。0 にならないと、さわっていないのにボールが動く。"],
+       ["UNO と PC のあいだで、どんな文字が、どちら向きに行き来している？",
+        "UNO → PC：vx=〇,vy=〇（速さ）。PC → UNO：s（星を取った）。"]],
+  27: [["課題24（位置 = 角度）と課題27（位置 = 回る速さ）、ねらいを合わせやすいのはどっち？ 理由も書こう。",
+        "例：27。はなすと止まるので、少しずつ合わせられる。24 は手がふるえると角度もふるえる。"],
+       ["身の回りで「速さ」で動かすものの例をあげよう。",
+        "例：クレーンゲーム、ショベルカーのレバー、ドローンの上がり下がり。"]],
+  28: [["moved を使わないと、どうなった？ なぜそうなる？",
+        "たおしている間、数がどんどんふえる。loop は 1 秒に何十回も回るので、毎回「上にたおしている」と判定されるから。"],
+       ["課題20（距離金庫）とくらべて、入れやすいのはどっち？ 理由も。",
+        "例：28。手の距離はふらつくが、スティックは 1 つずつ確実に変えられる。"]],
+  29: [["このゲームで、UNO がしていることと PC がしていることを分けて書こう。",
+        "UNO：スティックを読んで pad と fire を送る。h が来たら命をへらして、サーボ・ブザー・LED。PC：ゲームの計算と画面。当たったら h を送る。"],
+       ["ゲームの計算を UNO ではなく PC にさせているのはなぜだと思う？",
+        "PC のほうが計算が速く、画面も描ける。UNO は部品を動かすことに集中できる。"]],
+  30: [["手動と自動、それぞれ便利な場面は？",
+        "手動：見たい向きが決まっているとき、細かく合わせたいとき。自動：人が見ていなくても見張りたいとき。"],
+       ["身の回りで、手動と自動を切りかえる機械をあげよう。",
+        "例：エアコン（自動運転と手動の風量）、車のクルーズコントロール、カメラのオートフォーカス。"]],
+  31: [["作ってみて、思ったとおりに動かなかったところと、どう直したかを書こう。",
+        "例：音が鳴りっぱなしになった → noTone を入れ忘れていたので足した。"]],
+};
+
+// 課題31 の設計メモ。[キー, 見出し, 例]
+const MEMO = [
+  ["name",   "作品の名前", "例：スティック太鼓"],
+  ["what",   "どんな作品か（使う人から見て）", "例：スティックをたおした向きで、ちがう音の太鼓が鳴る"],
+  ["input",  "入力（何を読む？）", "例：スティックの x と y、押しこみ"],
+  ["proc",   "処理（UNO の中で何を決める？）", "例：向きを 4 つに分けて、向きごとに音の高さを決める"],
+  ["output", "出力（何が動く・鳴る・光る？）", "例：ブザーの音、LED が光る、サーボがたたく"],
+];
 
 // =====================================================================
 // 作品編（26〜30）は穴を多くする：[コードの中の文字（最初に出てくる所）, ヒント]
@@ -963,6 +1105,7 @@ function handleLine(line) {
     if (k === "freq") { freq = v; ok = true; }
     else if (k === "ms") { ms = v; ok = true; }
     else if (k in state && k !== "ledSeen") { state[k] = v; got[k] = v; ok = true; }
+    if (k !== "freq" && k !== "ms" && LESSONS[current] && LESSONS[current].sim === "free") { freeSeen(k, v); ok = true; }
   }
   if ("led" in got) state.ledSeen = true;
   if ("angle" in got && "dist" in got) radarPts.push({ a: got.angle, d: got.dist, t: performance.now() });
@@ -1459,10 +1602,170 @@ function drawGuard() {
        m === null ? "#ff6b6b" : m === 1 ? "#5fd68a" : "#ffb43c", "center", true);
 }
 
+// ---- 31 自分の作品：届いた「名前=数」をそのまま並べる ----
+SIMINIT.free = () => { G = { vals: {} }; };
+function freeSeen(k, v) {
+  if (!G.vals) return;
+  const o = G.vals[k] || (G.vals[k] = { v, lo: v, hi: v });
+  o.v = v; o.lo = Math.min(o.lo, v); o.hi = Math.max(o.hi, v);
+}
+function drawFree() {
+  clear();
+  const names = Object.keys(G.vals || {}).slice(0, 8);
+  if (!names.length) {
+    text("名前=数 を送ると、ここに出る", W / 2, 190, 24, "#9aa0ad", "center", true);
+    text("例：Serial.print(\"x=\"); Serial.println(x);", W / 2, 230, 16, "#9aa0ad");
+    return;
+  }
+  names.forEach((k, i) => {
+    const o = G.vals[k], y = 40 + i * 47;
+    text(k, 20, y + 20, 20, "#ffb43c", "left", true);
+    text(String(o.v), 200, y + 20, 20, "#e8eaf0", "right", true);
+    g.fillStyle = "#2a2e38"; g.fillRect(220, y + 4, 400, 22);
+    const r = o.hi > o.lo ? (o.v - o.lo) / (o.hi - o.lo) : 1;
+    g.fillStyle = "#4aa3ff"; g.fillRect(220, y + 4, 400 * r, 22);
+    text(`${o.lo}〜${o.hi}`, 620, y + 40, 11, "#6f7787", "right");
+  });
+}
+
 const DRAW = { joyRaw: drawJoyRaw, joyDir: drawJoyDir, bright: drawBrightJoy, servoJoy: drawServoJoy, piano: drawPiano,
-  ball: drawBall, turret: drawTurret, stickSafe: drawStickSafe, dodge: drawDodge, guard: drawGuard };
+  ball: drawBall, turret: drawTurret, stickSafe: drawStickSafe, dodge: drawDodge, guard: drawGuard, free: drawFree };
 
 const ctrl = document.getElementById("ctrl");
+
+// =====================================================================
+// 考えよう・設計メモ・レポートの答え
+//   この PC のブラウザに一時的に残す（失敗してもページは動く）。出すのは印刷かコピー。
+// =====================================================================
+const NOTE_KEY = "arduino-kyozai-2-notes";
+let NOTES = {};
+try { NOTES = JSON.parse(localStorage.getItem(NOTE_KEY) || "{}") || {}; } catch { NOTES = {}; }
+function saveNotes() { try { localStorage.setItem(NOTE_KEY, JSON.stringify(NOTES)); } catch {} }
+const escA = s => esc(String(s)).replace(/"/g, "&quot;");
+
+function noteBox(key, rows, ph = "") {
+  return `<textarea data-note="${key}" rows="${rows}" placeholder="${escA(ph)}">${esc(NOTES[key] || "")}</textarea><div class="pv"></div>`;
+}
+function noteLine(key) {
+  return `<input data-note="${key}" value="${escA(NOTES[key] || "")}" autocomplete="off"><div class="pv"></div>`;
+}
+// 打つたびに残す（タブを切り替えても消えない）
+document.addEventListener("input", e => {
+  const k = e.target.dataset && e.target.dataset.note;
+  if (!k) return;
+  NOTES[k] = e.target.type === "checkbox" ? (e.target.checked ? "1" : "") : e.target.value;
+  saveNotes();
+});
+
+function thinkHtml(no) {
+  let h = "";
+  if (no === 31) {
+    h += `<div class="think"><b>設計メモ（先に書く）</b>` + MEMO.map(([k, t, ex]) =>
+      `<div class="q">${esc(t)}</div>${noteBox("memo-" + k, k === "name" ? 1 : 2, ex)}`).join("") + `</div>`;
+  }
+  const qs = THINK[no] || [];
+  if (qs.length) {
+    h += `<div class="think"><b>考えよう（動いたあとに書く）</b>` + qs.map(([q, ex], j) =>
+      `<div class="q">${j + 1}. ${esc(q)}</div>${noteBox(`t${no}-${j}`, 3)}${SENSEI ? `<div class="ex">${esc(ex)}</div>` : ""}`).join("") +
+      `<p class="note">書いた答えは「レポート」タブに集まる。</p></div>`;
+  }
+  return h;
+}
+
+// ---- レポート ----
+const reportEl = document.getElementById("report");
+let REPORT = false;
+const FREE_Q = [
+  ["r-fun",   "いちばん面白かった課題と、その理由"],
+  ["r-learn", "今日わかったこと（次のことばを 2 つ以上使って：analogRead、map、しきい値、整数のわり算、INPUT_PULLUP、手動と自動）"],
+  ["r-next",  "ジョイスティックを使って、身の回りの何を作ってみたい？"],
+];
+function noteText(k) { return (NOTES[k] || "").trim(); }
+
+function showReport() {
+  REPORT = true;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("active", b.classList.contains("report")));
+  document.querySelectorAll("main > section").forEach(s => s.hidden = s !== reportEl);
+  stopTone();
+  const ans = k => noteText(k) ? `<div class="rans">${esc(noteText(k))}</div>` : `<div class="rans empty">（まだ書いていない）</div>`;
+  let h = `<h2>レポート：Arduino 2回目（ジョイスティック）</h2>
+  <p class="note screen">「考えよう」と設計メモに書いたことが、ここに集まる（直すときは、その課題のタブで直す）。下の欄も書いたら、印刷するか、コピーして Classroom に貼って出す。<br>
+  書いたことは、この PC のブラウザに一時的に残るだけ。<b>出し終わるまでページを閉じない。</b>出し終わったら「全部消す」を押す（次にこの PC を使う人に見えないように）。</p>
+  <div class="rf">
+    <div><label>クラス</label>${noteLine("r-class")}</div>
+    <div><label>番号</label>${noteLine("r-no")}</div>
+    <div><label>名前</label>${noteLine("r-name")}</div>
+  </div>
+  <div class="rblock rdone"><h3>できた課題（動いたものに印）</h3>` +
+    LESSONS.map((L, i) => `<label><input type="checkbox" data-note="done-${FIRST + i}"${noteText("done-" + (FIRST + i)) ? " checked" : ""}> ${esc(L.tab)}</label>`).join("") +
+  `</div>`;
+  LESSONS.forEach((L, i) => {
+    const no = FIRST + i, qs = THINK[no] || [];
+    if (!qs.length) return;
+    h += `<div class="rblock"><h3>課題${no}：${esc(L.title)}</h3>` +
+      qs.map(([q], j) => `<div>${j + 1}. ${esc(q)}</div>${ans(`t${no}-${j}`)}`).join("") + `</div>`;
+  });
+  h += `<div class="rblock"><h3>自分の作品（課題31 の設計メモ）</h3>` +
+    MEMO.map(([k, t]) => `<div>${esc(t)}</div>${ans("memo-" + k)}`).join("") + `</div>`;
+  h += FREE_Q.map(([k, t]) => `<div class="rblock"><label>${esc(t)}</label>${noteBox(k, 3)}</div>`).join("");
+  h += `<div class="rbtns">
+    <button id="rPrint">印刷する</button>
+    <button id="rCopy">文字をコピー（Classroom に貼る）</button>
+    <button id="rClear">全部消す</button>
+    <span id="rMsg" class="note"></span>
+  </div>`;
+  reportEl.innerHTML = h;
+  document.getElementById("rPrint").onclick = () => { syncPv(); print(); };
+  document.getElementById("rCopy").onclick = copyReport;
+  const clr = document.getElementById("rClear");
+  let armed = 0;
+  clr.onclick = () => {   // confirm は使えない環境があるので、2 回押しで消す
+    if (Date.now() - armed > 4000) {
+      armed = Date.now(); clr.textContent = "もう一度押すと全部消えます"; clr.classList.add("armed");
+      setTimeout(() => { if (Date.now() - armed >= 4000) { clr.textContent = "全部消す"; clr.classList.remove("armed"); } }, 4100);
+      return;
+    }
+    NOTES = {}; try { localStorage.removeItem(NOTE_KEY); } catch {}
+    showReport();
+    document.getElementById("rMsg").textContent = "消しました。";
+  };
+}
+
+// 印刷のとき、入力欄の中身を文字として見せる
+function syncPv() {
+  document.querySelectorAll("[data-note]").forEach(el => {
+    const pv = el.nextElementSibling;
+    if (pv && pv.classList.contains("pv")) pv.textContent = el.value;
+  });
+}
+addEventListener("beforeprint", syncPv);
+
+function reportText() {
+  const v = k => noteText(k) || "（未記入）";
+  let s = `Arduino 2回目（ジョイスティック）レポート\nクラス：${v("r-class")}　番号：${v("r-no")}　名前：${v("r-name")}\n\n`;
+  s += "できた課題：" + (LESSONS.map((L, i) => noteText("done-" + (FIRST + i)) ? String(FIRST + i) : null).filter(Boolean).join("・") || "（なし）") + "\n";
+  LESSONS.forEach((L, i) => {
+    const no = FIRST + i, qs = THINK[no] || [];
+    if (!qs.length) return;
+    s += `\n■ 課題${no}：${L.title}\n` + qs.map(([q], j) => `${j + 1}. ${q}\n→ ${v(`t${no}-${j}`)}`).join("\n") + "\n";
+  });
+  s += "\n■ 自分の作品\n" + MEMO.map(([k, t]) => `${t}：${v("memo-" + k)}`).join("\n") + "\n";
+  s += FREE_Q.map(([k, t]) => `\n■ ${t}\n${v(k)}`).join("\n") + "\n";
+  return s;
+}
+function copyReport() {
+  const t = reportText(), msg = document.getElementById("rMsg");
+  const done = () => { msg.textContent = "コピーしました。Classroom の提出欄に貼りつけてください。"; };
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand("copy"); } catch {}
+    ta.remove();
+    if (ok) done(); else msg.textContent = "コピーできませんでした。印刷で出してください。";
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback);
+  else fallback();
+}
 
 // =====================================================================
 // 画面の切り替え
@@ -1470,6 +1773,8 @@ const ctrl = document.getElementById("ctrl");
 let current = 0;
 function showLesson(i) {
   current = i;
+  REPORT = false;
+  document.querySelectorAll("main > section").forEach(s => s.hidden = s === reportEl);
   const L = LESSONS[i];
   document.querySelectorAll("#tabs button").forEach((b, j) => b.classList.toggle("active", j === i));
   const kindLabel = L.kind === "real" ? `<span class="kind real">実機</span>`
@@ -1488,6 +1793,10 @@ function showLesson(i) {
   });
   document.getElementById("extra").innerHTML = L.extra || "";
   document.getElementById("more").innerHTML = `<b>できたら：</b>${esc(L.more).replace(/\{([A-Z])\}/g, "$1")}`;
+  document.getElementById("think").innerHTML = thinkHtml(FIRST + i);
+  document.getElementById("codehead").innerHTML = Object.keys(V.answers).length
+    ? `コード（<span style="color:var(--on)">□</span> の中を自分で考えて打つ）`
+    : "コード（土台。ここに自分で書き足す）";
 
   if (L.sim) {
     cv.style.display = "block"; realbox.style.display = "none";
@@ -1524,7 +1833,8 @@ showLevel();
 
 // ゲーム用：UNO がなくても矢印キーで動かせる（課題26・29）、スペースでビーム（課題29）
 addEventListener("keydown", e => {
-  if (document.activeElement === manual) return;
+  // 答えを打っている間は、ゲームの操作にしない
+  if (REPORT || /^(INPUT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName)) return;
   const sim = LESSONS[current].sim;
   if (sim !== "ball" && sim !== "dodge") return;
   if (e.key.startsWith("Arrow")) { e.preventDefault(); KEYS[e.key] = true; audio(); }
@@ -1549,11 +1859,16 @@ LESSONS.forEach((L, i) => {
   b.onclick = () => { showLesson(i); b.blur(); };
   tabs.appendChild(b);
 });
+const reportBtn = document.createElement("button");
+reportBtn.textContent = "レポート";
+reportBtn.className = "report";
+reportBtn.onclick = () => { showReport(); reportBtn.blur(); };
+tabs.appendChild(reportBtn);
 showLesson(0);
 
 function frame() {
   const L = LESSONS[current];
-  if (L.sim) DRAW[L.sim]();
+  if (!REPORT && L.sim) DRAW[L.sim]();
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

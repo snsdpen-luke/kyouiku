@@ -16,7 +16,7 @@
 | **決済をえらぶ** | 電子マネー②。キャッシュレス商店のふりかえり（行列と処理時間・ネット障害と残高の置き場所・端末の費用）→ 払い方を4つのものさしでくらべるトレードオフ → 店の条件から決済を設計 → 仮想通貨への問い。N キーで先生用メモ | コンピュータシステム技術（電子マネー） |
 | **自動駐車をつくろう** | 右ハンドル・シフト・アクセル/ブレーキで手動駐車。イージー〜ハード9ステージ（段差・柱・寄せて止めた隣の車・夜・歩行者・後続車と対向車のクラクション）。全クリアで自動制御のページへ進める。先生は Shift+T でロック解除 | 電子計測制御（自動車の制御） |
 | **速い・遅いの正体** | 通信速度（bps）・YouTubeの画質とギガ・動画が軽い理由・ping・節約術を、1画面1ネタの余談形式で。各ネタにさわれる仕掛け。N キーで先生用メモ | コンピュータシステム技術（ネットワーク） |
-| **Arduino 教材**（`arduino/`） | Arduino UNO の実習。コードの穴を埋めて書き込み、Chrome の Web Serial で画面のシミュレータやゲームを動かす。1回目は課題1〜20（LED・スイッチ・サーボ・超音波）、2回目は課題21〜30（ジョイスティック）。仕様は `arduino/HANDOFF.md`（教師用の答えファイルは公開しない）。**Windows の Arduino IDE と Chrome で使う**（Chromebook では書き込めない） | 実習 |
+| **Arduino 教材**（`arduino/`） | Arduino UNO の実習。コードの穴を埋めて書き込み、Chrome の Web Serial で画面のシミュレータやゲームを動かす。1回目は課題1〜20（LED・スイッチ・サーボ・超音波）、2回目は課題21〜31（ジョイスティック）と、考える問い・レポート。仕様は `arduino/HANDOFF.md`（教師用の答えファイルは公開しない）。**Windows の Arduino IDE と Chrome で使う**（Chromebook では書き込めない） | 実習 |
 
 ## 生徒に配るURL
 
@@ -42,7 +42,7 @@
 | 残高はどこにある | <https://snsdpen-luke.github.io/kyouiku/emoney/> |
 | キャッシュレス商店 | <https://snsdpen-luke.github.io/kyouiku/shop/> |
 | Arduino 教材 1回目 | <https://snsdpen-luke.github.io/kyouiku/arduino/src/arduino-kyozai-1.html> （課題1〜20） |
-| Arduino 教材 2回目 | <https://snsdpen-luke.github.io/kyouiku/arduino/src/arduino-kyozai-2.html> （課題21〜30・ジョイスティック） |
+| Arduino 教材 2回目 | <https://snsdpen-luke.github.io/kyouiku/arduino/src/arduino-kyozai-2.html> （課題21〜31・ジョイスティック・レポート） |
 | 決済をえらぶ | <https://snsdpen-luke.github.io/kyouiku/emoney2/> |
 
 Google Classroom にはこのリンクを貼る。ファイルは配らない
