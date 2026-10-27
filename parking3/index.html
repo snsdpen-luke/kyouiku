@@ -123,6 +123,7 @@ tr.click{cursor:pointer}
 .toast{position:absolute;left:50%;top:118px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:12px 20px;border-radius:10px;font-size:16px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;white-space:nowrap}.toast.on{opacity:1}
 .steps button.lock{opacity:.45}
 #pRev .rv{min-height:0;overflow-y:auto;padding-right:4px}
+.tm{font-size:13px}.tm .bar{display:flex;height:16px;border-radius:4px;overflow:hidden;background:var(--panel)}.tm .bar i{display:block;height:100%}.tm .rw{display:grid;grid-template-columns:150px 1fr 60px;gap:8px;align-items:center;margin:3px 0}.tm .lg{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--sub);margin:2px 0}.tm .lg span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;background:var(--c)}
 .acc2 table{border-collapse:collapse;font-size:13px}.acc2 th,.acc2 td{border:1px solid var(--line);padding:3px 8px;text-align:right}.acc2 th{font-weight:600;color:var(--sub)}.acc2 td:first-child{text-align:left}
 .acc2 .hint{font-size:14px;line-height:1.7;margin:2px 0}.acc2 .hint b{color:var(--copper)}
 .chain{display:flex;align-items:stretch;gap:4px}
@@ -185,6 +186,7 @@ tr.click{cursor:pointer}
           <div class="lv2" style="display:contents"><label for="pF">前進の速さ</label><input id="pF" type="range" min="0.5" max="9" step="0.1" value="4"><span class="val" id="pFV"></span>
           <label for="pV">バックの速さ</label><input id="pV" type="range" min="0.5" max="5" step="0.1" value="2"><span class="val" id="pVV"></span></div>
         </div>
+        <div class="note lv2" id="stopNote" style="font-size:12px;color:var(--copper);margin-top:2px"></div>
         <div class="slh you lv2">あなたが決める直す強さ</div>
         <div class="sl lv2">
           <label for="pK">直す強さ</label><input id="pK" type="range" min="0" max="20" step="0.5" value="1"><span class="val" id="pKV"></span>
@@ -506,7 +508,7 @@ function drawTraffic(c){TR.list.forEach(t=>{const [x1,y1]=P(t.x-2.2,t.y-HW),[x2,
 const sgn=v=>(v>=0?'+':'−')+fmt(Math.abs(v)*100)+'cm';
 function pUI(){P1.mR=+$('pS').value;P1.mC=+$('pC').value;if(P1.baseR==null)P1.baseR=0.45;if(P1.baseC==null)P1.baseC=0.3;P1.stop=Math.max(0.05,P1.baseR+P1.mR);P1.corner=Math.max(0.03,P1.baseC+P1.mC);
  $('baseBox').textContent=`前・うしろ ${fmt(P1.baseR*100)}cm　四すみ ${fmt(P1.baseC*100)}cm`+(P1.src?'':'（仮）');{const pv=[...tlog].reverse().find(e=>e.lv===(m.mode==='lv2'?2:1));if(pv)$('baseBox').innerHTML=$('baseBox').textContent+`<br><span style="color:var(--copper)">前回：前・うしろ ${sgn(pv.mR)}・四すみ ${sgn(pv.mC)} → ${pv.result==='成功'?pv.score+' 点':pv.result}</span>`;}
- $('pSV').textContent=`${sgn(P1.mR)} → ${fmt(P1.stop*100)}cm`;$('pCV').textContent=`${sgn(P1.mC)} → ${fmt(P1.corner*100)}cm`;P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('pKV').textContent=fmt(P1.kp,1);saveP();}
+ $('pSV').textContent=`${sgn(P1.mR)} → ${fmt(P1.stop*100)}cm`;$('pCV').textContent=`${sgn(P1.mC)} → ${fmt(P1.corner*100)}cm`;P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('stopNote').textContent=`止まるまでに進む：前進 約${fmt(stopDist(P1.vf)*100)}cm・バック 約${fmt(stopDist(P1.vt)*100)}cm`;$('pKV').textContent=fmt(P1.kp,1);saveP();}
 ['pF','pV','pK','pS','pC'].forEach(i=>$(i).oninput=pUI);
 $('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.mR||0;$('pC').value=P1.mC||0;pUI();
 
@@ -580,6 +582,20 @@ function logHTML(){const L=tlog.slice(-6);if(!L.length)return '';const lv2=L.som
  return `<div class="slh you" style="margin-top:4px">余裕を変えたら、どうなった？（調整の記録）</div><div class="note" style="font-size:12px">条件の文字が同じ回どうしなら、余裕のちがいだけをくらべられます。</div><table class="logt"><tr><th>回</th><th>条件</th><th>レベル</th><th>前・うしろ</th><th>四すみ</th>${lv2?'<th>前進／バック km/h</th>':''}<th>結果</th><th>時間</th><th>点数</th></tr>`+
  L.map((e,i)=>`<tr${i===L.length-1?' class="last"':''}><td>${e.n}</td><td><b>${e.seed?cl(e):'—'}</b></td><td>${e.lv}</td><td>${sgn(e.mR)}</td><td>${sgn(e.mC)}</td>${lv2?`<td>${e.lv>=2?fmt(e.vf*3.6,1)+'／'+fmt(e.vt*3.6,1):'—'}</td>`:''}<td>${e.result}</td><td>${fmt(e.time,1)} 秒</td><td><span class="bar" style="width:${e.score*0.6}px"></span>${e.score}</td></tr>`).join('')+'</table>';}
 $('rTune').onclick=()=>{if(RV.run){LV=RV.run.level;keepCond=RV.run.cond;}setMode('auto');const b=$('s1box');b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),1600);};
+// 時間の内訳：記録の行（0.05秒ごと）を「動いていた／止まっていた理由」に分ける。手動のいちばん速い記録とくらべ、どこで差がついたかを問う
+const TPART=[['d','前進で動いていた','var(--steel)'],['r','バックで動いていた','var(--sens)'],['auto','車のブレーキで止まったまま','var(--copper)'],['brake','自分のブレーキで止まっていた','var(--danger)'],['still','止まっていた（シフト・ハンドル）','var(--line)']];
+function timeParts(R){const p={d:0,r:0,auto:0,brake:0,still:0};R.forEach(x=>{if(Math.abs(x[5])>0.05)p[x[6]==='R'?'r':'d']+=FIX;else if(x[12])p.auto+=FIX;else if(x[7]==='B')p.brake+=FIX;else p.still+=FIX;});return p;}
+function timeHTML(r){const a=timeParts(r.rows),ta=r.rows.length*FIX;
+ let best=null;ownRuns().forEach(x=>{const t=x.rows.length*FIX;if(!best||t<best.t)best={t,p:timeParts(x.rows)};});
+ const T=Math.max(ta,best?best.t:0);const bar=(p,t)=>`<div class="bar" style="width:${(t/T*100).toFixed(1)}%">`+TPART.map(([k,,c])=>p[k]>0?`<i style="width:${(p[k]/t*100).toFixed(1)}%;background:${c}" title="${fmt(p[k],1)} 秒"></i>`:'').join('')+'</div>';
+ let h=`<div class="tm"><div class="note" style="font-size:13px">時間の内訳（どこで時間を使った？）${best?'　数字は「自動／手動」':''}</div><div class="rw"><span>この自動運転</span>${bar(a,ta)}<b>${fmt(ta,1)} 秒</b></div>`;
+ if(best)h+=`<div class="rw"><span>あなたの手動で一番速い記録</span>${bar(best.p,best.t)}<b>${fmt(best.t,1)} 秒</b></div>`;
+ h+=`<div class="lg">`+TPART.map(([k,n,c])=>`<span style="--c:${c}">${n} <b>${fmt(a[k],1)}</b>${best?'／'+fmt(best.p[k],1):''} 秒</span>`).join('')+`</div>`;
+ const hs=[];
+ if(best){let dk=null,dv=0.5;TPART.forEach(([k])=>{const d=a[k]-best.p[k];if(d>dv){dv=d;dk=k;}});if(dk)hs.push(`手動の一番速い記録とくらべて、いちばん差が大きいのは「<b>${TPART.find(x=>x[0]===dk)[1]}</b>」（<b>+${fmt(dv,1)} 秒</b>）。ここを短くするには、どうしたらいい？`);}
+ if(a.auto>1.5)hs.push(`車のブレーキで止まってから、次の操作まで <b>${fmt(a.auto,1)} 秒</b>。`);
+ const wait=r.rows.filter(x=>x[13]>0).length*FIX;if(wait>0.5)hs.push(`まわりの車を <b>${fmt(wait,1)} 秒</b>待たせた。どの数字を変えると、待たせる時間が減る？`);
+ return h+hs.map(t=>`<div class="hint">● ${t}</div>`).join('')+'</div>';}
 // レベル2：車輪速センサで測った速さを目標とくらべ、アクセルを決める。そのようすを数字とグラフで見せ、答えは言わずに問いかける
 function accelHTML(r){const R=r.rows,P=r.p||{},kh=v=>fmt(v*3.6,1),parts=[];
  [['D','前進',P.vf||P.vt],['R','バック',P.vt]].forEach(([g,nm,tg])=>{if(!tg)return;const A=R.filter(x=>x[6]===g);const i0=A.findIndex(x=>Math.abs(x[5])>0.02);if(i0<0)return;
@@ -588,7 +604,6 @@ function accelHTML(r){const R=r.rows,P=r.p||{},kh=v=>fmt(v*3.6,1),parts=[];
   const st=run.slice(Math.min(run.length-5,20)),avg=st.reduce((p,x)=>p+Math.abs(x[5]),0)/st.length,mx=Math.max(...run.map(x=>Math.abs(x[5])));
   let cross=0,pv=0;run.forEach(x=>{const d=Math.abs(x[5])-tg;if(d*pv<0)cross++;if(d)pv=d;});
   parts.push({g,nm,tg,reach,avg,mx,cross,pct:Math.round(avg/tg*100)});});
- const wait=R.filter(x=>x[13]>0).length*FIX;
  // グラフ（目標＝点線、実際＝線、今の場面＝縦線）
  const gw=640,gh=76,T=R[R.length-1][0]||1,vm=Math.max(...R.map(x=>Math.abs(x[5])),(P.vf||0),P.vt||0)*1.15||1,gx=t=>8+(gw-16)*t/T,gy=v=>gh-14-(gh-24)*v/vm;
  let tgl='',act='';R.forEach((x,i)=>{const tg=x[6]==='D'?(P.vf||P.vt):x[6]==='R'?P.vt:null;act+=(i?'L':'M')+gx(x[0]).toFixed(1)+' '+gy(Math.abs(x[5])).toFixed(1);if(tg)tgl+=((i&&R[i-1][6]===x[6])?'L':'M')+gx(x[0]).toFixed(1)+' '+gy(tg).toFixed(1);});
@@ -601,7 +616,6 @@ function accelHTML(r){const R=r.rows,P=r.p||{},kh=v=>fmt(v*3.6,1),parts=[];
  const hs=[];
  parts.forEach(q=>{if(q.pct>115)hs.push(`${q.nm}は、目標より速く、目標の <b>${q.pct}%</b> 出ていた。なぜ目標をこえた？`);if(q.pct<85)hs.push(`${q.nm}は、目標の <b>${q.pct}%</b> までしか出ていない。車は「目標との差 × 直す強さ」の分だけアクセルを踏む。目標に近づくと差は小さくなる。そのとき、アクセルはどうなる？`);
   if(q.cross>=6)hs.push(`${q.nm}で、速さが目標を <b>${q.cross} 回</b>またいだ（速くなったり遅くなったり）。直す強さを変えると、この回数はどう変わる？`);});
- if(wait>0.5)hs.push(`まわりの車を <b>${fmt(wait,1)} 秒</b>待たせた。どの数字を変えると、待たせる時間が減る？`);
  if(!hs.length)hs.push(r.result==='成功'?'速さは目標に合っている。もっと点数を上げるなら、どの数字を動かす？　速くすると、ブレーキが効くまでに進む距離はどうなる？':'速さは目標に合っている。ぶつかった理由は、上の ✕ を押して見てみよう。');
  return `<div class="acc2"><div class="note" style="font-size:13px">アクセルのふりかえり（① 車輪速センサで速さを測る → ② 目標とくらべる → ③ 差 × 直す強さ <b>${fmt(P.kp||0,1)}</b> でアクセルを決める → ④ モーターが動く）</div>${svg}${tb}`+hs.map(h=>`<div class="hint">● ${h}</div>`).join('')+`</div>`;}
 function revWorld(r){return makeWorldC(r.cond);}
@@ -614,7 +628,7 @@ function revUI(){const r=RV.run;const tl=X.cvT.c;tl.clearRect(0,0,720,30);if(!r)
  $('rTime').textContent=fmt(r.rows[RV.i][0],1)+' 秒 / '+fmt(r.time,1)+' 秒';
  let ev=null;r.events.forEach(e=>{if(e.i<=RV.i&&RV.i-e.i<=40)ev=e;});
  if(!ev){const nb=r.events.filter(e=>e.type==='brake').length,nc=r.events.filter(e=>e.type==='crash').length;
-  $('why').innerHTML=`<div class="note" style="font-size:14px;line-height:1.7">この運転で、車がブレーキを踏んだのは <b>${nb} 回</b>${nc?'、ぶつかったのは <b>1 回</b>':''}。<br>上の <span style="color:var(--sens)">▲</span>（ブレーキ）や <span style="color:var(--danger)">✕</span>（ぶつかった）を押すと、その場面の理由が出ます。</div>`+(r.level>=2?accelHTML(r):'')+logHTML();return;}
+  $('why').innerHTML=`<div class="note" style="font-size:14px;line-height:1.7">この運転で、車がブレーキを踏んだのは <b>${nb} 回</b>${nc?'、ぶつかったのは <b>1 回</b>':''}。<br>上の <span style="color:var(--sens)">▲</span>（ブレーキ）や <span style="color:var(--danger)">✕</span>（ぶつかった）を押すと、その場面の理由が出ます。</div>`+`<div class="acc2">${timeHTML(r)}</div>`+(r.level>=2?accelHTML(r):'')+logHTML();return;}
  const nm=id=>(SENSORS.find(x=>x.id===id)||{}).name||id;const cm=v=>fmt(v*100)+' cm';
  const box=(c,h,t)=>`<div class="bx ${c}"><h5>${h}</h5>${t}</div>`,ar='<span class="ar2">→</span>';
  let html;
