@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0;font-size:14px}img{max-width:100%}</style>
+<title>ふりかえり演習</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@700;900&display=swap">
+<style>
+/* layout: 問題カード1枚を画面いっぱいに。4:3 横画面に収め、上に部ごとの進み具合 */
+:root{
+  --bg:#eef2f6; --card:#ffffff; --ink:#1c2836; --sub:#5b6876; --line:#d5dde6;
+  --accent:#2a5fc4; --accent-soft:#e3ebfa; --ok:#1d7f55; --ok-soft:#e1f3ea; --ng:#b8402b; --ng-soft:#fbe7e2;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-head:"Zen Maru Gothic","BIZ UDPGothic","Hiragino Sans",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141b24; --card:#1d2631; --ink:#e6edf4; --sub:#9aa8b6; --line:#334150;
+  --accent:#7aa5f0; --accent-soft:#233452; --ok:#5cc596; --ok-soft:#1b3a2e; --ng:#f08a74; --ng-soft:#432622; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141b24; --card:#1d2631; --ink:#e6edf4; --sub:#9aa8b6; --line:#334150;
+  --accent:#7aa5f0; --accent-soft:#233452; --ok:#5cc596; --ok-soft:#1b3a2e; --ng:#f08a74; --ng-soft:#432622; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;box-sizing:border-box}
+*{box-sizing:border-box}
+.app{max-width:1040px;height:100%;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+h1{font-family:var(--f-head);font-size:22px;margin:0;font-weight:900}
+.chips{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.chip{font-size:13px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--sub);background:var(--card)}
+.chip.now{border-color:var(--accent);color:var(--accent);font-weight:700}
+.chip.done{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.count{font-size:14px;color:var(--sub);font-variant-numeric:tabular-nums}
+.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.prog div{height:100%;background:var(--accent)}
+.card{flex:1;min-height:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 28px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.sec{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.sec .lbl{font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.06em}
+.sec .nm{font-family:var(--f-head);font-size:17px;font-weight:700;color:var(--sub)}
+.tag{font-size:13px;font-weight:700;padding:2px 10px;border-radius:6px;background:var(--ng-soft);color:var(--ng)}
+.q{font-size:21px;font-weight:700;line-height:1.6;white-space:pre-line;text-wrap:pretty}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts.long{grid-template-columns:1fr}
+.opt{font:inherit;font-size:17px;text-align:left;padding:12px 16px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;min-height:54px;display:flex;gap:10px;align-items:flex-start}
+.opt .mk{flex:none;font-weight:700;color:var(--sub)}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:focus-visible,.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt.pick{border-color:var(--accent);background:var(--accent-soft)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--ng);background:var(--ng-soft)}
+.opt.miss{border-color:var(--ok);border-style:dashed}
+.opt:disabled{cursor:default}
+.box{width:20px;height:20px;border:2px solid var(--sub);border-radius:4px;flex:none;margin-top:3px;display:grid;place-items:center;font-size:14px;line-height:1}
+.opt.pick .box{border-color:var(--accent);background:var(--accent);color:var(--card)}
+.fb{border-radius:10px;padding:12px 16px;font-size:16px}
+.fb.ok{background:var(--ok-soft)} .fb.ng{background:var(--ng-soft)}
+.fb strong{display:block;margin-bottom:2px}
+.row{display:flex;gap:10px;justify-content:flex-end;margin-top:auto;flex-wrap:wrap}
+.btn{font:inherit;font-weight:700;font-size:17px;padding:12px 22px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:var(--card);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.bank{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.bank .opt{min-height:0;padding:8px 10px;font-size:16px;justify-content:center;text-align:center}
+.tin{font:inherit;font-size:22px;width:min(420px,100%);padding:10px 14px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+textarea{font:inherit;font-size:17px;width:100%;min-height:130px;padding:12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
+.model{background:var(--accent-soft);border-radius:10px;padding:12px 16px}
+.self{display:flex;gap:8px;flex-wrap:wrap}
+.self .opt{min-height:0}
+.hint{font-size:14px;color:var(--sub)}
+.res-total{font-family:var(--f-head);font-size:40px;font-weight:900;font-variant-numeric:tabular-nums}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:200px 1fr 64px;gap:10px;align-items:center;font-size:15px}
+.track{height:14px;border-radius:7px;background:var(--line);overflow:hidden}
+.fill{height:100%;background:var(--accent)}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.parts{display:flex;gap:24px;flex-wrap:wrap;font-size:16px}
+.parts b{font-size:22px;font-variant-numeric:tabular-nums}
+.start label{font-size:15px;color:var(--sub)}
+.start input{font:inherit;font-size:22px;width:120px;padding:8px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+table.plan{border-collapse:collapse;font-size:16px}
+table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
+ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
+@media (max-width:760px){.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:18px}}
+@media (prefers-reduced-motion:no-preference){.fill,.prog div{transition:width .5s ease}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>ふりかえり演習</h1>
+    <div class="chips" id="chips"></div>
+    <div class="count" id="count"></div>
+  </header>
+  <div class="prog"><div id="bar" style="width:0"></div></div>
+  <section class="card" id="card"></section>
+</div>
+
+<script>
+const CH={A:'メッセージが届くまで',B:'速い・遅いの正体',C:'電波はどこまで届くか',D:'パスワードは何秒で破られる？',E:'残高はどこにある？'};
+const PART={term:'第1部　用語',one:'第2部　選択',multi:'第2部　選択',w:'第3部　記述'};
+// t:'term' 入力 / 'one' 1つ選ぶ / 'multi' すべて選ぶ / 'w' 記述
+const Q=[
+// ===== 第1部 用語 =====
+{t:'term',s:'A',q:'パケットの先頭に付く「送り状」。宛先・送信元・番号・ポート番号などが書かれている。',a:['ヘッダ','ヘッダー']},
+{t:'term',s:'A',q:'名前（talk.example.com など）から、数字の住所（IPアドレス）を調べるしくみ。',a:['DNS']},
+{t:'term',s:'A',q:'同じ住所の中で、どのアプリ宛てかを示す「部屋番号」。',a:['ポート番号','ポート']},
+{t:'term',s:'A',q:'ルーターを1台通るごとに1ずつ減り、0になるとパケットが捨てられる数。',a:['TTL']},
+{t:'term',s:'A',q:'受け取った側が返す「届いた」という返事。',a:['ACK','アック']},
+{t:'term',s:'A',q:'家の中の住所（192.168.〜）を、外向きの住所に書き換えるしくみ。ルーターが行う。',a:['NAT','ナット']},
+{t:'term',s:'B',q:'動画の再生の前に、数秒ぶんを先に受け取って貯めておくこと。空になると「ぐるぐる」が出る。',a:['バッファ','バッファー']},
+{t:'term',s:'B',q:'相手に小さなデータを送り、返ってくるまでの時間を測ること。単位は ms。',a:['ping','ピング','ピン']},
+{t:'term',s:'B',q:'通信の経路の中で、いちばん細いところ。全体の速さはここで決まる。',a:['ボトルネック']},
+{t:'term',s:'B',q:'一度受け取ったデータをスマホに保存して、次は受け取り直さなくて済むようにするしくみ。',a:['キャッシュ']},
+{t:'term',s:'B',q:'動画の、1秒あたりのコマ数を表す単位（アルファベット3文字）。',a:['fps']},
+{t:'term',s:'C',q:'電波が進むうちに弱くなること。距離・壁・床・水などで起きる。（漢字2文字）',a:['減衰','げんすい']},
+{t:'term',s:'C',q:'同じ周波数の電波がぶつかって、通信が乱れること。（漢字2文字）',a:['干渉','かんしょう']},
+{t:'term',s:'C',q:'ルーターの電波を受け取り、別の場所から出し直す機械。',a:['中継器','ちゅうけいき','メッシュ','中継機']},
+{t:'term',s:'C',q:'1秒に波が何回ふれるかを表すもの。単位は Hz。（漢字3文字）',a:['周波数','しゅうはすう']},
+{t:'term',s:'D',q:'よく使われるパスワードや単語の一覧から、先にためしていく攻撃。',a:['辞書攻撃','じしょこうげき']},
+{t:'term',s:'D',q:'サイトがパスワードをそのまま保存せず、元に戻せない記号に変換したもの。',a:['ハッシュ']},
+{t:'term',s:'D',q:'「知っている」と「持っている」など、種類のちがう2つで本人を確かめること。',a:['二要素認証','2要素認証','にようそにんしょう']},
+{t:'term',s:'D',q:'本物そっくりの偽サイトで、パスワードなどを入力させて盗むこと。',a:['フィッシング']},
+{t:'term',s:'E',q:'残高が、カードやスマホのICチップに記録されるタイプの電子マネー。',a:['ICカード型','ICカードがた','IC型']},
+{t:'term',s:'E',q:'クレジットカードで払うとき、「この番号で使っていい？」とカード発行会社に問い合わせること。',a:['オーソリ','オーソリゼーション']},
+{t:'term',s:'E',q:'ICカードと改札機が、おたがいに「本物か」を確かめあうこと。（漢字4文字）',a:['相互認証','そうごにんしょう']},
+{t:'term',s:'E',q:'コイルのまわりの磁界が変わると、コイルに電気が生まれる現象。（漢字4文字）',a:['電磁誘導','でんじゆうどう']},
+{t:'term',s:'E',q:'真ん中の1台のコンピュータが、まとめて計算する形。（漢字4文字）',a:['集中処理','しゅうちゅうしょり']},
+
+// ===== 第2部 選択：A =====
+{t:'one',s:'A',q:'「明日10時」と送ります。日本語1文字＝3バイト、英数字1文字＝1バイトとすると、何バイトですか。',o:['5バイト','8バイト','11バイト','15バイト'],a:2,e:'「明」「日」「時」が3文字×3＝9、「1」「0」が2文字×1＝2。合わせて11バイトです。'},
+{t:'one',s:'A',q:'6,000,000バイトの動画を、1箱1,500バイトのパケットに分けて送ります。パケットはいくつになりますか。',o:['400個','4,000個','9,000個','40,000個'],a:1,e:'6,000,000 ÷ 1,500 ＝ 4,000個です。'},
+{t:'one',s:'A',q:'TTL を 20 にして送り出しました。サーバーまでの道に、ルーターが25台あります。どうなりますか。',o:['届くが、TTLは −5 になっている','途中でTTLが0になり、捨てられる','ルーターがTTLを自動でふやして届ける','25台目のルーターが、送り主に送り直しをたのむ'],a:1,e:'ルーターを通るたびに1減り、0になったところで捨てられます。迷子のパケットがいつまでも回らないためのしくみです。'},
+{t:'multi',s:'A',q:'ヘッダに「宛先」と「番号」は書いてありますが、「送信元」が書いてありません。起きることをすべて選びなさい。',o:['パケットは相手まで届く','相手は、正しい順番に並べられる','相手は、「届いた」の返事をどこへ返せばいいか分からない','途中のルーターで止められる'],a:[0,1,2],e:'ルーターは宛先だけを見て進めるので届きます。番号があるので並べられます。返事の宛先だけが分かりません。'},
+{t:'one',s:'A',q:'自分のスマホは 192.168.0.12、家のルーターの外向きの住所は 203.0.113.77、LINEのサーバーは 203.0.113.5、友だちは 10.20.30.40 です。\nサーバーが友だちへ送り直すパケットのヘッダとして正しいものはどれですか。',o:['宛先 10.20.30.40 ／ 送信元 192.168.0.12','宛先 10.20.30.40 ／ 送信元 203.0.113.77','宛先 10.20.30.40 ／ 送信元 203.0.113.5','宛先 203.0.113.5 ／ 送信元 10.20.30.40'],a:2,e:'パケットは2回作られます。サーバーが新しく作る箱なので、送信元はサーバーです。友だちに届く箱に自分の住所は書かれていません。'},
+{t:'one',s:'A',q:'前の問題と同じ家です。LINEのサーバーから見ると、自分のスマホの住所はどう見えますか。',o:['192.168.0.12','192.168.0.1','203.0.113.77','203.0.113.5'],a:2,e:'家のルーターがNATで送信元を外向きの住所に書き換えるので、サーバーには 203.0.113.77 に見えます。'},
+{t:'one',s:'A',q:'次の4つは、TCPとUDPのどちらを使いますか。正しい組み合わせを選びなさい。\n① ネット銀行の振込　② オンラインゲームの位置情報　③ ビデオ通話　④ 写真を送る',o:['① TCP　② UDP　③ UDP　④ TCP','① TCP　② TCP　③ UDP　④ TCP','① UDP　② UDP　③ TCP　④ TCP','① TCP　② UDP　③ TCP　④ UDP'],a:0,e:'1文字も欠けてはいけないものはTCP、古い情報を待つより次が大事なものはUDPです。'},
+{t:'multi',s:'A',q:'パケットを送ったのに、ACKが返ってきません。原因として考えられるものをすべて選びなさい。',o:['行きのパケットが途中で捨てられた','ACKが帰りの途中で捨てられた','受け取る側の電源が切れていた','宛先のIPアドレスがまちがっていた','ポート番号が443だった'],a:[0,1,2,3],e:'行き・帰りのどちらで消えても、相手がいなくても、宛先がちがっても返事は来ません。443 はふつうの番号で、原因になりません。'},
+{t:'one',s:'A',q:'次のア〜ウの正しい・まちがいの組み合わせを選びなさい。\nア　ルーターは、パケットの中身を読んで行き先を決めている\nイ　同じメッセージのパケットでも、別々の道を通ることがある\nウ　友だちのスマホの電源が切れていると、サーバーが預かって待つ',o:['ア 正　イ 正　ウ 正','ア 誤　イ 正　ウ 正','ア 誤　イ 誤　ウ 正','ア 正　イ 誤　ウ 誤'],a:1,e:'ルーターが見るのは宛先だけで、中身は読みません。'},
+
+// ===== 第2部 選択：B =====
+{t:'one',s:'B',q:'50Mbps の回線で、3MB の写真を10枚送ります。およそ何秒かかりますか。',o:['約0.6秒','約4.8秒','約6秒','約48秒'],a:1,e:'30MB × 8 ＝ 240Mb。240 ÷ 50 ＝ 4.8秒です。'},
+{t:'one',s:'B',q:'速度制限で 128kbps になりました。2MB のWebページを開くのに、およそどれくらいかかりますか。',o:['約16秒','約2分','約16分','約2時間'],a:1,e:'2MB ＝ 16,000kb。16,000 ÷ 128 ＝ 125秒、約2分です。'},
+{t:'one',s:'B',q:'1か月7GBの契約です。720p（1時間で約1.0GB）の動画を毎日30分見ると、何日でギガがなくなりますか（ほかは使わないとします）。',o:['約3.5日','約7日','約14日','約28日'],a:2,e:'1日0.5GB。7 ÷ 0.5 ＝ 14日です。'},
+{t:'one',s:'B',q:'3分の動画を撮ります。4K・60fps（1分約400MB）と、1080p・30fps（1分約60MB）では、容量の差はおよそいくらですか。',o:['約120MB','約340MB','約1GB','約3.4GB'],a:2,e:'1,200MB − 180MB ＝ 1,020MB、約1GBです。'},
+{t:'one',s:'B',q:'動画の画質を「自動」にしています。回線の速さが 6Mbps のとき、選ばれるいちばん高い画質はどれですか。\n（必要な速さ：360p 1Mbps／480p 2Mbps／720p 4Mbps／1080p 8Mbps／4K 25Mbps）',o:['480p','720p','1080p','4K'],a:1,e:'6Mbps は 720p の4Mbps には足りますが、1080p の8Mbps には足りません。止まるより画質を下げるほうを選びます。'},
+{t:'one',s:'B',q:'対戦ゲームで、ping が 200ms でした。自分の操作が相手の画面に届くまで、およそ何秒遅れますか。',o:['約0.1秒','約0.2秒','約0.4秒','約2秒'],a:0,e:'ping は往復の時間です。片道はその半分の100ms＝0.1秒です。'},
+{t:'multi',s:'B',q:'スマホのギガの節約に「効く」ものをすべて選びなさい。',o:['画質を手動で360pにする','5Gをオフにして4Gにする','省データモードをオンにする','ブラウザのキャッシュを消す','アプリの自動更新をWi-Fiのときだけにする','スマホを再起動する'],a:[0,2,4],e:'4G/5Gや再起動は「速さ」の話で、量は減りません。キャッシュを消すと受け取り直すので、むしろ増えます。'},
+{t:'multi',s:'B',q:'ギガの使う量が「むしろ増える」ものをすべて選びなさい。',o:['LINEで写真を「オリジナル画質」で送る','音楽の音質を「最高」にする','機内モードをオンにしてからオフにする','テザリングでノートPCをつなぐ','SNSの動画の自動再生をオフにする'],a:[0,1,3],e:'機内モードは量に関係なく、自動再生オフは節約になります。'},
+{t:'one',s:'B',q:'夜9時にネットが遅くなる理由について、ア〜ウの正しい・まちがいの組み合わせを選びなさい。\nア　「光回線1Gbps」は、出せる速さの上限である\nイ　先に使い始めた人が、優先して速く使える\nウ　全体の速さは、いちばん細い段を、そのとき使っている人数で分けた速さになる',o:['ア 正　イ 正　ウ 正','ア 正　イ 誤　ウ 正','ア 誤　イ 誤　ウ 正','ア 正　イ 正　ウ 誤'],a:1,e:'優先順位はなく、ほぼ均等に分け合います。'},
+
+// ===== 第2部 選択：C =====
+{t:'one',s:'C',q:'電波が「半分」になることが6回くり返されると、強さは最初の何分の1ですか。',o:['6分の1','12分の1','36分の1','64分の1'],a:3,e:'2を6回かけると64。64分の1です。'},
+{t:'one',s:'C',q:'壁のない場所で、ルーターから2mの電波の強さを100とします。8mでは、強さはいくつになりますか。',o:['50','25','12.5','6.25'],a:3,e:'距離が4倍なので、強さは 4×4＝16分の1。100 ÷ 16 ＝ 6.25です。'},
+{t:'one',s:'C',q:'2.4GHz の電波が、木の壁（半分1回）とコンクリートの壁（半分4回）を1枚ずつ通りました。強さは何分の1になりますか。',o:['5分の1','8分の1','16分の1','32分の1'],a:3,e:'半分の回数は足し算で 1＋4＝5回。2を5回かけて32分の1です。'},
+{t:'one',s:'C',q:'外壁を1枚通ると、2.4GHz は半分3回、5GHz は半分4回です。通ったあとの5GHzの強さは、2.4GHzの何倍ですか（通る前は同じ強さとします）。',o:['2倍','同じ','2分の1','4分の1'],a:2,e:'5GHz の方が半分1回ぶん多いので、2.4GHz の2分の1です。'},
+{t:'multi',s:'C',q:'2.4GHz帯の特徴として正しいものをすべて選びなさい。',o:['遠くまで届きやすい','壁や角を回り込みやすい','5GHz帯より速い','電子レンジや近所のWi-Fiと混みやすい','5GHz帯より波長が短い'],a:[0,1,3],e:'2.4GHz は波が長く（約12cm）、回り込んで遠くまで届きますが、速さは5GHzの方が上です。'},
+{t:'one',s:'C',q:'2階の奥の部屋に電波が届きません。中継器を置く場所として、いちばん良いのはどこですか。',o:['電波がほとんど届かない、2階の奥の部屋','ルーターの電波が届いている、2階の廊下','ルーターのすぐ横','2階の奥の部屋の、金属の棚の中'],a:1,e:'中継器はルーターの電波を受け取って出し直す機械です。電波が届かない場所に置いても働きません。'},
+{t:'one',s:'C',q:'鉄筋コンクリートのマンションです。ルーターと同じ部屋でゲームをする人と、別の階で動画を見る人がいます。それぞれに向く電波の組み合わせはどれですか。',o:['同じ部屋 5GHz　／　別の階 2.4GHz','同じ部屋 2.4GHz　／　別の階 5GHz','どちらも 5GHz','どちらも 2.4GHz'],a:0,e:'近くは速い5GHz（笛）、遠い部屋・別の階は届きやすい2.4GHz（太鼓）です。'},
+{t:'one',s:'C',q:'次のア〜ウの正しい・まちがいの組み合わせを選びなさい。\nア　電子レンジが使う 2.45GHz は、Wi-Fiの2.4GHz帯と同じ高さの波である\nイ　周波数が高い電波ほど、波長は長い\nウ　ルーターからの距離が2倍になると、半分が2回になる',o:['ア 正　イ 正　ウ 正','ア 正　イ 誤　ウ 誤','ア 正　イ 誤　ウ 正','ア 誤　イ 誤　ウ 正'],a:2,e:'周波数が高いほど、波長は短くなります。'},
+
+// ===== 第2部 選択：D =====
+{t:'one',s:'D',q:'小文字だけのパスワードを、8文字から10文字に長くしました。組み合わせの数は何倍になりますか。',o:['約1.25倍','26倍','52倍','676倍'],a:3,e:'1文字ふえるごとに26倍。2文字ふえたので 26×26＝676倍です。'},
+{t:'one',s:'D',q:'総当たり攻撃で、いちばん破られにくいのはどれですか。',o:['小文字だけ 12文字','全部まぜる（94種類） 8文字','数字だけ 16けた','小文字と数字をまぜて 10文字'],a:0,e:'26¹²は約9.5京、10¹⁶は1京、94⁸は約6千兆、36¹⁰は約3.7千兆。長さが効くので、種類が少なくても小文字12文字がいちばん多くなります。'},
+{t:'one',s:'D',q:'1秒に100億回ためせるコンピュータで、数字だけ10けたのパスワードを全部ためします。最大で何秒かかりますか。',o:['約1秒','約10秒','約3時間','約1年'],a:0,e:'数字10けたは100億通り。100億 ÷ 100億 ＝ 1秒です。'},
+{t:'one',s:'D',q:'総当たり攻撃で、まちがいが続いても「ロック」がかからないのはどちらですか。',o:['ログイン画面に、パスワードを打ちこんで試すとき','サイトから盗んだハッシュを、自分のパソコンで試すとき','どちらもロックがかかる','どちらもロックはかからない'],a:1,e:'ロックはサイトが回数を数えて行います。盗んだデータを手元で試すときは、サイトは気づけません。'},
+{t:'multi',s:'D',q:'本人確認の3種類のうち、「持っている」に当たるものをすべて選びなさい。',o:['スマホに届く6けたの番号','パターンロック','学生証カードで開くドア','秘密の質問（ペットの名前）','銀行のキャッシュカード','手のひらの静脈'],a:[0,2,4],e:'パターンロックと秘密の質問は「知っている」、静脈は「体」です。'},
+{t:'one',s:'D',q:'二段階認証として「弱い」組み合わせはどれですか。',o:['パスワード ＋ スマホに届く6けたの番号','パスワード ＋ 秘密の質問','パスワード ＋ 認証アプリの番号','パスワード ＋ スマホの通知で「はい」を押す'],a:1,e:'パスワードも秘密の質問も「知っている」なので、2つでも同じ種類です。'},
+{t:'one',s:'D',q:'パスキーで、サイトが預かっているものはどれですか。',o:['ハンコ','印影','指紋のデータ','パスワードのハッシュ'],a:1,e:'ハンコはスマホから出ません。サイトには印影だけを預けます。'},
+{t:'one',s:'D',q:'パスキーが偽サイト（フィッシング）にだまされにくい理由はどれですか。',o:['指紋のデータをサイトに送って、本物か照合するから','ハンコに本物のサイト名が刻まれていて、偽サイトの紙には押さないから','偽サイトには、そもそもアクセスできなくなるから','印影が30秒ごとに変わるから'],a:1,e:'指紋や顔はスマホの中で確かめるだけで、サイトには送りません。'},
+{t:'one',s:'D',q:'次のア〜ウの正しい・まちがいの組み合わせを選びなさい。\nア　認証アプリの番号は、30秒ほどで新しい番号に変わる\nイ　6けたの番号（100万通り）は、3回ためせば当たる見こみが高い\nウ　パスキーは、「持っている」と「体」を組み合わせたしくみである',o:['ア 正　イ 正　ウ 正','ア 正　イ 誤　ウ 正','ア 誤　イ 誤　ウ 正','ア 正　イ 誤　ウ 誤'],a:1,e:'100万通りを3回で当てる確率は、ほぼ0です。'},
+
+// ===== 第2部 選択：E =====
+{t:'multi',s:'E',q:'「前払い」に当たるものをすべて選びなさい。',o:['Suica・nimoca','WAON','PayPay（チャージした残高）','iD・QUICPay','デビットカード','図書カード'],a:[0,1,2,5],e:'iD・QUICPay はかざして使いますが後払い、デビットカードはその場で払う方式です。'},
+{t:'one',s:'E',q:'Suica（これまでの方式）の残高を「書きかえる」ことができるのはどれですか。',o:['駅の改札機や券売機だけ','スマホのアプリだけ','改札機とスマホのアプリの両方','どれもできない'],a:0,e:'残高を読むのは鍵なしでできますが、書きかえには鍵がいり、鍵は決まった会社の機械しか持っていません。'},
+{t:'one',s:'E',q:'店舗提示型のコード決済で160円払いました。残高が実際に書きかわるのはどこですか。',o:['お客のスマホ','お店のQRコードの紙','コード決済会社のサーバ','お店のタブレット'],a:2,e:'スマホは画面で見せているだけです。書きかわるのはサーバの記録です。'},
+{t:'one',s:'E',q:'文化祭の屋台と、コンビニに向くコード決済の方式の組み合わせはどれですか。',o:['屋台 店舗提示型　／　コンビニ 利用者提示型','屋台 利用者提示型　／　コンビニ 店舗提示型','どちらも 店舗提示型','どちらも 利用者提示型'],a:0,e:'屋台はQRを印刷した紙だけで始められる店舗提示型、コンビニは速くてまちがえにくい利用者提示型が向きます。'},
+{t:'one',s:'E',q:'利用者提示型のコードが、数分ごとに書きかわるのはなぜですか。',o:['スマホの電池を長もちさせるため','画面を写真にとられても、あとで使われないようにするため','残高をスマホの中で計算し直すため','お店のレジが読みやすくするため'],a:1,e:'いまだけ使える番号にしておけば、写真にとられても使えません。'},
+{t:'one',s:'E',q:'クレジットカードで1万円の服を買い、「承認」が返ってきました。この瞬間のお金の動きとして正しいものはどれですか。',o:['お客の銀行口座から1万円が引かれた','カード会社がお店に1万円を払い終わった','まだ、だれのお金も動いていない','お店の売上からすぐに手数料が引かれた'],a:2,e:'承認までは「使っていいか」の確認だけです。お客の口座が減るのは月1回の引き落としのときです。'},
+{t:'one',s:'E',q:'8,000円の商品がカードで売れました。加盟店手数料が4％のとき、お店に入るお金はいくらですか。',o:['7,200円','7,680円','7,960円','8,320円'],a:1,e:'8,000 × 0.04 ＝ 320円が手数料。8,000 − 320 ＝ 7,680円です。'},
+{t:'one',s:'E',q:'朝の駅に2,400人が来ます。改札は4台で、QRで通ると1人2.0秒かかります。全員が通り終わるのに何分かかりますか。',o:['約5分','約10分','約20分','約40分'],a:2,e:'1台で1分に30人、4台で120人。2,400 ÷ 120 ＝ 20分です。ICの1.0秒なら10分ですみます。'},
+{t:'one',s:'E',q:'「通信が切れても払える」と「新しい割引運賃をすぐ始められる」。それぞれ得意なのはどちらの形ですか。',o:['通信が切れても 分散処理　／　新しい割引 集中処理','通信が切れても 集中処理　／　新しい割引 分散処理','どちらも 分散処理','どちらも 集中処理'],a:0,e:'分散処理はその場で計算でき、集中処理は真ん中だけ直せば済みます。'},
+{t:'one',s:'E',q:'次のア〜ウの正しい・まちがいの組み合わせを選びなさい。\nア　カード番号のチェック用の数字が合っていれば、そのカードは必ず使える\nイ　交通系ICカードには電池が入っていない\nウ　センターサーバー方式にすると、通信が切れたときに困る側になる',o:['ア 正　イ 正　ウ 正','ア 誤　イ 正　ウ 正','ア 誤　イ 誤　ウ 正','ア 正　イ 正　ウ 誤'],a:1,e:'チェック用の数字が見つけるのは打ちまちがいだけです。使えるかはカードを出した会社が決めます。'},
+
+// ===== 第3部 記述 =====
+{t:'w',s:'A',q:'文字のメッセージはTCPで送るのに、ビデオ通話はUDPを使います。その理由を、TCPのしくみ（再送）にふれて説明しなさい。',m:'TCPは欠けたパケットを再送するが、ビデオ通話で再送を待つと映像が固まり声が遅れる。古いコマを待つより次のコマが大事なので、再送しないUDPを使う。',k:['TCPは欠けたら「再送する」ことが書けている','通話は「待つと止まる・遅れる」ので再送しないUDP、と書けている']},
+{t:'w',s:'B',q:'光回線（1Gbps）の家なのに、夜9時になると遅くなります。その理由を「分け合う」「いちばん細いところ」の2つの言葉を使って説明しなさい。',m:'1Gbpsは上限で、回線は家族・マンション・近所・地域の大勢と分け合っている。夜はみんなが使うので、いちばん細いところを大勢で分けることになり、1人あたりの速さが落ちる。',k:['回線をほかの人と「分け合っている」ことが書けている','「いちばん細いところ」を大勢で分けるので遅くなる、と書けている']},
+{t:'w',s:'C',q:'鉄筋コンクリートのマンションで、ルーターと別の階の部屋に電波が届きにくい理由と、その対策を1つ書きなさい。',m:'コンクリートの床は電波を大きく減らす（半分6回以上）から。対策は、中継器を階段や廊下に置く、ルーターを家の真ん中の高い所に置く、遠い部屋では2.4GHzを使う、など。',k:['コンクリートの床で大きく減る、と書けている','対策（中継器・置き場所・2.4GHz のどれか）が書けている']},
+{t:'w',s:'D',q:'サイトからデータが漏れたとき、パスワードとパスキーでは何がちがいますか。「印影」という言葉を使って説明しなさい。',m:'パスワードは漏れるとそのまま使われてしまう。パスキーではサイトが預かっているのは印影だけで、印影からハンコは作れないので、漏れてもログインには使えない。',k:['パスワードは漏れると使われる、と書けている','パスキーは印影だけでハンコは作れない、と書けている']},
+{t:'w',s:'E',q:'Suicaは2001年に分散処理を選びましたが、2023年からセンターサーバー方式（集中処理）へ移っています。それぞれの理由を説明しなさい。',m:'2001年は回線や真ん中のコンピュータが遅く、毎回問い合わせると0.2秒に間に合わなかったので、改札機とカードで計算する分散処理にした。いまは回線とコンピュータが速くなり、真ん中だけ直せば新しい運賃や割引を早く始められるので、集中処理へ移っている。',k:['2001年は回線・コンピュータが遅かった、と書けている','いまは速くなり、真ん中だけ直せば済む、と書けている']}
+];
+
+const EXTRA=['パケット','ルーター','UDP','波長','速度制限','パスキー'];
+const BANK=[...Q.filter(q=>q.t==='term').map(q=>q.a[0]),...EXTRA].sort((a,b)=>a.localeCompare(b,'ja'));
+const LET='アイウエオカ';
+let st={no:'',i:-1,ans:{},tin:{},self:{},text:{},shown:{},ord:{},pick:{}};
+const KEY='fukushu-v4';
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)st=Object.assign(st,s)}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s).normalize('NFKC').toLowerCase().replace(/[\s・\-ー－―‐。、.,]/g,'').replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60));
+const isTermOK=(q,v)=>q.a.some(x=>norm(x)===norm(v));
+const sameSet=(a,b)=>a.length===b.length&&a.every(x=>b.includes(x));
+function correct(i){const q=Q[i];
+  if(q.t==='term')return st.tin[i]!=null&&isTermOK(q,st.tin[i]);
+  if(q.t==='one')return st.ans[i]===q.a;
+  if(q.t==='multi')return Array.isArray(st.ans[i])&&sameSet(st.ans[i],q.a);
+  return false}
+function answered(i){const q=Q[i];return q.t==='w'?st.self[i]!=null:q.t==='term'?st.tin[i]!=null:st.ans[i]!=null}
+function order(i){const q=Q[i];if(!st.ord[i]){const a=q.o.map((_,k)=>k);for(let n=a.length-1;n>0;n--){const r=Math.floor(Math.random()*(n+1));[a[n],a[r]]=[a[r],a[n]]}st.ord[i]=a;save()}return st.ord[i]}
+const partOf=q=>q.t==='term'?1:q.t==='w'?3:2;
+
+function chrome(){
+  const parts=[1,2,3].map(p=>{const idx=Q.map((q,i)=>i).filter(i=>partOf(Q[i])===p);
+    const cur=st.i>=0&&st.i<Q.length&&partOf(Q[st.i])===p;const done=idx.every(answered);
+    return `<span class="chip ${cur?'now':done?'done':''}">${['','第1部 用語','第2部 選択','第3部 記述'][p]}（${idx.length}）</span>`});
+  $('chips').innerHTML=parts.join('');
+  $('count').textContent=st.i>=0&&st.i<Q.length?`${st.i+1} / ${Q.length}`:'';
+  $('bar').style.width=(Q.filter((q,i)=>answered(i)).length/Q.length*100)+'%';
+}
+function head(q){return `<div class="sec"><span class="lbl">${PART[q.t]}</span><span class="nm">${esc(CH[q.s])}</span>${q.t==='multi'?'<span class="tag">すべて選ぶ</span>':''}</div>`}
+function nav(canNext){return `<div class="row"><button class="btn ghost" id="back" ${st.i===0?'disabled':''}>もどる</button><button class="btn" id="next" ${canNext?'':'disabled'}>次へ</button></div>`}
+function bindNav(){$('back').onclick=()=>{st.i--;save();render()};const n=$('next');if(n)n.onclick=()=>{st.i++;save();render()}}
+
+function render(){
+  chrome();
+  if(st.i<0)return start();
+  if(st.i>=Q.length)return result();
+  const q=Q[st.i];
+  if(q.t==='term')return term(q);
+  if(q.t==='w')return written(q);
+  return choice(q);
+}
+function term(q){
+  const i=st.i,done=st.tin[i]!=null,ok=done&&isTermOK(q,st.tin[i]);
+  const cls=w=>!done?'':w===q.a[0]?'right':w===st.tin[i]?'wrong':'';
+  $('card').innerHTML=head(q)+`<div class="q">${esc(q.q)}</div>
+   <div class="hint">これを何といいますか。下の一覧から選びなさい。</div>
+   ${done?`<div class="fb ${ok?'ok':'ng'}"><strong>${ok?'正解です。':'正解は「'+esc(q.a[0])+'」です。'}</strong></div>`:''}
+   <div class="bank">${BANK.map(w=>`<button class="opt ${cls(w)}" data-w="${esc(w)}" ${done?'disabled':''}>${esc(w)}</button>`).join('')}</div>
+   <div class="row"><button class="btn ghost" id="back" ${i===0?'disabled':''}>もどる</button><button class="btn" id="next" ${done?'':'disabled'}>次へ</button></div>`;
+  if(!done)document.querySelectorAll('.bank .opt').forEach(b=>b.onclick=()=>{st.tin[i]=b.dataset.w;save();render()});
+  bindNav();
+}
+function choice(q){
+  const i=st.i,ord=order(i),multi=q.t==='multi',done=st.ans[i]!=null;
+  const long=q.o.some(o=>o.length>22);
+  const pick=multi?(done?st.ans[i]:(st.pick[i]||[])):null;
+  const cls=k=>{
+    if(!done)return multi&&pick.includes(k)?'pick':'';
+    if(multi){const sel=pick.includes(k),r=q.a.includes(k);return sel&&r?'right':sel?'wrong':r?'miss':''}
+    return k===q.a?'right':k===st.ans[i]?'wrong':''};
+  const ok=done&&correct(i);
+  const ansText=multi?q.a.map(k=>LET[ord.indexOf(k)]).sort().join('・'):LET[ord.indexOf(q.a)];
+  $('card').innerHTML=head(q)+`<div class="q">${esc(q.q)}</div>
+   <div class="opts ${long?'long':''}">${ord.map((k,pos)=>`<button class="opt ${cls(k)}" data-k="${k}" ${done?'disabled':''}>${multi?`<span class="box">${pick.includes(k)?'✓':''}</span>`:''}<span class="mk">${LET[pos]}</span><span>${esc(q.o[k])}</span></button>`).join('')}</div>
+   ${done?`<div class="fb ${ok?'ok':'ng'}"><strong>${ok?'正解です。':'正解は「'+ansText+'」です。'}</strong>${esc(q.e)}</div>`:''}
+   <div class="row"><button class="btn ghost" id="back" ${i===0?'disabled':''}>もどる</button>${done?'<button class="btn" id="next">次へ</button>':multi?`<button class="btn" id="go" ${pick.length?'':'disabled'}>答える</button>`:''}</div>`;
+  if(!done)document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;
+    if(multi){const p=st.pick[i]||[];st.pick[i]=p.includes(k)?p.filter(x=>x!==k):[...p,k];save();render()}
+    else{st.ans[i]=k;save();render()}});
+  if($('go'))$('go').onclick=()=>{st.ans[i]=[...(st.pick[i]||[])];save();render()};
+  bindNav();
+}
+function written(q){
+  const i=st.i,shown=st.shown[i],done=st.self[i]!=null;
+  $('card').innerHTML=head(q)+`<div class="q">${esc(q.q)}</div>
+   <textarea id="ta" placeholder="ここに書きます" ${shown?'readonly':''}>${esc(st.text[i]||'')}</textarea>
+   ${shown?`<div class="model"><strong>模範解答</strong><br>${esc(q.m)}<ol class="list">${q.k.map(k=>`<li>${esc(k)}</li>`).join('')}</ol></div>
+   <div class="hint">自分の答えと見比べて、えらびなさい。</div>
+   <div class="self">${['できた','半分できた','できなかった'].map((t,k)=>`<button class="opt ${st.self[i]===k?'pick':''}" data-k="${k}">${t}</button>`).join('')}</div>`:''}
+   <div class="row"><button class="btn ghost" id="back">もどる</button>
+   ${shown?`<button class="btn" id="next" ${done?'':'disabled'}>次へ</button>`:`<button class="btn" id="show">書けたので模範解答を見る</button>`}</div>`;
+  const ta=$('ta');ta.oninput=()=>{st.text[i]=ta.value;save()};
+  if($('show'))$('show').onclick=()=>{if(ta.value.trim().length<10){ta.focus();ta.placeholder='先に自分の答えを書きます（10文字以上）';return}st.shown[i]=1;save();render()};
+  document.querySelectorAll('.self .opt').forEach(b=>b.onclick=()=>{st.self[i]=+b.dataset.k;save();render()});
+  bindNav();
+}
+function start(){
+  const n=p=>Q.filter(q=>partOf(q)===p).length;
+  $('card').innerHTML=`<div class="q">これまでの5回の授業のふりかえりです</div>
+   <table class="plan"><tr><td>第1部　用語</td><td>${n(1)}問</td><td>説明を読んで、30個の用語の一覧から選びます</td></tr>
+   <tr><td>第2部　選択</td><td>${n(2)}問</td><td>「すべて選ぶ」問題は、1つでも多い・足りないと不正解です</td></tr>
+   <tr><td>第3部　記述</td><td>${n(3)}問</td><td>書いてから模範解答を見て、自分で判定します</td></tr></table>
+   <p style="margin:0">答えるとすぐに正解と解説が出ます。計算問題はメモを使ってかまいません。</p>
+   <div class="start"><label for="no">出席番号</label><br><input id="no" inputmode="numeric" value="${esc(st.no)}" placeholder="例 12"></div>
+   <div class="row"><button class="btn" id="go">はじめる</button></div>`;
+  const no=$('no');
+  $('go').onclick=()=>{if(!no.value.trim()){no.focus();no.placeholder='番号を入れます';return}st.no=no.value.trim();st.i=0;save();render()};
+}
+function result(){
+  const idx=p=>Q.map((q,i)=>i).filter(i=>partOf(Q[i])===p);
+  const sc=a=>a.filter(correct).length;
+  const p1=idx(1),p2=idx(2),p3=idx(3);
+  $('card').innerHTML=`<div class="q">出席番号 ${esc(st.no)} の結果</div>
+   <div><span class="res-total">${sc(p1)+sc(p2)}</span><span style="font-size:20px"> / ${p1.length+p2.length} 問 正解（用語＋選択）</span></div>
+   <div class="parts"><span>用語 <b>${sc(p1)}</b> / ${p1.length}</span><span>選択 <b>${sc(p2)}</b> / ${p2.length}</span></div>
+   <div class="bars">${Object.keys(CH).map(s=>{const a=Q.map((q,i)=>i).filter(i=>Q[i].s===s&&Q[i].t!=='w');const r=sc(a);
+     return `<div class="bar"><span>${esc(CH[s])}</span><div class="track"><div class="fill" style="width:${r/a.length*100}%"></div></div><span class="num">${r}/${a.length}</span></div>`}).join('')}</div>
+   <div>記述：${p3.map((i,n)=>`問${n+1} ${['できた','半分','できなかった'][st.self[i]]??'未回答'}`).join('　')}</div>
+   <div class="hint">この画面を先生に見せてください。いちばん短いバーの授業を見直しましょう。</div>
+   <div class="row"><button class="btn ghost" id="back">最後の問題にもどる</button></div>`;
+  $('back').onclick=()=>{st.i=Q.length-1;save();render()};
+}
+render();
+</script>
+
+</body>
+</html>

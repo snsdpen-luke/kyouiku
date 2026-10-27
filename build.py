@@ -18,6 +18,7 @@
   残高はどこにある.html → emoney/index.html （同上。電子マネーのしくみ：IC・コード決済・クレジット・集中と分散）
   キャッシュレス商店.html → shop/index.html （同上。電子マネー単元の経営ゲーム：店ごとに決済を選ぶ）
   決済をえらぶ.html   → emoney2/index.html（同上。電子マネー②：商店のふりかえり・トレードオフ・設計ワーク）
+  ふりかえり演習.html  → review1/index.html（同上。コンピュータシステム技術 5回分の復習演習）
 
   python3 build.py                  上の10を作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
@@ -129,6 +130,11 @@ print("生成: shop/index.html")
 os.makedirs("emoney2", exist_ok=True)
 shutil.copyfile("決済をえらぶ.html", "emoney2/index.html")
 print("生成: emoney2/index.html")
+
+# 1n) ふりかえり演習（TCP/IP・通信速度・電波・パスワード・電子マネーの復習。用語・選択・記述）
+os.makedirs("review1", exist_ok=True)
+shutil.copyfile("ふりかえり演習.html", "review1/index.html")
+print("生成: review1/index.html")
 
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:

@@ -44,6 +44,7 @@
 | Arduino 教材 1回目 | <https://snsdpen-luke.github.io/kyouiku/arduino/src/arduino-kyozai-1.html> （課題1〜20） |
 | Arduino 教材 2回目 | <https://snsdpen-luke.github.io/kyouiku/arduino/src/arduino-kyozai-2.html> （課題21〜31・ジョイスティック・レポート） |
 | 決済をえらぶ | <https://snsdpen-luke.github.io/kyouiku/emoney2/> |
+| ふりかえり演習 | <https://snsdpen-luke.github.io/kyouiku/review1/> （コンピュータシステム技術 5回分の復習） |
 
 Google Classroom にはこのリンクを貼る。ファイルは配らない
 （古い版を開いてしまう事故が起きるため）。
@@ -66,6 +67,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `電波はどこまで届くか.html` | **電波はどこまで届くかの本体。直すのはここだけ** |
 | `残高はどこにある.html` | **残高はどこにある（電子マネー①）の本体。直すのはここだけ** |
 | `決済をえらぶ.html` | **決済をえらぶ（電子マネー②）の本体。直すのはここだけ** |
+| `ふりかえり演習.html` | **ふりかえり演習（復習）の本体。直すのはここだけ** |
 | `index.html` | GitHub Pages が配るもの（ラダー工房）。`build.py` が作る**生成物**。手で編集しない |
 | `shinro/index.html` | GitHub Pages が配るもの（進路シミュレーション）。同じく**生成物** |
 | `uma/index.html` | GitHub Pages が配るもの（翔陽ダービー）。同じく**生成物** |
