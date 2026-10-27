@@ -42,7 +42,7 @@ canvas{display:block;border-radius:6px;background:var(--lot);touch-action:none}
 .ovx{display:flex;flex-direction:column;align-items:center;gap:6px}
 .scr{display:flex;align-items:center;gap:18px}
 .rank{font-family:var(--f-disp);font-size:64px;line-height:1;width:70px;text-align:center}
-.rank.S{color:#d4a017}.rank.A{color:var(--good)}.rank.B{color:var(--sens)}.rank.C{color:var(--sub)}.rank.X{color:var(--danger)}
+.rank.S,.rank.AP{color:#d4a017}.rank.AP{font-size:50px}.rank.A{color:var(--good)}.rank.B{color:var(--sens)}.rank.C{color:var(--sub)}.rank.X{color:var(--danger)}
 .pts{font-family:var(--f-num);font-size:44px;font-weight:700;color:var(--ink)}.pts small{font-size:18px;color:var(--sub)}
 .sub3{display:grid;grid-template-columns:auto auto;gap:0 10px;font-size:14px;color:var(--ink)}.sub3 b{font-family:var(--f-num);text-align:right}
 .best{font-size:18px;font-weight:700;color:#d4a017}.best.n{color:var(--sub);font-weight:400;font-size:14px}
@@ -545,9 +545,10 @@ function showOv(kind,t,s,x){$('ov').hidden=false;$('ov').className='overlay '+ki
 $('ovSame').onclick=()=>{$('ov').hidden=true;keepCond=W.cd;resetDrive();};
 $('ovRev').onclick=()=>{$('ov').hidden=true;setMode('review');};
 function usedTxt(e){return `前・うしろ <b>${sgn(e.mR)}</b>　四すみ <b>${sgn(e.mC)}</b>`+(e.lv>=2?`　前進 <b>${fmt(e.vf*3.6,1)}</b>・バック <b>${fmt(e.vt*3.6,1)}</b> km/h　直す強さ <b>${fmt(e.kp,1)}</b>`:'');}
-function scoreHTML(sc,e,best){if(!sc.total)return `<div class="scr"><div class="rank X">✕</div><div><div class="pts">0<small> 点</small></div><div class="sub3"><span>安全</span><b>✕</b></div></div></div><div class="used">今回の余裕：${usedTxt(e)}</div><div class="note">④で、なぜそうなったか見てみよう</div>`;
- return `<div class="scr"><div class="rank ${sc.rank}">${sc.rank}</div><div><div class="pts" data-to="${sc.total}"${best.nb?' data-best="1"':''}><span>0</span><small> 点</small></div><div class="sub3"><span>安全</span><b>○</b><span>正確（枠の真ん中・まっすぐ）</span><b>${sc.acc} / 50</b><span>速さ</span><b>${sc.spd} / 50</b></div></div></div>`+
- (best.nb?`<div class="best">自己ベスト更新！</div>`:`<div class="best n">レベル${e.lv}の自己ベスト ${best.b} 点</div>`)+`<div class="used">今回の余裕：${usedTxt(e)}</div>`;}
+function scoreHTML(sc,e,best){const used=e?`<div class="used">今回の余裕：${usedTxt(e)}</div>`:'';if(!sc.total)return `<div class="scr"><div class="rank X">✕</div><div><div class="pts">0<small> 点</small></div><div class="sub3"><span>安全</span><b>✕</b></div></div></div>${used}<div class="note">④で、なぜそうなったか見てみよう</div>`;
+ return `<div class="scr"><div class="rank ${sc.rank==='A+'?'AP':sc.rank}">${sc.rank}</div><div><div class="pts" data-to="${sc.total}"${best&&best.nb?' data-best="1"':''}><span>0</span><small> 点</small></div><div class="sub3"><span>正確（枠の真ん中・まっすぐ）</span><b>${sc.acc} / 30</b><span>速さ</span><b>${sc.spd} / 40</b><span>なめらか（切り返し ${sc.kiri} 回・途中で止まった ${sc.stops} 回）</span><b>${sc.smo} / 30</b></div></div></div>`+
+ (sc.over?`<div class="note">もっと早く駐車できるはず。どこで時間を使った？</div>`:'')+
+ (best?(best.nb?`<div class="best">自己ベスト更新！</div>`:`<div class="best n">レベル${e.lv}の自己ベスト ${best.b} 点</div>`):'')+used;}
 $('ovOk').onclick=()=>{$('ov').hidden=true;resetDrive();};
 const FIX=0.05;
 function tickDrive(dt){if(!m.crash&&!m.done&&!TR.over){m.at+=dt;while(m.at>=FIX){m.at-=FIX;tickTraffic(FIX);if(TR.over){m.c.v=0;tone([180],0.35,0.1,'sawtooth');const L=m.mode!=='manual'?saveAuto('待たせすぎ'):null;showOv('lose','GAME OVER',m.mode==='manual'?'まわりの車を待たせすぎました（この運転は記録に入れません）':'まわりの車を待たせすぎました',L?scoreHTML(L.sc,L.e,{}):'');break;}const r=physStep(m,W,FIX);m.last=r;if(m.hold&&m.c.v===0&&m.mode!=='manual'){const ev=[...m.events].reverse().find(e=>e.type==='brake');if(ev&&ev.stopD===undefined)ev.stopD=r.sens[ev.id];}if(!r.crash&&TR.peds.some(p=>inCar(m.s,p.x,p.y,0.22))){r.crash=true;r.ped=true;m.c.v=0;}
@@ -557,7 +558,7 @@ function tickDrive(dt){if(!m.crash&&!m.done&&!TR.over){m.at+=dt;while(m.at>=FIX)
    if(r.bump&&m.c.v===0&&m.gear!=='P'&&m.gear!=='N'&&!m.brake&&!m.acc&&m.msgT<=0)say('段差で止まっています');
    if(m.gear==='P'&&m.c.v===0&&(m.rows.length||m.mode!=='manual')&&m.t>0){const j=judge(W,m.s);
     if(j.ok){m.done=true;tone([523,659,784],0.25,0.07,'triangle');
-     if(m.mode==='manual'){const id=nextId++;runs.push({id,cond:W.cd,rows:m.rows,demo:false,color:COLORS[(id-1)%COLORS.length]});save();selRun=id;showOv('win','駐車成功！',`記録として保存しました（${stageRuns().length} 回目・${fmt(m.t,1)} 秒）`);}
+     if(m.mode==='manual'){const id=nextId++;runs.push({id,cond:W.cd,rows:m.rows,demo:false,color:COLORS[(id-1)%COLORS.length]});save();selRun=id;const sc=scoreRun(true);runs[runs.length-1].score=sc.total;runs[runs.length-1].rank=sc.rank;save();showOv('win','駐車成功！',`記録として保存しました（${stageRuns().length} 回目・${fmt(m.t,1)} 秒）`,scoreHTML(sc,null,null));}
      else{const L=saveAuto('成功');const k='stairs-bestscore-'+LV;let b=null;try{b=+localStorage.getItem(k)||null}catch(e){}const nb=b===null||L.sc.total>b;if(nb){try{localStorage.setItem(k,String(L.sc.total))}catch(e){}}
       let op='';if(LV===1&&!ALL){let was=false;try{was=localStorage.getItem('stairs-lv2open')==='1'}catch(e){}if(!was&&l1Wins()>=NEED_L1){try{localStorage.setItem('stairs-lv2open','1')}catch(e){}op='<div class="best">レベル2（アクセルも車に任せる）が開きました！</div>';}}
       showOv('win','駐車成功！',`レベル${LV}　${fmt(m.t,1)} 秒`,scoreHTML(L.sc,L.e,{nb,b})+op);}break;}
@@ -574,8 +575,18 @@ function sensUI(){const r=m.last||{sens:senseAll(W,m.s),bump:false,dir:0};const 
  $('sens').innerHTML=h;if(m.mode==='lv2'&&r.auto){$('accFill').style.height=fmt(r.auto.u*100)+'%';}}
 
 /* ===== ④ ふりかえり ===== */
-function scoreRun(ok){if(!ok)return {total:0,acc:0,spd:0,rank:'X'};const s=m.s,cx=s.x+1.3*Math.cos(s.th);const off=Math.abs(cx-W.gc)/W.st.tol,an=Math.abs(s.th-Math.PI/2)/W.st.ang;
- const acc=Math.round(50*Math.max(0,Math.min(1,1-0.6*off-0.4*an))),spd=Math.round(50*Math.max(0,Math.min(1,(45-m.t)/30))),total=acc+spd;return {total,acc,spd,rank:total>=90?'S':total>=75?'A':total>=55?'B':'C'};}
+// 採点：正確30・速さ40・なめらか30 → A+ / A / B / C。制限時間は画面に出さない（過ぎると速さの点が大きく下がり、B より上には行かない）
+const TLIM=()=>40+(W.cd.night?5:0)+(W.cd.cars>=3?3:0);
+function smoothOf(rows){let kiri=-1,g0=null,stops=0,still=0,moved=false;
+ rows.forEach(r=>{const g=r[6];if((g==='D'||g==='R')&&g!==g0){if(g0==='D'||g0==='R'||kiri<0)kiri++;g0=g;}
+  if(Math.abs(r[5])>0.05){if(moved&&still>=0.3)stops++;moved=true;still=0;}else still+=FIX;});
+ kiri=Math.max(0,kiri);const extraK=Math.max(0,kiri-1),extraS=Math.max(0,stops-kiri);
+ return {kiri,stops:extraS,pts:Math.max(0,30-8*extraK-4*Math.max(0,extraS-1))};}
+function scoreRun(ok){if(!ok)return {total:0,acc:0,spd:0,smo:0,rank:'X'};const s=m.s,cx=s.x+1.3*Math.cos(s.th);const off=Math.abs(cx-W.gc)/W.st.tol,an=Math.abs(s.th-Math.PI/2)/W.st.ang;
+ const L=TLIM(),t=m.t,over=t>L;const acc=Math.round(30*Math.max(0,Math.min(1,1-0.6*off-0.4*an)));
+ const spd=Math.round(over?24*Math.max(0,1-(t-L)/15):24+16*Math.max(0,Math.min(1,(L-t)/(L-15))));
+ const sm=smoothOf(m.rows),total=acc+spd+sm.pts;let rank=total>=90?'A+':total>=75?'A':total>=55?'B':'C';if(over&&(rank==='A+'||rank==='A'))rank='B';
+ return {total,acc,spd,smo:sm.pts,kiri:sm.kiri,stops:sm.stops,over,rank};}
 function saveAuto(result){if(!m.rows.length)return null;const sc=scoreRun(result==='成功');const e={n:(tlog.length?tlog[tlog.length-1].n:0)+1,lv:LV,seed:W.cd.seed,mR:P1.mR,mC:P1.mC,vf:P1.vf,vt:P1.vt,kp:P1.kp,result,time:+m.t.toFixed(1),score:sc.total,rank:sc.rank};
  tlog.push(e);if(tlog.length>40)tlog=tlog.slice(-40);saveL();m.lastLog={sc,e};
  aruns.push({id:Date.now(),cond:W.cd,level:LV,result,score:sc.total,rank:sc.rank,time:+m.t.toFixed(1),rows:m.rows,events:m.events,
