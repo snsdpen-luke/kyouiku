@@ -307,10 +307,12 @@ function senseAll(W,s,extra){const c=Math.cos(s.th),n=Math.sin(s.th);const pts=o
 /* ===== ランダムな条件 ===== */
 // 入れることを確かめた範囲だけで組み合わせる
 const LEVEL_ST={tol:0.3,ang:0.07};
+// 難しさ：ふだんは「なし」を出さず、歩行者と車は駐車中に出会う時間に集める。URL に ?easy を付けると前のゆるい設定
+const EASY=/[?&]easy\b/.test(location.search);
 function randomCond(rnd){rnd=rnd||Math.random;const pick=a=>a[Math.floor(rnd()*a.length)];
  const sw=pick([2.6,2.5,2.4,2.3]);const pillar=rnd()<0.3;const side=rnd()<0.5?'L':'R';const off=rnd()<0.4?pick([0.06,0.1,0.12]):0;
  return {sw,empty:2+Math.floor(rnd()*5),pillar,offL:side==='L'?off:0,offR:side==='R'?off:0,y0:8.2+rnd()*1.5,
-  night:rnd()<0.35,cars:pick([0,1,2,3]),peds:pick([0,1,2,3]),seed:Math.floor(rnd()*1e9)};}
+  night:rnd()<0.35,cars:EASY?pick([0,1,2,3]):pick([1,2,2,3,3]),peds:EASY?pick([0,1,2,3]):pick([1,2,2,3,3]),seed:Math.floor(rnd()*1e9)};}
 function makeWorldC(cd){const sw=cd.sw,o=[];
  for(let k=0;k<NSLOT;k++){if(k===cd.empty)continue;let cx=SX+sw*k+sw/2;if(k===cd.empty-1)cx+=cd.offL||0;if(k===cd.empty+1)cx-=cd.offR||0;o.push([cx-HW,0.8,cx+HW,5.2,0]);}
  for(let k=-2;k<NSLOT+3;k++){const cx=SX+BSW*k+BSW/2;o.push([cx-HW,AB,cx+HW,AB+4.4,1]);}
@@ -453,22 +455,25 @@ function tone(fs,dur,vol,type){if(!snd||!actx)return;try{const t=actx.currentTim
 
 
 /* ===== まわりの車（うしろから・対向から） ===== */
-const TCFG=[null,{first:25,every:20,onc:null,wait:90},{first:15,every:12,onc:35,wait:75},{first:10,every:8,onc:20,wait:60}];
+const TCFG=EASY?[null,{first:25,every:20,onc:null,wait:90},{first:15,every:12,onc:35,wait:75},{first:10,every:8,onc:20,wait:60}]
+ :[null,{first:12,every:14,onc:28,wait:70},{first:7,every:10,onc:16,wait:55},{first:4,every:7,onc:10,wait:45}];
 const LANE_B=9.55,LANE_O=7.35;
 const TR={list:[],peds:[],pedT:[],t:0,irr:0,over:false,started:false,nb:0,no:0,honkT:0};
 function seedRnd(a){a=a>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
-function resetTR(){const tm=TCFG[W.cd.cars];TR.rnd=seedRnd(W.cd.seed||1);const pt=[];for(let k=0;k<W.cd.peds*2;k++)pt.push(4+TR.rnd()*50);pt.sort((a,b)=>a-b);
+function resetTR(){const tm=TCFG[W.cd.cars];TR.rnd=seedRnd(W.cd.seed||1);const pt=[];for(let k=0;k<W.cd.peds*2;k++)pt.push(EASY?4+TR.rnd()*50:3+TR.rnd()*30);pt.sort((a,b)=>a-b);
  Object.assign(TR,{list:[],peds:[],pedT:pt,t:0,irr:0,over:false,started:false,nb:tm?tm.first:1e9,no:tm&&tm.onc!==null?tm.onc:1e9,honkT:0});W.dyn=[];W.peds=TR.peds;}
 function inCar(s,x,y,pad){const c=Math.cos(s.th),n=Math.sin(s.th),dx=x-s.x,dy=y-s.y;const a=dx*c+dy*n,b=-dx*n+dy*c;return a>-RO-pad&&a<FO+pad&&b>-HW-pad&&b<HW+pad;}
-function spawnPed(){const R=TR.rnd||Math.random;const k=1+Math.floor(R()*(NSLOT-1));const down=R()<0.6;const x=(k===W.empty||k===W.empty+1)&&R()<0.5?W.gc:SX+W.sw*k;
- TR.peds.push({x,y:down?4.4:10.7,to:down?10.7:4.4,dir:down?1:-1,wait:false,ph:0});}
+// 半分は止める枠のまわり（車の通り道）に出す。車のすぐそばには出さない（出られなければ1秒後にもう一度）
+function spawnPed(){const R=TR.rnd||Math.random;for(let n=0;n<6;n++){const down=R()<0.6;const k=1+Math.floor(R()*(NSLOT-1));
+  const x=EASY?((k===W.empty||k===W.empty+1)&&R()<0.5?W.gc:SX+W.sw*k):(R()<0.5?W.gc+(R()-0.5)*2*W.sw:SX+W.sw*k),y=down?4.4:10.7;
+  if(inCar(m.s,x,y,1.2))continue;TR.peds.push({x,y,to:down?10.7:4.4,dir:down?1:-1,wait:false,ph:0});return true;}return false;}
 const honk=long=>tone([392,494],long?0.6:0.22,0.09,'square');
 function carRim(s){const Cs=corners(s),P2=[];for(let i=0;i<4;i++){const a=Cs[i],b=Cs[(i+1)%4];for(let t=0;t<1;t+=0.125)P2.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}return P2;}
 function tickTraffic(dt){const tm=TCFG[W.cd.cars]||{every:1e9,wait:90};const s=m.s;const live=TR.started&&!TR.over&&!m.crash&&!m.done;
  if(!TR.started&&(m.gear!=='P'||m.c.v>0))TR.started=true;
  if(live){TR.t+=dt;
   if(TR.t>=TR.nb){const back=TR.list.filter(c=>c.dir>0);const last=back.length?Math.min(...back.map(c=>c.x)):99;if(back.length<5)TR.list.push({x:Math.min(-9,last-5.6),y:LANE_B,dir:1,v:2.5,wait:false,bub:0});TR.nb+=tm.every;}
-  while(TR.pedT.length&&TR.t>=TR.pedT[0]){TR.pedT.shift();spawnPed();}
+  while(TR.pedT.length&&TR.t>=TR.pedT[0]){TR.pedT.shift();if(!spawnPed())TR.pedT.unshift(TR.t+1);}
   if(TR.t>=TR.no){const fw=TR.list.filter(c=>c.dir<0);const last=fw.length?Math.max(...fw.map(c=>c.x)):-99;if(fw.length<3)TR.list.push({x:Math.max(31,last+5.6),y:LANE_O,dir:-1,v:2.5,wait:false,bub:0});TR.no+=25;}}
  const rim=carRim(s);
  TR.list.forEach(c=>{const front=c.x+c.dir*2.2;let room=Infinity;
