@@ -471,26 +471,31 @@ const honk=long=>tone([392,494],long?0.6:0.22,0.09,'square');
 function carRim(s){const Cs=corners(s),P2=[];for(let i=0;i<4;i++){const a=Cs[i],b=Cs[(i+1)%4];for(let t=0;t<1;t+=0.125)P2.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}return P2;}
 function tickTraffic(dt){const tm=TCFG[W.cd.cars]||{every:1e9,wait:90};const s=m.s;const live=TR.started&&!TR.over&&!m.crash&&!m.done;
  if(!TR.started&&(m.gear!=='P'||m.c.v>0))TR.started=true;
+ let passing=TR.list.some(c=>c.ty!==c.home||Math.abs(c.y-c.home)>0.05);
  if(live){TR.t+=dt;
-  if(TR.t>=TR.nb){const back=TR.list.filter(c=>c.dir>0);const last=back.length?Math.min(...back.map(c=>c.x)):99;if(back.length<5)TR.list.push({x:Math.min(-9,last-5.6),y:LANE_B,home:LANE_B,ty:LANE_B,dir:1,v:2.5,wait:false,bub:0});TR.nb+=tm.every;}
+  if(TR.t>=TR.nb&&!passing){const back=TR.list.filter(c=>c.dir>0);const last=back.length?Math.min(...back.map(c=>c.x)):99;if(back.length<5)TR.list.push({x:Math.min(-9,last-5.6),y:LANE_B,home:LANE_B,ty:LANE_B,dir:1,v:2.5,wait:false,bub:0});TR.nb+=tm.every;}
   while(TR.pedT.length&&TR.t>=TR.pedT[0]){TR.pedT.shift();if(!spawnPed())TR.pedT.unshift(TR.t+1);}
-  if(TR.t>=TR.no){const fw=TR.list.filter(c=>c.dir<0);const last=fw.length?Math.max(...fw.map(c=>c.x)):-99;if(fw.length<3)TR.list.push({x:Math.max(31,last+5.6),y:LANE_O,home:LANE_O,ty:LANE_O,dir:-1,v:2.5,wait:false,bub:0});TR.no+=25;}}
+  if(TR.t>=TR.no&&!passing){const fw=TR.list.filter(c=>c.dir<0);const last=fw.length?Math.max(...fw.map(c=>c.x)):-99;if(fw.length<3)TR.list.push({x:Math.max(31,last+5.6),y:LANE_O,home:LANE_O,ty:LANE_O,dir:-1,v:2.5,wait:false,bub:0});TR.no+=25;}}
  const rim=carRim(s);
- // 自分の車にふさがれたら、反対の車線が空いていれば追い越す。待つのはどうしても通れないときだけ
+ // 自分の車にふさがれたら、通路に空きがあればよけて追い越す（一度に1台）。待つのはどうしても通れないときだけ
  const laneHit=(y,x0,x1)=>rim.some(([x,yy])=>Math.abs(yy-y)<HW+0.3&&x>x0&&x<x1);
- TR.list.forEach(c=>{const front=c.x+c.dir*2.2;let room=Infinity,why='';const lim=(r,w)=>{if(r<room){room=r;why=w;}};
-  if(!m.done)rim.forEach(([x,y])=>{if(Math.abs(y-c.y)<HW+0.25&&(x-front)*c.dir>-0.5)lim((x-front)*c.dir-4.5,'me');});
-  TR.list.forEach(o=>{if(o===c)return;if(Math.abs(o.y-c.y)<HW*2+0.2&&(o.x-c.x)*c.dir>0)lim(Math.abs(o.x-c.x)-4.4-3.0,o.wait?'me':'q');});
+ const pickY=c=>{const a=Math.min(c.x,c.x+c.dir*16)-2,b=Math.max(c.x,c.x+c.dir*16)+2;let best=null;
+  for(let y=5.2+HW+0.2;y<=AB-HW-0.2;y+=0.1){if(laneHit(y,a,b)||TR.list.some(o=>o!==c&&Math.abs(o.y-y)<HW*2+0.3&&Math.abs(o.x-c.x)<(o.dir!==c.dir?50:30)))continue;if(best===null||Math.abs(y-c.home)<Math.abs(best-c.home))best=y;}return best;};
+ TR.list.forEach(c=>{const front=c.x+c.dir*2.2,pass=c.ty!==c.home;let room=Infinity,why='',phys=Infinity;const lim=(r,w)=>{if(r<room){room=r;why=w;}};
+  if(!m.done)rim.forEach(([x,y])=>{const d=(x-front)*c.dir;if(d<=-0.5)return;
+   if(Math.abs(y-c.y)<HW+0.15){lim(d-(pass?0.3+2.5*Math.abs(c.ty-c.y):4.5),'me');phys=Math.min(phys,d-0.3);}if(pass&&Math.abs(y-c.ty)<HW+0.25)lim(d-1.0,'me');});
+  TR.list.forEach(o=>{if(o===c)return;if((pass||Math.abs(c.y-c.home)>0.05)&&o.dir!==c.dir)return;if(Math.abs(o.y-c.y)<HW*2+0.2&&(o.x-c.x)*c.dir>0)lim(Math.abs(o.x-c.x)-4.4-3.0,o.wait?'me':'q');});
   TR.peds.forEach(p=>{if(Math.abs(p.y-c.y)<HW+0.8&&(p.x-front)*c.dir>-0.3)lim((p.x-front)*c.dir-2.0,'ped');});
-  if(c.ty===c.home&&why==='me'&&room<6&&!m.done){const a=Math.min(c.x,c.x+c.dir*16)-2,b=Math.max(c.x,c.x+c.dir*16)+2;let best=null;
-   for(let y=5.2+HW+0.2;y<=AB-HW-0.2;y+=0.1){if(laneHit(y,a,b)||TR.list.some(o=>o!==c&&Math.abs(o.y-y)<HW*2+0.3&&Math.abs(o.x-c.x)<30))continue;if(best===null||Math.abs(y-c.home)<Math.abs(best-c.home))best=y;}
-   if(best!==null)c.ty=best;}
-  if(c.ty!==c.home&&Math.abs(c.y-c.ty)<0.05&&!laneHit(c.home,Math.min(c.x-c.dir*3,c.x+c.dir*6),Math.max(c.x-c.dir*3,c.x+c.dir*6)))c.ty=c.home;
-  if(c.y!==c.ty){const st=1.4*dt*Math.min(1,0.3+c.v);c.y+=Math.max(-st,Math.min(st,c.ty-c.y));}
-  const want=room<=0?0:Math.min(2.5,Math.sqrt(2*0.8*room));c.v+=(want-c.v)*Math.min(1,dt*(want<c.v?3:1.2));if(room<=0.05&&c.v<0.3)c.v=0;
+  c.stuck=c.v<0.05?(c.stuck||0)+dt:0;
+  if(!pass&&why==='me'&&room<20&&!m.done&&!TR.list.some(o=>o!==c&&(o.ty!==o.home||Math.abs(o.y-o.home)>0.05))){const y=pickY(c);if(y!==null)c.ty=y;}
+  else if(pass&&c.stuck>1.5){c.stuck=0;const y=pickY(c);c.ty=y===null?c.home:y;}
+  if(c.ty!==c.home&&Math.abs(c.y-c.ty)<0.05&&!rim.some(([x,y])=>Math.abs(y-c.home)<HW+0.3&&(x-c.x)*c.dir>-4))c.ty=c.home;
+  // 横には前に進んだ分しか動けない（ゆっくりなら大きく切れる）。向きも進む方向に傾ける
+  let hd=0;if(c.y!==c.ty){const st=(0.25+0.35*Math.max(0,1-c.v))*c.v*dt*Math.min(1,0.25+Math.abs(c.ty-c.y)/0.8),dy=Math.max(-st,Math.min(st,c.ty-c.y));c.y+=dy;hd=c.v>0.01?dy/(c.v*dt):0;}c.hd=(c.hd||0)+(hd-(c.hd||0))*Math.min(1,dt*4);
+  let want=room<=0?0:Math.min(2.5,Math.sqrt(2*0.8*room));if(pass&&why==='me'&&phys>0.15&&c.y!==c.ty)want=Math.max(want,0.4);c.v+=(want-c.v)*Math.min(1,dt*(want<c.v?3:1.2));if(want===0&&room<=0.05&&c.v<0.3)c.v=0;
   c.wait=c.v<0.05&&room<1.5&&why==='me'&&!m.done;c.x+=c.dir*c.v*dt;c.bub=Math.max(0,c.bub-dt);});
  TR.list=TR.list.filter(c=>(c.dir>0?c.x<36:c.x>-12));
- TR.peds.forEach(p=>{const nx=p.x,ny=p.y+p.dir*0.6;let block=inCar(s,nx,ny,0.35)||(Math.abs(m.c.v)>0.05&&inCar(s,nx,ny,1.5)&&!inCar(s,p.x,p.y,1.5));TR.list.forEach(c=>{if(Math.abs(nx-c.x)<2.6&&Math.abs(ny-c.y)<HW+0.4)block=true;});p.wait=block;if(!block)p.y+=p.dir*1.1*dt;p.ph+=dt*(block?0:8);});
+ TR.peds.forEach(p=>{const nx=p.x,ny=p.y+p.dir*0.6;let block=inCar(s,nx,ny,0.35)||(Math.abs(m.c.v)>0.05&&inCar(s,nx,ny,1.5)&&!inCar(s,p.x,p.y,1.5));TR.list.forEach(c=>{if(Math.abs(nx-c.x)<2.6&&Math.abs(ny-c.y)<HW+0.4)block=true;});p.wait=block;p.blk=block?(p.blk||0)+dt:0;if(p.blk>2){p.blk=0;p.dir*=-1;p.to=p.dir>0?10.7:4.4;}if(!block)p.y+=p.dir*1.1*dt;p.ph+=dt*(block?0:8);});
  for(let i=TR.peds.length-1;i>=0;i--){const p=TR.peds[i];if((p.to-p.y)*p.dir<=0)TR.peds.splice(i,1);}
  W.dyn=TR.list.map(c=>[c.x-2.2,c.y-HW,c.x+2.2,c.y+HW]);
  const waiting=TR.list.filter(c=>c.wait);m.waiting=waiting.length;
@@ -511,8 +516,9 @@ function drawNight(c,w,h,s){if(!nightCv){nightCv=document.createElement('canvas'
  TR.list.forEach(t=>{cone(t.x+t.dir*2.2,t.y,t.dir>0?0:Math.PI,9,0.38,0.9);glow(t.x,t.y,2.4,0.7);});
  [[6,6.6],[13,6.6],[20,6.6]].forEach(([x,y])=>glow(x,y,2.2,0.45));
  n.globalCompositeOperation='source-over';c.drawImage(nightCv,0,0,w,h);}
-function drawTraffic(c){TR.list.forEach(t=>{const [x1,y1]=P(t.x-2.2,t.y-HW),[x2,y2]=P(t.x+2.2,t.y+HW);c.fillStyle=C.sub;c.beginPath();c.roundRect?c.roundRect(x1,y1,x2-x1,y2-y1,6):c.rect(x1,y1,x2-x1,y2-y1);c.fill();
-  const fx=t.dir>0?x2-30:x1+16;c.fillStyle=C.paper;c.globalAlpha=.75;c.fillRect(fx,y1+5,13,y2-y1-10);c.globalAlpha=1;
+function drawTraffic(c){TR.list.forEach(t=>{const [x1,y1]=P(t.x-2.2,t.y-HW),[x2,y2]=P(t.x+2.2,t.y+HW);const [cx,cy]=P(t.x,t.y),[bx,by]=P(t.x+t.dir,t.y+(t.hd||0));const hl=(x2-x1)/2,hw=Math.abs(y2-y1)/2;
+  c.save();c.translate(cx,cy);c.rotate(Math.atan2(by-cy,bx-cx));c.fillStyle=C.sub;c.beginPath();c.roundRect?c.roundRect(-hl,-hw,hl*2,hw*2,6):c.rect(-hl,-hw,hl*2,hw*2);c.fill();
+  c.fillStyle=C.paper;c.globalAlpha=.75;c.fillRect(hl-30,-hw+5,13,hw*2-10);c.globalAlpha=1;c.restore();
   if(t.wait&&TR.irr>40)anger(c,(x1+x2)/2+(t.dir>0?16:-16),y1-22,TR.irr>75?1.3:1,TR.t);
   if(t.bub>0){c.fillStyle=C.danger;c.font='bold 16px '+FB();c.textAlign='center';c.fillText(TR.irr>70?'プップー！！':'プッ！',(x1+x2)/2,y1-6);}});}
 
