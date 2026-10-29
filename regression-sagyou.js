@@ -16,7 +16,7 @@ const tap = sel => { const el = d.querySelector(sel); if (!el) throw new Error("
 /* 正しい作業の値（テストだけで使う。アプリには答えを出すボタンを置かない） */
 E(`window.goodParams = u => {
   const t = teach(), mid = a => Math.round((a[0] + a[1]) / 2);
-  if (u.kind === "cut") { const r = { done: true, len: {} }; t.cut.forEach(c => { r.len[c.n] = c.len; }); return r; }
+  if (u.kind === "cut") { const r = { done: true, add: {}, len: {} }; pieces().forEach(pc => { if (!pc.cut) return; r.add[pc.cut.n] = { a: addNeed(pc, "a"), b: addNeed(pc, "b") }; r.len[pc.cut.n] = cutLen(pc.cut, r.add[pc.cut.n]); }); return r; }
   if (u.kind === "piece") { const r = { done: true, ends: {} };
     ["a", "b"].forEach(sd => { const k = endKind(u.piece, sd); if (k === "none") { r.ends[sd] = { sheath: 0, core: 0 }; return; }
       const g = guideOf(k), core = { joint: 20, conn: gaugeOf("conn"), ring: 20, push: gaugeOf("push"), ceil: gaugeOf("ceil"), block: 11 }[k];
@@ -129,6 +129,23 @@ E(`allGood(); drawCheck();`);
 ok(/合格/.test(d.querySelector(".verdict").textContent) && !/不合格/.test(d.querySelector(".verdict").textContent) && d.querySelectorAll("#chk .issue.good").length === 8, "点検: 全部正しく作業すれば合格・資料の見直し8つが ☑");
 E(`store[P.id]["pl:SW"].face = "裏"; drawCheck();`);
 ok([...d.querySelectorAll("#chk .issue")].some(x => /✗/.test(x.textContent) && /中央/.test(x.textContent)), "枠を裏返すと「ロのスイッチは取付枠の中央か」に ✗");
+E(`store[P.id] = {}; save();`);
+
+console.log("\n【H】ケーブルを切る: 単線図の寸法に、両端で必要な分を足す");
+E(`openProb("k1"); store[P.id] = {};`);
+ok(E("JSON.stringify(goodParams(units()[0]).len)") === JSON.stringify({1:250,2:300,3:300,4:300,5:350,6:300,7:250}), "両端の決まり（ボックス側＋100・器具側＋50・電源側と施工省略側は足さない）で、資料の7本の長さ（250・300・300・300・350・300・250）になる");
+const cutD = mut => JSON.parse(E(`(()=>{ const u = units()[0], r = goodParams(u); (${mut})(r); return JSON.stringify(evalUnit(u, r).defects.map(x=>x.where).concat(evalUnit(u, r).tips.map(x=>"目安:"+x))); })()`));
+ok(cutD(r => { r.add[2].b = 0; }).some(x => /A（B1） 側/.test(x) && /届かない/.test(x)), "2 の A 側に足し忘れ → 「ボックスの中で届かない」（資料のよくある失敗）");
+ok(cutD(r => { r.add[6].a = 0; }).some(x => /ランプレセプタクル/.test(x) && /つけられない/.test(x)), "6 のランプレセプタクル側に足し忘れ → 「器具につけられない」");
+ok(cutD(r => { r.add[1].a = 50; }).some(x => /^目安:/.test(x) && /電源側・施工省略側は足さない/.test(x)), "電源側に足す → 目安（足さない）・材料のまま使う");
+ok(E(`(()=>{ const t = teach(), r = goodParams(units()[0]); return t.material[0].total - t.material[0].cuts.reduce((n, q) => n + r.len[q], 0); })()`) === 350, "資料どおりなら VVF 2心 1800mm から 1450mm 使い、残り 350mm（わたり線に使う）");
+E(`setMode("work"); unitId = "cut"; draw();`);
+const pick = (n, sd, v) => { const b = d.querySelector(`.seg[data-n="${n}"][data-s="${sd}"] button[data-v="${v}"]`); if (!b) throw new Error("ボタンが無い"); b.click(); };
+pick(2, "a", 50); pick(2, "b", 100);
+ok(/切る長さ 300mm（150 ＋ 50 ＋ 100）/.test($("cutlen2").textContent) && /＋100/.test($("cutbar2").innerHTML) && /単線図 150/.test($("cutbar2").innerHTML), "ボタンで両端を選ぶと、帯が伸び「切る長さ 300mm（150 ＋ 50 ＋ 100）」と出る");
+ok(/使う 300mm ／ 1800mm、残り 1500mm/.test($("mat").textContent), "材料の残りが出る");
+E(`unitId = units().find(u=>u.kind==='piece'&&u.piece.cut.n===2).id; draw();`);
+ok(/長さ 300mm。/.test($("body").textContent), "③ はがす画面のケーブルの長さは、② で決めた長さ");
 E(`store[P.id] = {}; save();`);
 
 console.log("\n【Z】後始末");
