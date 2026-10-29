@@ -168,6 +168,17 @@ tap('#stepBar button[data-c="3"]');
 ok(d.querySelectorAll('#station [data-w]').length === E("units().find(u=>u.id==='bx:B2').joints.find(j=>j.id===store[P.id]['bx:B2'].cur).n") && /先端/.test($("station").innerHTML), "コネクタを選ぶと、透明なコネクタと、差し込む線が出る");
 E(`store[P.id] = {}; save();`);
 
+console.log("\n【J】完成図（上から見た図）");
+E(`openProb("k1"); store[P.id] = {}; allGood(); setMode("check");`);
+ok(d.querySelector("#asm") && /EM-EEF2\.0-2C/.test($("asm").innerHTML) && /#38a3e8/.test($("asm").innerHTML), "点検に完成図。電源の EM-EEF 2.0 は青いケーブル");
+ok([...d.querySelectorAll("#asm text")].filter(t => /^[○小]$/.test(t.textContent)).length === 5, "A の5か所のスリーブに刻印（○・小）が出る");
+ok((($("asm").innerHTML.match(/#16a34a/g) || []).length === 2) && (($("asm").innerHTML.match(/#ea580c/g) || []).length === 1), "B の差込形コネクタ: 2本用（緑）2個・3本用（橙）1個");
+E(`store[P.id]["pl:SW"].pos = { Sa: "下", Sb: "中央", Sc: "上" }; drawCheck();`);
+ok(E(`(()=>{ const t=[...document.querySelectorAll("#asm text")].filter(t=>/^[イロハ]$/.test(t.textContent)).map(t=>[t.textContent,+t.getAttribute("y")]).sort((a,b)=>a[1]-b[1]).map(a=>a[0]).join(""); return t; })()`) === "ハロイ", "取付枠は、生徒が選んだ位置の順に描く（上からハ・ロ・イにすると、そう描く）");
+E(`store[P.id] = {}; drawCheck();`);
+ok(d.querySelector("#asm") && /不合格/.test(d.querySelector(".verdict").textContent), "何もしていなくても完成図は出る（ケーブルだけ、薄く）");
+E(`store[P.id] = {}; save();`);
+
 console.log("\n【Z】後始末");
 ok(!errs.length, "スクリプトエラーなし" + (errs.length ? " ← " + errs.join(" | ") : ""));
 console.log(fail ? `\n✗ 不合格 ${fail} 項目` : "\n✓ すべて合格");

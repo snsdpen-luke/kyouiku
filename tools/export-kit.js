@@ -17,9 +17,9 @@ const kit = JSON.parse(w.eval(`JSON.stringify(PROBLEMS.filter(p => p.official).m
                                   : { kind: "term", part: P.term[e].part.id, term: P.term[e].k, lab: P.term[e].lab || "", w: !!P.term[e].w };
   return {
     id: P.id, no: P.no, title: P.title, note: P.note || "", cond: P.cond || [],
-    parts: P.parts.map(p => ({ id: p.id, type: p.type, name: PNAME(p), typeName: TYPES[p.type].name, label: p.label || "", place: p.place, omit: omit(p),
+    parts: P.parts.map(p => ({ id: p.id, type: p.type, name: PNAME(p), typeName: TYPES[p.type].name, label: p.label || "", place: p.place, omit: omit(p), x: p.ax, y: p.ay,
       terms: p.terms.map(t => ({ k: t.k, lab: t.lab || "", desc: t.desc || "", w: !!t.w })) })),
-    boxes: P.boxes.map(b => ({ id: b.id, kind: b.kind || "box", join: b.join || "sleeve" })),
+    boxes: P.boxes.map(b => ({ id: b.id, kind: b.kind || "box", join: b.join || "sleeve", x: b.ax, y: b.ay })),
     places: Object.keys(P.place).map(k => ({ id: k, parts: P.place[k].map(p => p.id) })),
     cables: P.cables.map(c => ({ id: c.id, a: c.a, b: c.b, spec: c.spec, colors: c.colors, mm: (/(\\d\\.\\d)/.exec(c.spec) || [0, "1.6"])[1], name: CABNAME(c) })),
     wires: st.cores.map(k => { const r = routeOf(k.a, k.b); return { cable: r ? r.id : null, color: k.c, a: endOf(k.a), b: endOf(k.b) }; }),
