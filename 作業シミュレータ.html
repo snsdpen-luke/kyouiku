@@ -13,24 +13,46 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 14.5px/1.6 "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; }
-  .wrap { max-width: 1360px; margin: 0 auto; padding: 12px 16px 32px; }
-  h1 { font-size: 20px; margin: 0; display: inline-block; }
+  .wrap { max-width: 1600px; margin: 0 auto; padding: 8px 12px 16px; }
+  h1 { font-size: 17px; margin: 0; }
   h2 { font-size: 16px; margin: 0 0 6px; }
   h3 { font-size: 14.5px; margin: 10px 0 4px; }
-  .ver { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
-  .sub { color: var(--muted); font-size: 12.5px; margin-left: 12px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .ver { font-size: 11px; color: var(--muted); margin-left: auto; }
   .note { font-size: 12.5px; color: var(--muted); }
   button { font: inherit; color: var(--ink); border: 1px solid var(--line); background: var(--card);
            border-radius: 6px; padding: 5px 11px; cursor: pointer; touch-action: manipulation; }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 700; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
   button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  button.small { font-size: 12.5px; padding: 3px 9px; color: var(--muted); }
   .bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
-  .probs button { min-width: 48px; padding: 4px 7px; }
-  .modes button { font-weight: 700; padding: 6px 14px; }
-  .main { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 12px; align-items: start; margin-top: 8px; }
-  @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+  .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #prob { font: inherit; font-weight: 700; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); }
+  .modes { display: flex; gap: 4px; flex-wrap: wrap; }
+  .modes button { font-weight: 700; padding: 6px 12px; }
+  .modes button small { margin-left: 6px; font-size: 11px; font-weight: 600; opacity: .75; }
+  .main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 560px); gap: 10px; margin-top: 8px; height: calc(100vh - 62px); min-height: 520px; }
+  .pane { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; overflow: auto; min-height: 0; }
+  #leftp { position: relative; padding: 4px; overflow: hidden; display: flex; }
+  #left { flex: 1; min-width: 0; min-height: 0; }
+  #left svg { width: 100%; height: 100%; display: block; }
+  .cap { position: absolute; left: 12px; top: 8px; font-size: 12px; color: var(--muted); pointer-events: none; }
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; height: auto; } #leftp { height: 46vh; } }
+  .sthead { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .sthead b { font-size: 15.5px; }
+  .sthead button small { font-size: 11px; color: var(--muted); }
+  .hint { display: block; font-size: 12.5px; color: var(--muted); }
+  svg.st { width: 100%; height: auto; display: block; background: #fcfcfa; border: 1px solid var(--line); border-radius: 8px; touch-action: none; }
+  .tools .row, #stepBar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .lab { font-weight: 700; font-size: 13.5px; margin-right: 2px; }
+  .tools .lab { min-width: 84px; }
+  .stp { display: inline-flex; align-items: center; gap: 3px; } .stp b { min-width: 46px; text-align: center; }
+  .stp button { padding: 3px 10px; }
+  details.tip { margin-top: 8px; font-size: 12.5px; color: var(--muted); } details.tip summary { cursor: pointer; }
+  .wires { font-size: 13px; margin: 2px 0 4px; }
+  [data-t], .hit { cursor: pointer; }
+  button.issue { display: block; width: 100%; text-align: left; font: inherit; font-size: 13.5px; color: var(--ink); }
+  .issue .num { display: inline-block; min-width: 20px; height: 20px; border-radius: 10px; background: var(--bad); color: #fff; font-size: 12px; font-weight: 700; text-align: center; line-height: 20px; margin-right: 6px; }
+  .issue.todo { border-color: #f59e0b; background: #fffbeb; } .issue.todo .num { background: #f59e0b; }
   .list button { display: block; width: 100%; text-align: left; margin: 0 0 4px; padding: 6px 9px; }
   .list button.on { background: #e6f2ec; color: var(--ink); border-color: var(--accent); }
   .cutsides .ctl { margin: 2px 0; }
@@ -71,16 +93,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>技能試験 作業シミュレータ<span class="ver" id="ver"></span></h1><span class="sub">第二種電気工事士 ― 作業の順番・作り方・欠陥の確認</span>
-  <div class="bar probs" id="probs"></div>
-  <div class="bar modes" id="modes">
-    <button data-m="order">① 作業の順番</button>
-    <button data-m="work">② 作業をする</button>
-    <button data-m="check">③ 点検（欠陥の確認）</button>
-  </div>
+  <div class="top"><h1>作業シミュレータ</h1><select id="prob" aria-label="問題"></select><div class="modes" id="modes"></div><span class="ver" id="ver"></span></div>
   <div class="main">
-    <div class="card"><div id="side"></div></div>
-    <div class="card"><div id="body"></div></div>
+    <div class="pane" id="leftp"><div class="cap" id="cap"></div><div id="left"></div></div>
+    <div class="pane" id="right"></div>
   </div>
   <p class="src">欠陥の基準は 一般財団法人 電気技術者試験センター「技能試験の欠陥の判断基準」（<a href="https://www.shiken.or.jp/construction/upload/handankizyun2017.pdf" target="_blank" rel="noopener">PDF</a>・<a href="https://www.shiken.or.jp/construction/second/defect/" target="_blank" rel="noopener">案内</a>）。
     数値の決まりが無い寸法は HOZAN「第二種電工試験の虎」などの目安で、「目安」と書いて欠陥とは区別する。
@@ -88,7 +104,7 @@
 </div>
 <script>
 "use strict";
-const VER = "2026-10-29f";
+const VER = "2026-10-30a";
 // KIT-BEGIN（tools/export-kit.js が書く。手で直さない）
 const KIT = [{"id":"k1","no":1,"title":"No.1　位置表示灯内蔵スイッチと3つの照明","note":"スイッチ イ（位置表示灯内蔵）は引掛シーリング イ、ロ はランプレセプタクル ロ、ハ は蛍光灯 ハ を点滅する。","cond":["配線及び器具の配置は、図に従って行うこと。なお、「ロ」のタンブラスイッチは、取付枠の中央に取り付けること","電線の色別（絶縁被覆の色）は、次によること。① 電源からの接地側電線には、すべて白色を使用する。② 電源から点滅器までの非接地側電線には、すべて黒色を使用する。③ 次の器具の端子には、白色の電線を結線する。・ランプレセプタクルの受金ねじ部の端子 ・引掛シーリングローゼットの接地側極端子（接地側と表示）","VVF用ジョイントボックス部分を経由する電線は、その部分ですべて接続箇所を設け、接続方法は、次によること。① A部分は、リングスリーブによる接続とする。② B部分は、差込形コネクタによる接続とする","（このアプリでは A部分＝ボックス B1、B部分＝ボックス B2）","位置表示灯内蔵スイッチは、スイッチが切のとき表示灯が点く（異時点滅と同じ働き）。端子は普通のスイッチと同じ2つ","スイッチ3つへは VVF1.6-2C を2本使う（電源の黒と、イ・ロ・ハの返り線）。枠の中の渡り線は黒"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":90,"y":300,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"x":360,"y":80,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"swH","name":"位置表示灯内蔵スイッチ イ","typeName":"位置表示灯内蔵スイッチ","label":"イ","place":"SW","omit":false,"x":280,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"SW","omit":false,"x":360,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sc","type":"sw1","name":"スイッチ ハ","typeName":"スイッチ","label":"ハ","place":"SW","omit":false,"x":440,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"x":720,"y":80,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Fc","type":"fl","name":"蛍光灯（施工省略） ハ","typeName":"蛍光灯（施工省略）","label":"ハ","place":"Fc","omit":true,"x":720,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":360,"y":300},{"id":"B2","kind":"box","join":"conn","x":720,"y":300}],"places":[{"id":"PW","parts":["PW"]},{"id":"Ca","parts":["Ca"]},{"id":"SW","parts":["Sa","Sb","Sc"]},{"id":"Lb","parts":["Lb"]},{"id":"Fc","parts":["Fc"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"EM-EEF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（EM-EEF2.0-2C）"},{"id":"c1","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"SW","b":"B1","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"],"mm":"1.6","name":"位置表示灯内蔵スイッチ イの枠 と B1 の間のケーブル（VVF1.6-2C×2）"},{"id":"c3","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c4","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"Fc","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"蛍光灯（施工省略） ハ と B2 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r10"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r10"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Sb","term":"1","lab":"","w":false}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Sc","term":"1","lab":"","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r11"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r11"}},{"cable":"c3","color":"白","a":{"kind":"joint","box":"B1","joint":"#r11"},"b":{"kind":"joint","box":"B2","joint":"#r12"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r13"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r13"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r14"}},{"cable":"c3","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r14"},"b":{"kind":"joint","box":"B2","joint":"#r15"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Sc","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r16"}},{"cable":"c3","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r16"},"b":{"kind":"joint","box":"B2","joint":"#r17"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r12"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Fc","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r12"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r15"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Fc","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r17"}}],"joints":[{"id":"#r10","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r11","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r12","box":"B2","join":"差3","n":3,"n16":3,"n20":0},{"id":"#r13","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r14","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r15","box":"B2","join":"差2","n":2,"n16":2,"n20":0},{"id":"#r16","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r17","box":"B2","join":"差2","n":2,"n16":2,"n20":0}]},{"id":"k2","no":2,"title":"No.2　常時点灯の確認表示灯と2口コンセント","note":"スイッチ イ はランプレセプタクル イ（2つ）を点滅する。確認表示灯（パイロットランプ）は常時点灯。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","確認表示灯（パイロットランプ）は常時点灯とする（電源の黒と白のあいだにつなぐ）","コンセントからコンセントへは、コンセントの端子で渡す"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":90,"y":300,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"x":330,"y":80,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"x":620,"y":130,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Pl","type":"pl","name":"確認表示灯（パイロットランプ）","typeName":"確認表示灯（パイロットランプ）","label":"","place":"F","omit":false,"x":620,"y":45,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"Lb","omit":true,"x":900,"y":300,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"O2","type":"outlet2","name":"コンセント（2口）","typeName":"コンセント（2口）","label":"","place":"O2","omit":false,"x":620,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"O1","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"O1","omit":false,"x":330,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":330,"y":300},{"id":"B2","kind":"box","join":"sleeve","x":620,"y":300}],"places":[{"id":"PW","parts":["PW"]},{"id":"La","parts":["La"]},{"id":"F","parts":["Sa","Pl"]},{"id":"Lb","parts":["Lb"]},{"id":"O2","parts":["O2"]},{"id":"O1","parts":["O1"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"F","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ イの枠 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c4","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"O2","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（2口） と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"O1","b":"O2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント と コンセント（2口） の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r27"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r27"},"b":{"kind":"joint","box":"B2","joint":"#r28"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r29"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r29"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r29"},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r31"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r31"},"b":{"kind":"joint","box":"B2","joint":"#r32"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r28"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Pl","term":"1","lab":"","w":false}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"O2","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r28"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Pl","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"O2","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c3","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r32"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r32"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"O2","term":"L","lab":"B","w":false},"b":{"kind":"term","part":"O1","term":"L","lab":"B","w":false}},{"cable":"c6","color":"白","a":{"kind":"term","part":"O2","term":"W","lab":"W","w":true},"b":{"kind":"term","part":"O1","term":"W","lab":"W","w":true}}],"joints":[{"id":"#r27","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r28","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r29","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r30","box":"B2","join":"小","n":4,"n16":4,"n20":0},{"id":"#r31","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r32","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k3","no":3,"title":"No.3　タイムスイッチと接地極付コンセント","note":"タイムスイッチ イ は引掛シーリング イ を、スイッチ ロ はランプレセプタクル ロ を入り切りする。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","タイムスイッチは端子台で代用する。端子は左から S1・S2・L1","S1 には電源の黒、S2（接地側）には白、L1 から引掛シーリングへ","接地極付コンセントの接地極（E）から接地極（E_D）へは緑の接地線（E1.6）"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":200,"y":70,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"Sa","omit":false,"x":200,"y":570,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Ta","type":"ts","name":"タイムスイッチ イ","typeName":"タイムスイッチ","label":"イ","place":"Ta","omit":false,"x":500,"y":90,"terms":[{"k":"S1","lab":"S1","desc":"","w":false},{"k":"S2","lab":"S2","desc":"","w":true},{"k":"L1","lab":"L1","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"x":820,"y":110,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"x":840,"y":330,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"OE","type":"outletE","name":"コンセント（接地極付）","typeName":"コンセント（接地極付）","label":"","place":"OE","omit":false,"x":500,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"G","omit":true,"x":720,"y":560,"terms":[{"k":"E","lab":"E","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":200,"y":330},{"id":"B2","kind":"box","join":"sleeve","x":500,"y":330}],"places":[{"id":"PW","parts":["PW"]},{"id":"Sa","parts":["Sa"]},{"id":"Ta","parts":["Ta"]},{"id":"Ca","parts":["Ca"]},{"id":"Lb","parts":["Lb"]},{"id":"OE","parts":["OE"]},{"id":"G","parts":["G"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"Ta","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"タイムスイッチ イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ca","b":"Ta","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と タイムスイッチ イ の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"OE","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（接地極付） と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c7","a":"OE","b":"G","spec":"E1.6","colors":["緑"],"mm":"1.6","name":"コンセント（接地極付） と 接地極（施工省略） の間のケーブル（E1.6）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r42"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r42"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r42"},"b":{"kind":"joint","box":"B2","joint":"#r43"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r44"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r44"},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r46"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r46"},"b":{"kind":"joint","box":"B2","joint":"#r47"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Ta","term":"S1","lab":"S1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r43"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"OE","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r43"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Ta","term":"S2","lab":"S2","w":true},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"OE","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r47"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ta","term":"S2","lab":"S2","w":true},"b":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ta","term":"L1","lab":"L1","w":false},"b":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false}},{"cable":"c7","color":"緑","a":{"kind":"term","part":"OE","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"G","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r42","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r43","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r44","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r45","box":"B2","join":"小","n":4,"n16":4,"n20":0},{"id":"#r46","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r47","box":"B2","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k4","no":4,"title":"No.4　三相200V の電動機と電源表示灯","note":"単相100V（B）と三相200V（BE）の2つの電源。スイッチ イ は引掛シーリング イ を点滅する。電源表示灯は三相側で常に点く。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","三相電源の色は R 相 赤・S 相 白・T 相 黒","電源表示灯（ランプレセプタクル）は S 相と T 相のあいだにつなぐ。受金ねじ部に S 相（白）","電動機（施工省略）へは VVF2.0-3C の3本を R・S・T にそれぞれつなぐ"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"x":110,"y":90,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"PX","type":"brkBE","name":"漏電遮断器","typeName":"漏電遮断器","label":"","place":"PX","omit":false,"x":110,"y":250,"terms":[{"k":"R","lab":"R","desc":"","w":false},{"k":"S","lab":"S","desc":"","w":false},{"k":"T","lab":"T","desc":"","w":false}]},{"id":"Lr","type":"lamp","name":"電源表示灯","typeName":"ランプレセプタクル","label":"","place":"Lr","omit":false,"x":300,"y":540,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"M","type":"motor","name":"電動機（施工省略）","typeName":"電動機（施工省略）","label":"","place":"M","omit":true,"x":480,"y":560,"terms":[{"k":"U","lab":"U","desc":"","w":false},{"k":"V","lab":"V","desc":"","w":false},{"k":"W3","lab":"W","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"x":640,"y":380,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"x":800,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"x":880,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":480,"y":260},{"id":"B2","kind":"box","join":"sleeve","x":840,"y":110}],"places":[{"id":"PW","parts":["PW"]},{"id":"PX","parts":["PX"]},{"id":"Lr","parts":["Lr"]},{"id":"M","parts":["M"]},{"id":"Ca","parts":["Ca"]},{"id":"F","parts":["Sa","O"]}],"cables":[{"id":"c0","a":"PW","b":"B2","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B2 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"PX","b":"B1","spec":"VVF2.0-3C","colors":["黒","白","赤"],"mm":"2.0","name":"漏電遮断器 と B1 の間のケーブル（VVF2.0-3C）"},{"id":"c2","a":"M","b":"B1","spec":"VVF2.0-3C","colors":["黒","白","赤"],"mm":"2.0","name":"電動機（施工省略） と B1 の間のケーブル（VVF2.0-3C）"},{"id":"c3","a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"電源表示灯 と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ca","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"F","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ イの枠 と B2 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c1","color":"赤","a":{"kind":"term","part":"PX","term":"R","lab":"R","w":false},"b":{"kind":"joint","box":"B1","joint":"#r57"}},{"cable":"c2","color":"赤","a":{"kind":"term","part":"M","term":"U","lab":"U","w":false},"b":{"kind":"joint","box":"B1","joint":"#r57"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"PX","term":"S","lab":"S","w":false},"b":{"kind":"joint","box":"B1","joint":"#r58"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"M","term":"V","lab":"V","w":false},"b":{"kind":"joint","box":"B1","joint":"#r58"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Lr","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r58"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"PX","term":"T","lab":"T","w":false},"b":{"kind":"joint","box":"B1","joint":"#r59"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"M","term":"W3","lab":"W","w":false},"b":{"kind":"joint","box":"B1","joint":"#r59"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Lr","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r59"}},{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B2","joint":"#r60"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r60"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B2","joint":"#r61"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r61"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r61"}},{"cable":"c5","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r62"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r62"}}],"joints":[{"id":"#r57","box":"B1","join":"小","n":2,"n16":0,"n20":2},{"id":"#r58","box":"B1","join":"中","n":3,"n16":1,"n20":2},{"id":"#r59","box":"B1","join":"中","n":3,"n16":1,"n20":2},{"id":"#r60","box":"B2","join":"小","n":2,"n16":1,"n20":1},{"id":"#r61","box":"B2","join":"小","n":3,"n16":2,"n20":1},{"id":"#r62","box":"B2","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k5","no":5,"title":"No.5　200V コンセントと100V の照明","note":"スイッチ イ は蛍光灯 イ（施工省略）、ロ はランプレセプタクル ロ を点滅する。200V の接地極付コンセントは別の電源（BE）から。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","電源側（B・BE・接地端子）は5極の端子台で代用する","200V の回路は VVF2.0-3C（黒・赤・緑）。黒と赤は電源の2本に（どちら側でもよい）、緑は接地","スイッチ2つとコンセントへは VVF1.6-2C を2本使う（心線の数は未確認）"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"x":110,"y":90,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"PX","type":"brkBE","name":"漏電遮断器","typeName":"漏電遮断器","label":"","place":"P2","omit":false,"x":110,"y":230,"terms":[{"k":"L1","lab":"L1","desc":"","w":false},{"k":"L2","lab":"L2","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"P2","omit":true,"x":110,"y":350,"terms":[{"k":"E","lab":"E","desc":"","w":false}]},{"id":"Lr","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lr","omit":false,"x":380,"y":400,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"x":470,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"F","omit":false,"x":550,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"x":630,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Fl","type":"fl","name":"蛍光灯（施工省略） イ","typeName":"蛍光灯（施工省略）","label":"イ","place":"Fl","omit":true,"x":860,"y":330,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"O200","type":"outlet200","name":"コンセント（20A 250V 接地極付）","typeName":"コンセント（20A 250V 接地極付）","label":"","place":"O200","omit":false,"x":240,"y":560,"terms":[{"k":"X","lab":"","desc":"","w":false},{"k":"Y","lab":"","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":550,"y":120}],"places":[{"id":"PW","parts":["PW"]},{"id":"P2","parts":["PX","G"]},{"id":"Lr","parts":["Lr"]},{"id":"F","parts":["Sa","Sb","O"]},{"id":"Fl","parts":["Fl"]},{"id":"O200","parts":["O200"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"P2","b":"O200","spec":"VVF2.0-3C","colors":["黒","赤","緑"],"mm":"2.0","name":"漏電遮断器の枠 と コンセント（20A 250V 接地極付） の間のケーブル（VVF2.0-3C）"},{"id":"c2","a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"F","b":"B1","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"],"mm":"1.6","name":"スイッチ イの枠 と B1 の間のケーブル（VVF1.6-2C×2）"},{"id":"c4","a":"Fl","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"蛍光灯（施工省略） イ と B1 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r73"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r73"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Sb","term":"1","lab":"","w":false}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Lr","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Fl","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r75"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Fl","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r75"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r76"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Lr","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r76"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"PX","term":"L1","lab":"L1","w":false},"b":{"kind":"term","part":"O200","term":"X","lab":"","w":false}},{"cable":"c1","color":"赤","a":{"kind":"term","part":"PX","term":"L2","lab":"L2","w":false},"b":{"kind":"term","part":"O200","term":"Y","lab":"","w":false}},{"cable":"c1","color":"緑","a":{"kind":"term","part":"G","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"O200","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r73","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r74","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r75","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r76","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k6","no":6,"title":"No.6　3路スイッチで2灯と露出形コンセント","note":"2つの3路スイッチ イ のどちらからでも、引掛シーリング イ（2つ）を点滅できる。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","3路スイッチの記号「0」の端子には電源側または負荷側の線を、記号「1」「3」の端子にはスイッチどうしを結ぶ線をつなぐ"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":910,"y":300,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"O","type":"outletRo","name":"露出形コンセント","typeName":"露出形コンセント","label":"","place":"O","omit":false,"x":650,"y":80,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sa","omit":false,"x":650,"y":560,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"x":330,"y":80,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Cb","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Cb","omit":true,"x":110,"y":80,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sb","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sb","omit":false,"x":330,"y":560,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":650,"y":300},{"id":"B2","kind":"box","join":"sleeve","x":330,"y":300}],"places":[{"id":"PW","parts":["PW"]},{"id":"O","parts":["O"]},{"id":"Sa","parts":["Sa"]},{"id":"Ca","parts":["Ca"]},{"id":"Cb","parts":["Cb"]},{"id":"Sb","parts":["Sb"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"O","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"露出形コンセント と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"Sa","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B1 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c4","a":"Ca","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"Cb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"Sb","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B2 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r85"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Sa","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B1","joint":"#r85"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"O","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r85"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r86"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r86"}},{"cable":"c3","color":"白","a":{"kind":"joint","box":"B1","joint":"#r86"},"b":{"kind":"joint","box":"B2","joint":"#r87"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Sa","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B1","joint":"#r88"}},{"cable":"c3","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r88"},"b":{"kind":"joint","box":"B2","joint":"#r89"}},{"cable":"c2","color":"赤","a":{"kind":"term","part":"Sa","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B1","joint":"#r90"}},{"cable":"c3","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r90"},"b":{"kind":"joint","box":"B2","joint":"#r91"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r87"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Cb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r87"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"Sb","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r89"}},{"cable":"c6","color":"赤","a":{"kind":"term","part":"Sb","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B2","joint":"#r91"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"Sb","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B2","joint":"#r92"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r92"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Cb","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r92"}}],"joints":[{"id":"#r85","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r86","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r87","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r88","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r89","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r90","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r91","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r92","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k7","no":7,"title":"No.7　3路と4路スイッチで3か所から点滅","note":"3路スイッチ イ（2つ）と4路スイッチ イ の、どれを切り替えてもランプレセプタクル イ（2つ）が点滅する。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","3路スイッチの記号「0」の端子には電源側または負荷側の線を、記号「1」「3」の端子にはスイッチどうしを結ぶ線をつなぐ","4路スイッチは 2–1・4–3（平行）と 2–3・4–1（交差）が切り替わる。2・4 を一方の3路スイッチへ、1・3 をもう一方へ","4路スイッチへは VVF1.6-2C を2本使う。右のボックスはアウトレットボックス"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":150,"y":70,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Sa","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sa","omit":false,"x":150,"y":560,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"x":480,"y":80,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"Lb","omit":true,"x":790,"y":80,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"S4","type":"sw4","name":"4路スイッチ イ","typeName":"4路スイッチ","label":"イ","place":"S4","omit":false,"x":480,"y":560,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"2","lab":"2","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false},{"k":"4","lab":"4","desc":"","w":false}]},{"id":"Sb","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sb","omit":false,"x":790,"y":560,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":150,"y":320},{"id":"B2","kind":"obox","join":"sleeve","x":480,"y":320}],"places":[{"id":"PW","parts":["PW"]},{"id":"Sa","parts":["Sa"]},{"id":"La","parts":["La"]},{"id":"Lb","parts":["Lb"]},{"id":"S4","parts":["S4"]},{"id":"Sb","parts":["Sb"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Sa","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B1 の間のケーブル（VVF1.6-3C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"S4","b":"B2","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"],"mm":"1.6","name":"4路スイッチ イ と B2 の間のケーブル（VVF1.6-2C×2）"},{"id":"c6","a":"Sb","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B2 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r101"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Sa","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B1","joint":"#r101"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r102"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r102"},"b":{"kind":"joint","box":"B2","joint":"#r103"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Sa","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B1","joint":"#r104"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r104"},"b":{"kind":"joint","box":"B2","joint":"#r105"}},{"cable":"c1","color":"赤","a":{"kind":"term","part":"Sa","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B1","joint":"#r106"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r106"},"b":{"kind":"joint","box":"B2","joint":"#r107"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r103"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r103"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"S4","term":"2","lab":"2","w":false},"b":{"kind":"joint","box":"B2","joint":"#r105"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"S4","term":"4","lab":"4","w":false},"b":{"kind":"joint","box":"B2","joint":"#r107"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"S4","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r108"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"Sb","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r108"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"S4","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B2","joint":"#r109"}},{"cable":"c6","color":"赤","a":{"kind":"term","part":"Sb","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B2","joint":"#r109"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"Sb","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B2","joint":"#r110"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r110"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r110"}}],"joints":[{"id":"#r101","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r102","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r103","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r104","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r105","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r106","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r107","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r108","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r109","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r110","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k8","no":8,"title":"No.8　リモコンリレーで3つの照明","note":"リモコンリレー イ・ロ・ハ が、引掛シーリング イ、ランプレセプタクル ロ、引掛シーリング ハ（施工省略）をそれぞれ入り切りする。リモコンスイッチとトランスは施工省略。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","リモコンリレーは6極の端子台で代用する。1–2 がイ、3–4 がロ、5–6 がハ","電源の黒をボックスで分けて 1・3・5 に、2・4・6 からそれぞれの照明へ","各リモコンリレーへは、それぞれ VVF1.6-2C を使う（3本）"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"x":110,"y":110,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ra","type":"rly","name":"リモコンリレー イ","typeName":"リモコンリレー","label":"イ","place":"RY","omit":false,"x":330,"y":470,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"2","lab":"2","desc":"","w":false}]},{"id":"Rb","type":"rly","name":"リモコンリレー ロ","typeName":"リモコンリレー","label":"ロ","place":"RY","omit":false,"x":410,"y":470,"terms":[{"k":"1","lab":"3","desc":"","w":false},{"k":"2","lab":"4","desc":"","w":false}]},{"id":"Rc","type":"rly","name":"リモコンリレー ハ","typeName":"リモコンリレー","label":"ハ","place":"RY","omit":false,"x":490,"y":470,"terms":[{"k":"1","lab":"5","desc":"","w":false},{"k":"2","lab":"6","desc":"","w":false}]},{"id":"Ci","type":"ceil","name":"引掛シーリング（丸） イ","typeName":"引掛シーリング（丸）","label":"イ","place":"Ci","omit":false,"x":900,"y":80,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Lr","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lr","omit":false,"x":900,"y":380,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Ch","type":"ceilK","name":"引掛シーリング（角） ハ","typeName":"引掛シーリング（角）","label":"ハ","place":"Ch","omit":true,"x":690,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"obox","join":"sleeve","x":690,"y":190}],"places":[{"id":"PW","parts":["PW"]},{"id":"RY","parts":["Ra","Rb","Rc"]},{"id":"Ci","parts":["Ci"]},{"id":"Lr","parts":["Lr"]},{"id":"Ch","parts":["Ch"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVR2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B1 の間のケーブル（VVR2.0-2C）"},{"id":"c1","a":"RY","b":"B1","spec":"VVF1.6-2C×3","colors":["黒","白","黒","白","黒","白"],"mm":"1.6","name":"リモコンリレー イの枠 と B1 の間のケーブル（VVF1.6-2C×3）"},{"id":"c2","a":"Ci","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（丸） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ch","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） ハ と B1 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ra","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Rb","term":"1","lab":"3","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Rc","term":"1","lab":"5","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Ci","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Lr","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ch","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ra","term":"2","lab":"2","w":false},"b":{"kind":"joint","box":"B1","joint":"#r121"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Ci","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r121"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Rb","term":"2","lab":"4","w":false},"b":{"kind":"joint","box":"B1","joint":"#r122"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Lr","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r122"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Rc","term":"2","lab":"6","w":false},"b":{"kind":"joint","box":"B1","joint":"#r123"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ch","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r123"}}],"joints":[{"id":"#r119","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r120","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r121","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r122","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r123","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k9","no":9,"title":"No.9　接地極付接地端子付コンセント（EET）","note":"スイッチ イ はランプレセプタクル イ と引掛シーリング イ を点滅する。EET の先の2口コンセントは施工省略。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","EET の接地極（E）から接地極（E_D）へは緑の接地線（E1.6）（施工省略かどうかは未確認）","EET から施工省略の2口コンセントへ渡す"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":430,"y":60,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"x":130,"y":80,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"Sa","omit":false,"x":130,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Ci","type":"ceil","name":"引掛シーリング（丸） イ","typeName":"引掛シーリング（丸）","label":"イ","place":"Ci","omit":false,"x":430,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"EET","type":"outletEET","name":"コンセント（接地極付接地端子付）","typeName":"コンセント（接地極付接地端子付）","label":"","place":"EET","omit":false,"x":740,"y":300,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]},{"id":"O2","type":"outlet2","name":"コンセント（2口）","typeName":"コンセント（2口）","label":"","place":"O2","omit":true,"x":740,"y":70,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"G","omit":true,"x":900,"y":540,"terms":[{"k":"E","lab":"E","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":430,"y":300},{"id":"B2","kind":"box","join":"sleeve","x":130,"y":300}],"places":[{"id":"PW","parts":["PW"]},{"id":"La","parts":["La"]},{"id":"Sa","parts":["Sa"]},{"id":"Ci","parts":["Ci"]},{"id":"EET","parts":["EET"]},{"id":"O2","parts":["O2"]},{"id":"G","parts":["G"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c2","a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"Sa","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ci","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（丸） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"EET","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"コンセント（接地極付接地端子付） と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c6","a":"O2","b":"EET","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（2口） と コンセント（接地極付接地端子付） の間のケーブル（VVF1.6-2C）"},{"id":"c7","a":"EET","b":"G","spec":"E1.6","colors":["緑"],"mm":"1.6","name":"コンセント（接地極付接地端子付） と 接地極（施工省略） の間のケーブル（E1.6）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r133"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"EET","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r133"}},{"cable":"c1","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r133"},"b":{"kind":"joint","box":"B2","joint":"#r134"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r135"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"EET","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r135"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ci","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r135"}},{"cable":"c1","color":"白","a":{"kind":"joint","box":"B1","joint":"#r135"},"b":{"kind":"joint","box":"B2","joint":"#r136"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ci","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r137"}},{"cable":"c1","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r137"},"b":{"kind":"joint","box":"B2","joint":"#r138"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r134"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r136"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r138"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r138"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"EET","term":"L","lab":"B","w":false},"b":{"kind":"term","part":"O2","term":"L","lab":"B","w":false}},{"cable":"c6","color":"白","a":{"kind":"term","part":"EET","term":"W","lab":"W","w":true},"b":{"kind":"term","part":"O2","term":"W","lab":"W","w":true}},{"cable":"c7","color":"緑","a":{"kind":"term","part":"EET","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"G","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r133","box":"B1","join":"中","n":3,"n16":1,"n20":2},{"id":"#r134","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r135","box":"B1","join":"中","n":4,"n16":2,"n20":2},{"id":"#r136","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r137","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r138","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k10","no":10,"title":"No.10　同時点滅の確認表示灯","note":"スイッチ イ は引掛シーリング イ とランプレセプタクル イ を点滅する。確認表示灯（パイロットランプ）は同時点滅。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","確認表示灯（パイロットランプ）は、引掛シーリング及びランプレセプタクルと同時点滅とする（照明と並列）"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"x":110,"y":300,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"x":450,"y":80,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"x":820,"y":300,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Pl","type":"pl","name":"確認表示灯（パイロットランプ） イ","typeName":"確認表示灯（パイロットランプ）","label":"イ","place":"F","omit":false,"x":450,"y":450,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"x":450,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"x":560,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":450,"y":300}],"places":[{"id":"PW","parts":["PW"]},{"id":"Ca","parts":["Ca"]},{"id":"La","parts":["La"]},{"id":"F","parts":["Pl","Sa","O"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"F","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"確認表示灯（パイロットランプ） イの枠 と B1 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r146"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r146"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":null,"color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"term","part":"Pl","term":"2","lab":"","w":false}},{"cable":"c3","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r148"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r148"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r148"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"term","part":"Pl","term":"1","lab":"","w":false}}],"joints":[{"id":"#r146","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r147","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r148","box":"B1","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k11","no":11,"title":"No.11　金属管（ねじなし電線管）の配線","note":"スイッチ イ は引掛シーリング イ、ロ はランプレセプタクル ロ を点滅する。スイッチ イ とコンセントへは金属管（E19）の中の IV1.6。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","金属管（E19）の中は IV1.6 の3本（黒・白・赤）。黒は電源側、白はコンセントの W、赤はスイッチの返り線","ボックスと金属管のボンド線は、施工条件に指定があるときだけ（この練習では扱わない）"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":90,"y":150,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"x":860,"y":150,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"x":250,"y":440,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"x":410,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"x":490,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"Sb","omit":false,"x":720,"y":480,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"obox","join":"sleeve","x":450,"y":170}],"places":[{"id":"PW","parts":["PW"]},{"id":"Ca","parts":["Ca"]},{"id":"Lb","parts":["Lb"]},{"id":"F","parts":["Sa","O"]},{"id":"Sb","parts":["Sb"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"Lb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"F","b":"B1","spec":"IV1.6（E19）","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ イの枠 と B1 の間のケーブル（IV1.6（E19））"},{"id":"c4","a":"Sb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ ロ と B1 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r156"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r156"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r156"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c3","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r158"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r158"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r159"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r159"}}],"joints":[{"id":"#r156","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r157","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r158","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r159","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k12","no":12,"title":"No.12　合成樹脂製可とう電線管（PF管）の配線","note":"スイッチ イ は引掛シーリング イ、ロ はランプレセプタクル ロ を点滅する。スイッチ ロ とコンセントへは PF管（PF16）の中の IV1.6。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","PF管（PF16）の中は IV1.6 の3本（黒・白・赤）。黒は電源側、白はコンセントの W、赤はスイッチの返り線","右のボックスはアウトレットボックス"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":650,"y":60,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"x":300,"y":80,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"x":300,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"F","omit":false,"x":850,"y":300,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"x":930,"y":300,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"Sa","omit":false,"x":650,"y":560,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":300,"y":310},{"id":"B2","kind":"obox","join":"sleeve","x":620,"y":310}],"places":[{"id":"PW","parts":["PW"]},{"id":"Lb","parts":["Lb"]},{"id":"Ca","parts":["Ca"]},{"id":"F","parts":["Sb","O"]},{"id":"Sa","parts":["Sa"]}],"cables":[{"id":"c0","a":"PW","b":"B2","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B2 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"B2","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B2 と B1 の間のケーブル（VVF1.6-3C）"},{"id":"c2","a":"Lb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"F","b":"B2","spec":"IV1.6（PF16）","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ ロの枠 と B2 の間のケーブル（IV1.6（PF16））"},{"id":"c5","a":"Sa","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ イ と B2 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B2","joint":"#r168"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r168"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r168"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B2","joint":"#r169"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r169"}},{"cable":"c1","color":"白","a":{"kind":"joint","box":"B2","joint":"#r169"},"b":{"kind":"joint","box":"B1","joint":"#r170"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r171"}},{"cable":"c1","color":"黒","a":{"kind":"joint","box":"B2","joint":"#r171"},"b":{"kind":"joint","box":"B1","joint":"#r172"}},{"cable":"c4","color":"赤","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r173"}},{"cable":"c1","color":"赤","a":{"kind":"joint","box":"B2","joint":"#r173"},"b":{"kind":"joint","box":"B1","joint":"#r174"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r170"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r170"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r172"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r174"}}],"joints":[{"id":"#r168","box":"B2","join":"小","n":3,"n16":2,"n20":1},{"id":"#r169","box":"B2","join":"小","n":3,"n16":2,"n20":1},{"id":"#r170","box":"B1","join":"小","n":3,"n16":3,"n20":0},{"id":"#r171","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r172","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r173","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r174","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k13","no":13,"title":"No.13　自動点滅器と屋外灯","note":"スイッチ イ はランプレセプタクル イ を点滅する。自動点滅器 ロ は、暗くなると屋外灯 ロ（施工省略）を点ける。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","自動点滅器は端子台で代用する。端子は 1・2・3","1 には電源の黒、2（接地側）には白（電源からと屋外灯から）、3 から屋外灯へ","屋外灯へは VVR1.6-2C。接地極付コンセントの接地極から接地極（E_D）へは緑の接地線（E1.6）"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"x":120,"y":60,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"Sa","omit":false,"x":120,"y":570,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"x":440,"y":80,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"OE","type":"outletE","name":"コンセント（接地極付）","typeName":"コンセント（接地極付）","label":"","place":"OE","omit":false,"x":440,"y":560,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"G","omit":true,"x":620,"y":570,"terms":[{"k":"E","lab":"E","desc":"","w":false}]},{"id":"A","type":"swA","name":"自動点滅器 ロ","typeName":"自動点滅器","label":"ロ","place":"A","omit":false,"x":760,"y":300,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"2","lab":"2","desc":"","w":true},{"k":"3","lab":"3","desc":"","w":false}]},{"id":"Od","type":"outdoor","name":"屋外灯（施工省略） ロ","typeName":"屋外灯（施工省略）","label":"ロ","place":"Od","omit":true,"x":880,"y":540,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve","x":120,"y":320},{"id":"B2","kind":"box","join":"sleeve","x":440,"y":320}],"places":[{"id":"PW","parts":["PW"]},{"id":"Sa","parts":["Sa"]},{"id":"La","parts":["La"]},{"id":"OE","parts":["OE"]},{"id":"G","parts":["G"]},{"id":"A","parts":["A"]},{"id":"Od","parts":["Od"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"OE","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（接地極付） と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"A","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"自動点滅器 ロ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"Od","b":"A","spec":"VVR1.6-2C","colors":["黒","白"],"mm":"1.6","name":"屋外灯（施工省略） ロ と 自動点滅器 ロ の間のケーブル（VVR1.6-2C）"},{"id":"c7","a":"OE","b":"G","spec":"E1.6","colors":["緑"],"mm":"1.6","name":"コンセント（接地極付） と 接地極（施工省略） の間のケーブル（E1.6）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r184"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r184"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r184"},"b":{"kind":"joint","box":"B2","joint":"#r185"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r186"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r186"},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r188"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r188"},"b":{"kind":"joint","box":"B2","joint":"#r189"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"A","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r185"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"OE","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r185"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"A","term":"2","lab":"2","w":true},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"OE","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r189"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"A","term":"2","lab":"2","w":true},"b":{"kind":"term","part":"Od","term":"W","lab":"W","w":true}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"A","term":"3","lab":"3","w":false},"b":{"kind":"term","part":"Od","term":"L","lab":"B","w":false}},{"cable":"c7","color":"緑","a":{"kind":"term","part":"OE","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"G","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r184","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r185","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r186","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r187","box":"B2","join":"小","n":4,"n16":4,"n20":0},{"id":"#r188","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r189","box":"B2","join":"小○","n":2,"n16":2,"n20":0}]}];
 // KIT-END
@@ -388,29 +404,70 @@ function endText(e) {
 function termText(part, k) { const p = partOf(part), t = p.terms.find(x => x.k === k); return p.name + " の端子" + (t && t.lab ? "「" + t.lab + "」" : "（" + k + "）") + (t && t.desc ? "（" + t.desc + "）" : ""); }
 
 /* ============================================================
-   画面の骨組み
+   画面（1画面: 左に完成図＝作業台、右にその場所の作業）
+   上の段階を選び、左の図の中で作業する所（ケーブル・器具・接続点）をタップする
    ============================================================ */
+const STAGES = [["order", "順番"], ["cut", "② 切る"], ["strip", "③ はぐ"], ["dev", "④⑤ 器具"], ["join", "⑥⑦ つなぐ"], ["check", "⑧ 点検"]];
+const sel = {};                                   // 段階ごとに選んでいる所 { cut・strip: ケーブルの1本, dev: 器具の場所, join: 接続点 }
 function drawProbs() {
-  const host = $("probs"); host.innerHTML = "";
-  KIT.forEach(p => { const b = document.createElement("button"); b.textContent = "No." + p.no + (TEACH[p.id] ? "★" : ""); b.classList.toggle("on", P && P.id === p.id);
-    if (TEACH[p.id]) b.title = "先生の資料あり";
-    b.onclick = () => openProb(p.id); host.appendChild(b); });
+  const s = $("prob");
+  s.innerHTML = KIT.map(p => `<option value="${p.id}"${P && P.id === p.id ? " selected" : ""}>No.${p.no}${TEACH[p.id] ? " ★" : ""}</option>`).join("");
+  s.onchange = () => openProb(s.value);
 }
-function setMode(m) { mode = m; document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.m === m)); draw(); }
-document.querySelectorAll("#modes button").forEach(b => { b.onclick = () => setMode(b.dataset.m); });
+function drawModes() {
+  $("modes").innerHTML = STAGES.map(([m, t]) => { const ts = targets(m), n = ts.filter(x => x.done).length;
+    const badge = ts.length ? `<small>${n === ts.length ? "✓" : n + "/" + ts.length}</small>` : "";
+    return `<button data-m="${m}" class="${m === mode ? "on" : ""}"${m === "cut" && !ts.length ? ' disabled title="先生の資料がある問題だけ"' : ""}>${t}${badge}</button>`; }).join("");
+  $("modes").querySelectorAll("button").forEach(b => { b.onclick = () => setMode(b.dataset.m); });
+}
+function setMode(m) { mode = m; draw(); }
 function openProb(id) {
   P = prob(id); store[P.id] = store[P.id] || load(P.id) || {};
-  const us = units(); unitId = us.length ? us[0].id : null; orderState.set = null;
+  Object.keys(sel).forEach(k => delete sel[k]); orderState.set = null; selWire = selMod = null;
   drawProbs(); draw();
 }
-function draw() { if (mode === "order") drawOrder(); else if (mode === "work") drawWork(); else drawCheck(); }
+function draw() { if (mode === "cut" && !targets("cut").length) mode = "strip"; drawModes(); drawLeft(); drawRight(); }
+function drawRight() { if (mode === "order") drawOrder(); else if (mode === "check") drawCheck(); else drawStation(); }
+function drawLeft() {
+  const marks = mode === "check" ? checkList().map((x, i) => ({ n: i + 1, todo: x.todo, ...spot(x.u, x.d) })) : [];
+  $("left").innerHTML = assemblySVG(marks);
+  $("cap").textContent = mode === "check" ? "番号をタップすると、その作業へ" : mode === "order" ? "完成図" : "図の中をタップして、作業する所を選ぶ";
+  $("left").querySelectorAll("[data-t]").forEach(g => { g.onclick = () => pickTarget(g.dataset.t); });
+}
 const KEY = "sagyou:";
 function save() { try { localStorage.setItem(KEY + P.id, JSON.stringify(store[P.id])); } catch (e) {} }
 function load(id) { try { return JSON.parse(localStorage.getItem(KEY + id) || "null"); } catch (e) { return null; } }
-function teachNote() { const t = teach(); return t ? `<p class="note">★ ${esc(t.src)} に合わせてある。</p>` : ""; }
+function changed() { save(); drawModes(); drawLeft(); }          // 右で作業したら、左の完成図と上の進み具合を描き直す
+
+/* 段階ごとの「作業する所」と、やったかどうか（欠陥かどうかは ⑧ 点検で見る） */
+function targets(m) {
+  const st = store[P.id];
+  if (m === "cut") return pieces().filter(pc => pc.cut).map(pc => { const x = st.cut && st.cut.add && st.cut.add[pc.cut.n]; return { id: pc.id, done: !!x && x.a !== undefined && x.b !== undefined }; });
+  if (m === "strip") return pieces().map(pc => { const r = st["pc:" + pc.id]; return { id: pc.id, done: ["a", "b"].every(sd => endKind(pc, sd) === "none" || (!!r && r.ends[sd].sheath > 0 && r.ends[sd].core > 0)) }; });
+  if (m === "dev") return units().filter(u => u.kind === "dev").map(u => { const r = st[u.id]; return { id: u.place, done: !!r && connRows(u).every(x => r.conn[x.key]) }; });
+  if (m === "join") return units().filter(u => u.kind === "box").flatMap(u => u.joints.map(j => { const x = st[u.id] && st[u.id].j[j.id];
+    return { id: j.id, done: !!x && (u.conn ? !!x.conn && jointWires(j, u.box).every(q => (x.ins[q.i] || 0) > 0) : !!x.cut) }; }));
+  return [];
+}
+function curTarget() { const ts = targets(mode); if (!ts.length) return null; if (!ts.some(x => x.id === sel[mode])) sel[mode] = (ts.find(x => !x.done) || ts[0]).id; return sel[mode]; }
+function nextTarget() { const ts = targets(mode), i = ts.findIndex(x => x.id === sel[mode]);
+  const nx = ts.slice(i + 1).concat(ts.slice(0, i + 1)).find(x => !x.done) || ts[(i + 1) % ts.length]; sel[mode] = nx.id; selWire = selMod = null; draw(); }
+function pickTarget(t) { const k = t.indexOf("|"), m = t.slice(0, k), id = t.slice(k + 1); mode = m; sel[m] = id; selWire = selMod = null; draw(); }
+function head(title, hint) {
+  const ts = targets(mode), i = ts.findIndex(x => x.id === sel[mode]);
+  return `<div class="sthead"><div><b>${esc(title)}</b>${hint ? `<span class="hint">${esc(hint)}</span>` : ""}</div>${ts.length > 1 ? `<button id="nextT">次 ▶ <small>${i + 1}/${ts.length}</small></button>` : ""}</div>`;
+}
+function drawStation() {
+  const id = curTarget(); if (!id) { $("right").innerHTML = `<p class="note">この問題には、この作業がない。</p>`; return; }
+  if (mode === "cut") cutStation(pieces().find(p => p.id === id));
+  else if (mode === "strip") stripStation(pieces().find(p => p.id === id));
+  else if (mode === "dev") devStation(units().find(u => u.place === id));
+  else joinStation(units().find(u => u.kind === "box" && u.joints.some(j => j.id === id)), id);
+}
+const endShort = e => e.kind === "joint" ? (BOXNAME[P.id] && BOXNAME[P.id][e.box] || e.box) : partOf(e.part).name.replace(/（.*?）/g, "");
 
 /* ============================================================
-   ① 作業の順番
+   順番（カードを正しい順に押す）
    ============================================================ */
 let orderState = { set: null, done: [], miss: 0, pool: [] };
 function orderDef(set) {                      // 資料があれば「全体の流れ」は資料の8つ
@@ -432,18 +489,17 @@ function drawOrder() {
   const sets = orderSetsFor();
   if (!sets.includes(orderSet)) orderSet = "flow";
   if (orderState.set !== orderSet || orderState.pid !== P.id) startOrder(orderSet);
-  $("side").innerHTML = `<h2>どの作業の順番？</h2><div class="list">` + sets.map(s => `<button data-s="${s}" class="${s === orderSet ? "on" : ""}">${esc(orderDef(s).name)}</button>`).join("") + `</div>
-    <p class="note">No.${P.no} の作業に出てくるものだけを並べている。</p>` + teachNote();
-  $("side").querySelectorAll("button[data-s]").forEach(b => { b.onclick = () => { startOrder(b.dataset.s); drawOrder(); }; });
   const O = orderDef(orderSet), byId = id => O.cards.find(c => c.id === id), fin = !orderState.pool.length;
   const mins = O.cards.some(c => c.min) ? O.cards.reduce((n, c) => n + (c.min || 0), 0) : 0;
   const ct = c => esc(c.t) + (c.min ? `<span class="note">（目安 ${c.min}分）</span>` : "");
-  $("body").innerHTML = `<h2>${esc(O.name)}：正しい順にカードを押す</h2>
+  $("right").innerHTML = `<div class="sthead"><div><b>正しい順にカードを押す</b></div></div>
+    <div class="seg" id="sets">${sets.map(s => `<button data-s="${s}" class="${s === orderSet ? "on" : ""}">${esc(orderDef(s).name)}</button>`).join("")}</div>
     <div class="msg" id="omsg"></div>
-    <h3>やった順</h3><div class="seq" id="seq">${orderState.done.map((id, i) => `<div class="cardbtn"><b>${i + 1}</b>${ct(byId(id))}</div>`).join("") || '<span class="note">ここに並ぶ</span>'}</div>
-    <h3>カード</h3><div class="pool" id="pool">${orderState.pool.map(id => `<button class="cardbtn" data-c="${id}">${esc(byId(id).t)}</button>`).join("") || '<span class="note">全部並べた</span>'}</div>
-    <div class="bar"><button id="oAgain">もう一度（並べ直す）</button></div>
+    <div class="seq" id="seq">${orderState.done.map((id, i) => `<div class="cardbtn"><b>${i + 1}</b>${ct(byId(id))}</div>`).join("") || '<span class="note">ここに並ぶ</span>'}</div>
+    <div class="pool" id="pool">${orderState.pool.map(id => `<button class="cardbtn" data-c="${id}">${esc(byId(id).t)}</button>`).join("") || '<span class="note">全部並べた</span>'}</div>
+    <div class="bar"><button id="oAgain">並べ直す</button></div>
     ${fin ? `<div class="issue ${orderState.miss ? "tip" : "good"}">${orderState.miss ? "できた。順番の間違いは " + orderState.miss + " 回。もう一度やってみよう。" : "間違えずに並べられた！"}${mins ? `<span class="rule">目安の時間は合わせて ${mins} 分。</span>` : ""}${O.note ? `<span class="rule">${esc(O.note)}</span>` : ""}</div>` : ""}`;
+  $("sets").querySelectorAll("button[data-s]").forEach(b => { b.onclick = () => { startOrder(b.dataset.s); drawOrder(); }; });
   $("oAgain").onclick = () => { startOrder(orderSet); drawOrder(); };
   $("pool").querySelectorAll("button[data-c]").forEach(b => { b.onclick = () => pickCard(b.dataset.c, b); });
 }
@@ -458,84 +514,48 @@ function pickCard(id, el) {
   drawOrder(); const m = $("omsg"); m.className = "msg ok"; m.textContent = "よし。" + (orderState.pool.length ? "次は？" : "");
 }
 
-/* ============================================================
-   ② 作業をする（資料の ②〜⑦ の順: 切る → 外装・被覆をはがす → 器具につける → ボックスでつなぐ）
-   ============================================================ */
-function sideList() {
-  const us = units(); let grp = "";
-  $("side").innerHTML = `<h2>No.${P.no} の作業</h2><div class="list">` + us.map(u => {
-    const r = store[P.id][u.id], res = r && r.done ? evalUnit(u, r) : null;
-    const st = !res ? '<span class="st todo">まだ</span>' : res.defects.length ? `<span class="st ng">欠陥 ${res.defects.length}</span>` : '<span class="st ok">✓</span>';
-    const head = u.group !== grp ? `<h3>${esc(grp = u.group)}</h3>` : "";
-    return head + `<button data-u="${esc(u.id)}" class="${u.id === unitId ? "on" : ""}">${st}${esc(u.name)}<br><span class="note">${esc(unitWork(u))}</span></button>`;
-  }).join("") + `</div><p class="note">作業をしない所: ${esc(omitList())}</p>` + teachNote();
-  $("side").querySelectorAll("button[data-u]").forEach(b => { b.onclick = () => { unitId = b.dataset.u; draw(); }; });
-}
-function omitList() {
-  const names = P.parts.filter(p => p.omit || !WORK[p.type]).map(p => p.name);
-  return names.length ? names.join("、") + "（電源・施工省略）" : "なし";
-}
 function defaults(u) {                       // 作業を始める前の値（わざと「まだやっていない」状態）
   if (u.kind === "cut") return { done: false, add: {}, len: {} };
   if (u.kind === "piece") return { done: false, ends: { a: { sheath: 0, core: 0 }, b: { sheath: 0, core: 0 } } };
   if (u.kind === "box") return { done: false, j: {} };
   return { done: false, jump: 0, bend: 3, dir: "", wrap: 0, conn: {}, face: "", pos: {} };
 }
-function drawWork() {
-  sideList();
-  const u = units().find(x => x.id === unitId); if (!u) { $("body").innerHTML = "作業がない。"; return; }
-  const r = store[P.id][u.id] = store[P.id][u.id] || defaults(u);
-  if (u.kind === "cut") drawCutWork(u, r); else if (u.kind === "piece") drawPieceWork(u, r); else if (u.kind === "box") drawBoxWork(u, r); else drawDevWork(u, r);
-}
-let binds = [], rid = 0;                                             // 画面を書いたあとに、スライダーをつなぐ
-function bindAll() { binds.forEach(f => f()); binds = []; }
-function rangeRow(label, val, min, max, step, onIn, unit) {
-  const id = "rg" + (rid++);
-  binds.push(() => { const el = $(id); if (!el) return; el.oninput = () => { onIn(+el.value); $(id + "v").textContent = el.value + (unit || ""); redrawPreview(); }; el.onchange = () => save(); });
-  return `<div class="ctl"><label for="${id}">${esc(label)}</label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"><span class="val" id="${id}v">${val}${unit || ""}</span></div>`;
-}
-let redrawPreview = () => {};
-function finishBar() { return `<div class="bar"><button class="primary" id="finish">この作業を終える（点検に出す）</button><button id="redo">やり直す</button><button id="next">次の作業へ →</button></div><div id="res"></div>`; }
-function wireFinish(u, r) {
-  $("finish").onclick = () => { r.done = true; save(); sideList(); showResult(u, r); };
-  $("redo").onclick = () => { store[P.id][u.id] = defaults(u); save(); drawWork(); };
-  $("next").onclick = () => { const us = units(), i = us.findIndex(x => x.id === u.id); if (i < us.length - 1) { unitId = us[i + 1].id; drawWork(); } };
-  if (r.done) showResult(u, r);
-}
+const arrowName = (pc, sd) => sd === "a" ? "◀ " + shortEnd(pc, "a") : shortEnd(pc, "b") + " ▶";
 
 /* ---------- ② ケーブルを切る: 単線図の寸法に、両端で必要な分を足す ---------- */
 const ADD = { box: 100, dev: 50, none: 0 };                          // 資料: ボックス側 +100、器具側 +50、電源側・施工省略側は足さない
 function addNeed(pc, side) { const k = endKind(pc, side); return k === "joint" || k === "conn" ? ADD.box : k === "none" ? ADD.none : ADD.dev; }
 function cutLen(c, x) { return x && x.a !== undefined && x.b !== undefined ? c.fig + x.a + x.b : 0; }
-function drawCutWork(u, r) {
-  const t = teach(); r.add = r.add || {};
-  let h = `<h2>${esc(u.name)}</h2><p class="note">切る長さ ＝ 単線図の寸法 ＋ 両端で必要な分。端ごとに、何を足すかを選ぶ。</p>`;
-  pieces().forEach(pc => { const c = pc.cut; if (!c) return; const x = r.add[c.n] = r.add[c.n] || {};
-    h += `<div class="sect"><h3>${esc(c.n + ". " + c.seg)}（${esc(c.spec)}）</h3><svg class="side" id="cutbar${c.n}" viewBox="0 0 900 66" style="margin:4px 0"></svg>
-      <div class="cutsides">` + ["a", "b"].map(sd => `<div class="ctl" style="grid-template-columns:200px 1fr"><span>${sd === "a" ? "左" : "右"}：${esc(endLabel(pc, sd))}</span><span class="seg" data-n="${c.n}" data-s="${sd}">${[[0, "足さない"], [50, "＋50"], [100, "＋100"]].map(([v, l]) => `<button data-v="${v}" class="${x[sd] === v ? "on" : ""}">${l}</button>`).join("")}</span></div>`).join("")
-      + `</div><p class="note" id="cutlen${c.n}"></p></div>`; });
-  if (t.material) h += `<div class="sect" id="mat"></div>`;
-  h += `<p class="note">${esc(t.cutNote)}</p>` + finishBar();
-  $("body").innerHTML = h;
-  $("body").querySelectorAll(".seg[data-n]").forEach(sg => sg.querySelectorAll("button").forEach(b => { b.onclick = () => {
-    const x = r.add[sg.dataset.n]; x[sg.dataset.s] = +b.dataset.v; sg.querySelectorAll("button").forEach(o => o.classList.toggle("on", o === b));
-    r.len = r.len || {}; const c = t.cut.find(q => q.n == sg.dataset.n); r.len[c.n] = cutLen(c, x); save(); redrawPreview(); }; }));
-  redrawPreview = () => {
-    pieces().forEach(pc => { const c = pc.cut; if (!c) return; const x = r.add[c.n] || {}, s = $("cutbar" + c.n), k = 1.7, len = cutLen(c, x);
-      const L = x.a || 0, R = x.b || 0, x0 = 450 - (c.fig + L + R) * k / 2;
-      let g = `<rect x="${x0 + L * k}" y="18" width="${c.fig * k}" height="24" fill="#fff" stroke="#151a18" stroke-width="1.5"/><text x="${x0 + (L + c.fig / 2) * k}" y="34" font-size="12" text-anchor="middle">単線図 ${c.fig}</text>`;
-      if (L) g += `<rect x="${x0}" y="18" width="${L * k}" height="24" fill="#e5e1d8" stroke="#8b8271"/><text x="${x0 + L * k / 2}" y="34" font-size="12" text-anchor="middle" fill="#3f3a33">＋${L}</text>`;
-      if (R) g += `<rect x="${x0 + (L + c.fig) * k}" y="18" width="${R * k}" height="24" fill="#e5e1d8" stroke="#8b8271"/><text x="${x0 + (L + c.fig + R / 2) * k}" y="34" font-size="12" text-anchor="middle" fill="#3f3a33">＋${R}</text>`;
-      g += `<text x="${x0 - 6}" y="34" font-size="11" text-anchor="end" fill="#5d6763">${esc(shortEnd(pc, "a"))}</text><text x="${x0 + (L + c.fig + R) * k + 6}" y="34" font-size="11" fill="#5d6763">${esc(shortEnd(pc, "b"))}</text>`;
-      if (len) g += `<line x1="${x0}" y1="54" x2="${x0 + len * k}" y2="54" stroke="#0f6b4f"/><line x1="${x0}" y1="49" x2="${x0}" y2="59" stroke="#0f6b4f"/><line x1="${x0 + len * k}" y1="49" x2="${x0 + len * k}" y2="59" stroke="#0f6b4f"/>`;
-      s.innerHTML = g;
-      $("cutlen" + c.n).innerHTML = len ? `切る長さ <b>${len}mm</b>（${c.fig} ＋ ${x.a} ＋ ${x.b}）${c.asis ? "。このケーブルは材料の長さのまま使う" : ""}` : "両端の足す分を選ぶと、切る長さが出る。"; });
-    if (t.material && $("mat")) $("mat").innerHTML = t.material.map(m => { const used = m.cuts.reduce((n, q) => n + (r.len && r.len[q] || 0), 0), left = m.total - used;
-      return `<h3>材料：${esc(m.label)}</h3><p class="note">${m.cuts.join("・")} を切り出す：使う ${used}mm ／ ${m.total}mm、残り <b style="color:${left < 0 ? "var(--bad)" : "inherit"}">${left}mm</b>${left < 0 ? "（足りない）" : "（" + esc(m.rest) + "に使う）"}</p>`; }).join("");
-  };
-  redrawPreview(); wireFinish(u, r);
+function cutStation(pc) {
+  const t = teach(), r = store[P.id].cut = store[P.id].cut || defaults({ kind: "cut" }), c = pc.cut;
+  r.add = r.add || {}; r.len = r.len || {}; const x = r.add[c.n] = r.add[c.n] || {};
+  const mats = (t.material || []).filter(m => m.cuts.includes(c.n));
+  $("right").innerHTML = head(c.n + ". " + c.seg + "（" + c.spec + "）", "両端に、足す長さを選ぶ")
+    + `<svg class="st" id="station" viewBox="0 0 600 ${mats.length ? 230 : 140}"></svg><div class="tools">`
+    + ["a", "b"].map(sd => `<div class="row"><span class="lab">${esc(arrowName(pc, sd))}</span><span class="seg" data-n="${c.n}" data-s="${sd}">${[[0, "足さない"], [50, "＋50"], [100, "＋100"]].map(([v, l]) => `<button data-v="${v}" class="${x[sd] === v ? "on" : ""}">${l}</button>`).join("")}</span></div>`).join("")
+    + `</div>` + (t.cutNote ? `<details class="tip"><summary>資料の考え方</summary>${esc(t.cutNote)}</details>` : "");
+  $("right").querySelectorAll(".seg[data-n] button").forEach(b => { b.onclick = () => {
+    x[b.parentNode.dataset.s] = +b.dataset.v; r.len[c.n] = cutLen(c, x); r.done = true; changed(); cutStation(pc); }; });
+  const k = 1.1, L = x.a || 0, R = x.b || 0, tot = c.fig + L + R, x0 = 300 - tot * k / 2, len = cutLen(c, x);
+  const blk = (xa, w, fill, stroke, txt) => `<rect x="${xa}" y="40" width="${w}" height="30" fill="${fill}" stroke="${stroke}"/>` + (w > 30 ? `<text x="${xa + w / 2}" y="60" font-size="13" text-anchor="middle" fill="#3f3a33">${txt}</text>` : "");
+  let g = `<text x="10" y="24" font-size="13" fill="#5d6763">${esc(arrowName(pc, "a"))}</text><text x="590" y="24" font-size="13" text-anchor="end" fill="#5d6763">${esc(arrowName(pc, "b"))}</text>`;
+  if (L) g += blk(x0, L * k, "#e5e1d8", "#8b8271", "＋" + L);
+  g += blk(x0 + L * k, c.fig * k, "#fff", "#151a18", "単線図 " + c.fig);
+  if (R) g += blk(x0 + (L + c.fig) * k, R * k, "#e5e1d8", "#8b8271", "＋" + R);
+  if (len) g += `<line x1="${x0}" y1="88" x2="${x0 + tot * k}" y2="88" stroke="#0f6b4f"/><line x1="${x0}" y1="82" x2="${x0}" y2="94" stroke="#0f6b4f"/><line x1="${x0 + tot * k}" y1="82" x2="${x0 + tot * k}" y2="94" stroke="#0f6b4f"/>`
+    + `<text x="300" y="118" font-size="17" font-weight="800" text-anchor="middle" fill="#0f6b4f">切る長さ ${len}mm</text>`;
+  else g += `<text x="300" y="118" font-size="14" text-anchor="middle" fill="#9ca3af">切る長さ ？</text>`;
+  mats.forEach(m => { const mk = 560 / m.total; let xx = 20, used = 0;
+    g += `<text x="20" y="160" font-size="12" fill="#5d6763">材料：${esc(m.label)}</text>`;
+    m.cuts.forEach(n => { const l = r.len[n] || 0; if (!l) return; const w = l * mk, on = n === c.n; used += l;
+      g += `<rect x="${xx}" y="170" width="${w}" height="26" fill="${on ? "#fde68a" : "#e5e7eb"}" stroke="${on ? "#b45309" : "#9ca3af"}"/><text x="${xx + w / 2}" y="188" font-size="12" text-anchor="middle">${n}</text>`; xx += w; });
+    const left = m.total - used;
+    g += left >= 0 ? `<rect x="${xx}" y="170" width="${Math.max(0, 580 - xx)}" height="26" fill="#fff" stroke="#9ca3af" stroke-dasharray="4 3"/><text x="${(xx + 580) / 2}" y="188" font-size="12" text-anchor="middle" fill="#5d6763">残り ${left}</text><text x="580" y="214" font-size="11" text-anchor="end" fill="#5d6763">残りは ${esc(m.rest)} に使う</text>`
+      : `<text x="580" y="214" font-size="12" text-anchor="end" fill="#b91c1c">材料が ${-left}mm 足りない</text>`; });
+  $("station").innerHTML = g;
 }
-/* ---------- ③ 外装・被覆をはがす（1本ずつ。両端をドラッグで） ---------- */
+
+/* ---------- ③ 外装・被覆をはがす（1本ずつ。両端の ▼外装・▲被覆 をドラッグ） ---------- */
 function pieceLen(pc) { const c = store[P.id].cut; return (pc.cut && c && c.add && cutLen(pc.cut, c.add[pc.cut.n])) || pc.len; }
 function shortEnd(pc, side) {                                        // 図の中に書く短い名前
   const pl = pc[side]; if (boxOf(pl)) return (BOXNAME[P.id] && BOXNAME[P.id][pl] || pl) + " 側";
@@ -543,206 +563,235 @@ function shortEnd(pc, side) {                                        // 図の�
   return ps.length > 1 ? (ps.every(p => WORK[p.type] === "push") ? "スイッチの枠" : ps[0].name.replace(/（.*$/, "") + "の枠") + " 側" : ps[0].name.replace(/（.*?）/g, "") + " 側";
 }
 function endLabel(pc, side) { const pl = pc[side]; return boxOf(pl) ? "ボックス " + boxName(pl) + " 側" : placeName(pl) + " 側"; }
-function drawPieceWork(u, r) {
-  const pc = u.piece, L = pieceLen(pc), kA = endKind(pc, "a"), kB = endKind(pc, "b");
-  const gl = k => { if (k === "none") return "はがない（電源側・施工省略側は加工しない）"; const g = guideOf(k); return "外装 " + rg(g.sheath) + "・被覆 " + rg(g.core) + "（" + ENDWORK[k] + "）"; };
-  let h = `<h2>${esc(pc.name)}（${esc(pc.spec)}）</h2>
-    <p class="note">長さ ${L}mm${pc.cut && !(store[P.id].cut && store[P.id].cut.add && cutLen(pc.cut, store[P.id].cut.add[pc.cut.n])) ? "（まだ切っていないので、資料の長さで描いている）" : ""}。
-    外装（▼）と被覆（▲）の切り目を、左右それぞれドラッグして決める。スケールで測って印をつけてから、はぐ。</p>
-    <svg class="side" id="bench" viewBox="0 0 960 230" style="touch-action:none"></svg>
-    <div class="ends">` + ["a", "b"].map(sd => { const k = sd === "a" ? kA : kB;
-      return `<div class="sect"><h3>${sd === "a" ? "左" : "右"}：${esc(endLabel(pc, sd))}</h3><p class="note">目安：${esc(gl(k))}</p>`
-        + (k === "none" ? "" : ["sheath", "core"].map(f => `<div class="ctl"><span>${f === "sheath" ? "外装（シース）をはぐ" : "被覆をはぐ"}</span><span class="seg"><button data-e="${sd}" data-f="${f}" data-d="-5">−5</button><button data-e="${sd}" data-f="${f}" data-d="-1">−1</button><b id="v_${sd}_${f}" style="min-width:64px;text-align:center">${r.ends[sd][f]}mm</b><button data-e="${sd}" data-f="${f}" data-d="1">＋1</button><button data-e="${sd}" data-f="${f}" data-d="5">＋5</button></span><span></span></div>`).join(""))
-        + `</div>`; }).join("") + `</div>` + finishBar();
-  $("body").innerHTML = h;
+const rg = a => a[0] === a[1] ? a[0] + "mm" : a.join("〜") + "mm";
+function stripStation(pc) {
+  const u = units().find(x => x.id === "pc:" + pc.id), r = store[P.id][u.id] = store[P.id][u.id] || defaults(u);
+  const L = pieceLen(pc), kind = { a: endKind(pc, "a"), b: endKind(pc, "b") };
+  const gl = k => { if (k === "none") return "はがない"; const g = guideOf(k); return "外装 " + rg(g.sheath) + "・被覆 " + rg(g.core) + "（" + ENDWORK[k] + "）"; };
+  const stp = (sd, f) => `<span class="stp" data-e="${sd}" data-f="${f}"><button data-d="-1">−</button><b id="v_${sd}_${f}">${r.ends[sd][f]}mm</b><button data-d="1">＋</button></span>`;
+  $("right").innerHTML = head(pc.name + "（" + pc.spec + "）", "▼外装・▲被覆 の切り目をドラッグ。細かくは −／＋")
+    + `<svg class="st" id="bench" viewBox="0 0 640 210"></svg><div class="tools">`
+    + ["a", "b"].map(sd => `<div class="row"><span class="lab">${esc(arrowName(pc, sd))}</span>` + (kind[sd] === "none" ? `<span class="note">はがない（電源・施工省略）</span>` : `外装 ${stp(sd, "sheath")} 被覆 ${stp(sd, "core")}`) + `</div>`).join("")
+    + `</div><details class="tip"><summary>目安</summary>${["a", "b"].map(sd => esc(shortEnd(pc, sd)) + "：" + esc(gl(kind[sd]))).join("<br>")}</details>`;
   const lim = (sd, f, v) => { const o = r.ends[sd === "a" ? "b" : "a"]; v = Math.max(0, Math.round(v));
     if (f === "sheath") v = Math.min(v, L - (o.sheath || 0) - 20); else v = Math.min(v, Math.max(0, r.ends[sd].sheath || 0), 40); return v; };
   const set = (sd, f, v) => { r.ends[sd][f] = lim(sd, f, v); if (f === "sheath" && r.ends[sd].core > r.ends[sd].sheath) r.ends[sd].core = r.ends[sd].sheath;
     ["sheath", "core"].forEach(g => { const el = $("v_" + sd + "_" + g); if (el) el.textContent = r.ends[sd][g] + "mm"; }); bench(); };
-  $("body").querySelectorAll("button[data-e]").forEach(b => { b.onclick = () => { set(b.dataset.e, b.dataset.f, r.ends[b.dataset.e][b.dataset.f] + +b.dataset.d); save(); }; });
-  const x0 = 60, W = 840, sc = W / L, cy = 108;
+  $("right").querySelectorAll(".stp[data-e] button").forEach(b => { b.onclick = () => { const p = b.parentNode; set(p.dataset.e, p.dataset.f, r.ends[p.dataset.e][p.dataset.f] + +b.dataset.d); r.done = true; changed(); }; });
+  const x0 = 30, W = 580, sc = W / L, cy = 100;
   function bench() {
     const s = $("bench"); if (!s) return; const A = r.ends.a, B = r.ends.b, ws = pc.wires;
     const xa = x0 + A.sheath * sc, xb = x0 + (L - B.sheath) * sc, ca = x0 + A.core * sc, cb = x0 + (L - B.core) * sc;
-    let g = `<text x="${x0}" y="20" font-size="13" fill="#3f3a33">${esc(endLabel(pc, "a"))}</text><text x="${x0 + W}" y="20" font-size="13" text-anchor="end" fill="#3f3a33">${esc(endLabel(pc, "b"))}</text>`;
-    g += `<text x="${x0 + W / 2}" y="20" font-size="13" text-anchor="middle" fill="#5d6763">${L}mm</text>`;
+    let g = `<text x="${x0 + W / 2}" y="18" font-size="13" text-anchor="middle" fill="#5d6763">長さ ${L}mm</text>`;
     const hgt = 10 + ws.length * 12, top = cy - hgt / 2;
-    if (xb > xa) g += `<rect x="${xa}" y="${top}" width="${xb - xa}" height="${hgt}" rx="6" fill="#d9d6cf" stroke="#9a9488"/>`;
+    if (xb > xa) g += `<rect x="${xa}" y="${top}" width="${xb - xa}" height="${hgt}" rx="6" fill="${/2\.0/.test(pc.spec) ? "#7dc4f0" : "#d9d6cf"}" stroke="#9a9488"/>`;
     ws.forEach((x, n) => { const y = top + 11 + n * 12, col = COLORS[x.w.color] || "#888", st = x.w.color === "白" ? "#888" : "#444";
       if (xa > ca) g += `<rect x="${ca}" y="${y - 4}" width="${xa - ca}" height="8" rx="2" fill="${col}" stroke="${st}"/>`;
       if (cb > xb) g += `<rect x="${xb}" y="${y - 4}" width="${cb - xb}" height="8" rx="2" fill="${col}" stroke="${st}"/>`;
       if (ca > x0) g += `<line x1="${x0}" y1="${y}" x2="${ca}" y2="${y}" stroke="#b87333" stroke-width="3"/>`;
       if (x0 + W > cb) g += `<line x1="${cb}" y1="${y}" x2="${x0 + W}" y2="${y}" stroke="#b87333" stroke-width="3"/>`; });
-    // 寸法線（資料の完成見本と同じ）
     const dim = (x1, x2, y, txt) => x2 - x1 > 2 ? `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#0f6b4f" marker-start="url(#ar)" marker-end="url(#ar)"/><text x="${(x1 + x2) / 2}" y="${y - 4}" font-size="12" text-anchor="middle" fill="#0f6b4f">${txt}</text>` : "";
     g += `<defs><marker id="ar" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#0f6b4f"/></marker></defs>`;
-    if (A.sheath) g += dim(x0, xa, cy - hgt / 2 - 16, "外装 " + A.sheath);
-    if (B.sheath) g += dim(xb, x0 + W, cy - hgt / 2 - 16, "外装 " + B.sheath);
-    if (A.core) g += dim(x0, ca, cy + hgt / 2 + 22, "被覆 " + A.core);
-    if (B.core) g += dim(cb, x0 + W, cy + hgt / 2 + 22, "被覆 " + B.core);
-    // 目盛り
-    for (let mm = 0; mm <= L; mm += 10) { const x = x0 + mm * sc; g += `<line x1="${x}" y1="200" x2="${x}" y2="${mm % 50 ? 205 : 210}" stroke="#9ca3af"/>`;
-      if (mm % 50 === 0) g += `<text x="${x}" y="224" font-size="10" text-anchor="middle" fill="#6b7280">${mm}</text>`; }
-    g += `<line x1="${x0}" y1="200" x2="${x0 + W}" y2="200" stroke="#9ca3af"/>`;
-    // ドラッグのつまみ（▼外装・▲被覆）。はがない端には出さない
-    [["a", kA], ["b", kB]].forEach(([sd, k]) => { if (k === "none") return; const E = r.ends[sd], xs = sd === "a" ? xa : xb, xc = sd === "a" ? ca : cb;
-      g += `<g class="hit" data-h="${sd}:sheath"><rect x="${xs - 14}" y="${top - 46}" width="28" height="40" fill="transparent"/><path d="M${xs - 9} ${top - 26}L${xs + 9} ${top - 26}L${xs} ${top - 10}z" fill="#b45309"/><line x1="${xs}" y1="${top - 10}" x2="${xs}" y2="${top + hgt}" stroke="#b45309" stroke-dasharray="3 3"/></g>`;
-      g += `<g class="hit" data-h="${sd}:core"><rect x="${xc - 14}" y="${top + hgt + 2}" width="28" height="44" fill="transparent"/><path d="M${xc - 9} ${top + hgt + 30}L${xc + 9} ${top + hgt + 30}L${xc} ${top + hgt + 14}z" fill="#2563eb"/><line x1="${xc}" y1="${top}" x2="${xc}" y2="${top + hgt + 14}" stroke="#2563eb" stroke-dasharray="3 3"/></g>`; });
+    if (A.sheath) g += dim(x0, xa, top - 16, "外装 " + A.sheath);
+    if (B.sheath) g += dim(xb, x0 + W, top - 16, "外装 " + B.sheath);
+    if (A.core) g += dim(x0, ca, top + hgt + 22, "被覆 " + A.core);
+    if (B.core) g += dim(cb, x0 + W, top + hgt + 22, "被覆 " + B.core);
+    for (let mm = 0; mm <= L; mm += 10) { const x = x0 + mm * sc; g += `<line x1="${x}" y1="180" x2="${x}" y2="${mm % 50 ? 185 : 190}" stroke="#9ca3af"/>`;
+      if (mm % 50 === 0) g += `<text x="${x}" y="203" font-size="10" text-anchor="middle" fill="#6b7280">${mm}</text>`; }
+    g += `<line x1="${x0}" y1="180" x2="${x0 + W}" y2="180" stroke="#9ca3af"/>`;
+    ["a", "b"].forEach(sd => { if (kind[sd] === "none") return; const xs = sd === "a" ? xa : xb, xc = sd === "a" ? ca : cb;
+      g += `<g class="hit" data-h="${sd}:sheath"><rect x="${xs - 16}" y="${top - 50}" width="32" height="44" fill="transparent"/><path d="M${xs - 10} ${top - 30}L${xs + 10} ${top - 30}L${xs} ${top - 12}z" fill="#b45309"/><line x1="${xs}" y1="${top - 12}" x2="${xs}" y2="${top + hgt}" stroke="#b45309" stroke-dasharray="3 3"/></g>`;
+      g += `<g class="hit" data-h="${sd}:core"><rect x="${xc - 16}" y="${top + hgt + 2}" width="32" height="46" fill="transparent"/><path d="M${xc - 10} ${top + hgt + 32}L${xc + 10} ${top + hgt + 32}L${xc} ${top + hgt + 14}z" fill="#2563eb"/><line x1="${xc}" y1="${top}" x2="${xc}" y2="${top + hgt + 14}" stroke="#2563eb" stroke-dasharray="3 3"/></g>`; });
     s.innerHTML = g;
   }
   let drag = null;
   const svg = $("bench"), mmAt = e => { const m = svg.getScreenCTM(); if (!m) return 0; const x = (e.clientX - m.e) / m.a; return (x - x0) / sc; };
   svg.addEventListener("pointerdown", e => { const h = e.target.closest && e.target.closest("[data-h]"); if (!h) return; const [sd, f] = h.dataset.h.split(":"); drag = { sd, f }; try { svg.setPointerCapture(e.pointerId); } catch (er) {} e.preventDefault(); });
   svg.addEventListener("pointermove", e => { if (!drag) return; const mm = mmAt(e); set(drag.sd, drag.f, drag.sd === "a" ? mm : L - mm); });
-  const end = () => { if (drag) { drag = null; save(); } };
+  const end = () => { if (drag) { drag = null; r.done = true; changed(); } };
   svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
-  redrawPreview = bench; bench(); wireFinish(u, r);
+  bench();
 }
-const rg = a => a[0] === a[1] ? a[0] + "mm" : a.join("〜") + "mm";
 
-/* ---------- ④⑤ 器具につける ---------- */
-function drawDevWork(u, r) {
-  const ps = (P.places.find(x => x.id === u.place)).parts.map(partOf).filter(p => !p.omit && WORK[p.type]);
-  const jm = jumpersAt(u.place), kinds = u.work, ring = kinds.includes("ring"), g = guideOf(kinds[0]);
-  let h = `<h2>${esc(u.name)}</h2><p class="note">${esc(kinds.map(k => WORKNAME[k]).join("・"))}。外装・被覆は「③ 外装・被覆をはがす」でケーブルごとにはいだ長さを使う。</p>`;
-  const ends = connRows(u).filter(x => x.c).map(x => endVals(x.key * 1, u.place)).filter(Boolean);
-  const seen = new Set(); h += `<div class="sect"><h3>はいだ長さ（③ から）</h3>` + (ends.filter(e => !seen.has(e.piece.id) && seen.add(e.piece.id)).map(e => `<p class="note">${esc(e.piece.name)}：外装 ${e.sheath}mm・被覆 ${e.core}mm</p>`).join("") || `<p class="note">まだはいでいない。</p>`) + `</div>`;
-  if (ring) h += `<svg class="side" id="prev" viewBox="0 0 900 205"></svg>`;
-  if (u.frame.length) h += frameUI(u, r);
-  if (jm.length) h += `<div class="sect"><h3>わたり線（${jm.length} 本）</h3><p class="note">残りのケーブルから心線を取り出して作る。${teach() ? "資料では両端の被覆を " + teach().guide.jump + "mm ずつはぐ。" : ""}</p>` + rangeRow("両端の被覆をはぐ長さ", r.jump, 0, 30, 1, v => { r.jump = v; }, "mm") + `</div>`;
-  if (ring) {
-    h += `<div class="sect"><h3>輪作り（のの字）</h3>`
-      + rangeRow("曲げる所（被覆の端から）", r.bend, 0, 10, 1, v => { r.bend = v; }, "mm")
-      + `<div class="ctl"><span>巻く向き</span><span class="seg" id="dirSeg"><button data-v="右" class="${r.dir === "右" ? "on" : ""}">右巻き（時計回り）</button><button data-v="左" class="${r.dir === "左" ? "on" : ""}">左巻き（反時計回り）</button></span><span></span></div>`
-      + `<div class="ctl"><span>巻く量</span><span class="seg" id="wrapSeg">${[[0.5, "半周"], [0.75, "3/4周"], [1, "ほぼ1周"], [1.25, "1周と1/4（重なる）"]].map(([v, t]) => `<button data-v="${v}" class="${r.wrap === v ? "on" : ""}">${t}</button>`).join("")}</span><span></span></div></div>`;
-  }
-  const terms = ps.flatMap(p => p.terms.map(t => ({ v: p.id + "." + t.k, t: termText(p.id, t.k) })));
-  h += `<div class="sect"><h3>どの線を、どの端子へ</h3><table class="wires"><tr><th>線</th><th>行き先・来る所</th><th>つなぐ端子</th></tr>` + connRows(u).map(x => {
-    const cur = r.conn[x.key] || "", from = x.c ? x.c.spec : "わたり線";
-    return `<tr><td><span class="chip" style="background:${COLORS[x.w.color] || "#888"}"></span>${esc(x.w.color)}（${esc(from)}）</td><td>${esc(x.other)}</td><td><select data-k="${esc(x.key)}"><option value="">えらぶ</option>${terms.map(t => `<option value="${esc(t.v)}"${t.v === cur ? " selected" : ""}>${esc(t.t)}</option>`).join("")}</select></td></tr>`;
-  }).join("") + `</table></div>`;
-  h += finishBar();
-  $("body").innerHTML = h; bindAll();
-  const seg = (id, key, cast) => { const el = $(id); if (!el) return; el.querySelectorAll("button").forEach(b => { b.onclick = () => { r[key] = cast(b.dataset.v); save(); drawDevWork(u, r); }; }); };
-  seg("dirSeg", "dir", String); seg("wrapSeg", "wrap", Number); seg("faceSeg", "face", String);
-  $("body").querySelectorAll("select[data-k]").forEach(s => { s.onchange = () => { r.conn[s.dataset.k] = s.value; save(); }; });
-  $("body").querySelectorAll("select[data-pos]").forEach(s => { s.onchange = () => { r.pos[s.dataset.pos] = s.value; save(); }; });
-  redrawPreview = () => ringPreview(r); redrawPreview(); wireFinish(u, r);
-}
+/* ---------- ④⑤ 器具につける（線をタップ → 端子をタップ。取付枠は 器具をタップ → 位置をタップ） ---------- */
+let selWire = null, selMod = null;
 function connRows(u) {
   const rows = [];
   cablesAt(u.place).forEach(({ c, wires }) => wires.forEach(({ w, i }) => { const e = endAt(w, u.place); if (e) rows.push({ key: String(i), w, c, e, other: endText(otherEnd(w, u.place)) }); }));
   jumpersAt(u.place).forEach(({ w, i }) => { rows.push({ key: i + ":a", w, c: null, e: w.a, other: endText(w.b) }); rows.push({ key: i + ":b", w, c: null, e: w.b, other: endText(w.a) }); });
   return rows;
 }
-function frameUI(u, r) {
-  const t = teach(), n = u.frame.length;
-  const rule = t && t.frame ? t.frame.why : n === 1 ? "器具が1個なら中央" : n === 2 ? "器具が2個なら上と下" : "器具が3個なら上・中央・下";
-  return `<div class="sect"><h3>取付枠</h3><p class="note">${esc(rule)}。枠は「上」の文字が読める向きが表・上。</p>
-    <div class="ctl"><span>枠の向き</span><span class="seg" id="faceSeg">${[["表", "表・上向き"], ["裏", "裏返し"], ["逆", "上下さかさま"]].map(([v, x]) => `<button data-v="${v}" class="${r.face === v ? "on" : ""}">${x}</button>`).join("")}</span><span></span></div>`
-    + u.frame.map(id => `<div class="ctl"><span>${esc(partOf(id).name)}</span><select data-pos="${id}"><option value="">位置をえらぶ</option>${["上", "中央", "下"].map(v => `<option${r.pos[id] === v ? " selected" : ""}>${v}</option>`).join("")}</select><span></span></div>`).join("") + `</div>`;
+function ringPath(tx, ty, R, dir, turn) {                            // のの字（上から見た図）。y が下向きなので、角度が増える向きが時計回り
+  const a0 = Math.PI / 2, a1 = a0 + (dir === "左" ? -1 : 1) * turn * 2 * Math.PI, n = 40; let d = "";
+  for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n, rr = R - (turn > 1 && i > n * 0.8 ? 4 : 0); d += (i ? "L" : "M") + (tx + rr * Math.cos(a)).toFixed(1) + " " + (ty + rr * Math.sin(a)).toFixed(1); }
+  return d;
 }
-function ringPreview(r) {
-  const s = $("prev"); if (!s) return;
-  const cx = 450, cy = 95, R = 26, turn = r.wrap || 0, dir = r.dir === "左" ? -1 : 1;
-  let g = `<circle cx="${cx}" cy="${cy}" r="11" fill="#e5e7eb" stroke="#6b7280"/><text x="${cx}" y="${cy - 40}" font-size="13" text-anchor="middle" fill="#5d6763">ねじ（上から見た図）</text>`;
-  if (turn) { const a0 = Math.PI / 2, a1 = a0 - dir * turn * 2 * Math.PI, n = 40; let d = "";
-    for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n, rr = R - (turn > 1 && i > n * 0.8 ? 4 : 0); d += (i ? "L" : "M") + (cx + rr * Math.cos(a)).toFixed(1) + " " + (cy + rr * Math.sin(a)).toFixed(1); }
-    g += `<path d="M${cx} ${cy + R + 40} L${cx} ${cy + R}" stroke="#b87333" stroke-width="5" fill="none"/><path d="${d}" stroke="#b87333" stroke-width="5" fill="none"/>`;
-    g += `<rect x="${cx - 6}" y="${cy + R + 40}" width="12" height="${8 + r.bend * 2}" fill="#fff" stroke="#555"/>`;
-    g += `<text x="${cx}" y="${cy + R + 75}" font-size="12" text-anchor="middle" fill="#5d6763">${r.dir ? r.dir + "巻き" : "向き未定"}・${turn}周・被覆の端から ${r.bend}mm で曲げる</text>`; }
-  else g += `<text x="${cx}" y="${cy + 60}" font-size="12" text-anchor="middle" fill="#9ca3af">まだ輪を作っていない</text>`;
-  s.innerHTML = g;
+function devStation(u) {
+  const r = store[P.id][u.id] = store[P.id][u.id] || defaults(u);
+  const live = P.places.find(x => x.id === u.place).parts.map(partOf).filter(p => !p.omit && WORK[p.type]);
+  const rows = connRows(u), ring = u.work.includes("ring"), jm = jumpersAt(u.place), t = teach();
+  if (!rows.some(x => x.key === selWire)) selWire = (rows.find(x => !r.conn[x.key]) || {}).key || null;
+  const segH = (key, opts, cur) => `<span class="seg" data-key="${key}">${opts.map(([v, l]) => `<button data-v="${v}" class="${String(cur) === String(v) ? "on" : ""}">${l}</button>`).join("")}</span>`;
+  const stp = (key, v) => `<span class="stp" data-key="${key}"><button data-d="-1">−</button><b>${v}mm</b><button data-d="1">＋</button></span>`;
+  let tools = "";
+  if (u.frame.length) tools += `<div class="row"><span class="lab">取付枠</span>${segH("face", [["表", "表"], ["裏", "裏返し"], ["逆", "上下逆"]], r.face)}</div>`;
+  if (ring) tools += `<div class="row"><span class="lab">のの字</span>${segH("dir", [["右", "右巻き ↻"], ["左", "左巻き ↺"]], r.dir)} ${segH("wrap", [[0.5, "½周"], [0.75, "¾周"], [1, "1周"], [1.25, "1¼周"]], r.wrap)}</div>`
+    + `<div class="row"><span class="lab">曲げる所</span>被覆の端から ${stp("bend", r.bend)}</div>`;
+  if (jm.length) tools += `<div class="row"><span class="lab">わたり線</span>両端の被覆を ${stp("jump", r.jump)} はぐ</div>`;
+  const rule = u.frame.length ? (t && t.frame ? t.frame.why : u.frame.length === 1 ? "器具が1個なら中央" : u.frame.length === 2 ? "器具が2個なら上と下" : "器具が3個なら上・中央・下") : "";
+  $("right").innerHTML = head(u.name, (u.frame.length ? "器具 → 位置、" : "") + "線 → 端子 の順にタップ")
+    + `<svg class="st" id="station" viewBox="0 0 600 480"></svg><div class="tools">${tools}</div>`
+    + `<details class="tip"><summary>目安</summary>${rule ? esc(rule) + "。「上」の文字が読める向きが表。<br>" : ""}${esc(u.work.map(k => WORKNAME[k]).join("・"))}。白い線は W（接地側）へ。${ring ? "のの字は右巻き（ねじを締める向き）でほぼ1周、被覆の端から約3mmで曲げる。" : ""}${jm.length && t ? "資料では わたり線の被覆を " + t.guide.jump + "mm はぐ。" : ""}</details>`;
+  $("right").querySelectorAll(".seg[data-key] button").forEach(b => { b.onclick = () => { const k = b.parentNode.dataset.key; r[k] = k === "wrap" ? +b.dataset.v : b.dataset.v; r.done = true; changed(); devStation(u); }; });
+  $("right").querySelectorAll(".stp[data-key] button").forEach(b => { b.onclick = () => { const k = b.parentNode.dataset.key; r[k] = Math.max(0, Math.min(k === "bend" ? 10 : 30, (r[k] || 0) + +b.dataset.d)); r.done = true; changed(); devStation(u); }; });
+  const T = {}; let g = "", gt = "";
+  const term = (p, tk, x, y, screw) => { const tt = p.terms.find(q => q.k === tk); T[p.id + "." + tk] = { x, y, screw };
+    return `<g data-term="${p.id}.${tk}" class="hit">` + (screw ? `<rect x="${x - 13}" y="${y - 13}" width="26" height="26" rx="3" fill="#c9a227" stroke="#7a5c0b"/>` : `<circle cx="${x}" cy="${y}" r="11" fill="#fff" stroke="#374151" stroke-width="1.5"/>`)
+      + `<text x="${x}" y="${screw ? y - 17 : y + 2}" font-size="11" font-weight="700" text-anchor="middle" fill="#111">${esc(tt && tt.lab || "")}</text></g>`; };
+  const SY = 400;                                                    // 線の束（下）。ここから器具へ
+  if (u.frame.length) {
+    const FX = 330, SL = { 上: 82, 中央: 170, 下: 258 }, face = r.face;
+    g += `<rect x="${FX - 78}" y="26" width="156" height="290" rx="8" fill="${face === "裏" ? "#d1d5db" : "#9ca3af"}" stroke="#4b5563" stroke-width="2"${face === "裏" ? ' stroke-dasharray="7 4"' : ""}/>`;
+    g += face === "逆" ? `<text x="${FX}" y="313" font-size="13" font-weight="700" text-anchor="middle" fill="#fff" transform="rotate(180 ${FX} 309)">上</text>`
+      : `<text x="${FX}" y="41" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">${face === "裏" ? "（裏）" : face === "表" ? "上" : "？"}</text>`;
+    Object.entries(SL).forEach(([p, y]) => { g += `<g data-slot="${p}" class="hit"><rect x="${FX - 58}" y="${y - 36}" width="116" height="72" rx="4" fill="#e5e7eb" stroke="#6b7280" stroke-dasharray="4 3"/><text x="${FX}" y="${y + 5}" font-size="13" text-anchor="middle" fill="#9ca3af">${p}</text></g>`; });
+    let tray = 0;
+    if (u.frame.some(id => !SL[r.pos[id]])) g += `<text x="80" y="40" font-size="12" text-anchor="middle" fill="#5d6763">まだ付けていない</text>`;
+    u.frame.forEach(id => { const p = partOf(id), on = SL[r.pos[id]], mx = on ? FX : 80, my = on ? SL[r.pos[id]] : 90 + 84 * tray++, s = selMod === id;
+      g += `<g data-mod="${id}" class="hit"><rect x="${mx - 52}" y="${my - 32}" width="104" height="64" rx="4" fill="${p.type === "pl" ? "#fde68a" : "#fafaf9"}" stroke="${s ? "#f59e0b" : "#57534e"}" stroke-width="${s ? 4 : 1.5}"/>`
+        + `<text x="${mx}" y="${my + 2}" font-size="17" font-weight="800" text-anchor="middle" fill="#3f3a33">${esc(p.label || "")}</text><text x="${mx}" y="${my + 20}" font-size="10" text-anchor="middle" fill="#5d6763">${esc(TYPES_SHORT(p.type) || p.name.slice(0, 5))}</text></g>`;
+      const n = p.terms.length; p.terms.forEach((tt, k) => { const dx = k % 2 ? 36 : -36, dy = n <= 2 ? -4 : (k < 2 ? -14 : 14); gt += term(p, tt.k, mx + dx, my + dy, false); }); });
+  } else {
+    const n = live.length;
+    live.forEach((p, i) => { const big = n === 1, cy = big ? 175 : 50 + (i + 0.5) * (290 / n), k = WORK[p.type], hgt = big ? 150 : Math.min(70, 290 / n - 26), wdt = big ? 250 : 220;
+      if (p.type === "lamp") { const R = big ? 110 : hgt / 2 + 10; g += `<circle cx="300" cy="${cy}" r="${R}" fill="#1f1f1f"/><circle cx="300" cy="${cy}" r="${R * 0.38}" fill="#9a4f2b"/><circle cx="300" cy="${cy}" r="${R * 0.14}" fill="#e0a37f"/>`; }
+      else g += `<rect x="${300 - wdt / 2}" y="${cy - hgt / 2}" width="${wdt}" height="${hgt}" rx="${k === "ceil" ? 26 : 6}" fill="${k === "ceil" ? "#f5f0e6" : k === "block" ? "#e7e5e4" : "#fafaf9"}" stroke="#57534e" stroke-width="1.5"/>`;
+      g += `<text x="300" y="${cy - (p.type === "lamp" ? (big ? 118 : hgt / 2 + 16) : hgt / 2 + 8)}" font-size="13" text-anchor="middle" fill="#3f3a33">${esc(p.name)}</text>`;
+      const m = p.terms.length, step = big ? 116 : 70; p.terms.forEach((tt, j) => { gt += term(p, tt.k, 300 + (j - (m - 1) / 2) * step, cy + (p.type === "lamp" ? 0 : 8), k === "ring" || k === "block"); }); });
+  }
+  /* 線（下の束から、えらんだ端子へ） */
+  const n = rows.length, gap = Math.min(66, 520 / Math.max(1, n)), sx0 = 300 - (n - 1) * gap / 2;
+  rows.forEach((x, i) => { x.sx = sx0 + i * gap; x.core = x.c ? ((endVals(+x.key, u.place) || {}).core || 0) : (r.jump || 0); });
+  const grp = {}; rows.forEach(x => { if (x.c) (grp[x.c.id] = grp[x.c.id] || []).push(x); });
+  let gw = "", gs = "";
+  Object.values(grp).forEach(xs => { const c = xs[0].c, a = xs[0].sx - 16, b = xs[xs.length - 1].sx + 16, blue = /2\.0/.test(c.spec);
+    gs += `<rect x="${a}" y="${SY + 34}" width="${b - a}" height="32" rx="6" fill="${blue ? "#38a3e8" : "#c7c7c7"}" stroke="${blue ? "#1d6fb8" : "#8f8f8f"}"/><text x="${(a + b) / 2}" y="${SY + 55}" font-size="12" text-anchor="middle" fill="${blue ? "#fff" : "#3f3a33"}">${esc(endShort(otherEnd(xs[0].w, u.place)))} から</text>`; });
+  const wpath = (d, x, w) => `<g data-k="${esc(x.key)}" class="hit"><path d="${d}" fill="none" stroke="transparent" stroke-width="20"/><path d="${d}" fill="none" stroke="${x.w.color === "白" ? "#9ca3af" : "#111"}" stroke-width="${w + 2}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${COLORS[x.w.color] || "#888"}" stroke-width="${w}" stroke-linecap="round"/></g>`;
+  const done = new Set();
+  for (let i = 0; i < n; i++) { const a = rows[i], b = rows[i + 1];                     // わたり線: 両端とも付けたら、端子どうしを短くつなぐ
+    if (a.c || !b || b.c || a.key.split(":")[0] !== b.key.split(":")[0]) continue;
+    const ta = T[r.conn[a.key]], tb = T[r.conn[b.key]];
+    if (ta && tb) { const side = ta.x + tb.x > 660 ? 1 : -1, mx = (side > 0 ? Math.max(ta.x, tb.x) : Math.min(ta.x, tb.x)) + side * 26, my = (ta.y + tb.y) / 2;
+      gw += wpath(`M${ta.x + side * 12} ${ta.y} Q${mx} ${ta.y} ${mx} ${my}`, a, 6) + wpath(`M${mx} ${my} Q${mx} ${tb.y} ${tb.x + side * 12} ${tb.y}`, b, 6); done.add(a.key).add(b.key); }
+    else if (!ta && !tb) gs += `<path d="M${a.sx} ${SY + 34} Q${(a.sx + b.sx) / 2} ${SY + 74} ${b.sx} ${SY + 34}" fill="none" stroke="${a.w.color === "白" ? "#9ca3af" : "#111"}" stroke-width="9"/><path d="M${a.sx} ${SY + 34} Q${(a.sx + b.sx) / 2} ${SY + 74} ${b.sx} ${SY + 34}" fill="none" stroke="${COLORS[a.w.color] || "#888"}" stroke-width="7"/><text x="${(a.sx + b.sx) / 2}" y="${SY + 72}" font-size="11" text-anchor="middle" fill="#5d6763">わたり</text>`;
+    i++; }
+  rows.forEach(x => { if (done.has(x.key)) return; const col = COLORS[x.w.color] || "#888", edge = x.w.color === "白" ? "#9ca3af" : "#111", tp = T[r.conn[x.key]], on = selWire === x.key;
+    if (on) gs += `<rect x="${x.sx - 17}" y="${SY - 34}" width="34" height="76" rx="8" fill="#fde68a" stroke="#f59e0b" stroke-width="2"/>`;
+    if (tp) { const ey = tp.y + (ring && tp.screw && r.dir && r.wrap ? 15 : 0);
+      if (u.frame.length) { const side = tp.x < 330 ? -1 : 1, ox = tp.x + side * 34;      // 取付枠: 外側から端子へ（器具の文字にかぶらない）
+        gw += wpath(`M${x.sx} ${SY + 36} C${x.sx} ${SY - 40} ${ox} ${tp.y + 70} ${ox} ${tp.y + 8} Q${ox} ${tp.y} ${tp.x + side * 12} ${tp.y}`, x, on ? 8 : 6); }
+      else gw += wpath(`M${x.sx} ${SY + 36} C${x.sx} ${SY - 50} ${tp.x} ${ey + 90} ${tp.x} ${ey + 14}`, x, on ? 9 : 7) + `<line x1="${tp.x}" y1="${ey + 14}" x2="${tp.x}" y2="${ey}" stroke="#b87333" stroke-width="4"/>`;
+      if (ring && tp.screw && r.dir && r.wrap) gw += `<path d="${ringPath(tp.x, tp.y, 15, r.dir, r.wrap)}" fill="none" stroke="#b87333" stroke-width="4"/>`; }
+    else { const cl = Math.min(30, x.core * 1.5);
+      gs += `<g data-k="${esc(x.key)}" class="hit"><rect x="${x.sx - 7}" y="${SY - 10}" width="14" height="46" rx="2" fill="${col}" stroke="${edge}"/>` + (cl ? `<rect x="${x.sx - 2.5}" y="${SY - 10 - cl}" width="5" height="${cl}" fill="#c27a3a"/>` : "")
+        + `<rect x="${x.sx - 16}" y="${SY - 44}" width="32" height="82" fill="transparent"/></g>`; } });
+  Object.keys(T).forEach(k => { if (rows.some(x => r.conn[x.key] === k)) gt += `<circle cx="${T[k].x}" cy="${T[k].y + 7}" r="3" fill="#c27a3a" pointer-events="none"/>`; });   // つないだ端子に心線
+  const sw = rows.find(x => x.key === selWire);
+  g += gw + gt + gs;
+  g += `<text x="12" y="20" font-size="13" fill="#b45309" font-weight="700">${selMod ? esc(partOf(selMod).name) + " → 付ける位置をタップ" : sw ? esc(sw.w.color) + "の線（" + esc(sw.c ? endShort(otherEnd(sw.w, u.place)) + " から" : "わたり線") + "）→ 端子をタップ" : rows.every(x => r.conn[x.key]) ? "" : "線をタップ"}</text>`;
+  const s = $("station"); s.innerHTML = g;
+  const place = (id, p) => { const other = u.frame.find(o => o !== id && r.pos[o] === p); if (other) r.pos[other] = r.pos[id] || ""; r.pos[id] = p; selMod = null; r.done = true; changed(); };
+  s.onclick = e => { const q = k => e.target.closest && e.target.closest(k), tm = q("[data-term]"), st = q("[data-k]"), md = q("[data-mod]"), sl = q("[data-slot]");
+    if (tm && selWire) { const v = tm.dataset.term; if (r.conn[selWire] === v) delete r.conn[selWire]; else r.conn[selWire] = v;
+      selWire = (rows.find(x => !r.conn[x.key]) || {}).key || null; r.done = true; changed(); devStation(u); return; }
+    if (st) { selWire = selWire === st.dataset.k ? null : st.dataset.k; selMod = null; devStation(u); return; }
+    if (md) { const id = md.dataset.mod; if (selMod && selMod !== id && r.pos[id]) place(selMod, r.pos[id]); else { selMod = selMod === id ? null : id; selWire = null; } devStation(u); return; }
+    if (sl && selMod) { place(selMod, sl.dataset.slot); devStation(u); } };
 }
 
-/* ---------- ⑥⑦ ボックスでつなぐ（イラストで操作。接続点ごとにタブ） ---------- */
+/* ---------- ⑥⑦ ボックスでつなぐ（接続点ごと。イラストで操作） ---------- */
 function jointWires(j, box) {                                          // その接続点の線と、③ ではいだ被覆の長さ
   return P.wires.map((w, i) => ({ w, i })).filter(({ w }) => [w.a, w.b].some(e => e.kind === "joint" && e.joint === j.id))
     .map(({ w, i }) => { const o = w.a.kind === "joint" && w.a.joint === j.id ? w.b : w.a, ev = endVals(i, box); return { w, i, other: o, core: ev ? ev.core : 0 }; });
 }
 function protrude(x, ws) { const core = Math.min(...ws.map(q => q.core)); return core - (x.gap || 0) - MODEL.sleeveLen; }   // 圧着した時、スリーブの上に出ている心線
-function drawBoxWork(u, r) {
+const SLEEVE0 = () => ({ align: null, size: "", gap: null, mark: "", crimped: false, full: false, cut: false, tip: null });
+function joinStation(u, jid) {
   const t = teach(), tip = t ? t.guide.tip : [1, 3];
-  r.cur = u.joints.some(j => j.id === r.cur) ? r.cur : u.joints[0].id;
-  const tabs = u.joints.map((j, n) => { const x = r.j[j.id], fin = x && (u.conn ? x.conn && x.deep : x.cut);
-    return `<button data-tab="${j.id}" class="${j.id === r.cur ? "on" : ""}">${fin ? "✓ " : ""}接続点 ${n + 1}（${j.n}本）</button>`; }).join("");
-  const j = u.joints.find(q => q.id === r.cur), n = u.joints.indexOf(j), ws = jointWires(j, u.box);
-  const x = r.j[j.id] = r.j[j.id] || (u.conn ? { conn: "", ins: {}, deep: false } : { align: null, size: "", gap: null, mark: "", crimped: false, full: false, cut: false, tip: null });
-  let h = `<h2>${esc(u.name)}</h2><p class="note">${u.conn ? "差込形コネクタ。本数に合ったコネクタを選び、線を1本ずつ上へドラッグして奥まで差し込む。先から心線の先が見えて、根元で心線が見えなければよい。"
-    : "リングスリーブで圧着。先をそろえる → スリーブを選ぶ → スリーブを下へドラッグして通す（被覆との間 約2mm）→ ダイスを選ぶ → 握る（最後まで）→ 先端を " + tip.join("〜") + "mm 残して切る。"}</p>
-    <div class="bar">${tabs}</div>
-    <h3>接続点 ${n + 1}（${wireText(j)}）</h3><p class="note">つなぐ線：${ws.map(q => `<span class="chip" style="background:${COLORS[q.w.color] || "#888"}"></span>${esc(q.w.color)}：${esc(endText(q.other))}（被覆 ${q.core}mm）`).join("　")}</p>
-    ${ws.some(q => !q.core) ? `<p class="msg err">③ で被覆をはいでいない線がある。先に「③ 外装・被覆をはがす」をする。</p>` : ""}
-    <svg class="side" id="station" viewBox="0 0 900 400" style="touch-action:none"></svg>
-    <div class="bar" id="stepBar"></div><div class="msg" id="smsg"></div>` + finishBar();
-  $("body").innerHTML = h;
-  $("body").querySelectorAll("button[data-tab]").forEach(b => { b.onclick = () => { r.cur = b.dataset.tab; save(); drawBoxWork(u, r); }; });
+  const r = store[P.id][u.id] = store[P.id][u.id] || defaults(u); r.cur = jid;
+  const j = u.joints.find(q => q.id === jid), n = u.joints.indexOf(j), ws = jointWires(j, u.box);
+  const x = r.j[j.id] = r.j[j.id] || (u.conn ? { conn: "", ins: {}, deep: false } : SLEEVE0());
+  $("right").innerHTML = head((BOXNAME[P.id] && BOXNAME[P.id][u.box] || u.box) + " の接続点 " + (n + 1) + "（" + wireText(j) + "）", u.conn ? "差込形コネクタ" : "リングスリーブ")
+    + `<div class="wires">${ws.map(q => `<span class="chip" style="background:${COLORS[q.w.color] || "#888"}"></span>${esc(endShort(q.other))}`).join("　")}</div>`
+    + (ws.some(q => !q.core) ? `<p class="msg err">③ で被覆をはいでいない線がある</p>` : "")
+    + `<svg class="st" id="station" viewBox="0 0 600 400"></svg><div class="bar" id="stepBar"></div><div class="msg" id="smsg"></div>`
+    + (u.conn ? "" : `<details class="tip"><summary>目安</summary>被覆とスリーブの間は約2mm。先端は ${tip.join("〜")}mm 残して切る。スリーブとダイスは、線の太さと本数で決まる。</details>`);
   const msg = (m, err) => { const e = $("smsg"); e.className = "msg" + (err ? " err" : " ok"); e.textContent = m; };
   if (u.conn) connStation(u, r, j, ws, x, msg); else sleeveStation(u, r, j, ws, x, msg, tip);
-  redrawPreview = () => {}; wireFinish(u, r);
 }
-/* リングスリーブ: 左に心線とスリーブ（1mm = 7）、右に圧着工具 */
+/* リングスリーブ: 左に心線とスリーブ（1mm = 7）、右に圧着工具。いまの手順のボタンだけを出す */
 function sleeveStation(u, r, j, ws, x, msg, tip) {
   const s = $("station"), K = 7, base = 300, cx = 190, n = ws.length, pitch = 22, w0 = cx - (n - 1) * pitch / 2;
   const SL = { 小: { w: n * 9 + 12 }, 中: { w: n * 9 + 22 }, 大: { w: n * 9 + 32 } };
   const off = q => (x.align ? 0 : [0, -3, 2, -1, 3, -2][ws.indexOf(q) % 6]);   // そろえていない心線の先のばらつき（mm）
+  const again = () => joinStation(u, j.id);
   const stepBar = () => {
-    const B = (id, label, on, dis) => `<button id="${id}" class="${on ? "on" : ""}"${dis ? " disabled" : ""}>${label}</button>`;
-    $("stepBar").innerHTML = (x.crimped ? "" :
-      B("sAlign", "① 先をそろえる", x.align === true) + B("sNoAlign", "そろえない", x.align === false)
-      + ["小", "中", "大"].map(v => B("sz" + v, "② スリーブ " + v, x.size === v, x.align === null)).join("")
-      + `<span class="note">③ スリーブを下へドラッグ</span>`
-      + ["○", "小", "中", "大"].map(v => B("dz" + v, "④ ダイス " + v, x.mark === v, x.gap === null)).join("")
-      + B("sGrip", "⑤ 握る（押し続ける）", false, !x.mark))
-      + (x.crimped && !x.cut ? `<span class="note">⑥ はさみの線（赤）をドラッグして、先端を切る</span>` + B("sCut", "ここで切る", false, false) : "")
-      + (x.crimped ? B("sRedo", "この接続点をやり直す", false, false) : "");
+    const B = (id, label, on) => `<button id="${id}" class="${on ? "on" : ""}">${label}</button>`, L = t => `<span class="lab">${t}</span>`;
+    let h = "";
+    if (x.align === null) h = L("① 心線の先") + B("sAlign", "そろえる", false) + B("sNoAlign", "そろえない", false);
+    else if (!x.size) h = L("② スリーブ") + ["小", "中", "大"].map(v => B("sz" + v, v, false)).join("");
+    else if (!x.crimped) h = L("③ 下へドラッグ ④ ダイス") + ["○", "小", "中", "大"].map(v => B("dz" + v, v, x.mark === v)).join("") + (x.mark ? B("sGrip", "⑤ 握る（押し続ける）", false) : "");
+    else if (!x.cut) h = L("⑥ 赤い線をドラッグ") + B("sCut", "ここで切る", false);
+    if (x.align !== null) h += `<button id="sRedo" class="small">やり直す</button>`;
+    $("stepBar").innerHTML = h;
     const on = (id, f) => { const e = $(id); if (e) e.onclick = f; };
-    on("sAlign", () => { x.align = true; save(); draw2(); msg("心線の先をそろえた。"); });
-    on("sNoAlign", () => { x.align = false; save(); draw2(); msg("そろえないまま進む。短い線の先が、スリーブの中に沈むかもしれない。", true); });
-    ["小", "中", "大"].forEach(v => on("sz" + v, () => { x.size = v; if (x.gap === null) x.gap = 12; save(); draw2(); msg("スリーブ「" + v + "」を選んだ。スリーブを下へドラッグして、心線に通す。"); }));
-    ["○", "小", "中", "大"].forEach(v => on("dz" + v, () => { x.mark = v; save(); draw2(); msg("ダイス「" + v + "」に合わせた。「握る」を押し続ける。"); }));
-    on("sRedo", () => { r.j[j.id] = { align: null, size: "", gap: null, mark: "", crimped: false, full: false, cut: false, tip: null }; save(); drawBoxWork(u, r); });
-    on("sCut", () => { x.cut = true; if (x.tip === null) x.tip = Math.round(protrude(x, ws)); save(); drawBoxWork(u, r); msg("先端 " + x.tip + "mm を残して切った。"); });
+    on("sAlign", () => { x.align = true; changed(); draw2(); msg("心線の先をそろえた。"); });
+    on("sNoAlign", () => { x.align = false; changed(); draw2(); msg("そろえないまま進む。", true); });
+    ["小", "中", "大"].forEach(v => on("sz" + v, () => { x.size = v; if (x.gap === null) x.gap = 12; changed(); draw2(); msg("スリーブ「" + v + "」。下へドラッグして心線に通す。"); }));
+    ["○", "小", "中", "大"].forEach(v => on("dz" + v, () => { x.mark = v; changed(); draw2(); msg("ダイス「" + v + "」。「握る」を押し続ける。"); }));
+    on("sRedo", () => { r.j[j.id] = SLEEVE0(); changed(); again(); });
+    on("sCut", () => { x.cut = true; if (x.tip === null) x.tip = Math.round(protrude(x, ws)); changed(); again(); msg("先端 " + x.tip + "mm を残して切った。"); });
     const g = $("sGrip"); if (g) {                                     // 押し続けると柄が閉じる。途中で離すと不完全
       let timer = null, p = 0;
       const start = e => { e.preventDefault(); if (timer) return; p = 0; timer = setInterval(() => { p = Math.min(1, p + 0.05); grip = p; draw2(); if (p >= 1) stop(); }, 40); };
       const stop = () => { if (!timer) return; clearInterval(timer); timer = null; x.crimped = true; x.full = p >= 1; grip = 0;
-        if (x.tip === null) x.tip = Math.round(protrude(x, ws)); save(); drawBoxWork(u, r);
-        msg(x.full ? "最後まで握った。スリーブに刻印「" + x.mark + "」が入った。" : "途中で離した。圧着が不完全。", !x.full); };
+        if (x.tip === null) x.tip = Math.round(protrude(x, ws)); changed(); again();
+        msg(x.full ? "最後まで握った。刻印「" + x.mark + "」が入った。" : "途中で離した。圧着が不完全。", !x.full); };
       g.addEventListener("pointerdown", start); g.addEventListener("pointerup", stop); g.addEventListener("pointerleave", stop); g.addEventListener("pointercancel", stop);
     }
   };
   let grip = 0;
   function draw2() {
     const sl = SL[x.size], top = Math.min(...ws.map(q => q.core + off(q)));
-    let g = `<text x="20" y="22" font-size="13" fill="#5d6763">横から見た図（拡大）</text>`;
+    let g = `<text x="14" y="22" font-size="13" fill="#5d6763">横から見た図（拡大）</text>`;
     ws.forEach((q, i) => { const xx = w0 + i * pitch, col = COLORS[q.w.color] || "#888", st = q.w.color === "白" ? "#888" : "#444";
       let len = q.core + off(q); if (x.cut && x.tip !== null) len = Math.min(len, (x.gap || 0) + MODEL.sleeveLen + x.tip);
       g += `<rect x="${xx - 7}" y="${base}" width="14" height="60" fill="${col}" stroke="${st}"/>`;
-      g += `<rect x="${xx - 2.5}" y="${base - len * K}" width="5" height="${len * K}" fill="#c27a3a" stroke="#8a5225" stroke-width=".8"/>`; });
+      len = Math.max(0, len); g += `<rect x="${xx - 2.5}" y="${base - len * K}" width="5" height="${len * K}" fill="#c27a3a" stroke="#8a5225" stroke-width=".8"/>`; });
     g += `<text x="${cx}" y="${base + 78}" font-size="12" text-anchor="middle" fill="#5d6763">被覆</text>`;
     if (sl && x.gap !== null) {                                          // スリーブ
       const yb = base - x.gap * K, yt = yb - MODEL.sleeveLen * K, squeeze = x.crimped ? (x.full ? 6 : 3) : grip * 6;
       g += `<g class="hit" data-h="sleeve"><path d="M${cx - sl.w / 2 + squeeze} ${yt} L${cx + sl.w / 2 - squeeze} ${yt} L${cx + sl.w / 2 - squeeze / 2} ${yb} L${cx - sl.w / 2 + squeeze / 2} ${yb} Z" fill="#d6d9de" stroke="#6b7280" stroke-width="1.5" opacity=".95"/>`;
       if (x.crimped) g += `<text x="${cx}" y="${(yt + yb) / 2 + 5}" font-size="15" font-weight="800" text-anchor="middle" fill="${x.full ? "#151a18" : "#9ca3af"}">${esc(x.mark)}</text>`;
+      if (!x.crimped) g += `<text x="${cx}" y="${(yt + yb) / 2 + 5}" font-size="14" text-anchor="middle" fill="#6b7280">↕</text>`;
       g += `<rect x="${cx - sl.w / 2 - 20}" y="${yt - 10}" width="${sl.w + 40}" height="${yb - yt + 20}" fill="transparent"/></g>`;
       g += `<text x="${cx + sl.w / 2 + 8}" y="${yt + 14}" font-size="12" fill="#3f3a33">スリーブ ${x.size}</text>`;
-      g += x.gap > 0 ? `<line x1="${cx + 60}" y1="${yb}" x2="${cx + 60}" y2="${base}" stroke="#0f6b4f"/><text x="${cx + 66}" y="${(yb + base) / 2 + 4}" font-size="12" fill="${x.gap >= 10 ? "#b91c1c" : "#0f6b4f"}">被覆との間 ${x.gap}mm</text>`
-        : `<text x="${cx + 60}" y="${base - 4}" font-size="12" fill="#b91c1c">被覆がスリーブに入っている</text>`;
+      g += x.gap > 0 ? `<line x1="${cx + 60}" y1="${yb}" x2="${cx + 60}" y2="${base}" stroke="#0f6b4f"/><text x="${cx + 66}" y="${(yb + base) / 2 + 4}" font-size="12" fill="#0f6b4f">被覆との間 ${x.gap}mm</text>`
+        : `<text x="${cx + 60}" y="${base - 4}" font-size="12" fill="#3f3a33">被覆がスリーブに入っている</text>`;
       const pr = (x.cut ? x.tip : top - x.gap - MODEL.sleeveLen);
-      g += `<text x="${cx - sl.w / 2 - 10}" y="${yt - 6}" font-size="12" text-anchor="end" fill="${pr >= 5 ? "#b91c1c" : pr < 0 ? "#b91c1c" : "#0f6b4f"}">${pr < 0 ? "先端が中に沈む" : "上に出た心線 " + pr + "mm"}</text>`;
+      g += `<text x="${cx - sl.w / 2 - 10}" y="${yt - 6}" font-size="12" text-anchor="end" fill="#3f3a33">${pr < 0 ? "先端が中に沈む" : "上に出た心線 " + pr + "mm"}</text>`;
       if (x.crimped && !x.cut) { const yc = yt - (x.tip ?? 0) * K;     // はさみの線
         g += `<g class="hit" data-h="cut"><rect x="${cx - 90}" y="${yc - 12}" width="180" height="24" fill="transparent"/><line x1="${cx - 80}" y1="${yc}" x2="${cx + 80}" y2="${yc}" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7 4"/><text x="${cx + 84}" y="${yc + 4}" font-size="12" fill="#dc2626">✂ ${x.tip}mm 残す</text></g>`; }
     }
     // 圧着工具（右）
-    const hx = 690, hy = 120, ang = (x.crimped ? (x.full ? 1 : 0.5) : grip) * 16;
+    const hx = 470, hy = 110, ang = (x.crimped ? (x.full ? 1 : 0.5) : grip) * 16;
     g += `<text x="${hx}" y="22" font-size="13" text-anchor="middle" fill="#5d6763">圧着工具（柄が黄色）</text>`;
     g += `<g><rect x="${hx - 70}" y="${hy - 70}" width="140" height="90" rx="10" fill="#4b5563"/>` + ["○", "小", "中", "大"].map((v, i) => { const yy = hy - 52 + i * 20, on = x.mark === v;
       return `<rect x="${hx - 30}" y="${yy}" width="60" height="16" rx="8" fill="${on ? "#facc15" : "#9ca3af"}" stroke="#111"/><text x="${hx}" y="${yy + 12.5}" font-size="12" font-weight="700" text-anchor="middle">${v}</text>`; }).join("") + `</g>`;
     g += `<path d="M${hx - 40} ${hy + 20} L${hx - 70 - ang * 1.5} ${hy + 240} L${hx - 40 - ang * 1.5} ${hy + 245} L${hx - 15} ${hy + 20} Z" fill="#facc15" stroke="#a16207"/>`;
     g += `<path d="M${hx + 40} ${hy + 20} L${hx + 70 - ang * 3} ${hy + 240} L${hx + 40 - ang * 3} ${hy + 245} L${hx + 15} ${hy + 20} Z" fill="#facc15" stroke="#a16207"/>`;
     if (grip > 0 || x.crimped) g += `<rect x="${hx - 60}" y="${hy + 262}" width="120" height="8" rx="4" fill="#e5e7eb"/><rect x="${hx - 60}" y="${hy + 262}" width="${120 * (x.crimped ? (x.full ? 1 : 0.5) : grip)}" height="8" rx="4" fill="${(x.crimped && !x.full) ? "#f59e0b" : "#0f6b4f"}"/>`;
-    s.innerHTML = g; stepBar();
+    s.innerHTML = g; if (!grip) stepBar();
   }
   let drag = null; const mmY = e => { const m = s.getScreenCTM(); return m ? (e.clientY - m.f) / m.d : 0; };
   s.addEventListener("pointerdown", e => { const hh = e.target.closest && e.target.closest("[data-h]"); if (!hh) return;
@@ -752,30 +801,31 @@ function sleeveStation(u, r, j, ws, x, msg, tip) {
     if (drag === "sleeve") { x.gap = Math.max(-2, Math.min(15, Math.round((base - y - MODEL.sleeveLen * K / 2) / K))); }
     else { const yt = base - x.gap * K - MODEL.sleeveLen * K; x.tip = Math.max(-1, Math.min(Math.round(protrude(x, ws)), Math.round((yt - y) / K))); }
     draw2(); });
-  const end = () => { if (drag) { drag = null; save(); } };
+  const end = () => { if (drag) { drag = null; changed(); } };
   s.addEventListener("pointerup", end); s.addEventListener("pointercancel", end);
   draw2();
 }
 /* 差込形コネクタ: 透明なコネクタに、線を下から差し込む */
 function connStation(u, r, j, ws, x, msg) {
-  const s = $("station"), K = 9, gauge = gaugeOf("conn"), cx = 330, by = 130, H = gauge * K + 30, pitch = 44;
+  const s = $("station"), K = 9, gauge = gaugeOf("conn"), cx = 300, by = 130, H = gauge * K + 30, pitch = 44;
   const ins = q => x.ins[q.i] || 0;                                   // 差し込んだ深さ（mm）
   const holes = +x.conn || 0, hx0 = cx - (Math.max(holes, ws.length) - 1) * pitch / 2;
   const sb = () => {
-    $("stepBar").innerHTML = ["2", "3", "4"].map(v => `<button data-c="${v}" class="${x.conn === v ? "on" : ""}">${v}本用</button>`).join("") + `<span class="note">コネクタを選んだら、線を1本ずつ上へドラッグして差し込む</span>`;
-    $("stepBar").querySelectorAll("button[data-c]").forEach(b => { b.onclick = () => { x.conn = b.dataset.c; x.ins = {}; x.deep = false; save(); drawBoxWork(u, r); msg(b.dataset.c + "本用を選んだ。"); }; });
+    $("stepBar").innerHTML = `<span class="lab">${holes ? "線を上へドラッグ" : "① コネクタ"}</span>` + ["2", "3", "4"].map(v => `<button data-c="${v}" class="${x.conn === v ? "on" : ""}">${v}本用</button>`).join("");
+    $("stepBar").querySelectorAll("button[data-c]").forEach(b => { b.onclick = () => { x.conn = b.dataset.c; x.ins = {}; x.deep = false; changed(); joinStation(u, j.id); msg(b.dataset.c + "本用。線を1本ずつ上へドラッグして差し込む。"); }; });
   };
   function draw2() {
-    let g = `<text x="20" y="22" font-size="13" fill="#5d6763">横から見た図（拡大）。上が先端、下が差込口</text>`;
+    let g = `<text x="14" y="22" font-size="13" fill="#5d6763">横から見た図（拡大）。上が先端、下が差込口</text>`;
     if (holes) { const w = holes * pitch + 20;
       g += `<rect x="${cx - w / 2}" y="${by}" width="${w}" height="${H}" rx="6" fill="#fdba74" fill-opacity=".35" stroke="#c2410c" stroke-width="2"/>`;
-      g += `<text x="${cx + w / 2 + 8}" y="${by + 14}" font-size="12" fill="#c2410c">先端</text><text x="${cx + w / 2 + 8}" y="${by + H}" font-size="12" fill="#c2410c">差込口（下端）</text>`;
+      g += `<text x="${cx + w / 2 + 8}" y="${by + 14}" font-size="12" fill="#c2410c">先端</text><text x="${cx + w / 2 + 8}" y="${by + H}" font-size="12" fill="#c2410c">差込口</text>`;
       for (let i = 0; i < holes; i++) g += `<rect x="${hx0 + i * pitch - 5}" y="${by + 10}" width="10" height="${H - 10}" fill="#fff7ed" stroke="#fdba74"/>`; }
     ws.forEach((q, i) => { const xx = hx0 + i * pitch, d = ins(q), col = COLORS[q.w.color] || "#888", st = q.w.color === "白" ? "#888" : "#444";
       const coreTop = by + H - d * K, insTop = coreTop + q.core * K;
       g += `<g class="hit" data-w="${q.i}"><rect x="${xx - 14}" y="${coreTop - 6}" width="28" height="${400 - coreTop}" fill="transparent"/>`;
       g += `<rect x="${xx - 7}" y="${insTop}" width="14" height="${Math.max(0, 395 - insTop)}" fill="${col}" stroke="${st}"/>`;
       g += `<rect x="${xx - 2.5}" y="${coreTop}" width="5" height="${q.core * K}" fill="#c27a3a" stroke="#8a5225" stroke-width=".8"/></g>`;
+      if (holes && !d) g += `<text x="${xx}" y="392" font-size="14" text-anchor="middle" fill="#6b7280">↑</text>`;
       if (holes && d > 0) { const bottomBare = (by + H) < insTop - 2, tipSeen = d >= gauge - 1;
         g += `<text x="${xx}" y="${by - 8}" font-size="15" font-weight="700" text-anchor="middle" fill="${tipSeen ? "#0f6b4f" : "#b91c1c"}">${tipSeen ? "◯" : "✕"}</text>`;
         if (bottomBare && d >= gauge - 1) g += `<text x="${xx}" y="${by + H + 16}" font-size="11" text-anchor="middle" fill="#b91c1c">心線が見える</text>`; } });
@@ -789,7 +839,7 @@ function connStation(u, r, j, ws, x, msg) {
     try { s.setPointerCapture(e.pointerId); } catch (er) {} e.preventDefault(); });
   s.addEventListener("pointermove", e => { if (!drag) return; const m = s.getScreenCTM(), dy = (drag.y0 - e.clientY) / (m ? m.d : 1);
     x.ins[drag.i] = Math.max(0, Math.min(gauge, Math.round(drag.d0 + dy / K))); x.deep = ws.every(q => (x.ins[q.i] || 0) >= gauge - 1); draw2(); });
-  const end = () => { if (drag) { drag = null; save(); if (x.deep) msg("全部の線を奥まで差し込んだ。"); } };
+  const end = () => { if (drag) { drag = null; changed(); if (x.deep) msg("全部の線を奥まで差し込んだ。"); } };
   s.addEventListener("pointerup", end); s.addEventListener("pointercancel", end);
   draw2();
 }
@@ -801,14 +851,14 @@ function wireText(j) { return [j.n16 ? "1.6mm×" + j.n16 + "本" : "", j.n20 ? "
    ============================================================ */
 function evalUnit(u, r) {
   const defects = [], tips = [];
-  const D = (key, where) => defects.push({ def: DEF[key], key, where });
+  const D = (key, where, loc) => defects.push({ def: DEF[key], key, where, loc });   // loc: 欠陥の場所（ケーブルの端 a/b・接続点・ケーブル）
   const T = (text) => tips.push(text);
   if (u.kind === "cut") {
     const t = teach(), add = r.add || {};
-    pieces().forEach(pc => { const c = pc.cut; if (!c) return; const x = add[c.n] || {}, at = c.n + ". " + c.seg;
-      if (x.a === undefined || x.b === undefined) { D("unfinished", at + "：両端の足す分を決めていない"); return; }
+    pieces().forEach(pc => { const c = pc.cut; if (!c) return; const x = add[c.n] || {}, at = c.n + ". " + c.seg, Dc = (k, w) => D(k, w, pc.id);
+      if (x.a === undefined || x.b === undefined) { Dc("unfinished", at + "：両端の足す分を決めていない"); return; }
       ["a", "b"].forEach(sd => { const need = addNeed(pc, sd), got = x[sd], nm = endLabel(pc, sd);
-        if (got < need) D("unfinished", at + " の" + nm + "：" + (got ? "＋" + got : "足していない") + "。" + (need === ADD.box ? "ボックスの中で電線どうしをつなぐ分（＋100）が足りず、届かない" : "器具につける分（＋50）が足りず、つけられない"));
+        if (got < need) Dc("unfinished", at + " の" + nm + "：" + (got ? "＋" + got : "足していない") + "。" + (need === ADD.box ? "ボックスの中で電線どうしをつなぐ分（＋100）が足りず、届かない" : "器具につける分（＋50）が足りず、つけられない"));
         else if (got > need) T(at + " の" + nm + "：＋" + got + "（" + (need ? "＋" + need + " でよい" : "電源側・施工省略側は足さない") + "）。長すぎると材料が足りなくなる"); });
       const len = cutLen(c, x); if (c.asis && len !== c.len) T(at + "：" + len + "mm。このケーブルは材料（" + c.len + "mm）を切らずにそのまま使う"); });
     (t.material || []).forEach(m => { const used = m.cuts.reduce((n, q) => n + cutLen(t.cut.find(c => c.n === q), add[q]), 0);
@@ -818,7 +868,7 @@ function evalUnit(u, r) {
   if (u.kind === "piece") {
     const pc = u.piece;
     ["a", "b"].forEach(sd => {
-      const k = endKind(pc, sd), E = r.ends[sd] || { sheath: 0, core: 0 }, at = endLabel(pc, sd), sh = E.sheath, co = E.core;
+      const D = (k, w) => defects.push({ def: DEF[k], key: k, where: w, loc: sd }), k = endKind(pc, sd), E = r.ends[sd] || { sheath: 0, core: 0 }, at = endLabel(pc, sd), sh = E.sheath, co = E.core;
       if (k === "none") { if (sh || co) T(at + "：電源側・施工省略側は はがない"); return; }
       if (!sh || !co) { D("unfinished", at + "：外装か被覆をはいでいない"); return; }
       const g = guideOf(k);
@@ -844,7 +894,7 @@ function evalUnit(u, r) {
   if (u.kind === "box") {
     const t = teach(), tip = t ? t.guide.tip : [1, 3];
     u.joints.forEach((j, n) => {
-      const x = r.j[j.id] || {}, at = "接続点 " + (n + 1) + "（" + wireText(j) + "）";
+      const D = (k, w) => defects.push({ def: DEF[k], key: k, where: w, loc: j.id }), x = r.j[j.id] || {}, at = "接続点 " + (n + 1) + "（" + wireText(j) + "）";
       if (u.conn) {
         if (!x.conn) { D("unfinished", at + "：コネクタを選んでいない"); return; }
         if (+x.conn !== j.n) D("connPick", at + "：" + j.n + "本の線に " + x.conn + "本用");
@@ -940,9 +990,13 @@ function showResult(u, r) {
 const AK = 0.9, CONNCOL = { 2: "#16a34a", 3: "#ea580c", 4: "#7c3aed" };
 function placePos(pl) { const b = boxOf(pl); if (b) return { x: b.x, y: b.y };
   const ps = (P.places.find(x => x.id === pl) || { parts: [] }).parts.map(partOf); return { x: ps.reduce((s, p) => s + p.x, 0) / ps.length, y: ps.reduce((s, p) => s + p.y, 0) / ps.length }; }
-function assemblySVG() {
+function assemblySVG(marks) {
   const st = store[P.id], us = units(), dev = id => st["pl:" + id] || {}, boxR = id => st["bx:" + id] || {};
-  let g = "", top = "";
+  let g = "", top = "", halo = "", hits = "", badge = "";              // halo: 選んでいる所 / hits: タップする所 / badge: やった・まだ・欠陥の番号
+  const ANC = {}, tgt = {}; targets(mode).forEach(x => { tgt[x.id] = x.done; });
+  const isSel = (m, id) => mode === m && sel[m] === id;
+  const bdg = (p, done) => done ? `<g pointer-events="none"><circle cx="${p.x}" cy="${p.y}" r="9" fill="#16a34a" stroke="#fff" stroke-width="2"/><text x="${p.x}" y="${p.y + 4}" font-size="11" font-weight="800" text-anchor="middle" fill="#fff">✓</text></g>`
+    : `<circle cx="${p.x}" cy="${p.y}" r="6" fill="#f59e0b" stroke="#fff" stroke-width="2" pointer-events="none"/>`;
   const ln = (a, b, col, wdt, extra) => `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="${wdt}" stroke-linecap="round"${extra || ""}/>`;
   const wireCol = c => c === "白" ? "#e5e7eb" : COLORS[c] || "#888", wireEdge = c => c === "白" ? "#9ca3af" : "#111";
   const wire = (a, b, c, bend) => { const mx = (a.x + b.x) / 2 + (bend ? bend.x : 0), my = (a.y + b.y) / 2 + (bend ? bend.y : 0), d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
@@ -953,29 +1007,33 @@ function assemblySVG() {
     const r = dev(pl), pos = r.pos || {}, rank = { 上: 0, 中央: 1, 下: 2 }; const ids = u.frame.slice();
     return ids.sort((a, b) => (pos[a] in rank ? rank[pos[a]] : 9) - (pos[b] in rank ? rank[pos[b]] : 9)); };
   P.places.forEach(pl => {
-    const ps = pl.parts.map(partOf), c = placePos(pl.id), live = ps.filter(p => !p.omit && WORK[p.type]);
+    const ps = pl.parts.map(partOf), c = placePos(pl.id), live = ps.filter(p => !p.omit && WORK[p.type]); let bb = [44, 44];
     if (!live.length) { if (ps.some(p => p.type === "src")) top += `<text x="${c.x}" y="${c.y - 22}" font-size="14" text-anchor="middle" fill="#3f3a33">電源</text>`;
       else top += `<text x="${c.x}" y="${c.y + 30}" font-size="12" text-anchor="middle" fill="#6b7280">${esc(ps[0].name)}</text>`; return; }
     const kind = WORK[live[0].type];
-    if (kind === "ring") { const p = live[0];
+    if (kind === "ring") { const p = live[0]; bb = [46, 46];
       g += `<circle cx="${c.x}" cy="${c.y}" r="40" fill="#1f1f1f"/><circle cx="${c.x}" cy="${c.y}" r="17" fill="#9a4f2b"/><circle cx="${c.x}" cy="${c.y}" r="6" fill="#e0a37f"/>`;
       [[-27, "W"], [27, "C"]].forEach(([dx, k]) => { g += `<rect x="${c.x + dx - 8}" y="${c.y - 8}" width="16" height="16" fill="#c9a227" stroke="#7a5c0b"/><path d="M${c.x + dx - 4} ${c.y + 4}L${c.x + dx + 4} ${c.y - 4}" stroke="#7a5c0b" stroke-width="2"/>`; term[p.id + "." + k] = { x: c.x + dx, y: c.y }; });
       top += `<text x="${c.x}" y="${c.y - 48}" font-size="12" text-anchor="middle" fill="#3f3a33">${esc(p.name)}</text>`;
-    } else if (kind === "ceil") { const p = live[0];
+    } else if (kind === "ceil") { const p = live[0]; bb = [40, 28];
       g += `<rect x="${c.x - 34}" y="${c.y - 22}" width="68" height="44" rx="10" fill="#f5f0e6" stroke="#a8a29e"/>`;
       p.terms.forEach((t, i) => { const tx = c.x - 12 + i * 24; g += `<circle cx="${tx}" cy="${c.y + 4}" r="5" fill="#e7e5e4" stroke="#57534e"/>`; term[p.id + "." + t.k] = { x: tx, y: c.y + 4 }; });
       top += `<text x="${c.x}" y="${c.y - 30}" font-size="12" text-anchor="middle" fill="#3f3a33">${esc(p.name)}</text>`;
-    } else if (kind === "push") { const ord = frameOrder(pl.id) || live.map(p => p.id), n = ord.length, H = 40 * n + 30, face = dev(pl.id).face;
+    } else if (kind === "push") { const ord = frameOrder(pl.id) || live.map(p => p.id), n = ord.length, H = 40 * n + 30, face = dev(pl.id).face; bb = [42, H / 2 + 4];
       g += `<rect x="${c.x - 26}" y="${c.y - H / 2}" width="52" height="${H}" rx="3" fill="#6b7280" stroke="#374151"/><text x="${c.x}" y="${c.y - H / 2 + 12}" font-size="9" text-anchor="middle" fill="#fff">${face === "逆" ? "ㅗ上" : face === "裏" ? "（裏）" : "上"}</text>`;
       ord.forEach((id, i) => { const p = partOf(id), y = c.y - H / 2 + 22 + i * 40;
         g += `<rect x="${c.x - 20}" y="${y}" width="40" height="34" rx="2" fill="${p.type === "pl" ? "#fde68a" : "#fafaf9"}" stroke="#57534e"/>`;
         g += `<text x="${c.x}" y="${y + 22}" font-size="11" text-anchor="middle" fill="#3f3a33">${esc(p.label || (p.type === "pl" ? "表示" : TYPES_SHORT(p.type)))}</text>`;
         p.terms.forEach((t, k) => { const tx = c.x - 34 + (k % 2) * 68, ty = y + 10 + Math.floor(k / 2) * 14; term[p.id + "." + t.k] = { x: tx, y: ty }; g += `<circle cx="${tx}" cy="${ty}" r="3.5" fill="#d6d3d1" stroke="#57534e"/>`; }); });
       top += `<text x="${c.x}" y="${c.y + H / 2 + 14}" font-size="12" text-anchor="middle" fill="#3f3a33">${esc(live.map(p => p.name.replace(/位置表示灯内蔵/, "")).join("・"))}</text>`;
-    } else { live.forEach((p, i) => { const y = c.y - (live.length - 1) * 22 + i * 44;
+    } else { bb = [46, live.length * 22 + 2]; live.forEach((p, i) => { const y = c.y - (live.length - 1) * 22 + i * 44;
         g += `<rect x="${c.x - 40}" y="${y - 16}" width="80" height="32" rx="3" fill="#e7e5e4" stroke="#57534e"/>`;
         p.terms.forEach((t, k) => { const tx = c.x - 26 + k * 52 / Math.max(1, p.terms.length - 1); term[p.id + "." + t.k] = { x: tx, y }; g += `<circle cx="${tx}" cy="${y}" r="5" fill="#c9a227" stroke="#7a5c0b"/>`; });
         top += `<text x="${c.x}" y="${y - 20}" font-size="11" text-anchor="middle" fill="#3f3a33">${esc(p.name)}</text>`; }); }
+    ANC["pl:" + pl.id] = c; const hb = { x: c.x - bb[0], y: c.y - bb[1], w: bb[0] * 2, h: bb[1] * 2 };
+    if (isSel("dev", pl.id)) halo += `<rect x="${hb.x - 8}" y="${hb.y - 8}" width="${hb.w + 16}" height="${hb.h + 16}" rx="12" fill="#fde68a" stroke="#f59e0b" stroke-width="3"/>`;
+    hits += `<rect data-t="dev|${pl.id}" x="${hb.x}" y="${hb.y}" width="${hb.w}" height="${hb.h}" fill="transparent"/>`;
+    if (mode === "dev" && pl.id in tgt) badge += bdg({ x: hb.x + hb.w + 4, y: hb.y - 4 }, tgt[pl.id]);
   });
   /* ケーブルと心線 */
   const jpos = {};
@@ -998,7 +1056,11 @@ function assemblySVG() {
     const rad = pl => boxOf(pl) ? 14 : 46, sa = done ? r.ends.a.sheath : 0, sb = done ? r.ends.b.sheath : 0;
     const ea = { x: A.x + ux * (rad(pc.a) + sa * AK) + nx * off, y: A.y + uy * (rad(pc.a) + sa * AK) + ny * off };
     const eb = { x: B.x - ux * (rad(pc.b) + sb * AK) + nx * off, y: B.y - uy * (rad(pc.b) + sb * AK) + ny * off };
-    const blue = /2\.0/.test(pc.spec);
+    const blue = /2\.0/.test(pc.spec), mid = { x: (ea.x + eb.x) / 2, y: (ea.y + eb.y) / 2 }, sm = mode === "cut" && pc.cut ? "cut" : "strip";
+    ANC["pc:" + pc.id] = mid; ANC["end:" + pc.id + ":a"] = ea; ANC["end:" + pc.id + ":b"] = eb;
+    if ((mode === "cut" || mode === "strip") && isSel(sm, pc.id)) halo += ln(ea, eb, "#fbbf24", 30);
+    hits += ln(ea, eb, "transparent", 26, ` data-t="${sm}|${pc.id}"`);
+    if ((mode === "cut" || mode === "strip") && pc.id in tgt) badge += bdg({ x: mid.x - nx * 16, y: mid.y - ny * 16 }, tgt[pc.id]);
     g += ln(ea, eb, blue ? "#1d6fb8" : "#8f8f8f", 17) + ln(ea, eb, blue ? "#38a3e8" : "#b8b8b8", 14, done ? "" : ' opacity=".6"');
     g += `<text x="${(ea.x + eb.x) / 2 + nx * 2}" y="${(ea.y + eb.y) / 2 + ny * 2 + 4}" font-size="9" text-anchor="middle" fill="${blue ? "#e0f2fe" : "#4b5563"}" transform="rotate(${(Math.atan2(uy, ux) * 180 / Math.PI + 90) % 180 - 90} ${(ea.x + eb.x) / 2} ${(ea.y + eb.y) / 2})">${esc(pc.spec)}</text>`;
     if (!done) return;
@@ -1006,7 +1068,7 @@ function assemblySVG() {
       [["a", ea, -1], ["b", eb, 1]].forEach(([sd, e, dir]) => {
         const end = sd === "a" ? (w.a.kind === "term" && (P.places.find(p => p.id === pc.a) || { parts: [] }).parts.includes(w.a.part) ? w.a : w.b) : null;
         const from = { x: e.x + nx * so, y: e.y + ny * so }, pl = pc[sd], k = endKind(pc, sd), E = r.ends[sd];
-        if (k === "none") return;
+        if (k === "none" || !E.sheath) return;
         if (boxOf(pl)) { const j = [w.a, w.b].find(x => x.kind === "joint" && x.box === pl); const jp = j && jpos[j.joint]; if (!jp) return;
           const inner = { x: jp.x - Math.cos(jp.a) * 6, y: jp.y - Math.sin(jp.a) * 6 }; g += wire(from, inner, w.color, { x: -Math.cos(jp.a) * 10, y: -Math.sin(jp.a) * 10 }); return; }
         // 器具: 生徒が選んだ端子へ
@@ -1020,7 +1082,11 @@ function assemblySVG() {
   P.places.forEach(pl => { jumpersAt(pl.id).forEach(({ w, i }) => { const r = dev(pl.id), a = r.conn && term[r.conn[i + ":a"]], b = r.conn && term[r.conn[i + ":b"]]; if (a && b) g += wire(a, b, w.color, { x: -26, y: 0 }); }); });
   /* 接続点: スリーブ（刻印）か差込形コネクタ */
   P.boxes.forEach(b => { const r = boxR(b.id), conn = b.join === "conn";
+    ANC["bx:" + b.id] = b;
     P.joints.filter(j => j.box === b.id).forEach(j => { const p = jpos[j.id], x = r.j && r.j[j.id], ang = p.a * 180 / Math.PI;
+      ANC["j:" + j.id] = p; if (isSel("join", j.id)) halo += `<circle cx="${p.x}" cy="${p.y}" r="22" fill="#fde68a" stroke="#f59e0b" stroke-width="3"/>`;
+      hits += `<circle data-t="join|${j.id}" cx="${p.x}" cy="${p.y}" r="17" fill="transparent"/>`;
+      if (mode === "join" && j.id in tgt) badge += bdg({ x: p.x + 15, y: p.y - 15 }, tgt[j.id]);
       if (conn) { const col = x && x.conn ? CONNCOL[x.conn] || "#64748b" : "#cbd5e1";
         g += `<g transform="rotate(${ang + 90} ${p.x} ${p.y})"><rect x="${p.x - 4 * j.n - 2}" y="${p.y - 10}" width="${8 * j.n + 4}" height="14" fill="#fff7ed" stroke="#9a3412"/><rect x="${p.x - 4 * j.n - 2}" y="${p.y + 2}" width="${8 * j.n + 4}" height="8" fill="${col}"/></g>`;
         if (x && x.conn && !x.deep) top += `<text x="${p.x}" y="${p.y - 14}" font-size="10" text-anchor="middle" fill="#b91c1c">浅い</text>`;
@@ -1032,35 +1098,48 @@ function assemblySVG() {
     top += `<text x="${b.x + 16}" y="${b.y - 12}" font-size="13" font-weight="700" fill="#6b7280">${esc(BOXNAME[P.id] && BOXNAME[P.id][b.id] || b.id)}</text>`; });
   const xs = [...P.parts.map(p => p.x), ...P.boxes.map(b => b.x)], ys = [...P.parts.map(p => p.y), ...P.boxes.map(b => b.y)];
   const x0 = Math.min(...xs) - 110, y0 = Math.min(...ys) - 90, W = Math.max(...xs) - x0 + 110, H = Math.max(...ys) - y0 + 110;
-  return `<svg class="side" id="asm" viewBox="${x0} ${y0} ${W} ${H}" style="max-height:78vh">${g}${top}</svg>`;
+  const cnt = {}; (marks || []).forEach(m => { const p = ANC[m.a]; if (!p) return; const k = cnt[m.a] = (cnt[m.a] || 0) + 1, x = p.x + (k - 1) * 20, y = p.y - 18;
+    badge += `<g data-t="${esc(m.t)}"><circle cx="${x}" cy="${y}" r="11" fill="${m.todo ? "#f59e0b" : "#dc2626"}" stroke="#fff" stroke-width="2"/><text x="${x}" y="${y + 4}" font-size="11" font-weight="800" text-anchor="middle" fill="#fff">${m.n}</text></g>`; });
+  return `<svg id="asm" viewBox="${x0} ${y0} ${W} ${H}" preserveAspectRatio="xMidYMid meet">${halo}${g}${top}${hits}${badge}</svg>`;
 }
 function TYPES_SHORT(t) { return { sw1: "スイッチ", swH: "スイッチ", sw3: "3路", sw4: "4路", outlet: "コンセント", outlet2: "2口", outletE: "E付", outletET: "ET", outletEET: "EET", outlet200: "250V" }[t] || ""; }
 
 /* ============================================================
-   ③ 点検（全体）
+   ⑧ 点検（全体）。欠陥は完成図に番号で出す。番号をタップすると、その作業へ
    ============================================================ */
+function checkList() {                                 // 欠陥（未完成は作業ごとに1つにまとめる）
+  const bad = [], todo = [];
+  units().forEach(u => { const res = evalUnit(u, store[P.id][u.id] || defaults(u)), unf = res.defects.filter(d => d.key === "unfinished");
+    res.defects.filter(d => d.key !== "unfinished").forEach(d => bad.push({ u, d }));
+    if (unf.length) todo.push({ u, d: unf[0], todo: true }); });
+  return bad.concat(todo);
+}
+function spot(u, d) {                                  // 欠陥の場所（完成図の上）と、タップした時に開く作業
+  if (u.kind === "cut") { const id = d.loc || pieces().find(p => p.cut).id; return { t: "cut|" + id, a: "pc:" + id }; }
+  if (u.kind === "piece") return { t: "strip|" + u.piece.id, a: d.loc ? "end:" + u.piece.id + ":" + d.loc : "pc:" + u.piece.id };
+  if (u.kind === "box") { const id = d.loc || u.joints[0].id; return { t: "join|" + id, a: "j:" + id }; }
+  return { t: "dev|" + u.place, a: "pl:" + u.place };
+}
+function unitShort(u) { return u.kind === "piece" ? u.piece.name : u.kind === "box" ? "ボックス " + (BOXNAME[P.id] && BOXNAME[P.id][u.box] || u.box) : u.kind === "cut" ? "切る" : u.name; }
 function drawCheck() {
-  const us = units(), t = teach(), keys = new Set();
-  let total = 0, todo = 0, h = "";
-  us.forEach(u => { const r = store[P.id][u.id];
-    if (!r || !r.done) { todo++; h += `<div class="issue"><b>${esc(u.name)}</b>：まだ作業していない<span class="rule">欠陥：未完成</span></div>`; total++; return; }
-    const res = evalUnit(u, r); total += res.defects.length; res.defects.forEach(d => keys.add(d.key));
-    h += res.defects.map(d => `<div class="issue"><b>${esc(u.name)}</b>：${esc(d.where)}<span class="rule">欠陥：${esc(d.def.cat)} ―「${esc(d.def.text)}」</span></div>`).join("");
-    h += res.tips.map(x => `<div class="issue tip"><b>${esc(u.name)}</b>：目安より ${esc(x)}</div>`).join(""); });
-  $("side").innerHTML = `<h2>No.${P.no} の点検</h2><p class="note">技能試験は、欠陥が1つでもあれば不合格。</p><div class="bar"><button id="goWork">② 作業へ戻る</button><button id="clearAll">この問題の作業を全部消す</button></div>`
-    + (t && t.check ? `<h3>⑧ 見直す（資料のチェック）</h3><div id="chk">` + t.check.map(c => { const ng = c.keys.some(k => keys.has(k));
-        return `<div class="issue ${todo ? "tip" : ng ? "" : "good"}" style="font-weight:400">${todo ? "□" : ng ? "✗" : "☑"} ${esc(c.t)}</div>`; }).join("") + `</div>` + (todo ? `<p class="note">全部の作業を終えると、チェックが付く。</p>` : "") : "");
-  $("body").innerHTML = `<div class="verdict ${total ? "ng" : "ok"}">${total ? "欠陥 " + total + " か所 ― 不合格" : "欠陥なし ― 合格"}</div>`
-    + `<h3>完成図（上から見た図。作業の結果をそのまま描く）</h3>` + assemblySVG()
-    + (todo ? `<p class="note">まだ作業していない所が ${todo} つある。</p>` : "") + (h || `<div class="issue good">すべての作業で欠陥なし</div>`);
-  $("goWork").onclick = () => setMode("work");
-  $("clearAll").onclick = () => { store[P.id] = {}; save(); drawCheck(); };
+  const t = teach(), L = checkList(), keys = new Set(L.filter(x => !x.todo).map(x => x.d.key)), todo = L.filter(x => x.todo).length;
+  const tips = units().flatMap(u => evalUnit(u, store[P.id][u.id] || defaults(u)).tips.map(x => ({ u, x })));
+  $("right").innerHTML = `<div class="verdict ${L.length ? "ng" : "ok"}">${L.length ? (L.length - todo ? "欠陥 " + (L.length - todo) + " か所" : "") + (L.length - todo && todo ? "・" : "") + (todo ? "まだ " + todo + " か所" : "") + " ― 不合格" : "欠陥なし ― 合格"}</div>`
+    + (todo ? `<p class="note">黄色の番号は、まだ作業していない所（未完成も欠陥）。赤は欠陥。</p>` : "")
+    + L.map((x, i) => `<button class="issue${x.todo ? " todo" : ""}" data-t="${esc(spot(x.u, x.d).t)}"><span class="num">${i + 1}</span><b>${esc(unitShort(x.u))}</b>　${esc(x.d.where)}${x.todo ? "" : `<span class="rule">${esc(x.d.def.cat)} ―「${esc(x.d.def.text)}」</span>`}</button>`).join("")
+    + (tips.length ? `<details class="tip"><summary>目安より（${tips.length}）</summary>${tips.map(x => `<div>${esc(unitShort(x.u))}：${esc(x.x)}</div>`).join("")}</details>` : "")
+    + (t && t.check ? `<details class="tip" open><summary>資料の見直し</summary><div id="chk">` + t.check.map(c => { const ng = c.keys.some(k => keys.has(k));
+        return `<div class="issue ${todo ? "tip" : ng ? "" : "good"}" style="font-weight:400">${todo ? "□" : ng ? "✗" : "☑"} ${esc(c.t)}</div>`; }).join("") + `</div></details>` : "")
+    + `<div class="bar"><button id="clearAll" class="small">この問題の作業を全部消す</button></div>`;
+  $("right").querySelectorAll("button[data-t]").forEach(b => { b.onclick = () => pickTarget(b.dataset.t); });
+  $("clearAll").onclick = () => { store[P.id] = {}; save(); draw(); };
 }
 
 /* ---------- 始める ---------- */
 $("ver").textContent = "版 " + VER;
+$("right").addEventListener("click", e => { if (e.target.closest && e.target.closest("#nextT")) nextTarget(); });
 openProb(KIT[0].id);
-setMode("order");
+setMode("cut");
 </script>
 </body>
 </html>
