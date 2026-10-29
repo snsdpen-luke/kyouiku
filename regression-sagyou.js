@@ -23,8 +23,8 @@ E(`window.goodParams = u => {
       r.ends[sd] = { sheath: k === "joint" || k === "conn" ? 100 : mid(g.sheath), core }; });
     return r; }
   if (u.kind === "box") { const r = { done: true, j: {} };
-    u.joints.forEach(j => { if (u.conn) { r.j[j.id] = { conn: String(j.n), deep: true }; return; }
-      const s = sleeveFor(j.n16, j.n20); r.j[j.id] = { size: s.size, mark: s.mark, align: true, gap: 2, tip: 2 }; });
+    u.joints.forEach(j => { if (u.conn) { const ins = {}; jointWires(j, u.box).forEach(q => { ins[q.i] = gaugeOf("conn"); }); r.j[j.id] = { conn: String(j.n), ins, deep: true }; return; }
+      const s = sleeveFor(j.n16, j.n20); r.j[j.id] = { size: s.size, mark: s.mark, align: true, gap: 2, crimped: true, full: true, cut: true, tip: 2 }; });
     return r; }
   const kind = u.work[0], r = { done: true, jump: { ring: 20, push: gaugeOf("push"), ceil: gaugeOf("ceil"), block: 11 }[kind], bend: 3, dir: "右", wrap: 1, conn: {}, face: "表", pos: {} };
   const n = u.frame.length, order = t && t.frame && t.frame.order.every(id => u.frame.includes(id)) ? t.frame.order : u.frame;
@@ -146,6 +146,26 @@ ok(/切る長さ 300mm（150 ＋ 50 ＋ 100）/.test($("cutlen2").textContent) &
 ok(/使う 300mm ／ 1800mm、残り 1500mm/.test($("mat").textContent), "材料の残りが出る");
 E(`unitId = units().find(u=>u.kind==='piece'&&u.piece.cut.n===2).id; draw();`);
 ok(/長さ 300mm。/.test($("body").textContent), "③ はがす画面のケーブルの長さは、② で決めた長さ");
+E(`store[P.id] = {}; save();`);
+
+console.log("\n【I】接続点をイラストで操作する");
+E(`openProb("k1"); store[P.id] = {}; allGood(); units().filter(u=>u.kind==="box").forEach(u=>{ store[P.id][u.id] = { done:false, j:{} }; }); setMode("work"); unitId = "bx:B1"; draw();`);
+ok(d.querySelectorAll("#body button[data-tab]").length === 5 && d.querySelector("#station"), "A（B1）: 接続点5つのタブと、拡大図");
+ok(d.querySelector("#sz小").disabled && d.querySelector("#sGrip").disabled, "先をそろえるまで、スリーブを選べない・握れない（実物の順）");
+tap("#sAlign"); tap("#sz小");
+ok(E("store[P.id]['bx:B1'].j[store[P.id]['bx:B1'].cur].gap") === 12 && d.querySelector('#station [data-h="sleeve"]'), "スリーブを選ぶと、心線の上にスリーブが出る（まだ通していない 12mm）");
+E(`(()=>{ const x = store[P.id]['bx:B1'].j[store[P.id]['bx:B1'].cur]; x.gap = 2; drawBoxWork(units().find(u=>u.id==='bx:B1'), store[P.id]['bx:B1']); })()`);
+ok(/被覆との間 2mm/.test($("station").innerHTML), "スリーブを下げると「被覆との間 2mm」");
+tap("#dz○");
+ok(!d.querySelector("#sGrip").disabled, "ダイスを選ぶと「握る」が押せる");
+const grip = () => { const g = $("sGrip"); g.dispatchEvent(new w.Event("pointerdown")); };
+grip(); E(`document.getElementById("sGrip").dispatchEvent(new Event("pointerup"))`);
+ok(E("(()=>{ const r = store[P.id]['bx:B1'], x = r.j[r.cur]; return x.crimped && x.full === false; })()"), "すぐ離すと、圧着が不完全");
+ok(JSON.parse(E(`JSON.stringify(evalUnit(units().find(u=>u.id==='bx:B1'), store[P.id]['bx:B1']).defects.map(x=>x.key))`)).includes("crimpHalf"), "不完全な圧着 → 欠陥（工具を最後まで握りきっていない）");
+E(`openProb("k1"); setMode("work"); unitId = "bx:B2"; draw();`);
+ok(d.querySelectorAll('#stepBar button[data-c]').length === 3, "B（B2）: 2本用・3本用・4本用を選ぶ");
+tap('#stepBar button[data-c="3"]');
+ok(d.querySelectorAll('#station [data-w]').length === E("units().find(u=>u.id==='bx:B2').joints.find(j=>j.id===store[P.id]['bx:B2'].cur).n") && /先端/.test($("station").innerHTML), "コネクタを選ぶと、透明なコネクタと、差し込む線が出る");
 E(`store[P.id] = {}; save();`);
 
 console.log("\n【Z】後始末");
