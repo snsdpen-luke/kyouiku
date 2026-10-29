@@ -136,6 +136,11 @@ os.makedirs("review1", exist_ok=True)
 shutil.copyfile("ふりかえり演習.html", "review1/index.html")
 print("生成: review1/index.html")
 
+# 1o) サトシ・ナカモト事件ファイル（ブロックチェーン・マイニングの体験スライド）
+os.makedirs("bitcoin", exist_ok=True)
+shutil.copyfile("サトシ・ナカモト事件ファイル.html", "bitcoin/index.html")
+print("生成: bitcoin/index.html")
+
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
     out = sys.argv[1]

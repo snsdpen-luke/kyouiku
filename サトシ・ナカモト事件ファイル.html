@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>サトシ・ナカモト事件ファイル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@700;900&family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: 1024x768 の固定ステージを画面に合わせて拡大縮小。左にスライド本体、右に用語欄。夜の捜査ボード（濃紺）に証拠カードを置く */
+:root{
+  --bg:#12151d; --board:#1a1f2b; --card:#232a39; --line:#343d51;
+  --ink:#ebe8e1; --sub:#9aa3b5; --clue:#f0b446; --bad:#ec5a5f; --ok:#45c2b1;
+  --f-dis:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);overflow:hidden}
+body{font-family:var(--f-body);padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+#stage{position:absolute;left:0;top:0;width:1024px;height:768px;transform-origin:0 0;display:grid;grid-template-columns:1fr 250px;background:var(--board)}
+#main{position:relative;overflow:hidden;display:flex;flex-direction:column}
+.slide{position:absolute;inset:0 0 64px 0;padding:34px 40px 10px;display:flex;flex-direction:column;gap:16px;overflow:auto}
+.slide:not(.on){display:none}
+.eb{font-family:var(--f-mono);font-size:13px;letter-spacing:.12em;color:var(--clue)}
+h1{font-family:var(--f-dis);font-weight:900;font-size:36px;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-family:var(--f-dis);font-weight:700;font-size:22px;margin:0}
+p{margin:0;font-size:18px;line-height:1.75}
+b{color:var(--clue);font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.row{display:flex;gap:14px}
+.row>*{flex:1;min-width:0}
+.mono{font-family:var(--f-mono)}
+button{font-family:var(--f-body);font-size:16px;font-weight:700;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 16px;cursor:pointer}
+button:hover{border-color:var(--clue)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--clue);outline-offset:2px}
+button.pri{background:var(--clue);color:#1a1408;border-color:var(--clue)}
+button:disabled{opacity:.4;cursor:default}
+input,textarea{font-family:var(--f-body);font-size:17px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%;box-sizing:border-box}
+textarea{min-height:90px;resize:none;line-height:1.6}
+.big{font-size:24px}
+
+/* nav */
+#nav button{white-space:nowrap}
+#nav{position:absolute;left:0;right:0;bottom:0;height:64px;display:flex;align-items:center;gap:12px;padding:0 24px;border-top:1px solid var(--line);background:var(--board)}
+#dots{flex:1;display:flex;gap:6px;justify-content:center}
+#dots i{width:14px;height:5px;border-radius:2px;background:var(--line)}
+#dots i.on{background:var(--clue)}
+#pg{font-family:var(--f-mono);font-size:13px;color:var(--sub);width:70px;white-space:nowrap;text-align:center}
+
+/* side glossary */
+#side{border-left:1px solid var(--line);background:var(--bg);padding:24px 18px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+#side h3{margin:0;font-size:13px;letter-spacing:.14em;color:var(--sub);font-weight:700}
+.term b{display:block;font-size:16px;margin-bottom:4px}
+.term span{font-size:14px;line-height:1.65;color:var(--ink)}
+
+/* cover */
+#cv{position:absolute;inset:0;opacity:.18}
+.cover{justify-content:center;gap:22px}
+.cover h1{font-size:58px;line-height:1.2}
+.stamp{align-self:flex-start;font-family:var(--f-dis);font-weight:900;color:var(--bad);border:3px solid var(--bad);padding:4px 16px;font-size:26px;transform:rotate(-6deg);letter-spacing:.2em}
+
+/* timeline */
+.tl{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:8px}
+.tl div{position:relative;padding:8px 0 12px 22px}
+.tl div::before{content:"";position:absolute;left:-7px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--board);border:2px solid var(--clue)}
+.tl .d{font-family:var(--f-mono);font-size:14px;color:var(--clue)}
+.tl p{font-size:17px}
+.paper{background:#ece6d6;color:#26221a;border-radius:4px;padding:18px 20px;font-family:var(--f-dis);box-shadow:0 6px 18px rgba(0,0,0,.35);transform:rotate(-1deg)}
+.paper b{color:#7a2d18}
+.clues{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.clue{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.clue .n{font-family:var(--f-mono);font-size:12px;color:var(--clue);letter-spacing:.1em}
+.clue p{font-size:16px;line-height:1.65}
+.q{border:2px dashed var(--clue);border-radius:8px;padding:18px 20px}
+.q p{font-size:22px;font-family:var(--f-dis);font-weight:700;line-height:1.6}
+
+.psteps{flex:1;display:flex;flex-direction:column;gap:10px}
+.pst{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.pst svg{width:110px;height:55px}
+.pst .n{font-family:var(--f-mono);font-size:12px;color:var(--clue);letter-spacing:.1em}
+.pst p{font-size:16px;line-height:1.6}
+.mm{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mm>div{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+.mm .good{border-top:4px solid var(--ok)} .mm .badc{border-top:4px solid var(--bad)}
+.mm .n{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em}
+.mm .good .n{color:var(--ok)} .mm .badc .n{color:var(--bad)}
+.mm ul{margin:6px 0 0;padding-left:20px;font-size:16px;line-height:1.7}
+.tlh{flex-direction:row!important;border-left:0!important;border-top:2px solid var(--line);margin:10px 0 0 0!important}.tlh div{flex:1;padding:16px 0 0 0!important}.tlh div::before{left:0!important;top:-8px!important}
+.pz{display:flex;gap:10px;flex:0 0 auto}.pz svg{width:130px;height:130px}
+.eq{font-family:var(--f-dis);font-weight:900;font-size:30px;line-height:1.5}.eq .mono{color:var(--clue);font-size:34px}
+#mf text{font-size:14px;text-anchor:middle;fill:var(--ink);font-family:var(--f-body)}
+#mf text.sm{font-size:12px}#mf text.hl{fill:var(--clue);font-family:var(--f-mono)}
+#mf .b rect{fill:var(--card);stroke:var(--ok);stroke-width:2}
+#mf .nb{fill:var(--card);stroke:var(--sub);stroke-width:2;stroke-dasharray:6 5;transition:stroke .3s}
+#mf .nb.done{stroke:var(--ok);stroke-dasharray:none}
+#mf .ln{stroke:var(--clue);stroke-width:3;fill:none;stroke-dasharray:6 5}#mf .ln.ok{stroke:var(--ok);stroke-dasharray:none}
+#mf .tx rect{fill:var(--bg);stroke:var(--line)}
+#mf .tx{transition:transform .6s,opacity .6s}#mf .tx.go{transform:translate(-185px,90px);opacity:0}
+#mf [data-s]{transition:opacity .4s}#mf [data-s].off{opacity:0}
+#mf .pc rect{fill:var(--bg);stroke:var(--ok)}#mf .pc text{fill:var(--ok);font-weight:700}
+.hl0{font-size:14px;color:var(--sub);white-space:nowrap;width:84px;flex:0 0 84px}
+.mini{background:var(--bg);border-radius:4px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}.mini>span{font-size:13px;color:var(--sub)}.mini b{color:var(--ink);font-size:18px}
+.props{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.props p{font-size:15px}
+.vtx{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px 12px;display:flex;flex-wrap:wrap;align-items:center;column-gap:12px;row-gap:2px;justify-content:space-between;min-height:36px}
+.vtx .vt{font-size:17px;white-space:nowrap}.vtx .stmp{margin-left:14px;font-size:13px;color:var(--bad);border:1.5px solid var(--bad);border-radius:3px;padding:1px 6px}
+.vtx .bt{display:flex;gap:6px}.vtx .bt button{font-size:14px;padding:6px 12px}
+.vtx .vr{font-size:13px;line-height:1.5;color:var(--sub);flex:1 1 100%;min-width:0}
+.vtx.okk{border-color:var(--ok)}.vtx.ngg{border-color:var(--bad)}.vtx.okk .mark{color:var(--ok);font-weight:700}.vtx.ngg .mark{color:var(--bad);font-weight:700}
+.crow{display:grid;grid-template-columns:96px 1fr 30px;gap:10px;align-items:center}.cl{font-weight:700;font-size:15px}.cn{text-align:right;font-size:18px}
+.cb{display:flex;gap:3px;flex-wrap:nowrap;overflow:hidden;min-height:26px}
+.cb i{flex:0 0 22px;height:24px;border-radius:3px;font-style:normal;font-family:var(--f-mono);font-size:10px;display:flex;align-items:center;justify-content:center;color:#10131a}
+.cb i.sh{background:var(--sub)}.cb i.g{background:var(--ok)}.cb i.r{background:var(--bad)}
+#cf text{font-size:14px;text-anchor:middle;fill:var(--ink);font-family:var(--f-body)}#cf text.sm{font-size:12px}#cf text.hl{fill:var(--clue);font-family:var(--f-mono)}
+#cf .b rect{fill:var(--card);stroke:var(--ok);stroke-width:2}
+#cf .cand rect{fill:var(--card);stroke:var(--sub);stroke-width:2;stroke-dasharray:6 5;transition:all .3s}
+#cf .cand{transition:opacity .4s}#cf .cand.win rect{stroke:var(--ok);stroke-dasharray:none}#cf .cand.ng rect{stroke:var(--bad);stroke-dasharray:none}#cf .cand.gone{opacity:.3}
+#cf .mk{font-size:26px;font-weight:700}
+#cf .ln{stroke:var(--sub);stroke-width:2.5;fill:none;stroke-dasharray:6 5;transition:all .3s}#cf .ln.ok{stroke:var(--ok);stroke-width:3.5;stroke-dasharray:none}#cf .ln.gone{opacity:.2}
+#cf .nb{fill:var(--card);stroke:var(--sub);stroke-width:2;stroke-dasharray:6 5}#cf .off{opacity:0}#cfNext{transition:opacity .4s}
+.lg{display:grid;grid-template-columns:28px 1fr 60px;gap:8px;align-items:center;padding:6px 8px;border-radius:4px;font-size:17px;transition:background .2s}
+.lg .no{font-family:var(--f-mono);font-size:13px;color:var(--sub)}.lg .m{font-family:var(--f-mono);text-align:right}
+.lg.in{background:color-mix(in srgb,var(--ok) 40%,transparent)}.lg.out{background:color-mix(in srgb,var(--bad) 40%,transparent)}
+#lgBtn button.sel{border-color:var(--clue);color:var(--clue)}
+.qop{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qop button{text-align:left;font-weight:400;font-size:17px;line-height:1.5;padding:12px 14px}
+.qop button.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 25%,var(--card))}.qop button.ng{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 25%,var(--card))}
+/* hash */
+.hash{font-family:var(--f-mono);font-size:19px;word-break:break-all;line-height:1.5;letter-spacing:.04em}
+.hash .z{color:var(--ok)}
+.hash .chg{color:var(--clue)}
+.fp{display:flex;align-items:center;gap:14px}
+
+/* chain */
+.chain{display:flex;gap:30px;align-items:stretch;position:relative}
+.chain svg.lk{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:2}
+.hv.chip{border-left:10px solid var(--c);background:var(--bg);border-radius:3px;padding:4px 6px}
+.blk{flex:1;min-width:0;background:var(--card);border:2px solid var(--ok);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.blk.bad{border-color:var(--bad)}
+.blk h4{margin:0;font-size:15px;display:flex;justify-content:space-between}
+.blk .lab{color:var(--sub);font-size:12px}
+.blk .hv{font-family:var(--f-mono);font-size:12px;word-break:break-all;line-height:1.35}
+.blk input{font-size:14px;padding:6px 8px}
+.blk .st{font-weight:700;font-size:13px}
+.blk.bad .st{color:var(--bad)} .blk:not(.bad) .st{color:var(--ok)}
+.arrow{align-self:center;color:var(--sub);font-size:20px}
+.blk button{font-size:13px;padding:6px 8px}
+
+/* mining */
+.diff{display:flex;gap:6px;flex-wrap:wrap}.diff button{padding:8px 10px;font-family:var(--f-mono)}
+.diff button.sel{border-color:var(--clue);color:var(--clue)}
+.meter{font-family:var(--f-mono);font-size:40px;font-weight:700}
+.log{font-family:var(--f-mono);font-size:13px;color:var(--sub);height:120px;overflow:hidden;line-height:1.5}
+.log .hit{color:var(--ok);font-weight:700}
+
+/* race */
+.miners{display:flex;flex-direction:column;gap:10px}
+.miner{display:grid;grid-template-columns:170px 1fr 60px;gap:12px;align-items:center}
+.miner .nm{font-size:15px;line-height:1.4}
+.miner .nm small{display:block;color:var(--sub);font-size:12px}
+.bar{height:22px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--clue);width:0;transition:width .25s}
+.miner .w{font-family:var(--f-mono);font-size:20px;text-align:right}
+
+/* ledgers */
+.nodes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.node{background:var(--card);border:2px solid var(--line);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+.node.atk{border-color:var(--bad)}
+.node.fix{border-color:var(--ok)}
+.node h4{margin:0;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.node svg{width:100%;height:40px}
+.node ol{margin:0;padding-left:18px;font-size:12px;line-height:1.6}
+.node li.mod{color:var(--bad);font-weight:700}
+.verdict{font-size:18px;line-height:1.7;min-height:62px}
+
+/* answer list */
+.ans{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ans .card h2{font-size:19px;margin-bottom:6px}
+.ans .card p{font-size:16px;line-height:1.65}
+.weak .card{border-left:4px solid var(--bad)}
+
+/* apps */
+.apps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.app{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.app .t{font-size:16px;font-weight:700}
+.app .bt{display:flex;gap:6px}
+.app .bt button{flex:1;font-size:14px;padding:7px 6px}
+.app .r{font-size:14px;line-height:1.6;color:var(--sub)}
+.app.okk{border-color:var(--ok)} .app.ngg{border-color:var(--bad)}
+.app .r .mark{font-weight:700}
+.app.okk .mark{color:var(--ok)} .app.ngg .mark{color:var(--bad)}
+.score{font-family:var(--f-mono);color:var(--clue)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div id="stage">
+<div id="main">
+
+<!-- 0 cover -->
+<section class="slide cover on" data-t="">
+  <canvas id="cv" width="774" height="704"></canvas>
+  <div class="stamp" style="position:relative">未解決</div>
+  <div class="eb" style="position:relative">CASE FILE No.2008-10-31</div>
+  <h1 style="position:relative">謎の発明者<br>サトシ・ナカモト</h1>
+  <p style="position:relative;color:var(--sub);font-size:20px">世界中で使われるお金を作った人がいます。でも、だれもその正体を知りません。</p>
+</section>
+
+<!-- 1 start -->
+<section class="slide" data-t="論文,管理者,手数料,リーマン・ショック">
+  <div class="eb">事件の始まり</div>
+  <h1>2008年10月31日、1通のメールが届いた</h1>
+  <div class="row" style="gap:18px">
+    <div class="paper" style="flex:0 0 220px">
+      <p style="font-size:13px;color:#6b6250">差出人：Satoshi Nakamoto<br>あて先：暗号の研究者たち</p>
+      <p style="font-size:14px;margin-top:12px;font-family:var(--f-mono);color:#3d372b">Bitcoin: A Peer-to-Peer Electronic Cash System</p>
+      <p style="font-size:19px;font-weight:900;margin:6px 0 10px;line-height:1.5">ビットコイン<br><b>人から人へ直接送れる電子のお金</b></p>
+      <p style="font-size:13px;color:#6b6250">添付：9ページの論文</p>
+    </div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+      <p style="font-size:17px">論文はまず、<b>今のお金のしくみ</b>を見直しました。</p>
+      <svg viewBox="0 0 440 70" style="width:100%;height:70px"><g fill="none" stroke="var(--sub)" stroke-width="2"><circle cx="40" cy="35" r="16"/><circle cx="400" cy="35" r="16"/><path d="M60 35h110M270 35h110"/><path d="M162 29l8 6-8 6M372 29l8 6-8 6"/></g><rect x="175" y="8" width="90" height="54" rx="3" fill="var(--clue)"/><g font-size="14" text-anchor="middle" font-weight="700"><text x="40" y="40" fill="var(--ink)">A</text><text x="400" y="40" fill="var(--ink)">B</text><text x="220" y="32" fill="#1a1408">銀行</text><text x="220" y="50" fill="#1a1408" font-size="11">記録を管理</text></g><text x="115" y="25" font-size="11" text-anchor="middle" fill="var(--sub)">手数料</text></svg>
+      <div class="mm">
+        <div class="good"><span class="n">メリット</span><ul><li>記録を<b>管理してくれる</b></li><li>まちがいやサギを見張ってくれる</li><li>困ったら相談できる</li></ul></div>
+        <div class="badc"><span class="n">デメリット</span><ul><li><b>手数料</b>がかかる</li><li>その会社を信じるしかない</li><li><b>つぶれたら</b>お金も止まる</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="font-size:16px;line-height:1.7">この年は<b>リーマン・ショック</b>の年。本当に世界中の銀行がつぶれかけていました。</div>
+  <div class="q"><p>中央で管理する会社がいないお金は、作れないか？</p></div>
+</section>
+
+<!-- 1a idea -->
+<section class="slide" data-t="分散型台帳,二重払い">
+  <div class="eb">ナカモトの案</div>
+  <h1>それなら、みんなで管理しよう</h1>
+  <svg viewBox="0 0 690 150" style="width:100%;height:150px">
+    <g stroke="var(--line)" stroke-width="2"><path d="M120 40L345 30L570 40L620 115L345 125L70 115Z M120 40L620 115 M570 40L70 115 M345 30L345 125"/></g>
+    <g fill="var(--card)" stroke="var(--ok)" stroke-width="2"><rect x="88" y="22" width="64" height="36" rx="4"/><rect x="313" y="12" width="64" height="36" rx="4"/><rect x="538" y="22" width="64" height="36" rx="4"/><rect x="38" y="97" width="64" height="36" rx="4"/><rect x="588" y="97" width="64" height="36" rx="4"/><rect x="313" y="107" width="64" height="36" rx="4"/></g>
+    <g font-size="12" text-anchor="middle" fill="var(--ink)"><text x="120" y="45">記録帳</text><text x="345" y="35">記録帳</text><text x="570" y="45">記録帳</text><text x="70" y="120">記録帳</text><text x="620" y="120">記録帳</text><text x="345" y="130">記録帳</text></g>
+  </svg>
+  <p style="font-size:17px">銀行のかわりに、参加する人<b>全員が同じ記録帳</b>を持ちます。</p>
+  <div class="mm">
+    <div class="good"><span class="n">メリット</span><ul><li>間に会社がいないので、<b>手数料が安い</b></li><li>1台つぶれても、<b>ほかが記録を持っている</b></li><li>だれか1人が勝手に止められない</li></ul></div>
+    <div class="badc"><span class="n">新しい問題</span><ul><li>データはコピーできる。同じお金を2回使う<b>二重払い</b>は？</li><li><b>ウソの記録</b>を書く人がいたら？</li><li>だれが記録を書くか、決める人がいない</li></ul></div>
+  </div>
+  <div class="q"><p>見張る人がいないのに、どうやってウソを防ぐ？</p></div>
+</section>
+
+<!-- 1b after -->
+<section class="slide" data-t="ビットコイン,ブロック">
+  <div class="eb">その後に起きたこと</div>
+  <h1>最初の買い物は、ピザ2枚だった</h1>
+  <div class="tl tlh">
+    <div style="flex:1"><span class="d">2008.10</span><p>論文が送られる</p></div>
+    <div style="flex:1"><span class="d">2009.01</span><p>ビットコインが動き出す</p></div>
+    <div style="flex:1"><span class="d" style="color:var(--bad)">2010.05.22</span><p><b>初めて物と交換される</b></p></div>
+  </div>
+  <div class="row" style="align-items:center;gap:24px">
+    <div class="pz"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="#d9a441"/><circle cx="60" cy="60" r="46" fill="#c8452f"/><g fill="#f2d98a"><circle cx="40" cy="45" r="9"/><circle cx="75" cy="38" r="8"/><circle cx="58" cy="70" r="10"/><circle cx="85" cy="72" r="8"/><circle cx="35" cy="78" r="7"/></g><g stroke="#d9a441" stroke-width="3"><path d="M60 6V114M6 60H114M22 22L98 98M98 22L22 98"/></g></svg><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="#d9a441"/><circle cx="60" cy="60" r="46" fill="#c8452f"/><g fill="#f2d98a"><circle cx="40" cy="45" r="9"/><circle cx="75" cy="38" r="8"/><circle cx="58" cy="70" r="10"/><circle cx="85" cy="72" r="8"/><circle cx="35" cy="78" r="7"/></g><g stroke="#d9a441" stroke-width="3"><path d="M60 6V114M6 60H114M22 22L98 98M98 22L22 98"/></g></svg></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="eq"><span class="mono">10,000</span> ビットコイン<br>＝ ピザ <span class="mono">2</span> 枚</div>
+      <p>アメリカのプログラマーが「ビットコインでピザを買いたい」と呼びかけ、引き受けた人がピザを届けました。</p>
+      <p>ピザ2枚は当時のお金で約4,000円。<b>1ビットコイン ＝ 約0.4円</b>です。ほとんどの人が「ただのデータ」だと思っていました。</p>
+    </div>
+  </div>
+  <div class="q"><p>この1万ビットコインは、今いくらになっている？<br><span style="font-size:17px;color:var(--sub)">答えは、事件ファイルの最後で。</span></p></div>
+</section>
+
+<!-- 2 clues about satoshi -->
+<section class="slide" data-t="ビットコイン,ブロック">
+  <div class="eb">ナカモトについて分かっていること</div>
+  <h1>日本人の名前。でも正体はだれも知らない</h1>
+  <div class="clues">
+    <div class="clue"><span class="n">証拠 1</span><h2>最初のブロックの伝言</h2><p>最初のブロックに、2009年1月3日のイギリスの新聞の見出しが書きこまれていました。内容は「国が銀行を<b>また</b>助ける」。</p></div>
+    <div class="clue"><span class="n">証拠 2</span><h2>動かないお金</h2><p>ナカモトが最初のころに計算して手に入れたビットコインが、約100万枚あると<b>推定</b>されています。それがどうなったかは、最後に。</p></div>
+    <div class="clue"><span class="n">証拠 3</span><h2>名乗り出た人</h2><p>「自分がナカモトだ」と名乗った人もいました。でも2024年、イギリスの裁判所が<b>本人ではない</b>と判断しました。</p></div>
+  </div>
+  <p style="color:var(--sub)">ナカモトは、1人なのか、グループなのかも分かっていません。</p>
+</section>
+
+<!-- 3 big mystery -->
+<section class="slide" data-t="電子マネー,管理者">
+  <div class="eb">最大の謎</div>
+  <h1>管理する会社がないのに、なぜ17年も止まらない？</h1>
+  <div class="row">
+    <div class="card"><h2 style="margin-bottom:8px">電子マネー（前回）</h2><p>記録を持っているのは<b>1つの会社</b>。会社が止まれば、お金も止まります。</p></div>
+    <div class="card"><h2 style="margin-bottom:8px">ビットコイン</h2><p>会社も、<b>管理者</b>も、社長もいません。それでも今も、だれかが記録を書き続けています。</p></div>
+  </div>
+  <div class="q"><p>だれが記録を書いている？<br>だれかがウソの記録を書いたら、どうやって見ぬく？</p></div>
+  <p style="color:var(--sub)">ナカモトが残した手がかりは3つ。1つずつ調べます。</p>
+</section>
+
+<!-- 5a public ledger -->
+<section class="slide" data-t="分散型台帳,アドレス">
+  <div class="eb">手がかり 1 の前に ／ みんなの記録帳</div>
+  <h1>記録帳は、世界中のだれでも見られる</h1>
+  <div class="row" style="align-items:flex-start">
+    <div class="card" style="flex:1.3;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:14px;color:var(--sub)">みんなの記録帳（これまでの取り引き全部）</div>
+      <div id="lgList"></div>
+    </div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:15px">残高を調べたい人をタップ</div>
+      <div style="display:flex;gap:8px" id="lgBtn"></div>
+      <div class="card" style="min-height:110px"><div id="lgCalc" class="mono" style="font-size:20px;line-height:1.6;color:var(--sub)">—</div></div>
+    </div>
+  </div>
+  <div class="card"><p>残高は、どこにも書いてありません。記録帳の取り引きを<b>全部たどれば、だれでも計算できます</b>。</p></div>
+  <p style="font-size:15px;color:var(--sub)">本物の記録帳には、名前のかわりに「アドレス」という英数字が書かれます。</p>
+</section>
+
+<!-- 5b verify -->
+<section class="slide" data-t="電子署名,秘密鍵,二重払い">
+  <div class="eb">手がかり 1 ／ 取り引きを確かめる</div>
+  <h1>入れていい取り引きは、どれ？</h1>
+  <div class="row" style="align-items:flex-start">
+    <div class="card" style="flex:0 0 170px;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:14px;color:var(--sub)">記録帳から計算した残高</div>
+      <div id="vBal" class="mono" style="font-size:17px;line-height:1.8"></div>
+    </div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px" id="vList"></div>
+  </div>
+  <div class="card" style="padding:10px 16px"><p id="vMsg" style="font-size:16px">上から順に、1つずつ確かめてください。ハンコは<b>送る人本人</b>のものでなければいけません。</p></div>
+</section>
+
+<!-- 4 hash -->
+<section class="slide" data-t="ハッシュ,ハッシュ値">
+  <div class="eb">手がかり 2 ／ 文字の指紋</div>
+  <h1>どんな文章にも「指紋」がつく</h1>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <label for="hIn" style="font-size:15px;color:var(--sub)">文章を入れてください（1文字変えたり、元にもどしたりしてみよう）</label>
+    <input id="hIn" value="Aさん → Bさん 100円">
+    <div class="fp"><span class="hl0">今の指紋</span><div class="hash" id="hOut"></div></div>
+    <div class="fp"><span class="hl0">最初の指紋</span><div class="hash" id="hOrg" style="color:var(--sub)"></div></div>
+    <div class="row" style="gap:10px">
+      <div class="mini"><span>最初と同じ文字</span><b id="hSame" class="mono">64 / 64</b></div>
+      <div class="mini"><span>文章の長さ</span><b id="hLen" class="mono">—</b></div>
+      <div class="mini"><span>指紋の長さ</span><b class="mono">64 文字</b></div>
+    </div>
+  </div>
+  <div class="props">
+    <div class="clue"><span class="n">性質 1</span><p>1文字ちがうだけで、<b>まったく別物</b>になる</p></div>
+    <div class="clue"><span class="n">性質 2</span><p>同じ文章なら、いつ・どこで計算しても<b>必ず同じ</b></p></div>
+    <div class="clue"><span class="n">性質 3</span><p>文章が長くても短くても、<b>長さはいつも同じ</b></p></div>
+    <div class="clue"><span class="n">性質 4</span><p>指紋から元の文章に<b>もどせない</b></p></div>
+  </div>
+</section>
+
+<!-- 5 chain -->
+<section class="slide" data-t="ブロック,ブロックチェーン,ハッシュ値">
+  <div class="eb">手がかり 2 ／ 鎖でつなぐ</div>
+  <h1>前のブロックの指紋を、次のブロックに書く</h1>
+  <div class="chain" id="chain"></div>
+  <div class="card"><p id="chMsg"></p></div>
+  <div><button id="chReset">元にもどす</button></div>
+</section>
+
+<!-- 5c which block -->
+<section class="slide" data-t="ブロック,マイナー,ナンス">
+  <div class="eb">手がかり 3 ／ どのブロックをつなぐ？</div>
+  <h1>候補はたくさん。つながるのは1つ</h1>
+  <div class="card" style="padding:10px">
+  <svg id="cf" viewBox="0 10 690 255" style="width:100%;height:240px">
+    <g class="b"><rect x="10" y="102" width="90" height="74" rx="6"/><text x="55" y="135">ブロック 1</text><text x="55" y="155" class="sm">記録ずみ</text></g>
+    <g class="b"><rect x="130" y="102" width="90" height="74" rx="6"/><text x="175" y="135">ブロック 2</text><text x="175" y="155" class="sm">記録ずみ</text></g>
+    <path d="M100 139H130" class="ln ok"/>
+    <path id="cfLA" d="M220 139C240 139 240 57 260 57" class="ln"/>
+    <path id="cfLB" d="M220 139H260" class="ln"/>
+    <path id="cfLC" d="M220 139C240 139 240 221 260 221" class="ln"/>
+    <g id="cfA" class="cand"><rect x="260" y="20" width="170" height="74" rx="6"/><text x="345" y="42">Aさんの候補</text><text x="345" y="62" class="sm">確かめた取り引き＋前の指紋</text><text x="345" y="82" class="sm hl" id="cfNA">ナンス ？</text><text x="455" y="64" class="mk" id="cfMA"></text></g><g id="cfB" class="cand"><rect x="260" y="102" width="170" height="74" rx="6"/><text x="345" y="124">Bさんの候補</text><text x="345" y="144" class="sm">確かめた取り引き＋前の指紋</text><text x="345" y="164" class="sm hl" id="cfNB">ナンス ？</text><text x="455" y="146" class="mk" id="cfMB"></text></g><g id="cfC" class="cand"><rect x="260" y="184" width="170" height="74" rx="6"/><text x="345" y="206">Cさんの候補</text><text x="345" y="226" class="sm">確かめた取り引き＋前の指紋</text><text x="345" y="246" class="sm hl" id="cfNC">ナンス ？</text><text x="455" y="228" class="mk" id="cfMC"></text></g>
+    <g id="cfNext" class="off"><path d="M430 57H500" class="ln" stroke-dasharray="5 5"/><rect x="500" y="20" width="170" height="74" rx="6" class="nb"/><text x="585" y="50" class="sm" fill="var(--sub)">ブロック 4</text><text x="585" y="70" class="sm" fill="var(--sub)">みんなでマイニング開始</text></g>
+    <text x="585" y="140" class="sm" id="cfNote" fill="var(--sub)"></text><text x="585" y="160" class="sm" id="cfNote2" fill="var(--sub)"></text>
+  </svg>
+  </div>
+  <div class="row" style="align-items:center">
+    <div style="flex:3"><div class="eb" id="cfStep">はじめ</div><p id="cfTxt" style="font-size:18px;margin-top:4px"></p></div>
+    <div style="flex:0 0 auto;display:flex;gap:8px"><button id="cfPrev">◀</button><button class="pri" id="cfNextB">次のステップ ▶</button></div>
+  </div>
+  <div class="card"><p>つながるのは、<b>一番先にナンスを見つけた</b>うえに、<b>みんなが確かめて正しい</b>ブロックだけです。</p></div>
+</section>
+
+<!-- 6 mining manual -->
+<section class="slide" data-t="マイニング,ナンス,ハッシュ値">
+  <div class="eb">手がかり 3 ／ マイニングを手でやってみる</div>
+  <h1>「0」が多く並ぶナンスを探せ</h1>
+  <div class="row" style="align-items:stretch">
+    <div class="card" style="flex:1.4;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:14px;color:var(--sub)">ブロックの中身</div>
+      <div class="mono" style="font-size:18px;background:var(--bg);border-radius:4px;padding:8px 10px">Aさん → Bさん 1000円 / ナンス <span id="hnV" style="color:var(--clue);font-weight:700">?</span></div>
+      <form id="hnF" style="display:flex;gap:8px;align-items:center"><input id="hnI" inputmode="numeric" autocomplete="off" placeholder="好きな数字" style="width:200px;font-family:var(--f-mono);font-size:22px"><button class="pri" type="submit">試す</button></form>
+      <div style="font-size:14px;color:var(--sub)">指紋（ハッシュ値）</div>
+      <div class="hash" id="hnH" style="font-size:16px;min-height:48px">—</div>
+      <div style="display:flex;gap:10px">
+        <div class="mini" style="flex:1"><span>頭の「0」</span><b id="hnZ" class="mono" style="font-size:26px">—</b></div>
+        <div class="mini" style="flex:1.4"><span>ベスト記録</span><b id="hnB" class="mono" style="font-size:20px">—</b></div>
+        <div class="mini" style="flex:1"><span>試した回数</span><b id="hnC" class="mono" style="font-size:20px">0</b></div>
+      </div>
+    </div>
+    <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:14px;color:var(--sub)">試したナンス（新しい順）</div>
+      <div id="hnLog" class="mono" style="font-size:14px;line-height:1.75"></div>
+    </div>
+  </div>
+  <div class="card"><p>記録は変えずに、<b>ナンスだけ</b>を変えます。指紋は予想できないので、1つずつ試すしかありません。この作業が<b>マイニング</b>です。</p></div>
+</section>
+
+<!-- 6b mining auto -->
+<section class="slide" data-t="マイニング,ナンス,ハッシュ値">
+  <div class="eb">手がかり 3 ／ コンピュータでマイニング</div>
+  <h1>「0」が増えると、探す回数はどうなる？</h1>
+  <div class="row" style="align-items:flex-start">
+    <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:15px;color:var(--sub)">頭にそろえる「0」の数</div>
+      <div class="diff" id="diff"></div>
+      <div><button class="pri" id="mGo">マイニング開始</button></div>
+      <div><div style="font-size:14px;color:var(--sub)">試したナンスの数</div><div class="meter" id="mCnt">0</div></div>
+      <div class="hash" id="mHash" style="font-size:15px">—</div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:14px;color:var(--sub)">中身：Aさん → Bさん 1000円 / ナンス ○○</div>
+      <div class="log" id="mLog"></div>
+      <div style="font-size:14px;color:var(--sub)">「0」の数ごとの記録</div>
+      <div id="mRec" class="mono" style="font-size:15px;line-height:1.7"></div>
+    </div>
+  </div>
+  <div class="card"><p><b>なんのため？</b>　ブロック1つ作るのに、たくさんの計算が必要になります。だから、ウソのブロックを作り直すのも、同じだけ大変です。</p></div>
+  <p style="color:var(--sub);font-size:16px">本物のビットコインは、頭の「0」が約19個。世界中のコンピュータで競争して、約10分で見つかります。</p>
+</section>
+
+<!-- 6c mining flow -->
+<section class="slide" data-t="マイニング,ナンス,報酬,マイナー">
+  <div class="eb">手がかり 3 ／ マイニングの全体の流れ</div>
+  <h1>マイニング＝新しいブロックを作ること</h1>
+  <div class="card" style="padding:10px">
+  <svg id="mf" viewBox="0 0 690 270" style="width:100%;height:270px">
+    <g class="b"><rect x="10" y="60" width="130" height="130" rx="6"/><text x="75" y="84">ブロック 1</text><text x="75" y="130" class="sm">記録ずみ</text></g>
+    <g class="b"><rect x="170" y="60" width="130" height="130" rx="6"/><text x="75" y="84" transform="translate(160 0)">ブロック 2</text><text x="235" y="130" class="sm">記録ずみ</text></g>
+    <path d="M140 125H170" class="ln ok"/>
+    <path id="mfL" d="M300 125H340" class="ln" data-s="2"/>
+    <g id="mfB3"><rect x="340" y="60" width="150" height="130" rx="6" class="nb"/><text x="415" y="82">新しいブロック</text>
+      <text x="415" y="102" class="sm hl" data-s="2">前の指紋 00a3f1…</text>
+      <text x="415" y="124" class="sm" data-s="1">Cさん → Dさん 5</text><text x="415" y="140" class="sm" data-s="1">Eさん → Fさん 20</text><text x="415" y="156" class="sm" data-s="1">Gさん → Aさん 8</text>
+      <text x="415" y="180" class="sm hl" data-s="3" id="mfN">ナンス 0</text></g>
+    <g id="mfPool"><text x="600" y="22" class="sm tx" fill="var(--sub)">まだ記録されていない取り引き</text>
+      <g class="tx"><rect x="525" y="32" width="150" height="24" rx="3"/><text x="600" y="49" class="sm">Cさん → Dさん 5</text></g>
+      <g class="tx"><rect x="525" y="62" width="150" height="24" rx="3"/><text x="600" y="79" class="sm">Eさん → Fさん 20</text></g>
+      <g class="tx"><rect x="525" y="92" width="150" height="24" rx="3"/><text x="600" y="109" class="sm">Gさん → Aさん 8</text></g></g>
+    <g data-s="4" id="mfChk"><text x="560" y="210" class="sm" fill="var(--sub)">ほかのコンピュータが確かめる</text>
+      <g class="pc"><rect x="500" y="222" width="36" height="24" rx="2"/><text x="518" y="240">✓</text></g><g class="pc"><rect x="545" y="222" width="36" height="24" rx="2"/><text x="563" y="240">✓</text></g><g class="pc"><rect x="590" y="222" width="36" height="24" rx="2"/><text x="608" y="240">✓</text></g><g class="pc"><rect x="635" y="222" width="36" height="24" rx="2"/><text x="653" y="240">✓</text></g></g>
+    <g data-s="5" id="mfCoin"><circle cx="415" cy="232" r="22" fill="var(--clue)"/><text x="415" y="238" fill="#1a1408" font-weight="700">₿</text><text x="250" y="230" class="sm" fill="var(--clue)">見つけた人に</text><text x="250" y="248" class="sm" fill="var(--clue)">3.125ビットコイン＋手数料</text></g>
+    <g data-s="6"><rect x="520" y="60" width="150" height="130" rx="6" class="nb dash"/><text x="595" y="125" class="sm" fill="var(--sub)">次のブロック</text><text x="595" y="145" class="sm" fill="var(--sub)">マイニング開始</text><path d="M490 125H520" class="ln" stroke-dasharray="5 5"/></g>
+  </svg>
+  </div>
+  <div class="row" style="align-items:center">
+    <div style="flex:3"><div class="eb" id="mfStep">はじめ</div><p id="mfTxt" style="font-size:18px;margin-top:4px"></p></div>
+    <div style="flex:0 0 auto;display:flex;gap:8px"><button id="mfPrev">◀</button><button class="pri" id="mfNext">次のステップ ▶</button></div>
+  </div>
+  <div class="card"><p>ナンスを<b>探すのは大変</b>。でも、<b>確かめるのは計算1回</b>で一瞬。だからウソのブロックは、すぐ見ぬかれます。</p></div>
+</section>
+
+<!-- 7 race -->
+<section class="slide" data-t="マイナー,報酬,マイニング">
+  <div class="eb">なぜ計算するのか</div>
+  <h1>一番先に見つけた人が、ごほうびをもらう</h1>
+  <div class="card">
+    <div class="miners" id="miners"></div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center"><button class="pri" id="rGo">10ブロック競争</button><button id="rReset">リセット</button><span id="rMsg" style="font-size:16px;color:var(--sub)"></span></div>
+  <div class="row">
+    <div class="card"><p>見つけた人には新しいビットコインが<b>報酬</b>として出ます。だから世界中の人が、自分から記録係になります。</p></div>
+    <div class="card"><p>計算の力が大きい人ほど勝ちやすい。でも<b>毎回勝てるとはかぎりません</b>。</p></div>
+  </div>
+</section>
+
+<!-- 8 attack -->
+<section class="slide" data-t="改ざん,51%攻撃,マイニング">
+  <div class="eb">犯人になってみる</div>
+  <h1>ウソのチェーンで追いぬけるか？</h1>
+  <p style="font-size:16px">ブロック2の「100円」を「9000円」に書きかえました。ブロック2から先を<b>全部マイニングし直し</b>、みんなのチェーンより長くできたら犯人の勝ちです。</p>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div class="crow"><span class="cl" style="color:var(--ok)">正直なみんな</span><div class="cb" id="atH"></div><span class="cn mono" id="atHn"></span></div>
+    <div class="crow"><span class="cl" style="color:var(--bad)">犯人</span><div class="cb" id="atA"></div><span class="cn mono" id="atAn"></span></div>
+    <div style="font-size:14px;color:var(--sub)">ルール：<b>計算をいちばん多く積み重ねた（いちばん長い）チェーン</b>が正しい記録になる。</div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <label for="atP" style="font-size:16px">犯人の計算の力：全体の <b id="atPv" class="mono">30%</b></label>
+    <input id="atP" type="range" min="10" max="70" step="10" value="30" style="width:180px;padding:0">
+    <button class="pri" id="atGo">競争スタート</button><button id="atMany">100回まとめて試す</button>
+  </div>
+  <div class="card verdict" id="atMsg">計算の力を決めて、スタートを押してください。</div>
+  <div id="atRec" class="mono" style="font-size:15px;color:var(--sub)"></div>
+</section>
+
+<!-- 9 answer -->
+<section class="slide" data-t="ブロックチェーン,分散型台帳,マイニング">
+  <div class="eb">謎の答え</div>
+  <h1>管理者がいなくても止まらない、4つのしかけ</h1>
+  <div class="ans">
+    <div class="card"><h2>みんなが同じ記録を持つ</h2><p>1台が止まっても、ほかが動いている。</p></div>
+    <div class="card"><h2>指紋の鎖でつなぐ</h2><p>1か所書きかえると、後ろが全部こわれる。</p></div>
+    <div class="card"><h2>書くのに手間がかかる</h2><p>ウソを通すには、全体の半分より多い計算の力が必要。</p></div>
+    <div class="card"><h2>正直なほうが得をする</h2><p>まじめに計算すれば報酬がもらえる。</p></div>
+  </div>
+  <p>ナカモトがいなくても、<b>しくみ</b>が記録を守り続けています。</p>
+</section>
+
+<!-- 10 weak -->
+<section class="slide" data-t="秘密鍵,マイニング">
+  <div class="eb">このしくみの弱点</div>
+  <h1>完ぺきなしくみではない</h1>
+  <div class="ans weak">
+    <div class="card"><h2>電気をたくさん使う</h2><p>ビットコイン全体で、1つの国と同じくらいの電気を使うといわれます。</p></div>
+    <div class="card"><h2>おそい</h2><p>1つのブロックに約10分。改札のように一瞬では終わりません。</p></div>
+    <div class="card"><h2>なくしたら戻らない</h2><p><b>秘密鍵</b>をなくすと、取り戻してくれる人がいません。</p></div>
+    <div class="card"><h2>まちがいも消せない</h2><p>送り先をまちがえても、取り消しができません。</p></div>
+  </div>
+</section>
+
+<!-- 11 apps -->
+<section class="slide" data-t="ブロックチェーン,トレーサビリティ">
+  <div class="eb">ほかに使えるか調べる</div>
+  <h1>ブロックチェーンに向いているのはどれ？</h1>
+  <div class="apps" id="apps"></div>
+  <div style="font-size:15px;color:var(--sub)">正解 <span class="score" id="apScore">0 / 8</span></div>
+</section>
+
+<!-- 12 quiz -->
+<section class="slide" data-t="">
+  <div class="eb">事件ファイルを閉じる前に ／ ふりかえり小テスト</div>
+  <h1>手がかりを、覚えているか？</h1>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px" id="qz">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="eb" id="qzNo"></span><span class="mono" style="color:var(--sub)" id="qzSc"></span></div>
+    <p id="qzQ" style="font-size:22px;font-weight:700;line-height:1.5"></p>
+    <div id="qzOp" class="qop"></div>
+    <div id="qzEx" style="font-size:17px;line-height:1.7;min-height:56px"></div>
+    <div><button class="pri" id="qzNext" hidden>次の問題 →</button></div>
+  </div>
+</section>
+
+<!-- 13 epilogue -->
+<section class="slide" data-t="ビットコイン">
+  <div class="eb">事件ファイル　その後</div>
+  <h1>ピザのお金と、消えた発明者</h1>
+  <div class="row" style="align-items:stretch">
+    <div class="card" style="display:flex;flex-direction:column;gap:10px">
+      <h2>ピザ2枚の1万ビットコインは、今いくら？</h2><div style="font-size:15px;color:var(--sub)">2010年は 1ビットコイン ＝ 約0.4円</div>
+      <label for="px" style="font-size:15px;color:var(--sub)">今日の1ビットコインの値段（円）</label>
+      <input id="px" inputmode="numeric" value="12260000" style="font-family:var(--f-mono);font-size:22px">
+      <div style="font-size:13px;color:var(--sub)">2026年10月28日ごろ：約1226万円。値段は毎日変わるので、その日の値段を入れてください。</div>
+      <div style="font-size:15px;color:var(--sub)">ピザ2枚の1万ビットコイン</div>
+      <div class="meter" id="pxA" style="font-size:30px">—</div>
+      <div id="pxR" style="font-size:15px;color:var(--clue)"></div>
+      <div style="font-size:15px;color:var(--sub)">ナカモトの約100万ビットコイン</div>
+      <div class="meter" id="pxB" style="font-size:30px">—</div>
+    </div>
+    <div class="tl" style="align-self:center">
+      <div><span class="d">2010.12</span><p>ネットへの書きこみが止まる</p></div>
+      <div><span class="d">2011.04</span><p>仲間へのメールに「ほかのことをする」と書き、<b>連絡が消える</b></p></div>
+      <div><span class="d">いま</span><p>約100万ビットコインは、<b>一度も動いていない</b></p></div>
+    </div>
+  </div>
+  <div class="q"><p>ナカモトは今どこにいるのか。正体は、今も分かっていません。</p></div>
+</section>
+
+<div id="nav"><button id="prev">← 前へ</button><div id="dots"></div><span id="pg"></span><button id="next" class="pri">次へ →</button></div>
+</div>
+<aside id="side"><h3>用語</h3><div id="terms"></div></aside>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function fit(){const v=window.visualViewport,w=v?v.width:innerWidth,h=v?v.height:innerHeight,s=Math.min(w/1024,h/768);$('#stage').style.transform=`translate(${(w-1024*s)/2}px,${(h-768*s)/2}px) scale(${s})`}
+addEventListener('resize',fit);window.visualViewport&&visualViewport.addEventListener('resize',fit);fit();
+
+/* SHA-256 */
+const K=[],H0=[];(function(){let n=2,c=0;const isP=x=>{for(let i=2;i*i<=x;i++)if(x%i==0)return 0;return 1};while(c<64){if(isP(n)){if(c<8)H0[c]=(Math.pow(n,.5)%1)*4294967296|0;K[c]=(Math.pow(n,1/3)%1)*4294967296|0;c++}n++}})();
+const TE=new TextEncoder();
+function sha256(s){const m=TE.encode(s),l=m.length,nb=((l+9+63)>>6)<<6,u=new Uint8Array(nb);u.set(m);u[l]=0x80;const dv=new DataView(u.buffer),bits=l*8;dv.setUint32(nb-4,bits>>>0);dv.setUint32(nb-8,Math.floor(bits/4294967296));let h=H0.slice();const W=new Int32Array(64);
+for(let o=0;o<nb;o+=64){for(let i=0;i<16;i++)W[i]=dv.getInt32(o+i*4);for(let i=16;i<64;i++){const a=W[i-15],b=W[i-2];W[i]=(W[i-16]+((a>>>7|a<<25)^(a>>>18|a<<14)^(a>>>3))+W[i-7]+((b>>>17|b<<15)^(b>>>19|b<<13)^(b>>>10)))|0}
+let a=h[0],b=h[1],c=h[2],d=h[3],e=h[4],f=h[5],g=h[6],k=h[7];for(let i=0;i<64;i++){const t1=(k+((e>>>6|e<<26)^(e>>>11|e<<21)^(e>>>25|e<<7))+((e&f)^(~e&g))+K[i]+W[i])|0,t2=(((a>>>2|a<<30)^(a>>>13|a<<19)^(a>>>22|a<<10))+((a&b)^(a&c)^(b&c)))|0;k=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0}
+h=[h[0]+a,h[1]+b,h[2]+c,h[3]+d,h[4]+e,h[5]+f,h[6]+g,h[7]+k].map(x=>x|0)}return h.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('')}
+const zeros=(h,n)=>`<span class="z">${h.slice(0,n)}</span>${h.slice(n)}`;
+
+/* glossary */
+const G={
+ "ビットコイン":"2009年に動き出した、インターネット上のお金。会社や国が管理していない。",
+ "論文":"研究の考えをまとめた文章。ナカモトの論文はたった9ページ。題名は「人から人へ直接送れる電子のお金のしくみ」。",
+ "ブロック":"取り引きの記録をまとめた箱。約10分に1つ作られる。",
+ "二重払い":"同じお金のデータをコピーして、2回使ってしまうこと。電子のお金で一番の難問。",
+ "リーマン・ショック":"2008年、アメリカの大きな証券会社がつぶれ、世界中の銀行やお金の流れが大混乱したできごと。",
+ "手数料":"お金を送ったり払ったりするときに、間に入る会社に払うお金。",
+ "電子署名":"秘密鍵で押す、デジタルのハンコ。本人が送ったことをだれでも確かめられる。",
+ "アドレス":"ビットコインを受け取る場所を表す英数字。銀行の口座番号のようなもの。",
+ "電子マネー":"お金をデータで払うしくみ。記録は会社のコンピュータにある。",
+ "管理者":"記録を正しく保つ責任者。銀行や電子マネーでは会社がこの役。",
+ "ハッシュ":"文章から決まった長さの「指紋」を作る計算。",
+ "ハッシュ値":"ハッシュで作った指紋。ここでは0〜9とa〜fの64文字。",
+ "ブロックチェーン":"ブロックを、前の指紋でつないで鎖にしたもの。",
+ "マイニング":"条件に合う指紋が出るまで計算をくり返し、ブロックを完成させること。",
+ "ナンス":"マイニングで変え続ける数字。答えになる数字を探す。",
+ "マイナー":"マイニングをする人やコンピュータ。",
+ "報酬":"ブロックを完成させた人がもらえるもの。新しいビットコイン（今は3.125枚）と手数料。新しく出る量は約4年ごとに半分になる。",
+ "分散型台帳":"同じ記録帳を、たくさんのコンピュータで分けて持つしくみ。",
+ "改ざん":"記録をこっそり書きかえること。",
+ "51%攻撃":"全体の半分より多い計算の力を集めて、ウソの記録を通すこと。とても難しい。",
+ "秘密鍵":"自分のお金を送るときに使う、自分だけのハンコ。",
+ "トレーサビリティ":"物が「いつ・どこで・だれの手を通ったか」をたどれること。"
+};
+const slides=$$('.slide');let cur=0;
+const dots=$('#dots');slides.forEach(()=>dots.appendChild(document.createElement('i')));
+function go(n){cur=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,i)=>s.classList.toggle('on',i===cur));$$('#dots i').forEach((d,i)=>d.classList.toggle('on',i===cur));$('#pg').textContent=`${cur+1} / ${slides.length}`;$('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1;
+ const t=(slides[cur].dataset.t||'').split(',').filter(Boolean);$('#terms').innerHTML=t.length?t.map(k=>`<div class="term"><b>${k}</b><span>${G[k]}</span></div>`).join(''):'<div class="term"><span style="color:var(--sub)">このページの用語はありません。</span></div>'}
+$('#prev').onclick=()=>go(cur-1);$('#next').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+go(0);
+const _go=go;go=n=>{_go(n);if(slides[cur].querySelector('#chain'))chDraw()};
+
+/* cover canvas: falling hashes */
+(function(){const c=$('#cv'),x=c.getContext('2d');const cols=Math.floor(c.width/18);const y=Array.from({length:cols},()=>Math.random()*-40);const red=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ function draw(){x.fillStyle='rgba(26,31,43,.25)';x.fillRect(0,0,c.width,c.height);x.font='14px "JetBrains Mono",monospace';
+  for(let i=0;i<cols;i++){x.fillStyle=Math.random()<.04?'#f0b446':'#45c2b1';x.fillText('0123456789abcdef'[Math.random()*16|0],i*18,y[i]*18);y[i]+=1;if(y[i]*18>c.height&&Math.random()>.97)y[i]=0}}
+ if(red){for(let k=0;k<60;k++)draw()}else setInterval(()=>{if(cur===0)draw()},70)})();
+
+/* hash slide */
+const hOrg=sha256($('#hIn').value);$('#hOrg').textContent=hOrg;
+function hUpd(){const v=$('#hIn').value,h=sha256(v);let n=0,o='';for(let i=0;i<64;i++){if(h[i]===hOrg[i]){n++;o+=h[i]}else o+=`<span class="chg">${h[i]}</span>`}$('#hOut').innerHTML=o;
+ $('#hSame').innerHTML=n===64?'<span style="color:var(--ok)">64 / 64 完全に同じ</span>':`${n} / 64`;$('#hLen').textContent=[...v].length+' 文字'}
+$('#hIn').addEventListener('input',hUpd);hUpd();
+
+/* chain slide */
+const DIFF_C=2;
+const chData=['ナカモト → Aさん 50','Aさん → Bさん 10','Bさん → Cさん 3','Cさん → Dさん 1'];
+let chain=[];
+function bHash(b){return sha256(b.i+'|'+b.prev+'|'+b.data+'|'+b.nonce)}
+function mineB(b){b.nonce=0;while(!bHash(b).startsWith('0'.repeat(DIFF_C)))b.nonce++}
+function chInit(){chain=[];let prev='0'.repeat(64);chData.forEach((d,i)=>{const b={i:i+1,prev,data:d,nonce:0};mineB(b);chain.push(b);prev=bHash(b)});chDraw();$('#chMsg').innerHTML='「この指紋」と、次のブロックの「前の指紋」は<b>同じ色・同じ文字</b>。線でつながっています。2番の「記録」を書きかえてみてください。'}
+const hcol=h=>/^0+$/.test(h)?'#6b7385':`hsl(${parseInt(h.slice(8,12),16)%360} 75% 58%)`;
+function chDraw(){const el=$('#chain');el.innerHTML='';let ok=true;const links=[];
+ chain.forEach((b,i)=>{const h=bHash(b);const good=h.startsWith('0'.repeat(DIFF_C));const link=i===0||b.prev===bHash(chain[i-1]);if(i>0)links.push(link);const v=good&&link&&ok;ok=v;
+  const d=document.createElement('div');d.className='blk'+(v?'':' bad');
+  d.innerHTML=`<h4>ブロック ${b.i}</h4><div class="lab">前の指紋</div><div class="hv chip hp" style="--c:${hcol(b.prev)}">${b.prev.slice(0,16)}</div><div class="lab">記録</div><input id="cb${i}" value="${b.data}"><div class="lab">ナンス ${b.nonce}</div><div class="lab">この指紋</div><div class="hv chip hh" style="--c:${hcol(h)}">${zeros(h.slice(0,16),good?DIFF_C:0)}</div><div class="st">${v?'正しい':'こわれた'}</div>`;
+  if(!v){const bt=document.createElement('button');bt.textContent='計算しなおす';bt.onclick=()=>{mineB(b);if(chain[i+1])chain[i+1].prev=bHash(b);chDraw();$('#chMsg').innerHTML='直したら、<b>次のブロック</b>がこわれました。後ろのブロックも全部、計算しなおしが必要です。'};d.appendChild(bt)}
+  el.appendChild(d);
+  d.querySelector('input').addEventListener('input',e=>{b.data=e.target.value;const pos=e.target.selectionStart;chDraw();const ni=$('#cb'+i);ni.focus();ni.setSelectionRange(pos,pos);$('#chMsg').innerHTML='書きかえたブロックの「この指紋」の色が変わり、次のブロックの「前の指紋」と<b>線が切れました</b>。そこから後ろが全部こわれます。'})});
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','lk');el.appendChild(svg);
+ const cr=el.getBoundingClientRect(),sc=cr.width/el.offsetWidth||1,P=r=>({l:(r.left-cr.left)/sc,r:(r.right-cr.left)/sc,y:(r.top+r.height/2-cr.top)/sc});
+ const hh=[...el.querySelectorAll('.hh')],hp=[...el.querySelectorAll('.hp')];let out='';
+ links.forEach((ok,i)=>{const a=P(hh[i].getBoundingClientRect()),b=P(hp[i+1].getBoundingClientRect());const x1=a.r+10,x2=b.l-10,mx=(x1+x2)/2;
+  const c=ok?'var(--ok)':'var(--bad)';
+  out+=`<path d="M${a.r} ${a.y}H${x1}C${mx+30} ${a.y} ${mx-30} ${b.y} ${x2} ${b.y}H${b.l}" fill="none" stroke="${c}" stroke-width="3" ${ok?'':'stroke-dasharray="6 6"'}/>`;
+  out+=`<circle cx="${a.r}" cy="${a.y}" r="4" fill="${c}"/><circle cx="${b.l}" cy="${b.y}" r="4" fill="${c}"/>`;
+  if(!ok){const my=(a.y+b.y)/2;out+=`<circle cx="${mx}" cy="${my}" r="12" fill="var(--board)" stroke="var(--bad)" stroke-width="2"/><path d="M${mx-5} ${my-5}l10 10M${mx+5} ${my-5}l-10 10" stroke="var(--bad)" stroke-width="3"/>`}});
+ svg.innerHTML=out;
+}
+$('#chReset').onclick=chInit;chInit();
+
+/* mining slide */
+const mData='Aさん → Bさん 1000円 / ナンス ';
+/* manual */
+const lz=h=>h.match(/^0*/)[0].length;let hnBest=null;const hnTried=new Map();
+$('#hnF').addEventListener('submit',e=>{e.preventDefault();const t=$('#hnI').value.trim().replace(/[^0-9]/g,'');if(!t)return;const n=t.replace(/^0+(?=\d)/,'');
+ const h=sha256(mData+n),z=lz(h);$('#hnV').textContent=n;$('#hnH').innerHTML=zeros(h,z);$('#hnZ').innerHTML=`<span style="color:${z?'var(--ok)':'var(--ink)'}">${z} 個</span>`;
+ hnTried.set(n,z);$('#hnC').textContent=hnTried.size;
+ if(!hnBest||z>hnBest.z){hnBest={n,z};$('#hnB').innerHTML=`<span style="color:var(--clue)">${z} 個</span>（${n}）`}
+ $('#hnLog').insertAdjacentHTML('afterbegin',`<div><span style="color:${z?'var(--ok)':'var(--sub)'}">${'0'.repeat(z)||'×'}</span>　${n}　→ ${h.slice(0,10)}…</div>`);while($('#hnLog').children.length>12)$('#hnLog').lastChild.remove();
+ $('#hnI').select()});
+let mD=1,mN=0,mRun=false,rec={};
+$('#diff').innerHTML=[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${n===mD?'sel':''}">${'0'.repeat(n)}</button>`).join('');
+$$('#diff button').forEach(b=>b.onclick=()=>{mD=+b.dataset.n;$$('#diff button').forEach(x=>x.classList.toggle('sel',x===b));mStop();mN=0;$('#mCnt').textContent='0';$('#mHash').textContent='—';$('#mLog').innerHTML=''});
+function mLog(n,h,hit){const l=$('#mLog');l.insertAdjacentHTML('afterbegin',`<div class="${hit?'hit':''}">ナンス ${n}: ${h.slice(0,20)}…${hit?' 発見！':''}</div>`);while(l.children.length>7)l.lastChild.remove()}
+function mTry(){const h=sha256(mData+mN);const hit=h.startsWith('0'.repeat(mD));$('#mCnt').textContent=(mN+1).toLocaleString();$('#mHash').innerHTML=zeros(h,hit?mD:0);return [h,hit]}
+function mFound(){mStop();rec[mD]=mN+1;$('#mRec').innerHTML=Object.keys(rec).sort().map(k=>`${'0'.repeat(k).padEnd(5,' ')}　${rec[k].toLocaleString()} 回`).join('<br>');$('#mGo').textContent='もう一度';}
+function mStop(){mRun=false;$('#mGo').textContent='マイニング開始'}
+$('#mGo').onclick=()=>{if(mRun){mStop();return}if($('#mGo').textContent==='もう一度'){mN=0;$('#mLog').innerHTML=''}mRun=true;$('#mGo').textContent='止める';
+ const step=()=>{if(!mRun)return;const per=mD===1?1:mD===2?2:mD===3?40:mD===4?400:4000;for(let k=0;k<per;k++){const[h,hit]=mTry();if(hit){mLog(mN,h,true);mFound();return}if(k===per-1)mLog(mN,h,false);mN++}requestAnimationFrame(step)};step()};
+
+/* race slide */
+const M=[{n:'Aさん',s:'家のパソコン',p:1},{n:'Bさん',s:'ゲーム用パソコン',p:4},{n:'C社',s:'マイニング工場',p:15},{n:'きみ',s:'スマホ',p:.3}];
+let wins=M.map(()=>0),rRun=false;
+function rDraw(){const tot=Math.max(1,wins.reduce((a,b)=>a+b,0));$('#miners').innerHTML=M.map((m,i)=>`<div class="miner"><div class="nm">${m.n}<small>${m.s}・計算の力 ${m.p}</small></div><div class="bar"><i style="width:${wins[i]/Math.max(10,tot)*100}%"></i></div><div class="w">${wins[i]}</div></div>`).join('')}
+function rOne(){const sum=M.reduce((a,m)=>a+m.p,0);let r=Math.random()*sum;for(let i=0;i<M.length;i++){r-=M[i].p;if(r<=0)return i}return 0}
+$('#rGo').onclick=()=>{if(rRun)return;rRun=true;let k=0;$('#rMsg').textContent='';const t=setInterval(()=>{const w=rOne();wins[w]++;rDraw();$('#rMsg').textContent=`ブロック ${k+1}：${M[w].n}が先に見つけた`;if(++k>=10){clearInterval(t);rRun=false}},350)};
+$('#rReset').onclick=()=>{if(rRun)return;wins=M.map(()=>0);rDraw();$('#rMsg').textContent=''};rDraw();
+
+/* attack slide */
+let atRun=null,atRec={};
+const atDrawRow=(el,n,cls,from)=>{el.innerHTML=Array.from({length:n},(_,i)=>`<i class="${i<from?'sh':cls}">${i+1}</i>`).join('')};
+function atDraw(h,a){atDrawRow($('#atH'),h,'g',1);atDrawRow($('#atA'),a,'r',1);$('#atHn').textContent=h;$('#atAn').textContent=a}
+function atRace(p,onStep){let h=4,a=1,t=0;const step=()=>{t++;if(Math.random()<p)a++;else h++;if(onStep)onStep(h,a);if(a>h)return 'win';if(h-a>=6||t>=40)return 'lose';return null};return step}
+function atShowRec(){return Object.keys(atRec).sort((x,y)=>x-y).map(k=>`${k}%：${atRec[k]}`).join('　')}
+$('#atP').addEventListener('input',e=>$('#atPv').textContent=e.target.value+'%');
+$('#atGo').onclick=()=>{clearInterval(atRun);const p=+$('#atP').value/100;atDraw(4,1);const st=atRace(p,atDraw);
+ $('#atMsg').textContent='マイニング競争中…';atRun=setInterval(()=>{const r=st();if(r){clearInterval(atRun);
+  $('#atMsg').innerHTML=r==='win'?'<span style="color:var(--bad)">犯人のチェーンが長くなりました。ウソの「9000円」が正しい記録になってしまいます。</span>':'<span style="color:var(--ok)">みんなのチェーンがどんどん先へ進み、犯人は追いつけませんでした。ウソは通りません。</span>'}},220)};
+$('#atMany').onclick=()=>{clearInterval(atRun);const p=+$('#atP').value/100;let w=0;for(let k=0;k<100;k++){const st=atRace(p);let r;while(!(r=st()));if(r==='win')w++}
+ atRec[Math.round(p*100)]=`${w}回成功`;$('#atMsg').innerHTML=`計算の力 ${Math.round(p*100)}%：100回中 <b>${w}回</b> 成功`;$('#atRec').textContent='これまでの記録（100回中）　'+atShowRec()};
+atDraw(4,1);
+
+/* verify slide */
+const VTX=[
+ {f:'Aさん',t:'Dさん',m:30,s:'Aさん',ok:1,why:'Aさんは50持っていて、本人のハンコ。正しい取り引きです。'},
+ {f:'Cさん',t:'Eさん',m:10,s:'Cさん',ok:0,why:'Cさんは3しか持っていません。残高が足りません。'},
+ {f:'Aさん',t:'Fさん',m:30,s:'Aさん',ok:0,why:'Aさんはさっき30送ったので、残りは20。同じお金をもう一度使う「二重払い」です。'},
+ {f:'Bさん',t:'Gさん',m:15,s:'Gさん',ok:0,why:'ハンコがBさんではなくGさんのもの。Gさんが、Bさんになりすましています。'},
+ {f:'Bさん',t:'Cさん',m:5,s:'Bさん',ok:1,why:'Bさんは20持っていて、本人のハンコ。正しい取り引きです。'}];
+let vBal,vAns;
+function vInit(){vBal={Aさん:50,Bさん:20,Cさん:3};vAns=VTX.map(()=>null);vDraw()}
+function vDraw(){$('#vBal').innerHTML=Object.entries(vBal).map(([k,v])=>`${k}　${String(v).padStart(3,' ')}`).join('<br>');
+ const nx=vAns.indexOf(null);
+ $('#vList').innerHTML=VTX.map((x,i)=>{const a=vAns[i];const st=a===null?'':(a===x.ok?'okk':'ngg');
+  return `<div class="vtx ${st}"><div class="vt"><span class="mono">${i+1}</span>　${x.f} → ${x.t}　<b class="mono">${x.m}</b><span class="stmp">ハンコ：${x.s}</span></div>${a===null?(i===nx?`<div class="bt"><button data-v="1">入れる</button><button data-v="0">入れない</button></div>`:''):`<div class="vr"><span class="mark">${a===x.ok?'正解':'ちがう'}</span>　${x.why}</div>`}</div>`}).join('');
+ $$('#vList button').forEach(b=>b.onclick=()=>{const i=vAns.indexOf(null),x=VTX[i];vAns[i]=+b.dataset.v;if(x.ok){vBal[x.f]-=x.m;if(vBal[x.t]!==undefined)vBal[x.t]+=x.m}vDraw();
+  if(vAns.indexOf(null)<0){const c=vAns.filter((a,k)=>a===VTX[k].ok).length;$('#vMsg').innerHTML=`${c} / 5 正解。正しい取り引きは <b>1と5だけ</b>。マイナーは、こうして確かめた取り引きだけを新しいブロックに入れます。<button id="vRe" style="margin-left:8px;font-size:14px;padding:6px 10px">もう一度</button>`;$('#vRe').onclick=()=>{vInit();$('#vMsg').innerHTML='上から順に、1つずつ確かめてください。ハンコは<b>送る人本人</b>のものでなければいけません。'}}})}
+vInit();
+
+/* apps slide */
+const APPS=[
+ {t:'中古車の走行距離の記録',a:1,r:'持ち主が何回変わっても、メーターの巻きもどしを見ぬける。'},
+ {t:'野菜や肉の産地の記録',a:1,r:'農家・工場・お店と、たくさんの会社が同じ記録を確かめられる。'},
+ {t:'資格や卒業の証明書',a:1,r:'発行した学校がなくなっても、本物かどうか確かめられる。'},
+ {t:'家の太陽光の電気を近所で売り買い',a:1,r:'電力会社を通さず、家どうしのやりとりを記録できる。実験も行われている。'},
+ {t:'クラスの出席簿',a:0,r:'先生1人で管理できる。まちがいを直せないほうが困る。'},
+ {t:'駅の改札の記録',a:0,r:'1人0.2秒で通る必要がある。10分待ちでは使えない。'},
+ {t:'病院のカルテ（病気の記録）',a:0,r:'消せない記録をみんなで持つのは、個人情報として危ない。'},
+ {t:'ゲームのセーブデータ',a:0,r:'自分だけのデータ。ほかの人と見くらべる必要がない。'}];
+let apAns=APPS.map(()=>null);
+function apDraw(){$('#apps').innerHTML=APPS.map((a,i)=>{const s=apAns[i];const cls=s===null?'':(s===a.a?'okk':'ngg');return `<div class="app ${cls}"><div class="t">${a.t}</div>${s===null?`<div class="bt"><button data-i="${i}" data-v="1">向いている</button><button data-i="${i}" data-v="0">向いていない</button></div>`:`<div class="r"><span class="mark">${s===a.a?'正解':'ちがう'}：${a.a?'向いている':'向いていない'}</span>　${a.r}</div>`}</div>`}).join('');
+ $$('#apps button').forEach(b=>b.onclick=()=>{apAns[+b.dataset.i]=+b.dataset.v;apDraw()});
+ $('#apScore').textContent=`${apAns.filter((s,i)=>s===APPS[i].a).length} / ${APPS.length}`}
+apDraw();
+
+/* epilogue */
+const yen=n=>{if(n>=1e12)return (n/1e12).toFixed(1)+' 兆円';if(n>=1e8)return Math.round(n/1e8).toLocaleString()+' 億円';if(n>=1e4)return Math.round(n/1e4).toLocaleString()+' 万円';return Math.round(n).toLocaleString()+' 円'};
+$('#px').addEventListener('input',e=>{const v=+e.target.value.replace(/[^0-9.]/g,'');if(!v){$('#pxR').textContent='';$('#pxA').textContent='—';$('#pxB').textContent='—';return}$('#pxA').textContent=yen(v*1e4);$('#pxR').textContent=`2010年の約 ${Math.round(v/0.4/1e4).toLocaleString()} 万倍`;$('#pxB').textContent=yen(v*1e6)});
+
+/* mining flow */
+const MF=['はじめ。ブロック2までは記録ずみ。右に、まだ記録されていない取り引きがあります。','取り引きを確かめて集める。残高が足りるか、本人のハンコか、二重払いでないかを確かめ、正しいものだけを新しいブロックに入れます。',
+ '前の指紋を書く。ブロック2の指紋を書き写すと、チェーンにつながる準備ができます。',
+ 'ナンスを探す。頭に「0」が並ぶ指紋になるまで、ナンスを変え続けます。',
+ '見つかった！ ほかのコンピュータが、そのナンスで1回計算して、正しいか確かめます。',
+ 'チェーンにつながる。完成させた人は、ごほうび（新しいビットコイン＋手数料）をもらえます。',
+ '次のブロックへ。みんなが、また次の新しいブロックのマイニングを始めます。'];
+let mfS=0,mfT=null;
+function mfDraw(){$$('#mf [data-s]').forEach(e=>e.classList.toggle('off',mfS<+e.dataset.s));$$('#mf .tx').forEach(e=>e.classList.toggle('go',mfS>=1));
+ $('#mfB3 .nb').classList.toggle('done',mfS>=4);$('#mfL').classList.toggle('ok',mfS>=5);
+ $('#mfStep').textContent=mfS?`ステップ ${mfS} / 6`:'はじめ';$('#mfTxt').textContent=MF[mfS];$('#mfPrev').disabled=mfS===0;$('#mfNext').disabled=mfS===6;
+ clearInterval(mfT);if(mfS===3){let n=0;mfT=setInterval(()=>{n+=137;$('#mfN').textContent='ナンス '+n},60)}else if(mfS>=4)$('#mfN').textContent='ナンス 8231 発見！';else $('#mfN').textContent='ナンス 0'}
+$('#mfNext').onclick=()=>{mfS=Math.min(6,mfS+1);mfDraw()};$('#mfPrev').onclick=()=>{mfS=Math.max(0,mfS-1);mfDraw()};mfDraw();
+
+/* which block */
+const CF=['ブロック2までは記録ずみ。Aさん・Bさん・Cさんの3人が、それぞれ取り引きを確かめて、新しいブロックの候補を作りました。',
+ '記録帳につなげられるのは、1つだけ。でも「あなたのを使う」と決める管理者はいません。',
+ 'そこでルール：頭に「0」が並ぶナンスを、一番先に見つけた人のブロックを使う。3人が同時にナンス探しを始めます。',
+ 'Cさんが一番先に見つけた！　でも、みんなが中身を確かめると二重払いが入っていました。Cさんのブロックは捨てられます。',
+ '次にAさんが見つけた。みんなが確かめると、ナンスも取り引きも正しい。Aさんのブロックが「ブロック3」としてつながります。',
+ 'Bさんの候補は使われません（中の取り引きは、次のブロックに回ります）。みんなはブロック3の指紋を書いて、ブロック4を作り始めます。'];
+let cfS=0,cfT=null;
+function cfDraw(){const S=cfS,set=(id,c,on)=>$(id).classList.toggle(c,on);
+ set('#cfA','win',S>=4);set('#cfC','ng',S>=3);set('#cfC','gone',S>=3);set('#cfB','gone',S>=5);
+ set('#cfLA','ok',S>=4);set('#cfLC','gone',S>=3);set('#cfLB','gone',S>=5);set('#cfNext','off',S<5);
+ $('#cfMA').textContent=S>=4?'✓':'';$('#cfMA').style.fill='var(--ok)';$('#cfMC').textContent=S>=3?'✕':'';$('#cfMC').style.fill='var(--bad)';$('#cfA text').textContent=S>=4?'ブロック 3（Aさん）':'Aさんの候補';
+ $('#cfNote').textContent=S===1?'つなげられるのは':'';$('#cfNote2').textContent=S===1?'どれか1つだけ':'';
+ clearInterval(cfT);const n={A:0,B:0,C:0};const fixed={A:S>=4?'ナンス 5821 発見！':null,C:S>=3?'ナンス 3107 発見！':null,B:S>=5?'ナンス ―（使われない）':null};
+ ['A','B','C'].forEach(k=>$('#cfN'+k).textContent=fixed[k]||(S>=2?'ナンス 0':'ナンス ？'));
+ if(S>=2){cfT=setInterval(()=>{['A','B','C'].forEach((k,i)=>{if(!fixed[k]){n[k]+=97+i*31;$('#cfN'+k).textContent='ナンス '+n[k]}})},70)}
+ $('#cfStep').textContent=S?`ステップ ${S} / 5`:'はじめ';$('#cfTxt').textContent=CF[S];$('#cfPrev').disabled=S===0;$('#cfNextB').disabled=S===5}
+$('#cfNextB').onclick=()=>{cfS=Math.min(5,cfS+1);cfDraw()};$('#cfPrev').onclick=()=>{cfS=Math.max(0,cfS-1);cfDraw()};cfDraw();
+
+/* public ledger */
+const LG=[['ナカモト','Aさん',60],['ナカモト','Bさん',30],['Aさん','Cさん',10],['Bさん','Eさん',10],['Cさん','Dさん',7]];
+$('#lgList').innerHTML=LG.map((x,i)=>`<div class="lg" id="lg${i}"><span class="no">${i+1}</span><span>${x[0]} → ${x[1]}</span><span class="m">${x[2]}</span></div>`).join('');
+$('#lgBtn').innerHTML=['Aさん','Bさん','Cさん'].map(n=>`<button data-n="${n}">${n}</button>`).join('');
+$$('#lgBtn button').forEach(b=>b.onclick=()=>{const n=b.dataset.n;$$('#lgBtn button').forEach(x=>x.classList.toggle('sel',x===b));let sum=0,parts=[];
+ LG.forEach((x,i)=>{const el=$('#lg'+i);el.classList.remove('in','out');if(x[1]===n){el.classList.add('in');sum+=x[2];parts.push('＋'+x[2])}else if(x[0]===n){el.classList.add('out');sum-=x[2];parts.push('−'+x[2])}});
+ $('#lgCalc').innerHTML=`<span style="color:var(--ink)">${n}</span><br>${parts.join(' ')}<br>＝ <b style="font-size:28px">${sum}</b>`});
+
+/* quiz */
+const QZ=[
+ ['ビットコインの残高は、どうやって分かる？',['記録帳の取り引きを全部たどって計算する','銀行が残高を教えてくれる','ナカモトが管理している','スマホに残高だけが書いてある'],'記録帳はだれでも見られます。取り引きを全部たどれば、だれの残高でも計算できます。'],
+ ['ブロックに入れては「いけない」取り引きは？',['残高20のAさんが、30を送る','残高50のAさんが、本人のハンコで30を送る','残高20のBさんが、本人のハンコで5を送る','残高3のCさんが、本人のハンコで3を送る'],'残高より多くは送れません。ほかに、二重払いや、本人ではないハンコもダメです。'],
+ ['指紋（ハッシュ値）について、正しいのはどれ？',['同じ文章なら、必ず同じ指紋になる','指紋から元の文章にもどせる','長い文章ほど、指紋も長くなる','1文字変えても、指紋は少ししか変わらない'],'同じ文章なら必ず同じ。1文字でもちがえばまったく別物。長さはいつも同じで、元にはもどせません。'],
+ ['ブロック2の記録を書きかえると、どうなる？',['ブロック2から後ろが、全部こわれる','ブロック2だけがこわれる','ブロック1だけがこわれる','何も起きない'],'次のブロックは前の指紋を持っています。1つ変わると、後ろが全部合わなくなります。'],
+ ['マイニングで、変え続けて探す「ナンス」とは？',['頭に「0」が並ぶ指紋になるように変える番号','送るお金の金額','自分だけのハンコ（秘密鍵）','ブロックの順番の番号'],'記録は変えずに、ナンスだけを変えて、条件に合う指紋を探します。'],
+ ['頭にそろえる「0」の数を増やすと、どうなる？',['見つけるまでに試す回数が、ずっと増える','見つけるまでの回数が減る','回数は変わらない','ナンスがいらなくなる'],'「0」が1つ増えるごとに、試す回数はおよそ16倍になります。'],
+ ['記録帳につながるブロックは、どれ？',['一番先にナンスを見つけ、みんなが確かめて正しいブロック','一番先にナンスを見つけたブロック（中身は関係ない）','管理者が選んだブロック','取り引きが一番多いブロック'],'Cさんのように一番でも、中身がまちがっていれば捨てられます。'],
+ ['犯人がウソの記録を通すには、何が必要？',['全体の半分より多い計算の力','パソコンをたくさん持つこと','自分のパソコンの記録を書きかえること','管理者にたのむこと'],'台数ではなく計算の力の勝負。長いチェーンが正しいので、半分より多い力がないと追いつけません。']];
+let qzI=0,qzS=0,qzOrd=[];
+const shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+function qzShow(){if(qzI>=QZ.length){$('#qzNo').textContent='結果';$('#qzQ').innerHTML=`${QZ.length}問中 <b style="font-size:34px">${qzS}</b> 問 正解`;$('#qzOp').innerHTML='';
+  $('#qzEx').textContent=qzS===QZ.length?'全問正解。事件ファイルを閉じる準備ができました。':'まちがえた手がかりのページを、もう一度見てみましょう。';$('#qzNext').hidden=false;$('#qzNext').textContent='もう一度';return}
+ const [q,op,ex]=QZ[qzI];qzOrd=shuf(op.map((t,i)=>[t,i]));$('#qzNo').textContent=`第 ${qzI+1} 問 / ${QZ.length}`;$('#qzSc').textContent=`正解 ${qzS}`;$('#qzQ').textContent=q;$('#qzEx').textContent='';$('#qzNext').hidden=true;$('#qzNext').textContent=qzI===QZ.length-1?'結果を見る →':'次の問題 →';
+ $('#qzOp').innerHTML=qzOrd.map(([t,i])=>`<button data-i="${i}">${t}</button>`).join('');
+ $$('#qzOp button').forEach(b=>b.onclick=()=>{if(!$('#qzNext').hidden)return;const ok=b.dataset.i==='0';if(ok)qzS++;b.classList.add(ok?'ok':'ng');$$('#qzOp button').forEach(x=>{if(x.dataset.i==='0')x.classList.add('ok');x.disabled=true;x.style.opacity=1});
+  $('#qzEx').innerHTML=`<b style="color:${ok?'var(--ok)':'var(--bad)'}">${ok?'正解':'ざんねん'}</b>　${ex}`;$('#qzSc').textContent=`正解 ${qzS}`;$('#qzNext').hidden=false})}
+$('#qzNext').onclick=()=>{if(qzI>=QZ.length){qzI=0;qzS=0}else qzI++;qzShow()};qzShow();
+document.getElementById('px').dispatchEvent(new Event('input'));
+</script>
+
+</body>
+</html>
