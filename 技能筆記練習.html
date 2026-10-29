@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>技能試験 筆記トレーニング（第二種電気工事士）</title>
+<style>
+/* 白基調・通信なし（外部フォントを読まない）・4:3 の横画面に収める。右に用語の説明欄 */
+:root{
+  color-scheme:light;
+  --bg:#f3f5f4; --card:#fff; --ink:#151a18; --sub:#5d6763; --line:#d9dfdc;
+  --accent:#0f6b4f; --accent-soft:#e6f2ec; --ok:#0f6b4f; --ok-soft:#e3f4ea; --ng:#b91c1c; --ng-soft:#fdeceb; --warn:#b45309; --warn-soft:#fff6e5;
+  --f:"Hiragino Sans","Yu Gothic UI","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--f);
+  padding:10px max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px))}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;touch-action:manipulation}
+.app{max-width:1280px;height:100%;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:19px;margin:0}
+.ver{font-size:11px;color:var(--sub);margin-left:auto}
+.count{font-size:14px;color:var(--sub);font-variant-numeric:tabular-nums}
+.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.prog div{height:100%;background:var(--accent);width:0}
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:10px}
+.card,.side{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto;min-height:0}
+.card{padding:18px 24px;display:flex;flex-direction:column;gap:12px}
+.side{padding:12px 14px;font-size:14px}
+.side h2{font-size:14px;margin:0 0 6px;color:var(--sub)}
+.side dl{margin:0}
+.side dt{font-weight:700;margin-top:8px}
+.side dd{margin:2px 0 0;color:#333}
+.side .none{color:var(--sub)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tag{font-size:12.5px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--sub)}
+.tag.kind{border-color:var(--accent);color:var(--accent);font-weight:700}
+.q{font-size:19px;font-weight:700;white-space:pre-line}
+.fig{display:flex;justify-content:center}
+.fig svg{max-width:100%;height:auto;max-height:260px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.opts.long{grid-template-columns:1fr}
+.opt{font-size:16px;text-align:left;padding:10px 14px;border-radius:10px;border:2px solid var(--line);background:var(--card);cursor:pointer;min-height:50px;display:flex;gap:10px;align-items:center}
+.opt .mk{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--sub);display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--sub)}
+.opt.pick{border-color:var(--accent);background:var(--accent-soft)}
+.opt.pick .mk{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--ng);background:var(--ng-soft)}
+.opt.miss{border-color:var(--ok);border-style:dashed}
+.opt:disabled{cursor:default}
+.opt svg{flex:none}
+.tin{font:inherit;font-size:20px;width:min(460px,100%);padding:8px 12px;border-radius:10px;border:2px solid var(--line)}
+.tin.num{width:160px;text-align:right}
+.unit{font-size:18px;margin-left:6px}
+.fb{border-radius:10px;padding:10px 14px;font-size:15.5px}
+.fb.ok{background:var(--ok-soft)} .fb.ng{background:var(--ng-soft)}
+.fb b.h{display:block;font-size:16px}
+.fb .src{display:block;margin-top:4px;font-size:13px;color:var(--sub)}
+.keys{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.key{font-size:13.5px;padding:1px 8px;border-radius:6px;background:#fff;border:1px solid var(--line)}
+.key.hit{border-color:var(--ok);color:var(--ok);font-weight:700}
+.key.lack{border-color:var(--ng);color:var(--ng);font-weight:700}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:auto;flex-wrap:wrap;align-items:center}
+.btn{font-weight:700;font-size:16px;padding:10px 20px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.warn{border-color:var(--ng);background:var(--ng)}
+.btn:disabled{opacity:.4;cursor:default}
+.lead{color:var(--sub);margin:0}
+.menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.menu button{text-align:left;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);cursor:pointer}
+.menu button b{display:block;font-size:15.5px}
+.menu button small{color:var(--sub);font-size:13px}
+.big{display:flex;gap:10px;flex-wrap:wrap}
+.big .btn{font-size:18px;padding:14px 24px}
+h3{font-size:16px;margin:6px 0 0}
+.score{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar{display:grid;grid-template-columns:190px 1fr 70px;gap:8px;align-items:center;font-size:14px}
+.track{height:12px;border-radius:6px;background:var(--line);overflow:hidden}
+.fill{height:100%;background:var(--accent)}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.qlist{display:flex;flex-wrap:wrap;gap:4px}
+.qlist button{width:38px;height:34px;border-radius:6px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
+.qlist button.done{background:var(--accent-soft);border-color:var(--accent)}
+.qlist button.ok{background:var(--ok-soft);border-color:var(--ok)}
+.qlist button.ng{background:var(--ng-soft);border-color:var(--ng)}
+.qlist button.now{outline:2px solid var(--ink)}
+.timer{font-variant-numeric:tabular-nums;font-weight:700}
+.note{font-size:13px;color:var(--sub)}
+table.t{border-collapse:collapse;font-size:14.5px}
+table.t td,table.t th{border:1px solid var(--line);padding:3px 8px;text-align:left}
+/* 解答欄（マークシート風） */
+.sheet{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;border:1.5px solid #b9c4bf;border-radius:8px;background:#fbfcfb}
+.sheet-h{font-size:13px;font-weight:700;color:var(--sub);writing-mode:horizontal-tb}
+.bub{width:40px;height:40px;border-radius:50%;border:2px solid #7d8a84;background:#fff;color:#4a5550;font-weight:700;font-size:15px;cursor:pointer;display:grid;place-items:center;padding:0}
+.bub.sm{width:30px;height:30px;font-size:13px}
+.bub.fill{background:#151a18;border-color:#151a18;color:#fff}
+.bub.right{box-shadow:0 0 0 3px var(--ok)}
+.bub.wrong{background:var(--ng);border-color:var(--ng);color:#fff}
+.bub:disabled{cursor:default}
+.dgrid{display:flex;gap:10px}
+.dcol{display:flex;flex-direction:column;gap:3px;align-items:center}
+.dh{font-size:12px;color:var(--sub)}
+.dval{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;margin-left:8px}
+textarea{font:inherit;font-size:17px;width:100%;min-height:110px;padding:10px;border-radius:10px;border:2px solid var(--line)}
+/* 図示 */
+.ztools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ztools .lab{font-size:13px;font-weight:700;color:var(--sub);margin-right:2px}
+.ztools .sep{color:var(--line)}
+.zc,.zm{font-size:15px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.zc i{display:inline-block;width:16px;height:16px;border-radius:3px;border:1px solid #777}
+.zc.on{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+.btn.sm{font-size:14px;padding:6px 12px}
+.zbox{border:1px solid var(--line);border-radius:10px;background:#fcfcfa}
+.zbox svg{width:100%;height:auto;max-height:62vh;display:block;touch-action:manipulation}
+.zbox.ans svg{max-height:40vh}
+/* 図示は図を画面の残りの高さに収める（4:3 の横画面でスクロールしない） */
+.main.wide{grid-template-columns:minmax(0,1fr) 210px}
+.card.dmode{gap:6px;padding:12px 18px}
+.card.dmode .q{font-size:15.5px;line-height:1.5}
+.card.dmode .note{font-size:12px}
+.card.dmode .zbox:not(.ans){flex:1 1 0;min-height:240px;display:flex}
+.card.dmode .zbox:not(.ans) svg{flex:1;height:100%;max-height:none}
+.card.dmode.shown .zbox:not(.ans){flex:none;height:46vh}
+@media (max-width:900px){.main{grid-template-columns:1fr}.side{max-height:30vh}.opts{grid-template-columns:1fr}.card{padding:14px}.bar{grid-template-columns:110px 1fr 60px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>技能試験 筆記トレーニング</h1>
+    <span class="count" id="count"></span>
+    <span class="timer" id="timer"></span>
+    <span class="ver" id="ver"></span>
+  </header>
+  <div class="prog"><div id="bar"></div></div>
+  <div class="main">
+    <section class="card" id="card"></section>
+    <aside class="side" id="side"></aside>
+  </div>
+</div>
+<script>
+"use strict";
+const VER = "2026-10-30a";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const MK = ["ア", "イ", "ウ", "エ", "オ", "カ"];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ============================================================
+   図記号（「複線図れんしゅう」の sym() と同じ描き方。JIS C 0303:2000）
+   ============================================================ */
+function sym(type, x, y, k) {
+  const ink = "#151a18", sw = 2 * Math.max(1, k * 0.8), R = 17 * k, lamp = "#fff";
+  const txt = (t, fs, dx, dy, anchor, w) => `<text x="${x + (dx || 0)}" y="${y + (dy || 0) + fs * 0.36}" text-anchor="${anchor || "middle"}" font-size="${fs}" font-weight="${w || 700}" fill="${ink}">${t}</text>`;
+  const circ = (r, fill) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill || "#fff"}" stroke="${ink}" stroke-width="${sw}"/>`;
+  const box = (w, h, fill) => `<rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" fill="${fill || "#fff"}" stroke="${ink}" stroke-width="${sw}"/>`;
+  const paren = s2 => `<path d="M${x - 3 * s2} ${y - 6 * s2}Q${x - 8 * s2} ${y} ${x - 3 * s2} ${y + 6 * s2}M${x + 3 * s2} ${y - 6 * s2}Q${x + 8 * s2} ${y} ${x + 3 * s2} ${y + 6 * s2}" fill="none" stroke="${ink}" stroke-width="${sw}"/>`;
+  const dot = sub => `<circle cx="${x}" cy="${y}" r="${9 * k}" fill="${ink}"/>` + (sub ? txt(sub, 12 * k, 11 * k, 9 * k, "start") : "");
+  const outlet = sub => {
+    const r = 15 * k, h = 0.42 * r, c = Math.sqrt(r * r - h * h), vx = 0.3 * r, vy = Math.sqrt(r * r - vx * vx);
+    return circ(r) + `<path d="M${x - c} ${y + h}A${r} ${r} 0 0 0 ${x + c} ${y + h}Z" fill="${ink}"/>`
+      + `<path d="M${x - c} ${y + h}H${x + c}M${x - vx} ${y - vy}V${y + h}M${x + vx} ${y - vy}V${y + h}" stroke="${ink}" stroke-width="${sw}"/>`
+      + (sub ? txt(sub, 11 * k, r + 2 * k, r * 0.55, "start") : "");
+  };
+  switch (type) {
+    case "src": return `<rect x="${x - 34 * k}" y="${y - 20 * k}" width="${68 * k}" height="${40 * k}" rx="${5 * k}" fill="#f5f1e8" stroke="#8b8271" stroke-width="${sw * 0.7}"/>` + txt("電源", 15 * k);
+    case "gnd": return `<path d="M${x} ${y - 14 * k}V${y}M${x - 12 * k} ${y}H${x + 12 * k}M${x - 8 * k} ${y + 5 * k}H${x + 8 * k}M${x - 4 * k} ${y + 10 * k}H${x + 4 * k}" stroke="${ink}" stroke-width="${sw}"/>` + txt("E<tspan font-size='" + 8 * k + "' dy='" + 3 * k + "'>D</tspan>", 12 * k, 15 * k, 6 * k, "start");
+    case "outletRo": return outlet("") + txt("露出形", 10 * k, 17 * k, -12 * k, "start", 500);
+    case "brkB": return box(26 * k, 22 * k) + txt("B", 14 * k);
+    case "brkBE": return box(32 * k, 22 * k) + txt("BE", 13 * k);
+    case "motor": return circ(R) + txt("M", 16 * k);
+    case "box": { const r = 15 * k, d = [0.7071, -0.7071], n = [0.7071, 0.7071]; let g = circ(r);
+      [-0.5, 0, 0.5].forEach(o => { const cx = x + n[0] * o * r, cy = y + n[1] * o * r, L = Math.sqrt(1 - o * o) * r * 0.9;
+        g += `<line x1="${cx - d[0] * L}" y1="${cy - d[1] * L}" x2="${cx + d[0] * L}" y2="${cy + d[1] * L}" stroke="${ink}" stroke-width="${sw * 0.8}"/>`; });
+      return g; }
+    case "obox": return box(28 * k, 28 * k);
+    case "lamp": return circ(R) + txt("R", 18 * k, 0, 0, "middle", 500);
+    case "ceil": return circ(R) + paren(k);
+    case "ceilK": return box(40 * k, 22 * k) + paren(k);
+    case "fl": return `<rect x="${x - 30 * k}" y="${y - 6 * k}" width="${60 * k}" height="${12 * k}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/>` + circ(12 * k);
+    case "outdoor": { const r2 = 9 * k;
+      return circ(R) + `<circle cx="${x}" cy="${y}" r="${r2}" fill="none" stroke="${ink}" stroke-width="${sw}"/>`
+        + [45, 135, 225, 315].map(a => { const c = Math.cos(a * Math.PI / 180), s2 = Math.sin(a * Math.PI / 180);
+          return `<line x1="${x + c * (r2 - 2 * k)}" y1="${y + s2 * (r2 - 2 * k)}" x2="${x + c * (r2 + 2 * k)}" y2="${y + s2 * (r2 + 2 * k)}" stroke="${lamp}" stroke-width="${4 * k}"/>`; }).join(""); }
+    case "pl": return circ(8 * k);
+    case "sw1": return dot("");
+    case "sw3": return dot("3");
+    case "sw4": return dot("4");
+    case "swH": return dot("H");
+    case "swA": return dot("A(3A)");
+    case "ts": return box(30 * k, 24 * k) + txt("TS", 12 * k);
+    case "rly": return `<rect x="${x - 7 * k}" y="${y - 11 * k}" width="${14 * k}" height="${22 * k}" fill="#fff" stroke="${ink}" stroke-width="${sw}"/><path d="M${x - 6 * k} ${y - 9 * k}L${x + 6 * k} ${y}L${x - 6 * k} ${y + 9 * k}Z" fill="${ink}"/>`;
+    case "outlet": return outlet("");
+    case "outlet2": return outlet("2");
+    case "outletE": return outlet("E");
+    case "outletET": return outlet("ET");
+    case "outletEET": return outlet("EET");
+    case "outlet200": return outlet("E") + txt("20A 250V", 9 * k, 17 * k, 16 * k, "start", 500);
+  }
+  return "";
+}
+const symSvg = (type, w, h, k) => `<svg viewBox="0 0 ${w || 90} ${h || 60}" width="${w || 90}" height="${h || 60}" role="img">${sym(type, (w || 90) / 2 - (/^(sw[34HA]|outlet)/.test(type) ? 8 : 0), (h || 60) / 2, k || 1.1)}</svg>`;
+
+/* ============================================================
+   用語（右の説明欄）。m の語が問題・選択肢・解説に出たら表示する
+   ============================================================ */
+const GLOSS = [
+  { k: "欠陥", d: "技能試験は作品に欠陥が1つでもあれば不合格。何が欠陥かは試験センターの「欠陥の判断基準」で決まっている。" },
+  { k: "施工条件", d: "試験問題に書かれている作業の決まり。電線の色・接続の方法・取付枠の位置などを指定する。守らないと回路が正しくても欠陥。" },
+  { k: "接地側", m: ["接地側", "白色", "白"], d: "大地につながっている側の電線。白色を使う。ランプレセプタクルの受金ねじ部や、W・N・接地側と書かれた端子につなぐ。" },
+  { k: "非接地側", d: "接地されていない側の電線。電源から点滅器（スイッチ）まで黒色を使う。" },
+  { k: "返り線", m: ["返り線"], d: "スイッチから照明へ戻る電線。スイッチを入れると、ここに電気が来る。色は施工条件の指定がなければ残った色を使う。" },
+  { k: "渡り線", m: ["渡り線", "わたり線"], d: "同じ取付枠の器具どうしを、ボックスを通らずに直接つなぐ短い電線。" },
+  { k: "リングスリーブ", m: ["リングスリーブ", "スリーブ"], d: "電線どうしをつなぐ金属の筒。小・中・大がある。リングスリーブ用圧着工具で圧着し、刻印（○・小・中・大）を付ける。" },
+  { k: "刻印（圧着マーク）", m: ["刻印", "圧着マーク"], d: "圧着したときにスリーブに付く印。電線の太さと本数で決まる。○・小・中・大の4つ。" },
+  { k: "差込形コネクタ", m: ["差込形コネクタ", "コネクタ"], d: "心線を差し込むだけでつなげる器具。2本用・3本用・4本用など、つなぐ本数に合わせて選ぶ。" },
+  { k: "VVF", m: ["VVF"], d: "600V ビニル絶縁ビニルシースケーブル平形。1.6mm・2.0mm、2心・3心などがある。" },
+  { k: "EM-EEF", m: ["EM-EEF", "エコケーブル"], d: "600V ポリエチレン絶縁耐燃性ポリエチレンシースケーブル平形（エコケーブル）。外装が硬く、ストリッパではぎにくいことがある。" },
+  { k: "VVR", m: ["VVR"], d: "600V ビニル絶縁ビニルシースケーブル丸形。中に介在物が入っている。介在物が抜けると欠陥。" },
+  { k: "IV", m: ["IV"], d: "600V ビニル絶縁電線。外装（シース）が無いので、金属管や PF 管の中に通して使う。" },
+  { k: "シース（外装）", m: ["シース", "外装"], d: "ケーブルのいちばん外側の被覆。中の絶縁電線を守る。" },
+  { k: "絶縁被覆", m: ["絶縁被覆", "被覆"], d: "1本1本の心線を包む被覆。色（黒・白・赤・緑）で区別する。" },
+  { k: "心線", m: ["心線"], d: "電線の中の銅線。" },
+  { k: "ストリップゲージ", m: ["ストリップゲージ", "ゲージ"], d: "器具やコネクタに付いている目盛り。被覆をはぐ長さの目安。これに合わせると心線が見えない。" },
+  { k: "取付枠", m: ["取付枠"], d: "埋込連用のスイッチやコンセントを取り付ける金属の枠。器具1個は中央、2個は上下、3個は全部の位置に付ける。" },
+  { k: "受金ねじ部", m: ["受金ねじ部"], d: "ランプレセプタクルの、電球のねじが入る金具。接地側（白）をつなぐ。" },
+  { k: "引掛シーリング", m: ["引掛シーリング"], d: "照明器具を引っ掛けて付ける器具。角形と丸形がある。端子に「接地側」の表示がある。" },
+  { k: "ランプレセプタクル", m: ["ランプレセプタクル"], d: "電球を付ける器具。端子はねじ締めで、心線で輪（の）の字を作って結線する。" },
+  { k: "3路スイッチ", m: ["3路"], d: "2か所から同じ照明を点けたり消したりするスイッチ。端子は 0・1・3。0 が共通の端子。" },
+  { k: "4路スイッチ", m: ["4路"], d: "3路スイッチ2つのあいだに入れて、3か所以上から点滅できるようにするスイッチ。" },
+  { k: "確認表示灯（パイロットランプ）", m: ["確認表示灯", "パイロットランプ"], d: "点いているかを知らせる小さなランプ。つなぎ方で、常時点灯・同時点滅・異時点滅が変わる。" },
+  { k: "位置表示灯内蔵スイッチ", m: ["位置表示灯"], d: "暗い所でスイッチの位置が分かるよう、切のときに光るスイッチ。記号は ●H。" },
+  { k: "端子台", m: ["端子台"], d: "試験で、タイムスイッチ・自動点滅器・リモコンリレーなどの代わりに使う部品。ねじで締めて結線する。" },
+  { k: "ねじなし電線管", m: ["ねじなし", "金属管", "E19"], d: "ねじを切らない金属管。ねじなしボックスコネクタでボックスにつなぎ、止めねじは頭がねじ切れるまで締める。" },
+  { k: "PF管", m: ["PF", "合成樹脂製可とう電線管"], d: "合成樹脂製可とう電線管。曲げられる樹脂の管。PF管用コネクタとロックナットでボックスにつなぐ。" },
+  { k: "ボンド線", m: ["ボンド"], d: "金属管とボックスを電気的につなぐ接地用の線。ねじなしボックスコネクタの接地用端子とボックスの接地用ねじ穴につなぐ。" },
+  { k: "ゴムブッシング", m: ["ゴムブッシング"], d: "ボックスの穴にはめ、ケーブルの外装が傷つかないようにするゴム。穴の大きさに合ったものを使う。" },
+  { k: "配線用遮断器", m: ["配線用遮断器"], d: "電流が流れすぎたとき回路を切るブレーカ。記号は B。接地側極（N）に白をつなぐ。" },
+  { k: "漏電遮断器", m: ["漏電遮断器"], d: "漏電したとき回路を切るブレーカ。記号は BE。" },
+  { k: "単線図", m: ["単線図", "配線図"], d: "電線の本数を書かず、器具とケーブルのつながりを1本の線で表した図。試験問題の図はこれ。" },
+  { k: "複線図", m: ["複線図"], d: "電線を1本ずつ描いた図。単線図から描き直して、どこを何色の線でつなぐかを決める。" },
+  { k: "施工省略", m: ["施工省略"], d: "配線図で一点鎖線で囲まれた部分。作らなくてよい（ケーブルの端は出しておく）。" },
+];
+
+/* ============================================================
+   問題。BANK に足していく
+   t: "c" 選択（マーク）／ "w" 語句（必要な語句を書く）／ "n" 数値
+   c: { o:[選択肢], a: 正解の番号 }   選択肢は表示のときに並べかえる（fix:true なら並べかえない）
+   w: { keys:[[語,別の書き方…], …] 全部入っていれば正解, ng:[入っていたら誤り], model:"模範解答" }
+   n: { a: 数, unit:"mm" }
+   fig: 図（SVG の文字列）  ex: 解説  src: 根拠
+   ============================================================ */
+const CATS = [];
+const BANK = [];
+function cat(id, name, note) { CATS.push({ id, name, note }); }
+function add(c, q) { q.cat = c; q.id = q.id || c + "-" + (BANK.filter(b => b.cat === c).length + 1); BANK.push(q); }
+const SRC_KEKKAN = "出典：電気技術者試験センター「電気工事士技能試験（第一種・第二種）欠陥の判断基準」";
+
+/* ============================================================
+   記述式（図示）。器具・端子・ボックスを印刷した解答欄に線を引き、
+   線の色と、接続点の刻印（または差込形コネクタ）を書き込む。
+   採点は見た目でなく、電気的なつながり（どの端子どうしがつながるか）で行う。
+   ============================================================ */
+const COLORS = { "黒": "#1f1f1f", "白": "#ffffff", "赤": "#d62828", "緑": "#1a7f3a" };
+const MARKS = { sleeve: ["○", "小", "中", "大"], conn: ["2本用", "3本用", "4本用", "5本用"] };
+const diaOf = spec => (String(spec).match(/(\d\.\d)/) || [, "1.6"])[1];
+function sleeveMark(n20, n16) { const r = SLV_TABLE.find(x => x[0] === n20 && x[1] === n16); return r ? ["○", "小", "中", "大"][r[2]] : null; }
+/* 入れかえてもよい端子（スイッチ・表示灯・リモコンリレーの 1–2、3路の 1–3、4路の 1–3 と 2–4） */
+function swapSets(z) {
+  const s = [];
+  z.parts.forEach(p => {
+    if (["sw1", "swH", "pl", "rly"].includes(p.type)) s.push([[p.id + ".1", p.id + ".2"]]);
+    if (p.type === "sw3") s.push([[p.id + ".1", p.id + ".3"]]);
+    if (p.type === "sw4") { s.push([[p.id + ".1", p.id + ".3"]]); s.push([[p.id + ".2", p.id + ".4"]]); }
+  });
+  return s;
+}
+function zPrep(z) {
+  if (z._p) return z._p;
+  const part = {}, place = {}, box = {}, term = {};
+  z.parts.forEach(p => { part[p.id] = p; (place[p.place] = place[p.place] || []).push(p); });
+  z.boxes.forEach(b => { box[b.id] = b; });
+  const nodeOf = x => box[x] || part[x] || (place[x] && place[x][0]);
+  const cab = (x, y) => z.cables.find(c => (c.a === x && c.b === y) || (c.a === y && c.b === x));
+  const cabOfPart = (p, other) => cab(p.place, other) || cab(p.id, other);
+  /* 端子の位置：器具から、ケーブルの行き先の向きに並べる */
+  z.parts.forEach(p => {
+    const c = z.cables.find(c => [c.a, c.b].some(e => e === p.place || e === p.id));
+    let tx = p.x, ty = p.y + 100;
+    if (c) { const o = nodeOf([c.a, c.b].find(e => e !== p.place && e !== p.id) || ""); if (o) { tx = o.x; ty = o.y; } }
+    const dx = tx - p.x, dy = ty - p.y, n = p.terms.length, gap = 24, off = p.type === "src" || p.type === "brkBE" ? 40 : 34;
+    p.terms.forEach((t, i) => { const s = (i - (n - 1) / 2) * gap; const vert = Math.abs(dy) >= Math.abs(dx);
+      term[p.id + "." + t.k] = { id: p.id + "." + t.k, part: p, t, x: vert ? p.x + s : p.x + Math.sign(dx || 1) * off, y: vert ? p.y + Math.sign(dy || 1) * off : p.y + s }; });
+  });
+  /* 正解のつながり（お手本の線から） */
+  const ansGroups = {};   // "B1:2" → [端子…]
+  z.ref.forEach(([a, b]) => [a, b].forEach((e, i) => { if (e.includes(":")) { const o = i ? a : b; (ansGroups[e] = ansGroups[e] || []); if (!o.includes(":")) ansGroups[e].push(o); } }));
+  /* ボックスの接続点の場所。正解の数より1つ多く用意する（数で答えが分からないように） */
+  const slots = {};
+  z.boxes.forEach(b => { const n = Object.keys(ansGroups).filter(j => j.startsWith(b.id + ":")).length + 1;
+    for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / n; slots[b.id + "#" + (i + 1)] = { id: b.id + "#" + (i + 1), box: b.id, x: b.x + 34 * Math.cos(a), y: b.y + 34 * Math.sin(a) }; } });
+  /* 線が通れるか（ケーブルか、同じ取付枠か）と、その線のケーブル */
+  function wireOf(a, b) {
+    const ta = term[a], tb = term[b], sa = slots[a], sb = slots[b];
+    if (ta && sb) { const c = cabOfPart(ta.part, sb.box); return c ? { c } : null; }
+    if (sa && tb) return wireOf(b, a);
+    if (sa && sb) { if (sa.box === sb.box) return null; const c = cab(sa.box, sb.box); return c ? { c } : null; }
+    if (ta && tb) { if (ta.part === tb.part) return null;
+      if (ta.part.place === tb.part.place) return { c: null, jump: true };
+      const c = cab(ta.part.place, tb.part.place) || cab(ta.part.id, tb.part.id) || cab(ta.part.place, tb.part.id) || cab(ta.part.id, tb.part.place);
+      return c ? { c } : null; }
+    return null;
+  }
+  /* 見える範囲 */
+  const xs = [], ys = [];
+  Object.values(term).forEach(t => { xs.push(t.x); ys.push(t.y); }); z.parts.forEach(p => { xs.push(p.x); ys.push(p.y); }); z.boxes.forEach(b => { xs.push(b.x - 60, b.x + 60); ys.push(b.y - 60, b.y + 60); });
+  const vb = [Math.min(...xs) - 60, Math.min(...ys) - 50, Math.max(...xs) - Math.min(...xs) + 120, Math.max(...ys) - Math.min(...ys) + 100];
+  z._p = { part, box, term, slots, ansGroups, wireOf, vb, cab, cabOfPart };
+  return z._p;
+}
+/* 線の集まりから、端子どうしのつながり（ネット）を作る */
+function comps(lines) {
+  const par = {}, f = x => (par[x] === undefined ? (par[x] = x) : par[x] === x ? x : (par[x] = f(par[x])));
+  lines.forEach(l => { const a = f(l.a), b = f(l.b); if (a !== b) par[a] = b; });
+  const g = {}; Object.keys(par).forEach(x => { const r = f(x); (g[r] = g[r] || []).push(x); });
+  return Object.values(g).map(all => ({ all, key: all.filter(x => !x.includes("#") && !x.includes(":")).sort().join(",") }));
+}
+const netsOf = lines => comps(lines).map(c => c.key).filter(Boolean);
+function zAnswerLines(z) { return z.ref.map(([a, b, c]) => ({ a, b, c })); }
+/* 接続点に要る刻印・コネクタ（ボックスの決まりと、集まる線の太さ・本数から） */
+function needMark(z, boxId, lines) {
+  const P = zPrep(z), b = P.box[boxId]; let n20 = 0, n16 = 0, pw = false;
+  lines.forEach(l => { const w = P.wireOf(l.a, l.b); const d = w && w.c ? diaOf(w.c.spec) : "1.6"; d === "2.0" ? n20++ : n16++;
+    [l.a, l.b].forEach(e => { if (P.term[e] && P.term[e].part.id === "PW") pw = true; }); });
+  const n = n20 + n16;
+  const kind = b.rule === "sleeve" ? "sleeve" : b.rule === "conn" ? "conn" : b.rule === "n4" ? (n === 4 ? "conn" : "sleeve") : b.rule === "n3" ? (n === 3 ? "conn" : "sleeve") : (pw ? "sleeve" : "conn");
+  return kind === "conn" ? n + "本用" : sleeveMark(n20, n16);
+}
+/* 施工条件で色が決まる線か。決まるならその色 */
+function needColor(z, line, netMap) {
+  const P = zPrep(z);
+  for (const e of [line.a, line.b]) { const t = P.term[e]; if (!t) continue; if (t.t.earth) return "緑"; if (t.t.w) return "白"; }
+  const net = netMap[line.a] || "";
+  const pots = net.split(",").map(id => P.term[id] && P.term[id].t.pot).filter(Boolean);
+  if (pots.includes("N") || pots.includes("S")) return "白";
+  if (pots.includes("L") || pots.includes("T")) return "黒";
+  if (pots.includes("R")) return "赤";
+  return null;
+}
+function zushiScore(z, v) {
+  const P = zPrep(z), lines = (v && v.lines) || [], marks = (v && v.marks) || {};
+  /* 1. つながり：正解のネットがそのまま作れているか（入れかえてよい端子は入れかえて一番よいもの） */
+  const mine = new Set(netsOf(lines)), sets = swapSets(z);
+  const ansLines = zAnswerLines(z);
+  let best = -1, bestNets = [];
+  for (let m = 0; m < (1 << sets.length); m++) {
+    const ren = {}; sets.forEach((s, i) => { if (m & (1 << i)) s.forEach(([x, y]) => { ren[x] = y; ren[y] = x; }); });
+    const nets = netsOf(ansLines.map(l => ({ a: ren[l.a] || l.a, b: ren[l.b] || l.b }))).filter(n => n.includes(","));
+    const hit = nets.filter(n => mine.has(n)).length;
+    if (hit > best) { best = hit; bestNets = nets; }
+  }
+  const extra = [...mine].filter(n => n.includes(",") && !bestNets.includes(n)).length;
+  const conn = { name: "つながり（回路）", got: best, of: bestNets.length, bad: extra };
+  /* 2. 心線の数：ケーブルごとの線の本数 */
+  const perCab = new Map();
+  lines.forEach(l => { const w = P.wireOf(l.a, l.b); if (w && w.c) perCab.set(w.c, (perCab.get(w.c) || []).concat([l])); });
+  const cabs = z.cables.filter(c => !/^E/.test(c.spec));
+  const cores = { name: "ケーブルの心線の数", got: cabs.filter(c => (perCab.get(c) || []).length === c.colors.length).length, of: cabs.length };
+  /* 3. 線の色：施工条件で決まる色と、ケーブルの中の色の組み合わせ */
+  const netMap = {}; comps(lines).forEach(c => c.all.forEach(id => { netMap[id] = c.key; }));
+  let need = 0, okc = 0;
+  lines.forEach(l => { const c = needColor(z, l, netMap); if (c) { need++; if (l.c === c) okc++; } });
+  let setBad = 0;
+  perCab.forEach((ls, c) => { const left = c.colors.slice(); ls.forEach(l => { const i = left.indexOf(l.c); if (i < 0) setBad++; else left.splice(i, 1); }); });
+  const color = { name: "線の色（施工条件）", got: okc, of: need, bad: setBad };
+  /* 4. 刻印・差込形コネクタ */
+  const bySlot = {};
+  lines.forEach(l => [l.a, l.b].forEach(e => { if (P.slots[e]) (bySlot[e] = bySlot[e] || []).push(l); }));
+  const used = Object.keys(bySlot).filter(s => bySlot[s].length >= 2);
+  const mk = { name: "刻印・コネクタ", got: used.filter(s => marks[s] && marks[s] === needMark(z, P.slots[s].box, bySlot[s])).length, of: used.length };
+  const dangling = Object.keys(bySlot).filter(s => bySlot[s].length === 1).length;
+  const items = [conn, cores, color, mk];
+  const ok = items.every(i => i.got === i.of && !i.bad) && dangling === 0 && lines.length > 0;
+  const frac = lines.length ? items.reduce((s, i) => s + (i.of ? Math.max(0, i.got - (i.bad || 0)) / i.of : 1), 0) / items.length : 0;
+  return { ok, items, frac, dangling };
+}
+/* 図を描く。ans=true は解答例 */
+function zSvg(z, v, sel, ans) {
+  const P = zPrep(z);
+  let lines = (v && v.lines) || [], marks = (v && v.marks) || {};
+  const slotPos = Object.assign({}, P.slots);
+  if (ans) {   // お手本の接続点を、接続点の場所に割り当てて描く
+    const map = {}, cnt = {};
+    Object.keys(P.ansGroups).forEach(j => { const b = j.split(":")[0]; cnt[b] = (cnt[b] || 0) + 1; map[j] = b + "#" + cnt[b]; });
+    lines = zAnswerLines(z).map(l => ({ a: map[l.a] || l.a, b: map[l.b] || l.b, c: l.c }));
+    marks = {}; const by = {};
+    lines.forEach(l => [l.a, l.b].forEach(e => { if (P.slots[e]) (by[e] = by[e] || []).push(l); }));
+    Object.keys(by).forEach(s => { marks[s] = needMark(z, P.slots[s].box, by[s]); });
+  }
+  const pos = id => P.term[id] || slotPos[id];
+  let g = "";
+  /* ケーブル（単線図）を薄く */
+  z.cables.forEach(c => { const A = P.box[c.a] || (P.part[c.a]) || z.parts.find(p => p.place === c.a), B = P.box[c.b] || P.part[c.b] || z.parts.find(p => p.place === c.b);
+    if (!A || !B) return; g += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#e7ece9" stroke-width="22" stroke-linecap="round"/>`;
+    g += `<text x="${(A.x + B.x) / 2}" y="${(A.y + B.y) / 2 - 14}" font-size="12" fill="#7b8580" text-anchor="middle">${esc(c.spec)}</text>`; });
+  z.boxes.forEach(b => { g += b.obox ? `<rect x="${b.x - 52}" y="${b.y - 52}" width="104" height="104" fill="#fff" stroke="#9aa5a0" stroke-width="2" stroke-dasharray="6 4"/>` : `<circle cx="${b.x}" cy="${b.y}" r="54" fill="#fff" stroke="#9aa5a0" stroke-width="2" stroke-dasharray="6 4"/>`;
+    g += `<text x="${b.x + 50}" y="${b.y - 46}" font-size="18" font-weight="700" fill="#151a18">${esc(b.name)}</text>`; });
+  z.parts.forEach(p => { g += sym(p.type, p.x, p.y, 1) + (p.label && p.type !== "src" ? `<text x="${p.x + 22}" y="${p.y - 18}" font-size="15" font-weight="700">${esc(p.label)}</text>` : ""); });
+  /* 線 */
+  lines.forEach((l, i) => { const A = pos(l.a), B = pos(l.b); if (!A || !B) return; const col = COLORS[l.c] || "#888";
+    g += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#555" stroke-width="7" stroke-linecap="round"/><line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${col}" stroke-width="4.5" stroke-linecap="round"/>`;
+    if (!ans) g += `<line data-l="${i}" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="transparent" stroke-width="16"/>`; });
+  /* 端子 */
+  Object.values(P.term).forEach(t => { const on = sel === t.id;
+    g += `<circle cx="${t.x}" cy="${t.y}" r="8" fill="${on ? "#2563eb" : "#fff"}" stroke="#151a18" stroke-width="2"/>`;
+    if (t.t.lab) g += `<text x="${t.x}" y="${t.y + (t.y > t.part.y ? 22 : -12)}" font-size="12" font-weight="700" text-anchor="middle" fill="#334">${esc(t.t.lab)}</text>`;
+    if (!ans) g += `<circle data-t="${t.id}" cx="${t.x}" cy="${t.y}" r="12" fill="transparent"/>`; });
+  /* 接続点 */
+  Object.values(P.slots).forEach(s => { const on = sel === s.id, used = lines.some(l => l.a === s.id || l.b === s.id);
+    if (ans && !used) return;
+    g += `<circle cx="${s.x}" cy="${s.y}" r="${used ? 7 : 6}" fill="${on ? "#2563eb" : used ? "#151a18" : "#fff"}" stroke="#151a18" stroke-width="1.5"/>`;
+    if (marks[s.id]) { const b = P.box[s.box], dx = s.x - b.x, dy = s.y - b.y, m = Math.hypot(dx, dy) || 1, mx = s.x + dx / m * 15, my = s.y + dy / m * 15, tw = marks[s.id].length * 13 + 8;
+      g += `<rect pointer-events="none" x="${mx - tw / 2}" y="${my - 10}" width="${tw}" height="19" rx="4" fill="#fff" stroke="#0f6b4f" stroke-width="1.5"/><text pointer-events="none" x="${mx}" y="${my + 5}" font-size="13" font-weight="700" text-anchor="middle" fill="#0f6b4f">${esc(marks[s.id])}</text>`; }
+    if (!ans) g += `<circle data-s="${s.id}" cx="${s.x}" cy="${s.y}" r="13" fill="transparent"/>`; });
+  const [x, y, w, h] = P.vb;
+  return `<svg class="zsvg" viewBox="${x} ${y} ${w} ${h}" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
+}
+
+/*BANK-START*/
+/* ---------- 分野 ---------- */
+cat("kekkan", "欠陥の判断基準", "どこまでが欠陥か・数字の決まり");
+cat("sleeve", "リングスリーブとコネクタ", "大きさ・刻印・差込形コネクタの選び方");
+cat("jouken", "施工条件と電線の色", "白・黒・赤・緑、試験問題の決まり");
+cat("kigou", "図記号と器具", "単線図の記号を読む");
+cat("kougu", "工具と試験のきまり", "何に使う工具か・使えない物");
+cat("tejun", "作業の手順と寸法", "No.1 の切る長さ・はぐ長さ・順番");
+cat("fukusen", "複線図の考え方", "白・黒・返り線・3路・表示灯");
+cat("kouho", "候補問題 No.1〜13", "公表された試験問題の施工条件と材料");
+
+/* ---------- 欠陥の判断基準（数字） ---------- */
+[
+  ["ケーブルの外装（シース）の縦われが何 mm 以上あると欠陥か。", 20, "5-1 ロ「外装縦われが 20mm 以上のもの」。"],
+  ["リングスリーブの上端から、心線が何 mm 以上出ていると欠陥か。", 5, "6-2 ロ「リングスリーブの上端から心線が 5mm 以上露出したもの」。圧着したら先端を切りそろえる。"],
+  ["絶縁被覆のむき過ぎで、リングスリーブの下端から心線が何 mm 以上見えると欠陥か。", 10, "6-2 ハ「リングスリーブの下端から心線が 10mm 以上露出したもの」。"],
+  ["ケーブル外装のはぎ取り不足で、絶縁被覆が何 mm 以下だと欠陥か（リングスリーブの接続部分）。", 20, "6-2 ニ「ケーブル外装のはぎ取り不足で、絶縁被覆が 20mm 以下のもの」。"],
+  ["絶縁被覆の傷は、リングスリーブの下端から何 mm 以内なら欠陥としないか。", 10, "5-2 ただし書き「リングスリーブの下端から 10mm 以内の絶縁被覆の傷は欠陥としない」。"],
+  ["埋込連用のスイッチやコンセント（ねじなし端子）で、差込口から心線が何 mm 以上見えると欠陥か。", 2, "8-9「心線が差込口から 2mm 以上露出したもの」。"],
+  ["引掛シーリングローゼットで、差込口から心線が何 mm 以上見えると欠陥か。", 1, "8-9 ただし書き「引掛シーリングローゼットにあっては、1mm 以上露出したもの」。ほかの器具より厳しい。"],
+  ["引掛シーリングローゼットへの結線で、絶縁被覆が台座の下端から何 mm 以上出ていると欠陥か。", 5, "8-10。シースをはぎすぎないこと。"],
+  ["ランプレセプタクルの結線で、ねじの端から心線が何 mm 以上出ていると欠陥か。", 5, "8-3 ニ「ねじの端から心線が 5mm 以上露出したもの」。"],
+  ["ランプレセプタクルの巻き付け（輪作り）で、心線がねじの端から何 mm 以上はみ出すと欠陥か。", 5, "8-7 ハ「心線がねじの端から 5mm 以上はみ出したもの」。"],
+  ["端子台の低圧側の結線で、端子台の端から心線が何 mm 以上出ていると欠陥か。", 5, "8-3 ロ。"],
+  ["端子台の高圧側の結線で、端子台の端から心線が何 mm 以上出ていると欠陥か（第一種の課題）。", 20, "8-3 イ。第二種で出るのは低圧側（5mm）。"],
+  ["配線用遮断器の結線で、器具の端から心線が何 mm 以上出ていると欠陥か。", 5, "8-3 ハ「配線用遮断器又は押しボタンスイッチ等の結線にあっては、器具の端から心線が 5mm 以上露出したもの」。"],
+  ["寸法は、配線図に示された寸法の何 % 以下だと欠陥か。", 50, "2-2「寸法（器具にあっては中心からの寸法）が、配線図に示された寸法の 50% 以下のもの」。", "%"],
+  ["配線図に 150mm と書かれた部分を作った。何 mm 以下だと欠陥になるか。", 75, "150mm の 50% は 75mm。2-2「配線図に示された寸法の 50% 以下」は欠陥。"],
+  ["配線図に 200mm と書かれた部分を作った。何 mm 以下だと欠陥になるか。", 100, "200mm の 50% は 100mm。2-2。"],
+  ["第二種電気工事士の技能試験の試験時間は何分か。", 40, "「技能試験の概要と注意すべきポイント」：第二種 40分（第一種は 60分）。", "分"],
+].forEach(([q, a, ex, unit]) => add("kekkan", { t: "n", q, a, unit: unit || "mm", ex, src: SRC_KEKKAN }));
+
+/* ---------- 欠陥の判断基準（欠陥になる？ならない？） ---------- */
+const YN = ["欠陥になる", "欠陥にならない"];
+[
+  ["ランプレセプタクルの台座が、作業中に少し欠けた。", 1, "12-5 ただし書き「ランプレセプタクル、引掛シーリングローゼット又は露出形コンセントの台座の欠けについては欠陥としない」。"],
+  ["ねじなし端子の器具から電線を外そうとして、連用器具（スイッチ）を欠けさせた。", 0, "12-5「器具を破損させたもの」。台座の欠けの例外は、ランプレセプタクル・引掛シーリング・露出形コンセントだけ。"],
+  ["ランプレセプタクルのねじの端から、心線が 3mm 出ている。", 1, "欠陥は「5mm 以上」露出したもの（8-3 ニ）。3mm なら欠陥ではない（実際の工事では 0mm に近づける）。"],
+  ["スイッチ（埋込連用）の差込口から、心線が 1mm 見えている。", 1, "ねじなし端子の欠陥は「2mm 以上」（8-9）。1mm は欠陥ではない。"],
+  ["引掛シーリングローゼットの差込口から、心線が 1mm 見えている。", 0, "引掛シーリングローゼットは「1mm 以上」で欠陥（8-9 ただし書き）。"],
+  ["リングスリーブ1つに、圧着マークが2つ付いている（2度圧着した）。", 0, "6-1 ホ「1つのリングスリーブに2つ以上の圧着マークがあるもの」。"],
+  ["1か所の接続に、リングスリーブを2個使った。", 0, "6-1 ヘ「1箇所の接続に2個以上のリングスリーブを使用したもの」。"],
+  ["絶縁被覆の上から、リングスリーブを圧着した。", 0, "6-2 ホ「絶縁被覆の上から圧着したもの」。"],
+  ["リングスリーブを上から見ると、3本のうち2本の心線の先しか見えない。", 0, "6-2 イ「接続する心線の先端が一本でも見えないもの」。"],
+  ["リングスリーブの先端で、圧着マークの一部が欠けている。", 0, "6-1 ニ「リングスリーブの先端または末端で、圧着マークの一部が欠けたもの」。"],
+  ["差込形コネクタを真横から見て、先端に心線の先が見えない。", 0, "7-1「コネクタの先端部分を真横から目視して心線が見えないもの」。奥まで差し込む。"],
+  ["差込形コネクタの下端（差込口）に、心線が見えている。", 0, "7-2「コネクタの下端部分を真横から目視して心線が見えるもの」。ストリップゲージに合わせてはぐ。"],
+  ["差込形コネクタの差し込みをやり直すため、追加支給を受けた。", 1, "「差込形コネクタは追加支給を受けても欠陥の対象にはなりません」（注意すべきポイント）。抜いて使い回さず、切って新しいもので差し直す。"],
+  ["ランプレセプタクルの輪作りを、左巻き（反時計回り）にした。", 0, "8-7 ロ「心線を左巻きにしたもの」。ねじを締める向き（右回り）に巻く。"],
+  ["ランプレセプタクルの輪が重なって二重になった（重ね巻き）。", 0, "8-7 イ「心線の巻き付けが不足、又は重ね巻きしたもの」。"],
+  ["ランプレセプタクルの結線で、ケーブルを台座の引込口を通さずに上から結線した。", 0, "8-5。ケーブルは台座の下（裏側）から通す。"],
+  ["ランプレセプタクルの台座の中に、ケーブルの外装が入っていない。", 0, "8-6「ケーブル外装が台座の中に入っていないもの」。"],
+  ["ランプレセプタクルのカバーが、絶縁被覆が長すぎて締まらない。", 0, "8-7 ニ「カバーが締まらないもの」。"],
+  ["端子台のねじが、絶縁被覆を締め付けている。", 0, "8-4「絶縁被覆を締め付けたもの」。"],
+  ["スイッチの心線を、引っ張ったら抜けた。", 0, "8-8「電線を引っ張って外れるもの」。差込口の奥まで差し込む。"],
+  ["埋込連用取付枠を裏返しにして、スイッチを取り付けた。", 0, "11-2「取付枠を裏返しにして、配線器具を取り付けたもの」。"],
+  ["取付枠に器具が1個だけ。上の位置に取り付けた。", 0, "11-4 イ「配線器具が1個の場合に、中央以外に取り付けたもの」。"],
+  ["取付枠に器具が2個。上と中央に取り付けた。", 0, "11-4 ロ「配線器具が2個の場合に、中央に取り付けたもの」。2個なら上と下。"],
+  ["取付枠に器具が2個。上と下に取り付けた。", 1, "2個のときは中央をあけて上下に付ける（11-4 ロ）。"],
+  ["施工条件で「ロのスイッチは取付枠の中央」とあるのに、イを中央にした。", 0, "11-4 ハ「配線器具が3個の場合に、中央に指定した器具以外を取り付けたもの」。"],
+  ["ボックスの穴にゴムブッシングを使わずにケーブルを通した。", 0, "12-4 イ「ゴムブッシングを使用していないもの」。"],
+  ["ねじなしボックスコネクタの止めねじを、頭がねじ切れる前で止めた。", 0, "9-3「止めねじをねじ切っていないもの」。頭部がねじ切れるまで締める。"],
+  ["金属管の端の絶縁ブッシングが外れている。", 0, "9-2 ロ「絶縁ブッシングが外れているもの」。"],
+  ["ボンド線を、ボックスのカバー取付用のビス穴に取り付けた。", 0, "9-5 ハ「接地用取付ねじ穴以外に取り付けたもの」。"],
+  ["ボンド線が、ねじなしボックスコネクタの接地用端子の他端から出ていない。", 0, "9-6 ロ「ボンド線が他端から出ていないもの」。"],
+  ["PF管とボックスのつなぎ目に、目で見て分かる隙間がある。", 0, "10-2 ロ「管とボックスとの接続部分を目視して隙間があるもの」。"],
+  ["自分で持ってきたリングスリーブを使った。", 0, "12-1「支給品以外の材料を使用したもの」。"],
+  ["露出形コンセントの送り端子にも電線を結線した。", 0, "12-2「不要な工事、余分な工事又は用途外の工事を行ったもの」の例。"],
+  ["ランプレセプタクルの取付用ビス穴から電線を通した。", 0, "12-2「用途外の工事」の例として挙げられている。"],
+  ["ボックスに、打ち抜かれていない穴を自分で開けて使った。", 0, "施工条件「打ち抜き済みの穴だけをすべて使用」に反する。12-2「不要な工事、余分な工事」。"],
+  ["ケーブルの表面に、少しだけ傷がついている（心線も被覆も見えない）。", 1, "「表面に傷がついている程度のものについては欠陥と致しません」（注意すべきポイント A）電線の取り扱い）。"],
+  ["ケーブルを折り曲げると、外装の傷から中の絶縁被覆が見える。", 0, "5-1 イ「ケーブルを折り曲げたときに絶縁被覆が露出するもの」。"],
+  ["電線を折り曲げると、絶縁被覆の傷から心線が見える（スリーブから離れた所）。", 0, "5-2「絶縁被覆の損傷で、電線を折り曲げたときに心線が露出するもの」。"],
+  ["配線は少し曲がっているが、配線図どおりの配置と寸法になっている。", 1, "「多少曲がっていたとしても欠陥とは判断されません」（注意すべきポイント A）配置等）。"],
+  ["回路は電気的に正しいが、施工条件の色の指定どおりになっていない。", 0, "「施工条件に従って施工されていない作品は、回路が電気的に正しく結線されていたとしても、欠陥であると判断します」。"],
+  ["リングスリーブを、持ち手が赤い圧着端子用の工具で圧着した（数字の刻印が付いた）。", 0, "正しい工具が使われたとは認められず欠陥（注意すべきポイント B-1 ⅱ）。リングスリーブ用（握りが黄色）を使う。"],
+  ["使い古した圧着工具で、刻印がはっきり見えない。", 0, "「刻印が明確に見えない」ものは欠陥（注意すべきポイント B-1 ⅱ）。"],
+  ["VVR ケーブルの介在物が抜けてしまった。", 0, "5-1 ハ「VVR、CVV の介在物が抜けたもの」。"],
+].forEach(([q, a, ex]) => add("kekkan", { t: "c", q: "次の作品は欠陥になるか。\n" + q, o: YN, a, fix: true, ex, src: SRC_KEKKAN }));
+
+/* ---------- 欠陥の判断基準（語群から選ぶ） ---------- */
+[
+  ["時間内に作業が終わらず、つないでいない電線が残った。欠陥の判断基準では何という欠陥か。", ["未完成のもの", "誤接続のもの", "寸法の相違", "器具の破損"], "判断基準 1「未完成のもの」。"],
+  ["スイッチを入れてもランプが点かない作品。判断基準の「〔　〕、誤結線のもの」の〔　〕に入る語句は。", ["誤接続", "未完成", "極性", "接続方法"], "判断基準 3「誤接続、誤結線のもの」。短絡も誤接続。"],
+  ["受金ねじ部に黒い電線をつないだ作品。判断基準の「電線の色別、配線器具の〔　〕が施工条件に相違したもの」の〔　〕に入る語句は。", ["極性", "寸法", "接続方法", "種類"], "判断基準 4。"],
+  ["施工条件で「B 部分は差込形コネクタ」なのに、リングスリーブでつないだ。判断基準の「〔　〕が施工条件に相違したもの」の〔　〕に入る語句は。", ["接続方法", "電線の種類", "器具の配置", "寸法"], "判断基準 2-4「接続方法が施工条件に相違したもの」。"],
+  ["配線図で VVF1.6-3C と指定された所に VVF1.6-2C を使った。判断基準の「〔　〕が配線図と相違したもの」の〔　〕に入る語句は。", ["電線の種類", "接続方法", "電線の色別", "器具の配置"], "判断基準 2-3「電線の種類が配線図と相違したもの」。"],
+  ["技能試験の合否は何で決まるか。", ["作品の欠陥の有無", "作業にかかった時間", "作品の美しさの点数", "使った材料の量"], "「欠陥のない作品が合格となります」（注意すべきポイント 3 合否の決定）。"],
+  ["ランプレセプタクルの輪作りは、何巻きにするか。", ["右巻き（ねじを締める向き）", "左巻き", "二重巻き", "どちらでもよい"], "8-7 ロ「心線を左巻きにしたもの」は欠陥。"],
+  ["ランプレセプタクルの巻き付けが「不足」で欠陥とされるのは、何周以下のときか。", ["3/4 周以下", "1/4 周以下", "1/2 周以下", "1 周以下"], "8-7 イ「心線の巻き付けが不足（3/4 周以下）」。"],
+  ["ボックスの穴にはめて、ケーブルの外装が傷つかないようにするゴムの部品は。", ["ゴムブッシング", "絶縁ブッシング", "ロックナット", "ボンド線"], "12-4「ゴムブッシングの使用が適切でないもの」。絶縁ブッシングは金属管の端に付ける部品。"],
+].forEach(([q, o, ex]) => add("kekkan", { t: "c", q, o, a: 0, ex, src: SRC_KEKKAN }));
+
+/* ---------- リングスリーブ（JIS C 2806 の表から作る） ---------- */
+const SRC_JIS = "出典：「技能試験の概要と注意すべきポイント」B-1 リングスリーブ（E形）と電線の組合せ（JIS C 2806 準拠）";
+const SLV = ["小スリーブ・刻印「○」", "小スリーブ・刻印「小」", "中スリーブ・刻印「中」", "大スリーブ・刻印「大」"];
+/* [2.0mm の本数, 1.6mm の本数, SLV の番号] */
+const SLV_TABLE = [
+  [0, 2, 0],
+  [0, 3, 1], [0, 4, 1], [2, 0, 1], [1, 1, 1], [1, 2, 1],
+  [0, 5, 2], [0, 6, 2], [3, 0, 2], [4, 0, 2], [1, 3, 2], [1, 4, 2], [1, 5, 2], [2, 1, 2], [2, 2, 2], [2, 3, 2], [3, 1, 2],
+  [0, 7, 3], [5, 0, 3], [1, 6, 3], [2, 4, 3], [3, 2, 3], [4, 1, 3],
+];
+const wiresText = (a, b) => [a ? `2.0mm × ${a}本` : "", b ? `1.6mm × ${b}本` : ""].filter(Boolean).join(" と ");
+SLV_TABLE.forEach(([a, b, s]) => add("sleeve", { t: "c", q: `${wiresText(a, b)} をリングスリーブでつなぐ。使うスリーブと刻印はどれか。`, o: SLV, a: s, fix: true, group: "slv" + a + "-" + b,
+  ex: `${wiresText(a, b)} は ${SLV[s]}。` + (s === 0 ? "1.6mm × 2本だけが「○」。同じ小スリーブでも本数が増えると「小」。" : s === 1 ? "小スリーブで「○」以外は刻印「小」。" : ""), src: SRC_JIS }));
+[
+  [0, 2, "○"], [0, 3, "小"], [0, 4, "小"], [2, 0, "小"], [1, 1, "小"], [0, 5, "中"], [1, 3, "中"], [2, 2, "中"], [3, 0, "中"],
+].forEach(([a, b, m]) => add("sleeve", { t: "c", q: `${wiresText(a, b)} をリングスリーブで圧着する。付ける刻印（圧着マーク）はどれか。`,
+  o: ["○", "小", "中", "大"], a: ["○", "小", "中", "大"].indexOf(m), fix: true, group: "slv" + a + "-" + b,
+  ex: `${wiresText(a, b)} → ${SLV[SLV_TABLE.find(r => r[0] === a && r[1] === b)[2]]}。`, src: SRC_JIS }));
+[2, 3, 4].forEach(n => add("sleeve", { t: "c", q: `1.6mm の心線 ${n}本を差込形コネクタでつなぐ。どのコネクタを使うか。`, o: ["2本用", "3本用", "4本用", "5本用"], a: n - 2, fix: true,
+  ex: "差込形コネクタは、つなぐ本数と同じ「◯本用」を使う。", src: "出典：令和8年度 技能試験問題の材料表（差込形コネクタ 2本用・3本用・4本用）" }));
+[
+  ["1.6mm × 2本 を、小スリーブで刻印「小」を付けて圧着した。", 0, "1.6mm × 2本は刻印「○」。6-1 ロ「圧着マークが不適正のもの」。"],
+  ["1.6mm × 2本 を、中スリーブで圧着した。", 0, "1.6mm × 2本は小スリーブ。6-1 イ「リングスリーブの選択を誤ったもの」。"],
+  ["2.0mm × 1本 と 1.6mm × 1本 を、小スリーブで刻印「小」を付けて圧着した。", 1, "2.0mm × 1本 と 1.6mm × 1〜2本 は小スリーブ・刻印「小」。正しい。"],
+  ["1.6mm × 4本 を、小スリーブで刻印「小」を付けて圧着した。", 1, "1.6mm × 3〜4本 は小スリーブ・刻印「小」。正しい。"],
+  ["1.6mm × 5本 を、小スリーブで圧着した。", 0, "1.6mm × 5〜6本 は中スリーブ。6-1 イ「リングスリーブの選択を誤ったもの」。"],
+].forEach(([q, a, ex]) => add("sleeve", { t: "c", q: "次の圧着は欠陥になるか。\n" + q, o: YN, a, fix: true, ex, src: SRC_JIS }));
+[
+  ["リングスリーブの大きさを決めるのは、つなぐ電線の何か。", ["電線の太さ（径）と本数", "電線の長さと色", "ボックスの大きさ", "電圧と電流"], "「接続する『電線の径』と『接続する本数』に応じて、正しいリングスリーブを選択する」。"],
+  ["リングスリーブ用圧着工具の握りの色は。", ["黄色", "赤色（オレンジ）", "青色", "黒色"], "「握り部分の色が黄色のものを使用すれば、圧着マークが刻印されます」。持ち手がオレンジ（赤）の工具は圧着端子用。"],
+  ["圧着したリングスリーブに付く印を何というか。", ["圧着マーク（刻印）", "ストリップゲージ", "極性表示", "接地側表示"], "6-1 ロ「圧着マークが不適正のもの」。"],
+].forEach(([q, o, ex]) => add("sleeve", { t: "c", q, o, a: 0, ex, src: SRC_JIS }));
+add("sleeve", { t: "n", q: "リングスリーブと電線の組合せを決めている JIS の番号「JIS C □□□□」の数字をマークせよ。", a: 2806, digits: 4, ex: "JIS C 2806（欠陥の判断基準 6-1 イ・ロ）。", src: SRC_JIS });
+add("sleeve", { t: "c", q: "2.0mm × 1本 と 1.6mm × 2本 の接続で、試験で使うスリーブと刻印として正しいものは。", o: ["小スリーブ・刻印「小」", "小スリーブ・刻印「○」", "中スリーブ・刻印「中」", "中スリーブ・刻印「小」"], a: 0, fix: true, ex: "2.0mm × 1本 と 1.6mm × 1〜2本 は小スリーブ・刻印「小」。", src: SRC_JIS });
+add("sleeve", { t: "c", q: "リングスリーブで圧着したあと、上端に出た心線の先はどうするか。", o: ["5mm 未満に切りそろえる", "そのまま長く残す", "折り曲げてスリーブに巻き付ける", "絶縁テープを巻く"], a: 0,
+  ex: "6-2 ロ「リングスリーブの上端から心線が 5mm 以上露出したもの」は欠陥。テープ巻き・絶縁キャップは試験では省略。", src: SRC_KEKKAN });
+
+/* ---------- 施工条件と電線の色 ---------- */
+const SRC_POINT = "出典：電気技術者試験センター「技能試験の概要と注意すべきポイント」（令和8年3月）";
+[
+  ["電源からの接地側電線には、何色を使用するか。", "白", "施工条件の例 ⅰ）「電源からの接地側電線は、すべて白色を使用する」。", ["黒", "赤"]],
+  ["電源から点滅器（スイッチ）までの非接地側電線には、何色を使用するか。", "黒", "施工条件の例 ⅱ）「電源から点滅器までの非接地側電線は、すべて黒色を使用する」。", ["白", "赤"]],
+  ["ランプレセプタクルの受金ねじ部の端子には、何色の電線を結線するか。", "白", "施工条件の例 ⅲ）。受金ねじ部（電球のねじが入る金具）は接地側。", ["黒", "赤"]],
+  ["コンセントの接地側極端子（N、W 又は接地側と表示）には、何色の電線を結線するか。", "白", "施工条件の例 ⅲ）。", ["黒", "赤"]],
+  ["引掛シーリングの接地側極端子（N、W 又は接地側と表示）には、何色の電線を結線するか。", "白", "施工条件の例 ⅲ）。", ["黒", "赤"]],
+  ["配線用遮断器の接地側極端子（N と表示）には、何色の電線を結線するか。", "白", "施工条件の例 ⅲ）。", ["黒", "赤"]],
+  ["接地線には何色を使用するか。", "緑", "施工条件の例 ⅳ）「接地線には、緑色を使用する」。", ["白", "黒"]],
+  ["200V 回路の電源からの配線で、R 相には何色を使用するか。", "赤", "施工条件の例 ⅴ）「R 相に赤色、S 相に白色、T 相に黒色を使用する」。", ["白", "黒"]],
+  ["200V 回路の電源からの配線で、S 相には何色を使用するか。", "白", "施工条件の例 ⅴ）。S 相は接地されている相。", ["赤", "黒"]],
+  ["200V 回路の電源からの配線で、T 相には何色を使用するか。", "黒", "施工条件の例 ⅴ）。", ["赤", "白"]],
+].forEach(([q, a, ex]) => add("jouken", { t: "c", q, o: ["白色", "黒色", "赤色", "緑色"], a: ["白", "黒", "赤", "緑"].indexOf(a), fix: true, ex, src: SRC_POINT }));
+[
+  ["VVF 用ジョイントボックス部分を経由する電線は、どうするか。", ["その部分ですべて接続箇所を設ける", "つながずにそのまま通してよい", "1本だけ接続すればよい", "テープでまとめる"], "施工条件の例「ジョイントボックス部分を経由する電線は、その部分で全て接続箇所を設けること」。設けないと 2-4 の欠陥。"],
+  ["ボックスに「打ち抜き済みの穴だけをすべて使用する」とある。正しいものは。", ["打ち抜き済みの穴だけを全部使い、自分で穴は開けない", "足りなければ自分で穴を開けてよい", "使わない穴が残ってもよい", "1つの穴から2本以上出してよい"], "施工条件 B）ⅰ）。自分で開ける・使わない穴を残すのは 12-2 の欠陥。"],
+  ["試験問題の「なお」書きで、ふつう省略してよいとされている作業はどれか。", ["電線接続箇所のテープ巻きや絶縁キャップによる絶縁処理", "リングスリーブの圧着", "取付枠への器具の取り付け", "ランプレセプタクルの輪作り"], "令和8年度の問題文「電線接続箇所のテープ巻きや絶縁キャップによる絶縁処理は省略する」。"],
+  ["配線図で一点鎖線（ー・ー・ー）で囲まれた部分はどうするか。", ["施工を省略する", "かならず作る", "時間が余ったら作る", "別の材料で作る"], "令和8年度の問題文「ー・ー・ー で示した部分は施工を省略する」。"],
+  ["VVF 用ジョイントボックスとスイッチボックスについて、令和8年度の問題文ではどうなっているか。", ["支給していないので、取り付けは省略する", "支給するので必ず取り付ける", "自分で用意する", "どちらか1つだけ取り付ける"], "令和8年度の問題文「VVF 用ジョイントボックス及びスイッチボックスは支給していないので、その取り付けは省略する」。"],
+  ["支給された材料はどう使うか。", ["予備品を除き、与えられた全ての材料を使う", "使いたい材料だけ使う", "予備品も全部使う", "足りなければ持ち込んだ材料を使う"], "問題文「与えられた全ての材料（予備品を除く）を使用し」。支給品以外を使うと 12-1 の欠陥。"],
+  ["試験が始まったあと、追加でもらえるのはどれか。", ["リングスリーブ・差込形コネクタ・端子ねじ", "ケーブル", "スイッチ", "ランプレセプタクル"], "「作業開始後、リングスリーブ、差込形コネクタ、端子ねじ以外の材料の交換・追加支給は行いません」。"],
+  ["試験問題の配線図の図記号は、原則として何に準拠しているか。", ["JIS C 0303:2000", "JIS C 2806", "JIS C 9711", "電気設備の技術基準"], "問題の注「図記号は、原則として JIS C 0303:2000 に準拠している」。"],
+  ["施工条件で「Ａ部分はリングスリーブ、Ｂ部分は差込形コネクタ」とある。Ｂ部分をリングスリーブでつないだら。", ["欠陥（接続方法が施工条件に相違）", "回路が正しければ欠陥ではない", "Ｂ部分はどちらでもよい", "時間内なら直さなくてよい"], "2-4「接続方法が施工条件に相違したもの」。"],
+  ["電源の接地側から、ランプレセプタクルの受金ねじ部まで、白をつなぐ。途中のスイッチは。", ["通さない（白はスイッチを通らずに器具へ行く）", "白の側にスイッチを入れる", "白と黒の両方にスイッチを入れる", "どちらでもよい"], "スイッチは非接地側（黒）に入れる。接地側の白はスイッチを通さず、器具の接地側へ直接つなぐ。"],
+].forEach(([q, o, ex]) => add("jouken", { t: "c", q, o, a: 0, ex, src: SRC_POINT }));
+
+/* ---------- 図記号と器具 ---------- */
+const SRC_SYM = "出典：令和8年度 技能試験 候補問題の配線図（図記号は JIS C 0303:2000 準拠）";
+const KIGOU = [
+  ["box", "ジョイントボックス（VVF 用）"], ["obox", "アウトレットボックス"], ["lamp", "ランプレセプタクル"], ["ceilK", "引掛シーリング（角）"], ["ceil", "引掛シーリング（丸）"],
+  ["pl", "確認表示灯（パイロットランプ）"], ["sw1", "スイッチ（片切）"], ["sw3", "3路スイッチ"], ["sw4", "4路スイッチ"], ["swH", "位置表示灯内蔵スイッチ"], ["swA", "自動点滅器"],
+  ["ts", "タイムスイッチ"], ["outlet", "コンセント"], ["outlet2", "2口コンセント"], ["outletE", "接地極付コンセント"], ["outletET", "接地端子付コンセント"], ["outletEET", "接地極付接地端子付コンセント"],
+  ["outlet200", "接地極付コンセント（20A 250V）"], ["brkB", "配線用遮断器"], ["brkBE", "漏電遮断器"], ["motor", "電動機"], ["fl", "蛍光灯"],
+];
+const KIGOU_NEAR = { box: ["obox", "ceil", "lamp"], obox: ["box", "ceilK", "ts"], lamp: ["ceil", "pl", "motor"], ceilK: ["ceil", "fl", "obox"], ceil: ["ceilK", "lamp", "pl"], pl: ["lamp", "sw1", "ceil"],
+  sw1: ["sw3", "swH", "pl"], sw3: ["sw4", "sw1", "swH"], sw4: ["sw3", "sw1", "swA"], swH: ["sw1", "sw3", "swA"], swA: ["swH", "ts", "sw3"], ts: ["swA", "brkB", "obox"],
+  outlet: ["outlet2", "outletE", "outletET"], outlet2: ["outlet", "outletE", "outletEET"], outletE: ["outletET", "outletEET", "outlet2"], outletET: ["outletE", "outletEET", "outlet"],
+  outletEET: ["outletE", "outletET", "outlet200"], outlet200: ["outletE", "outletEET", "outlet2"], brkB: ["brkBE", "ts", "obox"], brkBE: ["brkB", "ts", "motor"], motor: ["lamp", "brkB", "pl"], fl: ["ceilK", "lamp", "ceil"] };
+const kname = t => KIGOU.find(k => k[0] === t)[1];
+KIGOU.forEach(([t, name]) => {
+  const opts = [t].concat(KIGOU_NEAR[t]);
+  add("kigou", { t: "c", q: "この図記号の器具は何か。", fig: symSvg(t, 150, 70, 1.5), o: opts.map(kname), a: 0, group: "k-" + t, ex: `${name} の図記号。`, src: SRC_SYM });
+});
+["sw3", "sw4", "swH", "outletE", "outletET", "outlet2", "lamp", "ceilK", "box", "obox", "pl", "brkB"].forEach(t => {
+  const opts = [t].concat(KIGOU_NEAR[t]);
+  add("kigou", { t: "c", q: `「${kname(t)}」の図記号はどれか。`, o: opts.map(() => ""), oSvg: opts.map(x => symSvg(x, 110, 50, 1.2)), a: 0, group: "k-" + t, ex: `${kname(t)} の図記号は ア〜エ のうち、${kname(t)} のもの。`, src: SRC_SYM });
+});
+[
+  ["スイッチの図記号 ● の右下の「3」は何を表すか。", ["3路スイッチ", "3個のスイッチ", "3A のスイッチ", "3番目のスイッチ"]],
+  ["スイッチの図記号 ● の右下の「4」は何を表すか。", ["4路スイッチ", "4個のスイッチ", "4A のスイッチ", "4番目のスイッチ"]],
+  ["スイッチの図記号 ● の右下の「H」は何を表すか。", ["位置表示灯内蔵", "高圧用", "防水形", "自動点滅"]],
+  ["点滅器の図記号 ● の右下に「A(3A)」とある器具は。", ["自動点滅器", "タイムスイッチ", "3路スイッチ", "リモコンリレー"]],
+  ["コンセントの図記号の右下の「E」は何を表すか。", ["接地極付", "接地端子付", "2口", "防雨形"]],
+  ["コンセントの図記号の右下の「ET」は何を表すか。", ["接地端子付", "接地極付", "抜け止め形", "2口"]],
+  ["コンセントの図記号の右下の「2」は何を表すか。", ["2口", "20A", "2番目", "接地極付"]],
+  ["配線図で ○ の中に R と書いた記号（Ⓡ）は。", ["ランプレセプタクル", "リモコンリレー", "電動機", "確認表示灯"]],
+  ["配線図で、四角の中に B と書いた記号は。", ["配線用遮断器", "漏電遮断器", "ボックス", "タイムスイッチ"]],
+  ["配線図で、四角の中に BE と書いた記号は。", ["漏電遮断器", "配線用遮断器", "接地極", "端子台"]],
+  ["配線図で、○ の中に M と書いた記号は。", ["電動機", "ランプレセプタクル", "引掛シーリング", "メーター"]],
+  ["配線図で、四角の中に TS と書いた記号は。", ["タイムスイッチ", "自動点滅器", "配線用遮断器", "端子台"]],
+].forEach(([q, o]) => add("kigou", { t: "c", q, o, a: 0, ex: o[0] + "。", src: SRC_SYM }));
+add("kigou", { t: "c", q: "試験で、タイムスイッチ・自動点滅器・リモコンリレーは何で代用されることが多いか。", o: ["端子台", "差込形コネクタ", "ジョイントボックス", "引掛シーリング"], a: 0,
+  ex: "「本試験では、器具の実物を支給する代わりに、端子台で代用する場合があります」。端子台は座金付きの端子にねじ締めで結線する。", src: SRC_POINT });
+
+/* ---------- 工具と試験のきまり ---------- */
+[
+  ["リングスリーブを圧着する工具はどれか。", ["リングスリーブ用圧着工具（握りが黄色）", "圧着端子用工具（握りが赤）", "ウォータポンププライヤ", "ペンチ"], "握りが黄色の JIS 規格（JIS C 9711）の工具。圧着端子用工具だと数字が刻印されて欠陥。"],
+  ["金属管工事で、ロックナットをしっかり締め付けるのに使う工具は。", ["ウォータポンププライヤ", "ワイヤストリッパ", "電工ナイフ", "圧着工具"], "注意すべきポイント D-1「ウォータポンププライヤ等を用いて、ロックナットをしっかりと締め付けて」。"],
+  ["エコケーブル（EM-EEF）や VVR の外装をはぐとき、心線を傷つけにくい方法は。", ["電工ナイフを使うなど、ケーブルに合った方法ではぐ", "VVF 用ストリッパで力いっぱい挟む", "歯で噛んではぐ", "ペンチでねじ切る"], "注意すべきポイント A）「VVF 用ストリッパでは適切に外装をはぎ取れないことがあり、…電工ナイフを用いるなど」。"],
+  ["技能試験で使える工具はどれか。", ["電動ではない手工具（ペンチ・ドライバ・ストリッパなど）", "充電式の電動ドライバ（電動機能を切って使う）", "テスタ", "持ち手を延ばした圧着工具"], "電動工具は電動機能を OFF にしても使えない。テスタなどの計測器も禁止。改造した工具も禁止。"],
+  ["試験中に電動ドライバを使ったら、どうなるか。", ["不正行為となり失格", "欠陥 1つと数える", "注意だけで続けられる", "時間が 5分減る"], "「電動工具を使用している場合…は、不正行為となり失格」。"],
+  ["試験中、テスタ（回路計）で導通を確かめてよいか。", ["使えない（計測器の使用は禁止）", "使ってよい", "最後の5分だけ使ってよい", "監督員に言えば使ってよい"], "「工具以外の物、例えば、テスタなどの計測器等の使用は禁止」。"],
+  ["自分で目盛を書き込んだ工具は使えるか。", ["使えない（改造した工具は使えない）", "使える", "目盛が小さければ使える", "監督員に見せれば使える"], "よくある問合せ Q3「改造の大小に関わらず、改造後の工具は使用できません」。"],
+  ["ケーブルにペンで印をつけてよいか。", ["よい", "だめ（欠陥になる）", "だめ（失格）", "白い線にだけよい"], "よくある問合せ Q5「ペンで印をつけても問題ありません」。"],
+  ["リングスリーブなどを入れておく小箱（ケース）を持ち込んで使えるか。", ["使えない（支給の材料箱を使う）", "使える", "ふたが無ければ使える", "透明なら使える"], "よくある問合せ Q2。材料の持ち込みを疑われないため。"],
+  ["電線を一時的に束ねるクリップは使えるか。", ["使えるが、試験終了までに外す", "使えない", "つけたまま提出してよい", "1つだけ使える"], "「電線を一時的に束ねるためのクリップ等については使用可能ですが、試験終了までには、必ず取り外して」。"],
+  ["ほかの受験者から工具を借りてよいか。", ["借りられない", "1回だけ借りられる", "監督員に言えば借りられる", "同じ学校の人なら借りられる"], "「他の受験者からの借用は禁止されています」。"],
+  ["けがが増えているため、使うのを控えるよう言われている工具は。", ["カッターナイフ", "ペンチ", "ドライバ", "ストリッパ"], "「カッターナイフでケガをされて…退出された方が増えていますので、カッターナイフの使用を自粛してください」。"],
+  ["ねじなし端子の器具から電線を外すときに使うのは。", ["電線外し穴に差し込む薄いドライバなど", "ペンチで強く引き抜く", "ニッパで切る", "ハンマでたたく"], "注意すべきポイント F）ⅳ）。こじると器具が欠けて欠陥（12-5）。"],
+  ["試験は立って作業してよいか。", ["座って作業する（力を入れるときに一時的に立つのはよい）", "ずっと立って作業してよい", "床に座って作業する", "どちらでもよい"], "よくある問合せ Q1「立ち続けた場合は、失格となります」。"],
+].forEach(([q, o, ex]) => add("kougu", { t: "c", q, o, a: 0, ex, src: SRC_POINT }));
+[
+  ["ねじなしボックスコネクタの止めねじは、どうなるまで締めるか。", ["頭部がねじ切れるまで", "軽く当たるまで", "半回転だけ", "締めなくてよい"], "9-3「止めねじをねじ切っていないもの」は欠陥。"],
+  ["埋込連用の器具や差込形コネクタについている、被覆をはぐ長さの目盛りを何というか。", ["ストリップゲージ", "圧着マーク", "ワイヤゲージ", "スケール"], "注意すべきポイント C-3 ⅰ）。"],
+].forEach(([q, o, ex]) => add("kougu", { t: "c", q, o, a: 0, ex, src: SRC_POINT }));
+add("kougu", { t: "n", q: "リングスリーブ用圧着工具が適合する JIS の番号「JIS C □□□□」の数字をマークせよ。", a: 9711, digits: 4, ex: "「JIS C 9711:1982・1990・1997 に適合する圧着工具」。", src: SRC_POINT });
+
+/* ---------- 作業の手順と寸法（No.1。授業の配布資料） ---------- */
+const SRC_NO1 = "出典：授業の配布資料「候補問題 No.1 作業の順番」（はぐ長さ・切る長さは目安で、欠陥の判断基準とは別）";
+[
+  ["No.1 を作るとき、いちばん最初にやることは。", ["複線図をかく（接続点の色とスリーブの刻印まで）", "ケーブルを切る", "外装をはぐ", "スイッチを枠に付ける"], "複線図が、あとの作業の設計図。先に描く。"],
+  ["ケーブルを切るのは、どの作業のあとか。", ["複線図をかいたあと", "外装をはいだあと", "器具を付けたあと", "見直しのあと"], "複線図で、どこへ何本行くかを決めてから切る。"],
+  ["作業の最後にやることは。", ["見直す（欠陥がないか）", "ケーブルを切る", "複線図をかく", "外装をはぐ"], "全部つないでから、複線図と見比べて欠陥がないか見直す。"],
+  ["ケーブルを切る長さの目安。ジョイントボックス側には、図の寸法に何 mm 足すか。", ["100mm", "50mm", "20mm", "足さない"], "ボックス内でつなぐために心線を長く残す。資料「ボックス側 100mm」。"],
+  ["ケーブルを切る長さの目安。器具側には、図の寸法に何 mm 足すか。", ["50mm", "100mm", "200mm", "足さない"], "資料「器具側 50mm」。"],
+  ["施工省略の器具（No.1 の蛍光灯）へ行くケーブルの、器具側は。", ["足さない（ボックス側の 100mm だけ足す）", "50mm 足す", "100mm 足す", "ケーブルを付けない"], "施工省略側と電源側は足さない。No.1 の B 〜 蛍光灯は 150 ＋ 100 ＝ 250mm。"],
+  ["No.1 の取付枠のスイッチの並び（上から）は。", ["イ（位置表示灯内蔵）・ロ・ハ", "ロ・イ・ハ", "ハ・ロ・イ", "イ・ハ・ロ"], "施工条件「ロのタンブラスイッチは、取付枠の中央に取り付けること」。上からイ・ロ・ハ。"],
+  ["No.1 で、A 部分の接続に使うのは。", ["リングスリーブ（5か所）", "差込形コネクタ（3か所）", "リングスリーブ（3か所）", "差込形コネクタ（5か所）"], "施工条件「A 部分は、リングスリーブによる接続」。"],
+  ["No.1 で、B 部分の接続に使うのは。", ["差込形コネクタ（3か所）", "リングスリーブ（5か所）", "リングスリーブ（3か所）", "差込形コネクタ（5か所）"], "施工条件「B 部分は、差込形コネクタによる接続」。材料は 2本用2個・3本用1個。"],
+  ["ランプレセプタクルに結線するとき、正しい順番は。", ["台座の穴にケーブルを通す → はぐ → 輪を作る → ねじで締める", "輪を作る → 台座に通す → ねじで締める", "ねじで締める → はぐ → 輪を作る", "はぐ → ねじで締める → 輪を作る"], "輪を作ってからだと台座の穴を通らない。台座に通してから輪を作る。"],
+].forEach(([q, o, ex]) => add("tejun", { t: "c", q, o, a: 0, ex, src: SRC_NO1 }));
+[
+  ["No.1：A 〜 引掛シーリング（図の寸法 150mm）のケーブルを切る長さは何 mm か（ボックス側 ＋100、器具側 ＋50）。", 300, "150 ＋ 100 ＋ 50 ＝ 300mm。"],
+  ["No.1：A 〜 スイッチ（図の寸法 150mm）のケーブルを切る長さは何 mm か（ボックス側 ＋100、器具側 ＋50）。", 300, "150 ＋ 100 ＋ 50 ＝ 300mm。"],
+  ["No.1：B 〜 ランプレセプタクル（図の寸法 150mm）のケーブルを切る長さは何 mm か。", 300, "150 ＋ 100 ＋ 50 ＝ 300mm。"],
+  ["No.1：B 〜 蛍光灯（施工省略。図の寸法 150mm）のケーブルを切る長さは何 mm か。", 250, "施工省略側は足さない。150 ＋ 100 ＝ 250mm。"],
+  ["No.1：A 〜 B（図の寸法 150mm。両側ともボックス）のケーブルの長さは何 mm にするか。", 350, "150 ＋ 100 ＋ 100 ＝ 350mm。支給の VVF1.6-3C（約 350mm）を切らずにそのまま使う。"],
+  ["No.1：電源 〜 A（図の寸法 150mm）。電源側は足さない。ケーブルの長さは何 mm か。", 250, "150 ＋ 100 ＝ 250mm。支給の EM-EEF2.0-2C（約 250mm）をそのまま使う。"],
+  ["ランプレセプタクルに結線するとき、外装（シース）をはぐ長さの目安は約何 mm か。", 40, "資料：ランプレセプタクルは外装 40mm・被覆 20mm。"],
+  ["ランプレセプタクルに結線するとき、絶縁被覆をはぐ長さの目安は約何 mm か。", 20, "資料：被覆 20mm（輪作りに使う）。"],
+  ["リングスリーブでつなぐボックス（No.1 の A）で、外装をはぐ長さの目安は約何 mm か。", 100, "資料：A は外装 100mm・被覆 20mm。"],
+  ["リングスリーブでつなぐボックス（No.1 の A）で、絶縁被覆をはぐ長さの目安は約何 mm か。", 20, "資料：被覆 20mm。"],
+  ["取付枠のスイッチへ行くケーブルの、外装をはぐ長さの目安は約何 mm か。", 100, "資料：スイッチは外装 100mm・被覆はストリップゲージに合わせる。"],
+  ["引掛シーリングへ行くケーブルの、外装をはぐ長さの目安は約何 mm か。", 20, "資料：外装は器具に当てて決める（約 20mm）。はぎすぎると 8-10 の欠陥（被覆が台座から 5mm 以上）。"],
+].forEach(([q, a, ex]) => add("tejun", { t: "n", q, a, unit: "mm", ex, src: SRC_NO1 }));
+
+/* ---------- 複線図の考え方 ---------- */
+const SRC_FK = "出典：複線図の描き方（授業）と、令和8年度 技能試験問題の施工条件";
+[
+  ["複線図を描くとき、電源の白（接地側）はどこへつなぐか。", ["照明やコンセントの接地側（W）へ。スイッチは通さない", "スイッチへ", "照明の B 側へ", "どこにもつながない"], "接地側の白は、負荷（照明・コンセント）の接地側へ直接。スイッチは黒の側に入れる。"],
+  ["複線図を描くとき、電源の黒（非接地側）はどこへつなぐか。", ["スイッチと、コンセント（の W でない側）へ", "照明の受金ねじ部へ", "照明の W へ", "どこにもつながない"], "施工条件「電源から点滅器までの非接地側電線には、すべて黒色」。コンセントにも黒が直接行く。"],
+  ["スイッチから照明へ戻る電線を何というか。", ["返り線", "渡り線", "接地線", "ボンド線"], "スイッチを入れると、返り線を通って照明に電気が行く。"],
+  ["VVF1.6-2C でスイッチ（片切）へ行くとき、ふつう白い線は何に使うか。", ["返り線", "電源の接地側", "渡り線", "接地線"], "黒は電源からスイッチへ（施工条件）。残った白がスイッチから照明への返り線になる。"],
+  ["同じ取付枠のスイッチ2つに、電源の黒を分けるとき、枠の中で器具どうしを直接つなぐ短い線を何というか。", ["渡り線", "返り線", "ボンド線", "接地線"], "渡り線。ボックスへ戻らずに、枠の中でつなぐ。"],
+  ["3路スイッチの端子「0」につなぐのは。", ["電源側または負荷側の線", "もう一方の3路スイッチとの間の線だけ", "接地線", "何もつながない"], "令和8年度 No.6・No.7 の施工条件「3路スイッチの記号「0」の端子には電源側又は負荷側の電線を結線し、記号「1」と「3」の端子にはスイッチ相互間の電線を結線する」。"],
+  ["3路スイッチの端子「1」と「3」につなぐのは。", ["スイッチ相互間（3路どうし・4路との間）の線", "電源の白", "照明の受金ねじ部", "接地線"], "1・3 はスイッチどうしを結ぶ線。"],
+  ["1つの照明を3か所から点けたり消したりする。スイッチの組み合わせは。", ["3路スイッチ2つと4路スイッチ1つ", "3路スイッチ3つ", "4路スイッチ3つ", "片切スイッチ3つ"], "両はしが3路、あいだに4路を入れる（No.7）。"],
+  ["ジョイントボックスから3路スイッチへ行くケーブルは、ふつう何心か。", ["3心", "2心", "4心", "1心"], "0 とスイッチ相互間の 1・3 の、3本が要る（VVF1.6-3C）。"],
+  ["確認表示灯（パイロットランプ）を「常時点灯」にするには。", ["電源の黒と白のあいだにつなぐ", "スイッチと並列にする", "照明と並列にする", "スイッチと直列にする"], "常時点灯は、スイッチに関係なく電源の黒と白につなぐ（No.2）。"],
+  ["確認表示灯を「同時点滅」（照明と一緒に点く）にするには。", ["照明と並列（返り線と白のあいだ）にする", "スイッチと並列にする", "電源の黒と白のあいだにつなぐ", "照明と直列にする"], "照明と同じ所（返り線と接地側の白）につなぐ（No.10）。"],
+  ["確認表示灯を「異時点滅」（照明が消えているとき点く）にするには。", ["スイッチと並列（スイッチの2つの端子のあいだ）にする", "照明と並列にする", "電源の黒と白のあいだにつなぐ", "照明の白にだけつなぐ"], "スイッチが切のとき、表示灯と照明が直列になり、表示灯だけが光る。"],
+  ["位置表示灯内蔵スイッチの表示灯が光るのは。", ["スイッチが切のとき", "スイッチが入のとき", "いつも", "光らない"], "暗い所でスイッチの位置を知らせる。切のとき光る（異時点滅と同じ働き）。"],
+  ["コンセントへ行く電線は、スイッチとどう関係するか。", ["スイッチと関係なく、電源の黒と白が直接行く", "スイッチを入れたときだけ電気が来る", "スイッチの返り線につなぐ", "照明と直列にする"], "コンセントには、いつも電圧がかかっている必要がある。"],
+  ["リングスリーブの大きさを決めるため、複線図で数えるものは。", ["1つの接続点に集まる電線の太さと本数", "ボックスの数", "スイッチの数", "ケーブルの長さ"], "接続点ごとに、1.6mm と 2.0mm が何本ずつ集まるかを数える。"],
+  ["複線図で、ボックスを通る電線について正しいのは。", ["ボックスの中ですべて接続点を作る", "途中でつながずに通してよい", "白だけ接続する", "黒だけ接続する"], "施工条件「VVF 用ジョイントボックス部分を経由する電線は、その部分ですべて接続箇所を設け」。"],
+].forEach(([q, o, ex]) => add("fukusen", { t: "c", q, o, a: 0, ex, src: SRC_FK }));
+[
+  ["1つの照明を2か所から点滅させるのに使うスイッチは。", ["3路スイッチ 2つ", "4路スイッチ 2つ", "片切スイッチ 2つ", "3路スイッチ 1つ"], "階段の上と下のように、2か所から点滅できる。"],
+  ["3路スイッチで、電源側または負荷側の線をつなぐ端子の記号は。", ["0", "1", "3", "1 と 3"], "1・3 はスイッチ相互間の線。"],
+].forEach(([q, o, ex]) => add("fukusen", { t: "c", q, o, a: 0, ex, src: SRC_FK }));
+[
+  ["1か所のジョイントボックスに、電源（VVF1.6-2C）・ランプ（VVF1.6-2C）・スイッチ（VVF1.6-2C）が来る（練習1の形）。ボックスの中の接続点はいくつか。", 3, "電源の黒＋スイッチへの黒／電源の白＋ランプの白／スイッチからの返り線＋ランプの黒 の3か所。"],
+  ["練習1の形（電源・ランプ・スイッチが1つのボックス）で、電源の白とランプの白をつなぐ接続点に集まる電線は何本か。", 2, "電源の白とランプの W へ行く白の 2本。1.6mm × 2本なら小スリーブ・刻印「○」。"],
+].forEach(([q, a, ex]) => add("fukusen", { t: "n", q, a, unit: "本", ex, src: SRC_FK }));
+/* ---------- 記述式（文章）。指定語句をすべて使って書く ---------- */
+/* [分野, 問い, 指定語句（別の書き方も可）, 模範解答, 解説, 根拠] */
+[
+  ["kekkan", "技能試験の合否がどう決まるかを説明せよ。", [["欠陥"], ["合格"]], "作品に欠陥が1つもなければ合格、1つでもあれば不合格になる。", "点数の合計ではなく、欠陥の有無で決まる。", SRC_POINT],
+  ["kekkan", "リングスリーブで圧着した接続部で、心線の見え方について欠陥になる場合を説明せよ。", [["上端"], ["5mm", "5ミリ"], ["下端"], ["10mm", "10ミリ"]], "スリーブの上端から心線が 5mm 以上出ているもの、下端から心線が 10mm 以上見えるものは欠陥。", "6-2 ロ・ハ。", SRC_KEKKAN],
+  ["kekkan", "引掛シーリングローゼットに結線したとき、確かめることを説明せよ。", [["1mm", "1ミリ"], ["5mm", "5ミリ"]], "差込口から心線が 1mm 以上見えていないか、絶縁被覆が台座の下端から 5mm 以上出ていないかを確かめる。", "8-9 ただし書き・8-10。", SRC_KEKKAN],
+  ["kekkan", "差込形コネクタでつないだあと、真横から見て確かめることを説明せよ。", [["先端"], ["下端"]], "先端から心線の先が見えること、下端（差込口）から心線が見えないことを確かめる。", "7-1・7-2。", SRC_KEKKAN],
+  ["kekkan", "取付枠に配線器具を付ける位置の決まりを、器具が1個と2個の場合で説明せよ。", [["1個", "一個"], ["中央", "真ん中"], ["2個", "二個"]], "器具が1個なら中央に付け、2個なら中央をあけて上と下に付ける。", "11-4 イ・ロ。3個なら全部の位置に付け、中央は施工条件で指定された器具。", SRC_KEKKAN],
+  ["kekkan", "回路は電気的に正しいのに欠陥とされるのはどんな場合か。", [["施工条件"], ["欠陥"]], "配線図や施工条件のとおりに作っていない場合は、回路が正しくても欠陥になる。", "「指定された配線図及び施工条件に従って施工されていない作品は、回路が電気的に正しく結線されていたとしても、欠陥であると判断します」。", SRC_POINT],
+  ["sleeve", "1.6mm の心線 2本をリングスリーブでつなぐときの、スリーブと刻印を説明せよ。", [["小"], ["○", "〇", "まる", "丸"]], "小スリーブを使い、刻印は「○」にする。", "1.6mm × 2本だけが刻印「○」。", SRC_JIS],
+  ["sleeve", "リングスリーブの選び方を説明せよ。", [["太さ", "径"], ["本数"]], "1つの接続点に集まる電線の太さと本数を数え、JIS C 2806 の表から大きさと刻印を決める。", "複線図を描くときに決めておくと速い。", SRC_JIS],
+  ["sleeve", "差込形コネクタの選び方を説明せよ。", [["本数"], ["本用"]], "つなぐ心線の本数と同じ「◯本用」のコネクタを使う。", "3本つなぐなら 3本用。", SRC_JIS],
+  ["jouken", "ランプレセプタクルの受金ねじ部に結線する電線と、その理由を説明せよ。", [["白"], ["接地側"]], "電球を替えるときに手が触れやすい受金ねじ部を接地側にするため、白い電線をつなぐ。", "施工条件「ランプレセプタクルの受金ねじ部の端子には白色の電線を結線する」。", SRC_POINT],
+  ["jouken", "ジョイントボックスを通る電線の扱いを説明せよ。", [["すべて", "全て"], ["接続"]], "ボックスを経由する電線は、その部分ですべて接続箇所を設ける。", "通しただけにすると 2-4「接続方法が施工条件に相違」。", SRC_POINT],
+  ["jouken", "200V の三相回路で、電源からの電線の色の決まりを説明せよ。", [["R"], ["赤"], ["S"], ["白"], ["T"], ["黒"]], "R 相に赤、S 相に白、T 相に黒を使う。", "施工条件の例 ⅴ）。", SRC_POINT],
+  ["fukusen", "スイッチを黒（非接地側）の側に入れる理由を説明せよ。", [["非接地側"], ["切"]], "スイッチを切ったとき照明器具に電圧がかからないよう、スイッチは非接地側に入れる。", "白（接地側）はスイッチを通さず、器具の接地側へ直接つなぐ。", SRC_FK],
+  ["fukusen", "返り線とは何かを説明せよ。", [["スイッチ"], ["照明", "器具", "負荷"]], "スイッチから照明（負荷）へ戻る電線。スイッチを入れると電気が来る。", "VVF 2心でスイッチへ行くと、ふつう白が返り線になる。", SRC_FK],
+  ["fukusen", "確認表示灯を異時点滅にするつなぎ方を説明せよ。", [["スイッチ"], ["並列"]], "確認表示灯をスイッチと並列（スイッチの2つの端子のあいだ）につなぐ。", "スイッチが切のとき、表示灯と照明が直列になり表示灯だけ光る。", SRC_FK],
+  ["fukusen", "確認表示灯を同時点滅にするつなぎ方を説明せよ。", [["照明", "負荷", "ランプ"], ["並列"]], "確認表示灯を照明と並列（返り線と接地側の白のあいだ）につなぐ。", "No.10 の形。", SRC_FK],
+  ["fukusen", "確認表示灯を常時点灯にするつなぎ方を説明せよ。", [["黒"], ["白"]], "確認表示灯を、電源の黒と白のあいだにつなぐ（スイッチに関係なく電圧がかかる）。", "No.2 の形。", SRC_FK],
+  ["fukusen", "3路スイッチの端子 0・1・3 に何をつなぐかを説明せよ。", [["0"], ["電源", "負荷"], ["1"], ["3"]], "0 には電源側または負荷側の電線、1 と 3 にはスイッチ相互間の電線をつなぐ。", "令和8年度 No.6・No.7 の施工条件。", SRC_FK],
+  ["kougu", "エコケーブル（EM-EEF）の外装をはぐときに気をつけることを説明せよ。", [["電工ナイフ"], ["心線"]], "外装が硬く VVF 用ストリッパでははぎにくいので、電工ナイフを使うなどして心線を傷つけないようにする。", "注意すべきポイント A）電線の取り扱い。", SRC_POINT],
+  ["kougu", "リングスリーブを圧着する工具について説明せよ。", [["黄"], ["刻印", "圧着マーク"]], "握りが黄色のリングスリーブ用圧着工具を使い、○・小・中・大の刻印がはっきり付くようにする。", "圧着端子用（握りが赤）を使うと数字が刻印されて欠陥。", SRC_POINT],
+  ["tejun", "ケーブルを切る長さの決め方を説明せよ（No.1 の資料の目安）。", [["100mm", "100ミリ"], ["50mm", "50ミリ"]], "配線図の寸法に、ジョイントボックス側は 100mm、器具側は 50mm を足して切る。電源側と施工省略側は足さない。", "No.1 の A 〜 引掛シーリングは 150 ＋ 100 ＋ 50 ＝ 300mm。", SRC_NO1],
+  ["tejun", "作業の最初に複線図を描く理由を説明せよ。", [["複線図"], ["本数", "色"]], "複線図で、どこへ何色の線が何本行くか、接続点の刻印まで決めておけば、切る・はぐ・つなぐ作業をまちがえない。", "資料の順番 ① 複線図をかく。", SRC_NO1],
+].forEach(([c, q, keys, model, ex, src]) => add(c, { t: "s", q, keys, model, ex, src }));
+
+/*KOUHO-START*/
+/* ---------- 候補問題 No.1〜13（令和8年度上期 技能試験問題の公表どおり） ---------- */
+const SRC_R8 = no => `出典：令和8年度上期第二種電気工事士技能試験（候補問題 No.${no}）の問題・解答（電気技術者試験センター公表）を一部改変`;
+/* 図示の元データ。器具の位置と正解のつながりは「複線図れんしゅう」のお手本（回帰テスト済み）。
+   ボックスの名前と接続方法の決まりは、令和8年度の施工条件による。各接続点の刻印・コネクタが公表の解答と一致することは確かめてある */
+const ZUSHI = [{"id":"r1","no":null,"title":"練習1　スイッチでランプを点ける","parts":[{"id":"PW","type":"src","label":"電源","x":110,"y":310,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"La","type":"lamp","label":"イ","x":500,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":500,"y":545,"place":"Sa","terms":[{"k":"1"},{"k":"2"}]}],"boxes":[{"id":"B1","x":500,"y":310,"name":"ボックス","rule":"sleeve","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["PW.N","B1:2","白"],["La.W","B1:2","白"],["Sa.2","B1:3","白"],["La.C","B1:3","黒"]]},{"id":"r2","no":null,"title":"練習2　コンセントを足す","parts":[{"id":"PW","type":"src","label":"電源","x":110,"y":310,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"La","type":"lamp","label":"イ","x":500,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":500,"y":545,"place":"Sa","terms":[{"k":"1"},{"k":"2"}]},{"id":"O1","type":"outlet","label":"","x":870,"y":310,"place":"O1","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]}],"boxes":[{"id":"B1","x":500,"y":310,"name":"ボックス","rule":"sleeve","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"O1","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["O1.L","B1:1","黒"],["PW.N","B1:2","白"],["La.W","B1:2","白"],["O1.W","B1:2","白"],["Sa.2","B1:3","白"],["La.C","B1:3","黒"]]},{"id":"r3","no":null,"title":"練習3　スイッチ2つ・ランプ2つ（渡り線）","parts":[{"id":"PW","type":"src","label":"電源","x":110,"y":310,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"La","type":"lamp","label":"イ","x":330,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Lb","type":"ceil","label":"ロ","x":690,"y":80,"place":"Lb","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":440,"y":555,"place":"SW","terms":[{"k":"1"},{"k":"2"}]},{"id":"Sb","type":"sw1","label":"ロ","x":560,"y":555,"place":"SW","terms":[{"k":"1"},{"k":"2"}]}],"boxes":[{"id":"B1","x":500,"y":310,"name":"ボックス","rule":"sleeve","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Lb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"SW","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["Sa.1","Sb.1","黒"],["PW.N","B1:2","白"],["La.W","B1:2","白"],["Lb.W","B1:2","白"],["Sa.2","B1:3","白"],["La.C","B1:3","黒"],["Sb.2","B1:4","赤"],["Lb.L","B1:4","黒"]]},{"id":"r4","no":null,"title":"練習4　3路スイッチ（2か所から点滅）","parts":[{"id":"PW","type":"src","label":"電源","x":110,"y":310,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"La","type":"lamp","label":"イ","x":500,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Sa","type":"sw3","label":"イ","x":290,"y":550,"place":"Sa","terms":[{"k":"1","lab":"1"},{"k":"0","lab":"0"},{"k":"3","lab":"3"}]},{"id":"Sb","type":"sw3","label":"イ","x":710,"y":550,"place":"Sb","terms":[{"k":"1","lab":"1"},{"k":"0","lab":"0"},{"k":"3","lab":"3"}]}],"boxes":[{"id":"B1","x":500,"y":310,"name":"ボックス","rule":"sleeve","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Sa","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"Sb","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"]}],"ref":[["PW.L","B1:1","黒"],["Sa.0","B1:1","黒"],["PW.N","B1:2","白"],["La.W","B1:2","白"],["Sa.1","B1:3","白"],["Sb.1","B1:3","白"],["Sa.3","B1:4","赤"],["Sb.3","B1:4","赤"],["Sb.0","B1:5","黒"],["La.C","B1:5","黒"]]},{"id":"r5","no":null,"title":"練習5　異時点滅の確認表示灯","parts":[{"id":"PW","type":"src","label":"電源","x":110,"y":300,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"La","type":"lamp","label":"イ","x":500,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Pl","type":"pl","label":"イ","x":610,"y":565,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"Sa","type":"sw1","label":"イ","x":500,"y":560,"place":"F","terms":[{"k":"1"},{"k":"2"}]}],"boxes":[{"id":"B1","x":500,"y":300,"name":"ボックス","rule":"sleeve","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"F","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["PW.N","B1:2","白"],["La.W","B1:2","白"],["Sa.2","B1:3","白"],["La.C","B1:3","黒"],["Sa.1","Pl.1","黒"],["Sa.2","Pl.2","黒"]]},{"id":"k1","no":1,"title":"No.1　位置表示灯内蔵スイッチと3つの照明","parts":[{"id":"PW","type":"src","label":"","x":90,"y":300,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Ca","type":"ceilK","label":"イ","x":360,"y":80,"place":"Ca","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sa","type":"swH","label":"イ","x":280,"y":560,"place":"SW","terms":[{"k":"1"},{"k":"2"}]},{"id":"Sb","type":"sw1","label":"ロ","x":360,"y":560,"place":"SW","terms":[{"k":"1"},{"k":"2"}]},{"id":"Sc","type":"sw1","label":"ハ","x":440,"y":560,"place":"SW","terms":[{"k":"1"},{"k":"2"}]},{"id":"Lb","type":"lamp","label":"ロ","x":720,"y":80,"place":"Lb","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Fc","type":"fl","label":"ハ","x":720,"y":560,"place":"Fc","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]}],"boxes":[{"id":"B1","x":360,"y":300,"name":"A","rule":"sleeve","obox":false},{"id":"B2","x":720,"y":300,"name":"B","rule":"conn","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"EM-EEF2.0-2C","colors":["黒","白"]},{"a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"SW","b":"B1","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"]},{"a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Fc","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["Sa.1","Sb.1","黒"],["Sb.1","Sc.1","黒"],["PW.N","B1:2","白"],["Ca.W","B1:2","白"],["B1:2","B2:1","白"],["Sa.2","B1:3","白"],["Ca.L","B1:3","黒"],["Sb.2","B1:4","黒"],["B1:4","B2:2","赤"],["Sc.2","B1:5","白"],["B1:5","B2:3","黒"],["Lb.W","B2:1","白"],["Fc.W","B2:1","白"],["Lb.C","B2:2","黒"],["Fc.L","B2:3","黒"]]},{"id":"k2","no":2,"title":"No.2　常時点灯の確認表示灯と2口コンセント","parts":[{"id":"PW","type":"src","label":"","x":90,"y":300,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"La","type":"lamp","label":"イ","x":330,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":620,"y":130,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"Pl","type":"pl","label":"","x":620,"y":45,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"Lb","type":"lamp","label":"イ","x":900,"y":300,"place":"Lb","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"O2","type":"outlet2","label":"","x":620,"y":560,"place":"O2","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"O1","type":"outlet","label":"","x":330,"y":560,"place":"O1","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]}],"boxes":[{"id":"B1","x":330,"y":300,"name":"A","rule":"sleeve","obox":false},{"id":"B2","x":620,"y":300,"name":"B","rule":"conn","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"F","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"O2","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"O1","b":"O2","spec":"VVF1.6-2C","colors":["黒","白"]}],"ref":[["PW.L","B1:1","黒"],["B1:1","B2:1","黒"],["PW.N","B1:2","白"],["La.W","B1:2","白"],["B1:2","B2:2","白"],["La.C","B1:3","黒"],["B1:3","B2:3","赤"],["Sa.1","B2:1","黒"],["Sa.1","Pl.1","黒"],["O2.L","B2:1","黒"],["Pl.2","B2:2","白"],["Lb.W","B2:2","白"],["O2.W","B2:2","白"],["Sa.2","B2:3","赤"],["Lb.C","B2:3","黒"],["O2.L","O1.L","黒"],["O2.W","O1.W","白"]]},{"id":"k3","no":3,"title":"No.3　タイムスイッチと接地極付コンセント","parts":[{"id":"PW","type":"src","label":"","x":200,"y":70,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Sa","type":"sw1","label":"ロ","x":200,"y":570,"place":"Sa","terms":[{"k":"1"},{"k":"2"}]},{"id":"Ta","type":"ts","label":"イ","x":500,"y":90,"place":"Ta","terms":[{"k":"S1","lab":"S1"},{"k":"S2","lab":"S2","w":true},{"k":"L1","lab":"L1"}]},{"id":"Ca","type":"ceilK","label":"イ","x":820,"y":110,"place":"Ca","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Lb","type":"lamp","label":"ロ","x":840,"y":330,"place":"Lb","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"OE","type":"outletE","label":"","x":500,"y":560,"place":"OE","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"},{"k":"E","lab":"E","earth":true}]},{"id":"G","type":"gnd","label":"","x":720,"y":560,"place":"G","terms":[{"k":"E","lab":"E","pot":"E","earth":true}]}],"boxes":[{"id":"B1","x":200,"y":330,"name":"A","rule":"sleeve","obox":false},{"id":"B2","x":500,"y":330,"name":"B","rule":"conn","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"Ta","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Ca","b":"Ta","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"OE","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"OE","b":"G","spec":"E1.6","colors":["緑"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["B1:1","B2:1","黒"],["PW.N","B1:2","白"],["B1:2","B2:2","白"],["Sa.2","B1:3","白"],["B1:3","B2:3","赤"],["Ta.S1","B2:1","黒"],["OE.L","B2:1","黒"],["Ta.S2","B2:2","白"],["OE.W","B2:2","白"],["Lb.W","B2:2","白"],["Lb.C","B2:3","黒"],["Ta.S2","Ca.W","白"],["Ta.L1","Ca.L","黒"],["OE.E","G.E","緑"]]},{"id":"k4","no":4,"title":"No.4　三相200V の電動機と電源表示灯","parts":[{"id":"PW","type":"brkB","label":"","x":110,"y":90,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"PX","type":"brkBE","label":"","x":110,"y":250,"place":"PX","terms":[{"k":"R","lab":"R","pot":"R"},{"k":"S","lab":"S","pot":"S"},{"k":"T","lab":"T","pot":"T"}]},{"id":"Lr","type":"lamp","label":"","x":300,"y":540,"place":"Lr","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"M","type":"motor","label":"","x":480,"y":560,"place":"M","terms":[{"k":"U","lab":"U"},{"k":"V","lab":"V"},{"k":"W3","lab":"W"}]},{"id":"Ca","type":"ceilK","label":"イ","x":640,"y":380,"place":"Ca","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":800,"y":560,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"O","type":"outlet","label":"","x":880,"y":560,"place":"F","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]}],"boxes":[{"id":"B1","x":480,"y":260,"name":"A","rule":"conn","obox":false},{"id":"B2","x":840,"y":110,"name":"B","rule":"sleeve","obox":false}],"cables":[{"a":"PW","b":"B2","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"PX","b":"B1","spec":"VVF2.0-3C","colors":["黒","白","赤"]},{"a":"M","b":"B1","spec":"VVF2.0-3C","colors":["黒","白","赤"]},{"a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Ca","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"F","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]}],"ref":[["PX.R","B1:1","赤"],["M.U","B1:1","赤"],["PX.S","B1:2","白"],["M.V","B1:2","白"],["Lr.W","B1:2","白"],["PX.T","B1:3","黒"],["M.W3","B1:3","黒"],["Lr.C","B1:3","黒"],["PW.L","B2:1","黒"],["Sa.1","B2:1","黒"],["Sa.1","O.L","黒"],["PW.N","B2:2","白"],["Ca.W","B2:2","白"],["O.W","B2:2","白"],["Sa.2","B2:3","赤"],["Ca.L","B2:3","黒"]]},{"id":"k6","no":6,"title":"No.6　3路スイッチで2灯と露出形コンセント","parts":[{"id":"PW","type":"src","label":"","x":910,"y":300,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"O","type":"outletRo","label":"","x":650,"y":80,"place":"O","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sa","type":"sw3","label":"イ","x":650,"y":560,"place":"Sa","terms":[{"k":"1","lab":"1"},{"k":"0","lab":"0"},{"k":"3","lab":"3"}]},{"id":"Ca","type":"ceilK","label":"イ","x":330,"y":80,"place":"Ca","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Cb","type":"ceilK","label":"イ","x":110,"y":80,"place":"Cb","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sb","type":"sw3","label":"イ","x":330,"y":560,"place":"Sb","terms":[{"k":"1","lab":"1"},{"k":"0","lab":"0"},{"k":"3","lab":"3"}]}],"boxes":[{"id":"B1","x":650,"y":300,"name":"B","rule":"sleeve","obox":false},{"id":"B2","x":330,"y":300,"name":"A","rule":"conn","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"O","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Sa","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"Ca","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Cb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Sb","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]}],"ref":[["PW.L","B1:1","黒"],["Sa.0","B1:1","黒"],["O.L","B1:1","黒"],["PW.N","B1:2","白"],["O.W","B1:2","白"],["B1:2","B2:1","白"],["Sa.1","B1:3","白"],["B1:3","B2:2","黒"],["Sa.3","B1:4","赤"],["B1:4","B2:3","赤"],["Ca.W","B2:1","白"],["Cb.W","B2:1","白"],["Sb.1","B2:2","白"],["Sb.3","B2:3","赤"],["Sb.0","B2:4","黒"],["Ca.L","B2:4","黒"],["Cb.L","B2:4","黒"]]},{"id":"k7","no":7,"title":"No.7　3路と4路スイッチで3か所から点滅","parts":[{"id":"PW","type":"src","label":"","x":150,"y":70,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Sa","type":"sw3","label":"イ","x":150,"y":560,"place":"Sa","terms":[{"k":"1","lab":"1"},{"k":"0","lab":"0"},{"k":"3","lab":"3"}]},{"id":"La","type":"lamp","label":"イ","x":480,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Lb","type":"lamp","label":"イ","x":790,"y":80,"place":"Lb","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"S4","type":"sw4","label":"イ","x":480,"y":560,"place":"S4","terms":[{"k":"1","lab":"1"},{"k":"2","lab":"2"},{"k":"3","lab":"3"},{"k":"4","lab":"4"}]},{"id":"Sb","type":"sw3","label":"イ","x":790,"y":560,"place":"Sb","terms":[{"k":"1","lab":"1"},{"k":"0","lab":"0"},{"k":"3","lab":"3"}]}],"boxes":[{"id":"B1","x":150,"y":320,"name":"A","rule":"sleeve","obox":false},{"id":"B2","x":480,"y":320,"name":"B","rule":"conn","obox":true}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"Sa","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"S4","b":"B2","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"]},{"a":"Sb","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]}],"ref":[["PW.L","B1:1","黒"],["Sa.0","B1:1","黒"],["PW.N","B1:2","白"],["B1:2","B2:1","白"],["Sa.1","B1:3","白"],["B1:3","B2:2","黒"],["Sa.3","B1:4","赤"],["B1:4","B2:3","赤"],["La.W","B2:1","白"],["Lb.W","B2:1","白"],["S4.2","B2:2","黒"],["S4.4","B2:3","白"],["S4.1","B2:4","黒"],["Sb.1","B2:4","白"],["S4.3","B2:5","白"],["Sb.3","B2:5","赤"],["Sb.0","B2:6","黒"],["La.C","B2:6","黒"],["Lb.C","B2:6","黒"]]},{"id":"k8","no":8,"title":"No.8　リモコンリレーで3つの照明","parts":[{"id":"PW","type":"brkB","label":"","x":110,"y":110,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Ra","type":"rly","label":"イ","x":330,"y":470,"place":"RY","terms":[{"k":"1","lab":"1"},{"k":"2","lab":"2"}]},{"id":"Rb","type":"rly","label":"ロ","x":410,"y":470,"place":"RY","terms":[{"k":"1","lab":"3"},{"k":"2","lab":"4"}]},{"id":"Rc","type":"rly","label":"ハ","x":490,"y":470,"place":"RY","terms":[{"k":"1","lab":"5"},{"k":"2","lab":"6"}]},{"id":"Ci","type":"ceil","label":"イ","x":900,"y":80,"place":"Ci","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Lr","type":"lamp","label":"ロ","x":900,"y":380,"place":"Lr","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Ch","type":"ceilK","label":"ハ","x":690,"y":560,"place":"Ch","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]}],"boxes":[{"id":"B1","x":690,"y":190,"name":"ボックス","rule":"n4","obox":true}],"cables":[{"a":"PW","b":"B1","spec":"VVR2.0-2C","colors":["黒","白"]},{"a":"RY","b":"B1","spec":"VVF1.6-2C×3","colors":["黒","白","黒","白","黒","白"]},{"a":"Ci","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Ch","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]}],"ref":[["PW.L","B1:1","黒"],["Ra.1","B1:1","黒"],["Rb.1","B1:1","黒"],["Rc.1","B1:1","黒"],["PW.N","B1:2","白"],["Ci.W","B1:2","白"],["Lr.W","B1:2","白"],["Ch.W","B1:2","白"],["Ra.2","B1:3","白"],["Ci.L","B1:3","黒"],["Rb.2","B1:4","白"],["Lr.C","B1:4","黒"],["Rc.2","B1:5","白"],["Ch.L","B1:5","黒"]]},{"id":"k9","no":9,"title":"No.9　接地極付接地端子付コンセント（EET）","parts":[{"id":"PW","type":"src","label":"","x":430,"y":60,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"La","type":"lamp","label":"イ","x":130,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":130,"y":560,"place":"Sa","terms":[{"k":"1"},{"k":"2"}]},{"id":"Ci","type":"ceil","label":"イ","x":430,"y":560,"place":"Ci","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"EET","type":"outletEET","label":"","x":740,"y":300,"place":"EET","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"},{"k":"E","lab":"E","earth":true}]},{"id":"O2","type":"outlet2","label":"","x":740,"y":70,"place":"O2","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"G","type":"gnd","label":"","x":900,"y":540,"place":"G","terms":[{"k":"E","lab":"E","pot":"E","earth":true}]}],"boxes":[{"id":"B1","x":430,"y":300,"name":"B","rule":"sleeve","obox":false},{"id":"B2","x":130,"y":300,"name":"A","rule":"conn","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Sa","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Ci","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"EET","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"O2","b":"EET","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"EET","b":"G","spec":"E1.6","colors":["緑"]}],"ref":[["PW.L","B1:1","黒"],["EET.L","B1:1","黒"],["B1:1","B2:1","黒"],["PW.N","B1:2","白"],["EET.W","B1:2","白"],["Ci.W","B1:2","白"],["B1:2","B2:2","白"],["Ci.L","B1:3","黒"],["B1:3","B2:3","赤"],["Sa.1","B2:1","黒"],["La.W","B2:2","白"],["Sa.2","B2:3","白"],["La.C","B2:3","黒"],["EET.L","O2.L","黒"],["EET.W","O2.W","白"],["EET.E","G.E","緑"]]},{"id":"k10","no":10,"title":"No.10　同時点滅の確認表示灯","parts":[{"id":"PW","type":"brkB","label":"","x":110,"y":300,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Ca","type":"ceilK","label":"イ","x":450,"y":80,"place":"Ca","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"La","type":"lamp","label":"イ","x":820,"y":300,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Pl","type":"pl","label":"イ","x":450,"y":450,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"Sa","type":"sw1","label":"イ","x":450,"y":560,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"O","type":"outlet","label":"","x":560,"y":560,"place":"F","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]}],"boxes":[{"id":"B1","x":450,"y":300,"name":"ボックス","rule":"n3","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"F","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["Sa.1","O.L","黒"],["PW.N","B1:2","白"],["Ca.W","B1:2","白"],["La.W","B1:2","白"],["O.W","B1:2","白"],["O.W","Pl.2","白"],["Sa.2","B1:3","赤"],["Ca.L","B1:3","黒"],["La.C","B1:3","黒"],["Sa.2","Pl.1","黒"]]},{"id":"k11","no":11,"title":"No.11　金属管（ねじなし電線管）の配線","parts":[{"id":"PW","type":"src","label":"","x":90,"y":150,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Ca","type":"ceilK","label":"イ","x":860,"y":150,"place":"Ca","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Lb","type":"lamp","label":"ロ","x":250,"y":440,"place":"Lb","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":410,"y":560,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"O","type":"outlet","label":"","x":490,"y":560,"place":"F","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sb","type":"sw1","label":"ロ","x":720,"y":480,"place":"Sb","terms":[{"k":"1"},{"k":"2"}]}],"boxes":[{"id":"B1","x":450,"y":170,"name":"ボックス","rule":"pw","obox":true}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Lb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"F","b":"B1","spec":"IV1.6（E19）","colors":["黒","白","赤"]},{"a":"Sb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["Sa.1","O.L","黒"],["Sb.1","B1:1","黒"],["PW.N","B1:2","白"],["Ca.W","B1:2","白"],["Lb.W","B1:2","白"],["O.W","B1:2","白"],["Sa.2","B1:3","赤"],["Ca.L","B1:3","黒"],["Sb.2","B1:4","白"],["Lb.C","B1:4","黒"]]},{"id":"k12","no":12,"title":"No.12　合成樹脂製可とう電線管（PF管）の配線","parts":[{"id":"PW","type":"src","label":"","x":650,"y":60,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Lb","type":"lamp","label":"ロ","x":300,"y":80,"place":"Lb","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"Ca","type":"ceilK","label":"イ","x":300,"y":560,"place":"Ca","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sb","type":"sw1","label":"ロ","x":850,"y":300,"place":"F","terms":[{"k":"1"},{"k":"2"}]},{"id":"O","type":"outlet","label":"","x":930,"y":300,"place":"F","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]},{"id":"Sa","type":"sw1","label":"イ","x":650,"y":560,"place":"Sa","terms":[{"k":"1"},{"k":"2"}]}],"boxes":[{"id":"B1","x":300,"y":310,"name":"A","rule":"conn","obox":false},{"id":"B2","x":620,"y":310,"name":"B","rule":"sleeve","obox":true}],"cables":[{"a":"PW","b":"B2","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"B2","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"Lb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"F","b":"B2","spec":"IV1.6（PF16）","colors":["黒","白","赤"]},{"a":"Sa","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]}],"ref":[["PW.L","B2:1","黒"],["Sb.1","B2:1","黒"],["Sb.1","O.L","黒"],["Sa.1","B2:1","黒"],["PW.N","B2:2","白"],["O.W","B2:2","白"],["B2:2","B1:1","白"],["Sa.2","B2:3","白"],["B2:3","B1:2","黒"],["Sb.2","B2:4","赤"],["B2:4","B1:3","赤"],["Lb.W","B1:1","白"],["Ca.W","B1:1","白"],["Ca.L","B1:2","黒"],["Lb.C","B1:3","黒"]]},{"id":"k13","no":13,"title":"No.13　自動点滅器と屋外灯","parts":[{"id":"PW","type":"src","label":"","x":120,"y":60,"place":"PW","terms":[{"k":"L","lab":"L","pot":"L"},{"k":"N","lab":"N","pot":"N"}]},{"id":"Sa","type":"sw1","label":"イ","x":120,"y":570,"place":"Sa","terms":[{"k":"1"},{"k":"2"}]},{"id":"La","type":"lamp","label":"イ","x":440,"y":80,"place":"La","terms":[{"k":"W","lab":"W","w":true},{"k":"C","lab":"B"}]},{"id":"OE","type":"outletE","label":"","x":440,"y":560,"place":"OE","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"},{"k":"E","lab":"E","earth":true}]},{"id":"G","type":"gnd","label":"","x":620,"y":570,"place":"G","terms":[{"k":"E","lab":"E","pot":"E","earth":true}]},{"id":"A","type":"swA","label":"ロ","x":760,"y":300,"place":"A","terms":[{"k":"1","lab":"1"},{"k":"2","lab":"2","w":true},{"k":"3","lab":"3"}]},{"id":"Od","type":"outdoor","label":"ロ","x":880,"y":540,"place":"Od","terms":[{"k":"W","lab":"W","w":true},{"k":"L","lab":"B"}]}],"boxes":[{"id":"B1","x":120,"y":320,"name":"A","rule":"sleeve","obox":false},{"id":"B2","x":440,"y":320,"name":"B","rule":"conn","obox":false}],"cables":[{"a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"]},{"a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"]},{"a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"OE","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"A","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"]},{"a":"Od","b":"A","spec":"VVR1.6-2C","colors":["黒","白"]},{"a":"OE","b":"G","spec":"E1.6","colors":["緑"]}],"ref":[["PW.L","B1:1","黒"],["Sa.1","B1:1","黒"],["B1:1","B2:1","黒"],["PW.N","B1:2","白"],["B1:2","B2:2","白"],["Sa.2","B1:3","白"],["B1:3","B2:3","赤"],["A.1","B2:1","黒"],["OE.L","B2:1","黒"],["A.2","B2:2","白"],["OE.W","B2:2","白"],["La.W","B2:2","白"],["La.C","B2:3","黒"],["A.2","Od.W","白"],["A.3","Od.L","黒"],["OE.E","G.E","緑"]]}];
+const ZCOND = {
+  r1: "ボックス内はリングスリーブで接続する。", r2: "ボックス内はリングスリーブで接続する。", r3: "ボックス内はリングスリーブで接続する。",
+  r4: "ボックス内はリングスリーブで接続する。3路スイッチの 0 には電源側または負荷側の線をつなぐ。", r5: "ボックス内はリングスリーブで接続する。確認表示灯は異時点滅。",
+  k1: "A 部分はリングスリーブ、B 部分は差込形コネクタ。", k2: "A 部分はリングスリーブ、B 部分は差込形コネクタ。確認表示灯は常時点灯。",
+  k3: "A 部分はリングスリーブ、B 部分は差込形コネクタ。タイムスイッチ（端子台）の S2 に白。接地線は緑。", k4: "A 部分は差込形コネクタ、B 部分はリングスリーブ。電源表示灯は S 相と T 相の間。R 相 赤・S 相 白・T 相 黒。",
+  k6: "A 部分は差込形コネクタ、B 部分はリングスリーブ。3路スイッチの 0 には電源側又は負荷側の電線。", k7: "A 部分はリングスリーブ、B 部分は差込形コネクタ。3路スイッチの 0 には電源側又は負荷側、1・3 には 4路スイッチとの間の電線。",
+  k8: "4本の接続箇所は差込形コネクタ、その他はリングスリーブ。", k9: "A 部分は差込形コネクタ、B 部分はリングスリーブ。接地線は緑。", k10: "3本の接続箇所は差込形コネクタ、その他はリングスリーブ。確認表示灯は同時点滅。",
+  k11: "電源側電線（電源からの電線）との接続箇所はリングスリーブ、その他は差込形コネクタ。", k12: "A 部分は差込形コネクタ、B 部分はリングスリーブ。", k13: "A 部分はリングスリーブ、B 部分は差込形コネクタ。自動点滅器（端子台）の 2 に白。接地線は緑。",
+};
+const ZNAME = { src: "電源", brkB: "配線用遮断器", brkBE: "漏電遮断器", lamp: "ランプレセプタクル", ceilK: "引掛シーリング", ceil: "引掛シーリング", fl: "蛍光灯", outdoor: "屋外灯",
+  sw1: "スイッチ", swH: "位置表示灯内蔵スイッチ", sw3: "3路スイッチ", sw4: "4路スイッチ", pl: "パイロットランプ", outlet: "コンセント", outlet2: "2口コンセント", outletE: "接地極付コンセント",
+  outletEET: "接地極付接地端子付コンセント", outletRo: "露出形コンセント", ts: "タイムスイッチ", swA: "自動点滅器", rly: "リモコンリレー", motor: "電動機", gnd: "接地極", outlet200: "20A250V コンセント" };
+ZUSHI.forEach(z => {
+  const off = z.id[0] === "k";
+  const head = off ? `No.${z.no}（令和8年度 候補問題）` : z.title.split("　")[0];
+  add(off ? "kouho" : "fukusen", { t: "d", z, sub: head, q: `${off ? z.title.replace("　", "「") + "」" : z.title}　複線図を完成させ、線の色と、接続点の刻印（リングスリーブ）または差込形コネクタを書き込め。\n施工条件：${ZCOND[z.id]}`,
+    ex: "採点の項目：つながり（回路）・ケーブルの心線の数・施工条件で決まる線の色・刻印とコネクタ。", src: off ? SRC_R8(z.no) : "出典：複線図れんしゅう（練習問題）" });
+});
+/* 接続点ごとの刻印・コネクタ（正解のつながりから。公表の解答と一致） */
+ZUSHI.filter(z => z.id[0] === "k").forEach(z => {
+  const P = zPrep(z), groups = {};
+  z.ref.forEach(([a, b, c]) => [[a, b], [b, a]].forEach(([j, o]) => { if (j.includes(":")) (groups[j] = groups[j] || []).push({ o, c }); }));
+  Object.entries(groups).forEach(([j, mem]) => {
+    const bid = j.split(":")[0], b = P.box[bid];
+    const desc = mem.map(({ o, c }) => {
+      if (o.includes(":")) { const ob = P.box[o.split(":")[0]]; const cb = P.cab(bid, ob.id); return `${ob.name} へ行く${c}（${diaOf(cb.spec)}mm）`; }
+      const t = P.term[o], cb = P.cabOfPart(t.part, bid); return `${ZNAME[t.part.type] || ""}${t.part.label ? " " + t.part.label : ""}の${c}（${diaOf(cb ? cb.spec : "1.6")}mm）`;
+    });
+    const need = needMark(z, bid, mem.map(({ o }) => ({ a: o.includes(":") ? o.replace(":", "#") : o, b: j.replace(":", "#") })));
+    const conn = /本用/.test(need);
+    const o = conn ? MARKS.conn.slice() : MARKS.sleeve.map(m => "リングスリーブ・刻印「" + m + "」");
+    add("kouho", { t: "c", sub: `No.${z.no}`, group: "pt-" + z.id + j,
+      q: `No.${z.no}「${z.title.split("　")[1]}」の ${b.name === "ボックス" ? "ボックス" : b.name + " 部分"}で、次の電線をつなぐ。使うものはどれか。\n${desc.join("、")}`,
+      o: conn ? o.map(x => "差込形コネクタ " + x) : o, a: conn ? MARKS.conn.indexOf(need) : MARKS.sleeve.indexOf(need), fix: true,
+      ex: `施工条件：${ZCOND[z.id]}　` + (conn ? `${mem.length}本をつなぐので ${need}。` : `${desc.length}本（2.0mm と 1.6mm の本数）から、刻印「${need}」。`), src: SRC_R8(z.no) });
+  });
+});
+/* 材料・施工条件（問題ごと） */
+const KF = [
+  { no: 1, pw: "EM-EEF 2.0-2C", conn: { 2: 2, 3: 1 }, q: [
+    ["No.1 で、電源から A へのケーブルは。", ["EM-EEF 2.0-2C（エコケーブル）", "VVF 2.0-2C", "VVR 2.0-2C", "VVF 1.6-2C"], "配線図「EM-EEF 2.0-2C」。外装が硬いので電工ナイフなどではぐ。"],
+    ["No.1 で、取付枠の中央に取り付けるスイッチは。", ["ロ のタンブラスイッチ", "イ（位置表示灯内蔵）", "ハ のタンブラスイッチ", "どれでもよい"], "施工条件「「ロ」のタンブラスイッチは、取付枠の中央に取り付けること」。"],
+    ["No.1 の B 部分の接続方法は。", ["差込形コネクタ", "リングスリーブ", "どちらでもよい", "接続しない"], "施工条件「B 部分は、差込形コネクタによる接続とする」。"]] },
+  { no: 2, pw: "VVF 2.0-2C", conn: { 3: 2, 4: 1 }, q: [
+    ["No.2 の確認表示灯（パイロットランプ）の点灯のしかたは。", ["常時点灯", "同時点滅", "異時点滅", "点灯させない"], "施工条件「確認表示灯（パイロットランプ）は、常時点灯とすること」。電源の黒と白のあいだにつなぐ。"],
+    ["No.2 で、埋込連用取付枠を使う所は。", ["タンブラスイッチ及びパイロットランプ部分", "コンセント部分", "2口コンセント部分", "使わない"], "施工条件 5。"]] },
+  { no: 3, pw: "VVF 2.0-2C", conn: { 2: 1, 3: 1, 4: 1 }, q: [
+    ["No.3 で、タイムスイッチ（端子台）の白い電線をつなぐ端子は。", ["S2", "S1", "L1", "どれでもよい"], "施工条件「タイムスイッチ（端子台）の記号 S2 の端子」に白。"],
+    ["No.3 で、接地線（コンセントの接地極から）の色は。", ["緑色", "白色", "黒色", "赤色"], "施工条件「接地線には、緑色を使用する」。材料は 600V ビニル絶縁電線 1.6mm 緑。"],
+    ["No.3 で、埋込連用取付枠を使う所は。", ["コンセント部分", "タンブラスイッチ部分", "タイムスイッチ部分", "使わない"], "施工条件 5。"]] },
+  { no: 4, pw: "VVF 2.0-2C", conn: { 2: 1, 3: 2 }, q: [
+    ["No.4 で、電源表示灯（ランプレセプタクル）をつなぐのは三相のどの相の間か。", ["S 相と T 相の間", "R 相と S 相の間", "R 相と T 相の間", "100V の L と N の間"], "施工条件「三相電源の S 相は接地されているものとし、電源表示灯は、S 相と T 相間に接続すること」。"],
+    ["No.4 で、200V 回路の R 相の電線の色は。", ["赤色", "白色", "黒色", "緑色"], "施工条件「R 相に赤色、S 相に白色、T 相に黒色」。"],
+    ["No.4 で、A 部分（200V 側）の接続方法は。", ["差込形コネクタ", "リングスリーブ", "どちらでもよい", "接続しない"], "施工条件「A 部分は、差込形コネクタによる接続とする。B 部分は、リングスリーブ」。"],
+    ["No.4 で、配線用遮断器（端子台）の白い電線をつなぐ端子は。", ["N", "L", "R", "T"], "施工条件「配線用遮断器（端子台）の記号 N の端子」に白。"]] },
+  { no: 5, pw: "VVF 2.0-2C", conn: { 4: 1 }, q: [
+    ["No.5 のボックスの接続方法の決まりは。", ["4本の接続箇所は差込形コネクタ、その他はリングスリーブ", "すべてリングスリーブ", "すべて差込形コネクタ", "2本の接続箇所は差込形コネクタ、その他はリングスリーブ"], "施工条件 4。"],
+    ["No.5 で、取付枠の中央に取り付けるのは。", ["ロ のタンブラスイッチ", "イ のタンブラスイッチ", "コンセント", "何も付けない"], "施工条件「「ロ」のタンブラスイッチは、取付枠の中央に取り付けること」。"],
+    ["No.5 で、漏電遮断器から 20A250V 接地極付コンセントへのケーブルは。", ["VVF 2.0-3C（ボックスを通らない）", "VVF 1.6-2C（ボックスを通る）", "VVF 2.0-2C（ボックスを通る）", "IV 1.6×3"], "配線図「VVF 2.0-3C」。ジョイントボックスを経由しない。"]] },
+  { no: 6, pw: "VVF 2.0-2C", conn: { 2: 2, 3: 2 }, q: [
+    ["No.6 で、露出形コンセントへの結線はどの端子に行うか。", ["ケーブルを挿入した部分に近い端子", "遠い端子", "どの端子でもよい", "4つ全部"], "施工条件 5。遠い端子（送り端子）に結線すると不要な工事。"],
+    ["No.6 で、3路スイッチの記号「0」の端子につなぐのは。", ["電源側又は負荷側の電線", "スイッチ相互間の電線", "接地線", "何もつながない"], "施工条件 2。"],
+    ["No.6 の B 部分の接続方法は。", ["リングスリーブ", "差込形コネクタ", "どちらでもよい", "接続しない"], "施工条件「A 部分は差込形コネクタ、B 部分はリングスリーブ」。"]] },
+  { no: 7, pw: "VVF 2.0-2C", conn: { 2: 4, 3: 2 }, q: [
+    ["No.7 で、ランプレセプタクルを3か所から点滅させるスイッチは。", ["3路スイッチ 2個と 4路スイッチ 1個", "3路スイッチ 3個", "4路スイッチ 3個", "タンブラスイッチ 3個"], "施工条件 2 ①。"],
+    ["No.7 で、埋込連用取付枠を使う所は。", ["4路スイッチ部分", "3路スイッチ部分", "ランプレセプタクル部分", "使わない"], "施工条件 6。"],
+    ["No.7 の B（アウトレットボックス）で正しいのは。", ["打抜き済みの穴だけをすべて使い、ゴムブッシングをはめる", "自分で穴を開けてもよい", "使わない穴を残してよい", "ゴムブッシングは使わない"], "施工条件 3。材料にゴムブッシング（19）3個・（25）2個。"]] },
+  { no: 8, pw: "VVR 2.0-2C", conn: { 4: 2 }, q: [
+    ["No.8 で、配線用遮断器からジョイントボックスへのケーブルは。", ["VVR 2.0-2C（丸形）", "VVF 2.0-2C", "EM-EEF 2.0-2C", "VVF 1.6-2C"], "配線図「VVR 2.0-2C」。介在物が抜けると欠陥（5-1 ハ）。"],
+    ["No.8 で、リモコンリレー（端子台）へ行く電線は。", ["それぞれ2心ケーブル1本", "3心ケーブル1本にまとめる", "IV 線", "2心ケーブル2本ずつ"], "施工条件「各リモコンリレーに至る電線には、それぞれ２心ケーブル１本を使用すること」。"],
+    ["No.8 で、電源からリモコンリレーまでの非接地側電線の色は。", ["黒色", "白色", "赤色", "どれでもよい"], "施工条件 5 ②。"]] },
+  { no: 9, pw: "VVF 2.0-2C", conn: { 2: 2, 3: 1 }, q: [
+    ["No.9 で、B から接地極付接地端子付コンセント（EET）へのケーブルは。", ["VVF 2.0-2C", "VVF 1.6-2C", "VVF 1.6-3C", "IV 2.0"], "配線図「VVF 2.0-2C」。そのため B のスリーブは「中」になる所がある。"],
+    ["No.9 の B 部分で、電源の白（2.0mm）・EET コンセントの白（2.0mm）・A へ行く白（1.6mm）・引掛シーリングの白（1.6mm）をつなぐ。刻印は。", ["中", "小", "○", "大"], "2.0mm × 2本 と 1.6mm × 2本 は中スリーブ・刻印「中」（材料はリングスリーブ（中）3個・予備含む）。"]] },
+  { no: 10, pw: "VVF 2.0-2C", conn: { 3: 1 }, q: [
+    ["No.10 の確認表示灯（パイロットランプ）の点灯のしかたは。", ["引掛シーリング及びランプレセプタクルと同時点滅", "常時点灯", "異時点滅", "コンセントと同時点滅"], "施工条件 2。照明と並列につなぐ。"],
+    ["No.10 のボックスの接続方法の決まりは。", ["3本の接続箇所は差込形コネクタ、その他はリングスリーブ", "すべてリングスリーブ", "すべて差込形コネクタ", "4本の接続箇所は差込形コネクタ"], "施工条件 4。"],
+    ["No.10 の配線用遮断器はどう支給されるか。", ["実物（100V 2極1素子）が支給される", "端子台で代用", "施工省略", "支給されない"], "材料表「配線用遮断器（100V、2極1素子）」。接地側極端子（N）に白。"]] },
+  { no: 11, pw: "VVF 2.0-2C", conn: { 2: 2 }, q: [
+    ["No.11 のボックスの接続方法の決まりは。", ["電源側電線（シース青色）との接続箇所はリングスリーブ、その他は差込形コネクタ", "すべてリングスリーブ", "すべて差込形コネクタ", "3本の接続箇所は差込形コネクタ"], "施工条件 4。"],
+    ["No.11 で、ねじなしボックスコネクタを取り付ける側は。", ["ジョイントボックス（アウトレットボックス）側", "スイッチ側", "どちらでもよい", "取り付けない"], "施工条件 5。止めねじは頭部がねじ切れるまで締める。"],
+    ["No.11 で、金属管（E19）の中に通す電線は。", ["IV 1.6 の黒・白・赤 3本", "VVF 1.6-3C", "VVF 2.0-2C", "IV 1.6 の黒・白 2本"], "配線図「IV 1.6×3（E19）」、材料表の IV 黒・白・赤。"],
+    ["No.11 で、問題文により省略してよいのは。", ["金属管とボックスとを電気的に接続すること（ボンド工事）", "絶縁ブッシングの取り付け", "ロックナットの締め付け", "ねじなしボックスコネクタの取り付け"], "問題文「金属管とジョイントボックス（アウトレットボックス）とを電気的に接続することは省略する」。"]] },
+  { no: 12, pw: "VVF 2.0-2C", conn: { 2: 2, 3: 1 }, q: [
+    ["No.12 で、PF管用ボックスコネクタを取り付ける側は。", ["ジョイントボックス側", "スイッチ側", "どちらでもよい", "取り付けない"], "施工条件「電線管用ボックスコネクタは、ジョイントボックス側に取り付けること」。"],
+    ["No.12 で使う電線管は。", ["合成樹脂製可とう電線管（PF16）", "ねじなし電線管（E19）", "硬質ポリ塩化ビニル電線管", "使わない"], "材料表「合成樹脂製可とう電線管（PF16）」。"],
+    ["No.12 の A 部分の接続方法は。", ["差込形コネクタ", "リングスリーブ", "どちらでもよい", "接続しない"], "施工条件「A 部分は差込形コネクタ、B 部分はリングスリーブ」。"]] },
+  { no: 13, pw: "VVF 2.0-2C", conn: { 2: 1, 3: 1, 4: 1 }, q: [
+    ["No.13 で、自動点滅器（端子台）の白い電線をつなぐ端子は。", ["2", "1", "3", "どれでもよい"], "施工条件「自動点滅器（端子台）の記号 2 の端子」に白。"],
+    ["No.13 で、自動点滅器から屋外灯（施工省略）へのケーブルは。", ["VVR 1.6-2C", "VVF 1.6-2C", "VVF 2.0-2C", "IV 1.6"], "配線図「VVR 1.6-2C」。"],
+    ["No.13 で、埋込連用取付枠を使う所は。", ["コンセント部分", "タンブラスイッチ部分", "自動点滅器部分", "使わない"], "施工条件 5。"]] },
+];
+KF.forEach(k => {
+  k.q.forEach(([q, o, ex]) => add("kouho", { t: "c", sub: `No.${k.no}`, q, o, a: 0, ex, src: SRC_R8(k.no) }));
+  if (k.no !== 1 && k.no !== 8) add("kouho", { t: "c", sub: `No.${k.no}`, q: `No.${k.no} で、電源（配線用遮断器）からボックスへのケーブルは。`, o: [k.pw, "VVF 1.6-2C", "EM-EEF 2.0-2C", "VVR 2.0-2C"].filter((x, i, a) => a.indexOf(x) === i).concat(["VVF 1.6-3C"]).slice(0, 4), a: 0,
+    ex: `配線図「${k.pw}」（シース青色）。`, src: SRC_R8(k.no) });
+  Object.entries(k.conn).forEach(([n, c]) => add("kouho", { t: "n", sub: `No.${k.no}`, digits: 1, unit: "個", q: `No.${k.no} の材料表で、差込形コネクタ（${n}本用）は何個か。複線図で、${n}本をつなぐ接続点の数を数えて答えよ。`, a: c,
+    ex: `差込形コネクタでつなぐ接続点のうち、${n}本が集まる所が ${c} か所。材料表の数と同じ。`, src: SRC_R8(k.no) }));
+});
+/*KOUHO-END*/
+/*BANK-END*/
+
+/* ============================================================
+   記録（端末の中。保存できない環境でも動く）
+   ============================================================ */
+const KEY = "ginou-hikki:v1";
+let rec = {};
+try { rec = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { rec = {}; }
+const saveRec = () => { try { localStorage.setItem(KEY, JSON.stringify(rec)); } catch (e) {} };
+function mark(id, ok) { const r = rec[id] || { n: 0, ok: 0, last: 0 }; r.n++; if (ok) r.ok++; r.last = ok ? 1 : 0; rec[id] = r; saveRec(); }
+const wrongIds = () => BANK.filter(q => rec[q.id] && rec[q.id].last === 0).map(q => q.id);
+
+/* ============================================================
+   採点
+   ============================================================ */
+const norm = s => String(s || "").normalize("NFKC").toLowerCase().replace(/[\s　、。・,.「」『』（）()]/g, "")
+  .replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+/* 数のマーク: 位ごとに 0〜9 を1つ塗る。左の空いた位は 0 と同じ。途中の位が空なら読めない */
+const digitsOf = q => q.digits || 3;
+function markNumber(q, v) {
+  if (!Array.isArray(v)) return null;
+  const d = v.slice(0, digitsOf(q)); let s = "", started = false;
+  for (const x of d) { if (x === null || x === undefined) { if (started) return null; continue; } started = true; s += x; }
+  return started ? +s : null;
+}
+const S_MIN = 10;   // 文章は 10 字以上
+function judge(q, v) {
+  if (q.t === "c") return v === q.a;
+  if (q.t === "n") return markNumber(q, v) === q.a;
+  if (q.t === "s") { const s = norm(v); if (s.length < S_MIN) return false; return q.keys.every(g => g.some(w => s.includes(norm(w)))); }
+  if (q.t === "d") return zushiScore(q.z, v).ok;
+  return false;
+}
+const keyHits = (q, v) => { const s = norm(v); return q.keys.map(g => ({ w: g[0], hit: g.some(w => s.includes(norm(w))) })); };
+const answerText = q => q.t === "c" ? q.o[q.a] : q.t === "n" ? q.a + (q.unit || "") : q.t === "d" ? "（解答例の図を見る）" : q.model;
+const hasAnswer = (q, v) => q.t === "c" ? v !== undefined : q.t === "n" ? markNumber(q, v) !== null : q.t === "d" ? !!(v && v.lines && v.lines.length) : !!(v && String(v).trim());
+
+/* ============================================================
+   画面
+   ============================================================ */
+/* 模擬テストの配分（本試験 30問の仮の形）。語群選択 20問×3点・数値 4問×2点・記述（文章）4問×4点・記述（図示）2問×8点 ＝ 100点 */
+const EXAM = { n: 30, minutes: 50, kinds: { c: 20, n: 4, s: 4, d: 2 }, pts: { c: 3, n: 2, s: 4, d: 8 } };
+let S = { view: "home" };     // view: home / q / result
+let tick = null;
+
+function setSide(texts) {
+  const all = texts.join(" ");
+  const hits = GLOSS.filter(g => (g.m || [g.k]).some(w => all.includes(w))).slice(0, 7);
+  $("side").innerHTML = `<h2>用語の説明</h2>` + (hits.length ? `<dl>${hits.map(g => `<dt>${esc(g.k)}</dt><dd>${esc(g.d)}</dd>`).join("")}</dl>` : `<p class="none">問題に出てくる用語の説明がここに出ます。</p>`);
+}
+function head(count, pct) { $("count").textContent = count || ""; $("bar").style.width = (pct || 0) + "%"; }
+
+function home() {
+  S = { view: "home" }; stopTimer(); head("", 0);
+  const nW = wrongIds().length;
+  const stat = c => { const qs = BANK.filter(q => q.cat === c.id), done = qs.filter(q => rec[q.id]), ok = qs.filter(q => rec[q.id] && rec[q.id].last === 1);
+    return `${qs.length}問` + (done.length ? `・いま正解 ${ok.length}` : ""); };
+  $("card").innerHTML = `
+    <p class="lead">第二種電気工事士の技能試験（複線図・施工条件・欠陥の判断基準・器具と工具）を、筆記の問題で練習します。<br>
+    答え方は定期考査と同じ4つです。<br>
+    ① 語群選択：記号の ○ をぬる　② 数値：位ごとに 0〜9 の ○ をぬる　③ 記述（文章）：指定語句をすべて使って書く　④ 記述（図示）：複線図の線・色・刻印を書き込む</p>
+    <div class="big">
+      <button class="btn" id="goExam">模擬テスト（${EXAM.n}問・${EXAM.minutes}分）</button>
+      <button class="btn ghost" id="goWrong" ${nW ? "" : "disabled"}>まちがえた問題（${nW}問）</button>
+      <button class="btn ghost" id="goAll">全部から10問</button>
+    </div>
+    <h3>分野をえらんで練習</h3>
+    <div class="menu">${CATS.map(c => `<button data-c="${c.id}"><b>${esc(c.name)}</b><small>${esc(stat(c))}<br>${esc(c.note || "")}</small></button>`).join("")}</div>
+    <p class="note">全部で ${BANK.length} 問。記録はこの端末の中にだけ残ります（先生には送られません）。
+    複線図を自分で描く練習は「<a href="../fukusen/">複線図れんしゅう</a>」で。</p>`;
+  $("goExam").onclick = startExam;
+  $("goWrong").onclick = () => startPractice(shuffle(wrongIds()), "まちがえた問題");
+  $("goAll").onclick = () => startPractice(shuffle(BANK.map(q => q.id)).slice(0, 10), "全部から");
+  document.querySelectorAll(".menu button").forEach(b => b.onclick = () => startPractice(shuffle(BANK.filter(q => q.cat === b.dataset.c).map(q => q.id)), CATS.find(c => c.id === b.dataset.c).name));
+  setSide(["欠陥 施工条件 複線図 リングスリーブ"]);
+}
+
+const byId = id => BANK.find(q => q.id === id);
+function prepOrder(q) { if (q.t !== "c") return null; const idx = q.o.map((_, i) => i); return q.fix ? idx : shuffle(idx); }
+
+function startPractice(ids, title) {
+  if (!ids.length) return home();
+  S = { view: "q", mode: "practice", title, ids, i: 0, ans: {}, done: {}, ord: {} };
+  ids.forEach(id => S.ord[id] = prepOrder(byId(id)));
+  render();
+}
+function startExam() {
+  /* 答え方ごとの数を守り、分野はかたよらないように順に取る */
+  const used = new Set(), ids = [];
+  Object.entries(EXAM.kinds).forEach(([t, n]) => {
+    const byCat = shuffle(CATS.map(c => shuffle(BANK.filter(q => q.t === t && q.cat === c.id))).filter(a => a.length));
+    let k = 0, got = 0, guard = 0;
+    while (got < n && guard++ < 999) { const pool = byCat[k++ % byCat.length]; const q = pool.find(x => !used.has(x.group || x.id)); if (q) { used.add(q.group || q.id); ids.push(q.id); got++; } }
+  });
+  S = { view: "q", mode: "exam", title: "模擬テスト", ids, i: 0, ans: {}, done: {}, ord: {}, t0: Date.now() };
+  ids.forEach(id => S.ord[id] = prepOrder(byId(id)));
+  startTimer(); render();
+}
+function startTimer() { stopTimer(); tick = setInterval(showTimer, 1000); showTimer(); }
+function stopTimer() { if (tick) clearInterval(tick); tick = null; $("timer").textContent = ""; }
+function showTimer() { if (!S.t0) return; const s = Math.floor((Date.now() - S.t0) / 1000), m = Math.floor(s / 60);
+  $("timer").textContent = `${m}分${String(s % 60).padStart(2, "0")}秒 ／ ${EXAM.minutes}分`; $("timer").style.color = m >= EXAM.minutes ? "var(--ng)" : ""; }
+
+const KIND = { c: "語群選択（記号をぬる）", n: "数値（数字をぬる）", s: "記述（文章）", d: "記述（図示）" };
+/* 解答欄の部品 */
+function bubbleRow(q, v, shown) {
+  const ord = S.ord[q.id];
+  return `<div class="sheet"><span class="sheet-h">解答欄</span>${ord.map((oi, k) => {
+    let cls = v === oi ? "fill" : ""; if (shown && oi === q.a) cls += " right"; if (shown && v === oi && oi !== q.a) cls += " wrong";
+    return `<button class="bub ${cls}" data-o="${oi}" ${shown ? "disabled" : ""} aria-label="${MK[k]}">${MK[k]}</button>`; }).join("")}</div>`;
+}
+function digitGrid(q, v, shown) {
+  const n = digitsOf(q), arr = Array.isArray(v) ? v : [], pl = ["一", "十", "百", "千"];
+  const ansD = String(q.a).padStart(n, " ").split("");
+  let h = `<div class="sheet"><span class="sheet-h">解答欄</span><div class="dgrid">`;
+  for (let c = 0; c < n; c++) {
+    h += `<div class="dcol"><span class="dh">${pl[n - 1 - c]}の位</span>`;
+    for (let d = 0; d <= 9; d++) { let cls = arr[c] === d ? "fill" : ""; if (shown && ansD[c] === String(d)) cls += " right"; if (shown && arr[c] === d && ansD[c] !== String(d)) cls += " wrong";
+      h += `<button class="bub sm ${cls}" data-c="${c}" data-d="${d}" ${shown ? "disabled" : ""}>${d}</button>`; }
+    h += `</div>`;
+  }
+  const val = markNumber(q, v);
+  return h + `</div><span class="dval">${val === null ? "（まだ）" : val}${q.unit ? " " + esc(q.unit) : ""}</span></div>`;
+}
+function zTools(q, v, shown) {
+  if (shown) return "";
+  const z = q.z, cols = [...new Set(z.cables.flatMap(c => c.colors))].filter(c => COLORS[c]);
+  const cur = S.zcol || "黒", sel = S.zsel;
+  let h = `<div class="ztools"><span class="lab">線の色</span>${cols.map(c => `<button class="zc ${c === cur ? "on" : ""}" data-zc="${c}"><i style="background:${COLORS[c]}"></i>${c}</button>`).join("")}`;
+  h += `<button class="btn ghost sm" id="zundo">1つ戻す</button><button class="btn ghost sm" id="zclear">全部消す</button></div>`;
+  h += `<div class="note">${S.zmsg ? `<b style="color:var(--ng)">${esc(S.zmsg)}</b>` : "端子 ○ → 行き先（ボックスの中の ○・同じ取付枠の端子）の順にタップで線。線をタップで消す。ボックスの中の ○ をタップして刻印・コネクタを書く。"}</div>`;
+  if (sel && zPrep(z).slots[sel]) h += `<div class="ztools"><span class="lab">この接続点に</span>${MARKS.sleeve.map(m => `<button class="zm" data-zm="${m}">${m}</button>`).join("")}<span class="sep">｜</span>${MARKS.conn.map(m => `<button class="zm" data-zm="${m}">${m}</button>`).join("")}<button class="zm" data-zm="">消す</button></div>`;
+  return h;
+}
+function render() {
+  if (S.view !== "q") return;
+  const id = S.ids[S.i], q = byId(id), v = S.ans[id], shown = S.mode === "practice" && S.done[id];
+  head(`${S.title}　${S.i + 1} / ${S.ids.length}`, (S.i + 1) / S.ids.length * 100);
+  const c = CATS.find(x => x.id === q.cat);
+  let h = `<div class="tags"><span class="tag kind">${KIND[q.t]}</span><span class="tag">${esc(c.name)}</span>${q.sub ? `<span class="tag">${esc(q.sub)}</span>` : ""}</div>
+    <div class="q">${esc(q.q)}</div>` + (q.fig ? `<div class="fig">${q.fig}</div>` : "");
+  if (q.t === "c") {
+    const ord = S.ord[id], long = q.o.some(s => String(s).length > 18) || q.oSvg;
+    h += `<div class="opts ${long ? "long" : ""}">` + ord.map((oi, k) => {
+      let cls = v === oi ? "pick" : "";
+      if (shown) cls = oi === q.a ? (v === oi ? "right" : "miss") : (v === oi ? "wrong" : "");
+      return `<button class="opt ${cls}" data-o="${oi}" ${shown ? "disabled" : ""}><span class="mk">${MK[k]}</span>${q.oSvg ? q.oSvg[oi] : ""}<span>${esc(q.o[oi])}</span></button>`;
+    }).join("") + `</div>` + bubbleRow(q, v, shown);
+  } else if (q.t === "n") {
+    h += digitGrid(q, v, shown);
+  } else if (q.t === "s") {
+    h += `<div class="keys">指定語句（すべて使う）：${q.keys.map(g => `<span class="key">${esc(g[0])}</span>`).join("")}</div>
+      <textarea id="tin" ${shown ? "disabled" : ""} placeholder="指定語句をすべて使って書く（${S_MIN}字以上）">${esc(v || "")}</textarea>`;
+  } else if (q.t === "d") {
+    h += zTools(q, v, shown) + `<div class="zbox">${zSvg(q.z, v, S.zsel, false)}</div>`;
+  }
+  if (shown) {
+    const ok = judge(q, v), mk = q.t === "c" ? MK[S.ord[id].indexOf(q.a)] + "　" : "";
+    h += `<div class="fb ${ok ? "ok" : "ng"}"><b class="h">${ok ? "正解" : "ちがいます"}　答え：${esc(mk + answerText(q))}</b>`;
+    if (q.t === "s") h += `<div class="keys">指定語句：${keyHits(q, v).map(k => `<span class="key ${k.hit ? "hit" : "lack"}">${esc(k.w)}${k.hit ? " ✓" : " なし"}</span>`).join("")}</div><div>模範解答：${esc(q.model)}</div>`;
+    if (q.t === "d") h += zReport(q, v);
+    h += (q.ex ? `<div>${esc(q.ex)}</div>` : "") + (q.src ? `<span class="src">${esc(q.src)}</span>` : "") + `</div>`;
+  }
+  if (S.mode === "exam" && q.t !== "d") h += `<div class="qlist">${S.ids.map((x, k) => `<button data-j="${k}" class="${hasAnswer(byId(x), S.ans[x]) ? "done" : ""} ${k === S.i ? "now" : ""}">${k + 1}</button>`).join("")}</div>`;
+  h += `<div class="row">`;
+  h += `<button class="btn ghost" id="quit">${S.mode === "exam" ? "やめる" : "分野にもどる"}</button>`;
+  if (S.i > 0) h += `<button class="btn ghost" id="back">もどる</button>`;
+  if (S.mode === "practice" && !shown) h += `<button class="btn" id="check" ${hasAnswer(q, v) ? "" : "disabled"}>答え合わせ</button>`;
+  else if (S.i < S.ids.length - 1) h += `<button class="btn" id="next">次へ</button>`;
+  else h += `<button class="btn" id="finish">${S.mode === "exam" ? "採点する" : "結果を見る"}</button>`;
+  h += `</div>`;
+  $("card").innerHTML = h;
+  $("card").className = "card" + (q.t === "d" ? " dmode" : "") + (shown ? " shown" : "");
+  document.querySelector(".main").classList.toggle("wide", q.t === "d");
+  setSide([q.q, (q.o || []).join(" "), shown ? (q.ex || "") + answerText(q) : ""]);
+  bind(q);
+}
+function zReport(q, v) {
+  const r = zushiScore(q.z, v);
+  return `<table class="t"><tr><th>採点の項目</th><th>できた数</th></tr>${r.items.map(i => `<tr><td>${esc(i.name)}</td><td>${i.got} / ${i.of}${i.bad ? `（まちがい ${i.bad}）` : ""}</td></tr>`).join("")}
+    ${r.dangling ? `<tr><td>線が1本しか来ていない接続点</td><td>${r.dangling}</td></tr>` : ""}</table>
+    <div class="note">解答例（接続点の位置や線の並びはちがってよい。つながり・色・刻印で採点する）</div><div class="zbox ans">${zSvg(q.z, null, null, true)}</div>`;
+}
+function bind(q) {
+  const id = q.id;
+  document.querySelectorAll(".opt, .bub[data-o]").forEach(b => b.onclick = () => { S.ans[id] = +b.dataset.o; render(); });
+  document.querySelectorAll(".bub[data-d]").forEach(b => b.onclick = () => { const a = Array.isArray(S.ans[id]) ? S.ans[id].slice() : Array(digitsOf(q)).fill(null);
+    const c = +b.dataset.c, d = +b.dataset.d; a[c] = a[c] === d ? null : d; S.ans[id] = a; render(); });
+  const tin = $("tin");
+  if (tin) { tin.oninput = () => { S.ans[id] = tin.value; const c = $("check"); if (c) c.disabled = !tin.value.trim(); }; }
+  if (q.t === "d") bindZ(q);
+  const go = (k) => { S.i = k; S.zsel = null; S.zhist = []; S.zmsg = ""; render(); };
+  if ($("check")) $("check").onclick = () => { S.done[id] = true; mark(id, judge(q, S.ans[id])); render(); };
+  if ($("next")) $("next").onclick = () => go(S.i + 1);
+  if ($("back")) $("back").onclick = () => go(S.i - 1);
+  if ($("finish")) $("finish").onclick = finish;
+  document.querySelectorAll(".qlist button").forEach(b => b.onclick = () => go(+b.dataset.j));
+  const quit = $("quit");
+  quit.onclick = () => { if (S.mode === "exam" && !quit.dataset.sure) { quit.dataset.sure = 1; quit.textContent = "本当にやめる（記録しない）"; quit.classList.add("warn"); return; } home(); };
+}
+/* 図示の操作：端子（か接続点）をタップ → 行き先をタップで線。線をタップで消す。接続点をタップして刻印を選ぶ */
+function bindZ(q) {
+  const id = q.id, z = q.z, P = zPrep(z);
+  const val = () => { const v = S.ans[id] || { lines: [], marks: {} }; S.ans[id] = v; return v; };
+  const push = () => { (S.zhist = S.zhist || []).push(JSON.stringify(val())); };
+  const svg = document.querySelector(".zbox:not(.ans) svg"); if (!svg || S.done[id]) return;
+  svg.addEventListener("click", e => {
+    const el = e.target, t = el.dataset.t, s = el.dataset.s, l = el.dataset.l;
+    const v = val(), sel = S.zsel;
+    if (t || s) {
+      const hit = t || s;
+      if (sel && sel !== hit) {
+        const w = P.wireOf(sel, hit);
+        if (w) { push(); v.lines.push({ a: sel, b: hit, c: S.zcol || "黒" }); S.zsel = null; S.zmsg = ""; }
+        else { S.zmsg = "そこへはケーブルが通っていないので、線を引けません。"; S.zsel = hit; }
+      } else S.zsel = sel === hit ? null : hit;
+    } else if (l !== undefined) { push(); v.lines.splice(+l, 1); S.zsel = null; }
+    else S.zsel = null;
+    render();
+  });
+  document.querySelectorAll("[data-zc]").forEach(b => b.onclick = () => { S.zcol = b.dataset.zc; render(); });
+  document.querySelectorAll("[data-zm]").forEach(b => b.onclick = () => { const v = val(); push(); if (b.dataset.zm) v.marks[S.zsel] = b.dataset.zm; else delete v.marks[S.zsel]; render(); });
+  if ($("zundo")) $("zundo").onclick = () => { const h = S.zhist || []; if (h.length) { S.ans[id] = JSON.parse(h.pop()); render(); } };
+  if ($("zclear")) $("zclear").onclick = () => { push(); S.ans[id] = { lines: [], marks: {} }; S.zsel = null; render(); };
+}
+function finish() {
+  const exam = S.mode === "exam";
+  /* 図示は項目ごとの部分点（できた割合 × 配点、切り捨て） */
+  const rows = S.ids.map(id => { const q = byId(id), ok = judge(q, S.ans[id]), pt = exam ? EXAM.pts[q.t] : 1;
+    const got = ok ? pt : q.t === "d" && exam ? Math.floor(zushiScore(q.z, S.ans[id]).frac * pt) : 0; return { q, ok, pt, got }; });
+  if (exam) rows.forEach(r => mark(r.q.id, r.ok));
+  stopTimer();
+  const got = rows.reduce((s, r) => s + r.got, 0), full = rows.reduce((s, r) => s + r.pt, 0);
+  const byCat = CATS.map(c => { const rs = rows.filter(r => r.q.cat === c.id); return { c, n: rs.length, ok: rs.filter(r => r.ok).length }; }).filter(x => x.n);
+  const min = S.t0 ? Math.round((Date.now() - S.t0) / 60000) : null;
+  S.view = "result"; head(S.title + "　結果", 100);
+  $("card").innerHTML = `<div class="score">${exam ? `${got} / ${full} 点` : `${rows.filter(r => r.ok).length} / ${rows.length} 問 正解`}</div>
+    ${min !== null ? `<p class="lead">かかった時間 約${min}分（目安 ${EXAM.minutes}分）</p>` : ""}
+    <div class="bars">${byCat.map(x => `<div class="bar"><span>${esc(x.c.name)}</span><div class="track"><div class="fill" style="width:${x.ok / x.n * 100}%"></div></div><span class="num">${x.ok} / ${x.n}</span></div>`).join("")}</div>
+    <h3>ふりかえり（番号を押すと、その問題の答えと解説）</h3>
+    <div class="qlist">${rows.map((r, k) => `<button data-j="${k}" class="${r.ok ? "ok" : "ng"}">${k + 1}</button>`).join("")}</div>
+    <div id="rev"></div>
+    <div class="row"><button class="btn ghost" id="home">はじめの画面へ</button>${rows.some(r => !r.ok) ? `<button class="btn" id="redo">まちがえた問題をもう一度</button>` : ""}</div>`;
+  document.querySelectorAll(".qlist button").forEach(b => b.onclick = () => { const r = rows[+b.dataset.j], q = r.q, v = S.ans[q.id];
+    const yours = q.t === "c" ? (v === undefined ? "（無回答）" : q.o[v]) : q.t === "n" ? (markNumber(q, v) ?? "（無回答）") : q.t === "d" ? `${r.got} / ${r.pt} 点` : (v || "（無回答）");
+    $("rev").innerHTML = `<div class="fb ${r.ok ? "ok" : "ng"}"><b class="h">${b.textContent}．${esc(q.q)}</b>あなたの答え：${esc(yours)}<br>答え：${esc(answerText(q))}`
+      + (q.t === "s" ? `<div class="keys">指定語句：${keyHits(q, v).map(k => `<span class="key ${k.hit ? "hit" : "lack"}">${esc(k.w)}</span>`).join("")}</div>` : "")
+      + (q.t === "d" ? `<div class="zbox">${zSvg(q.z, v, null, false)}</div>` + zReport(q, v) : "")
+      + `${q.ex ? `<div>${esc(q.ex)}</div>` : ""}${q.src ? `<span class="src">${esc(q.src)}</span>` : ""}</div>`;
+    setSide([q.q, q.ex || ""]); });
+  $("home").onclick = home;
+  if ($("redo")) $("redo").onclick = () => startPractice(rows.filter(r => !r.ok).map(r => r.q.id), "まちがえた問題");
+}
+
+$("ver").textContent = "版 " + VER;
+window.GINOU = { BANK, CATS, judge, norm, EXAM, startExam, startPractice, home, get S() { return S; } };
+/* 先生用：URL の末尾に #q=問題の id でその問題を開く（例 #q=kouho-1）。#exam で模擬テスト */
+const hq = decodeURIComponent(location.hash || "");
+if (hq.startsWith("#q=") && byId(hq.slice(3))) startPractice([hq.slice(3)], "指定の問題");
+else if (hq === "#exam") startExam();
+else home();
+</script>
+</body>
+</html>

@@ -141,6 +141,11 @@ os.makedirs("bitcoin", exist_ok=True)
 shutil.copyfile("サトシ・ナカモト事件ファイル.html", "bitcoin/index.html")
 print("生成: bitcoin/index.html")
 
+# 1p) 技能試験 筆記トレーニング（第二種電気工事士。語群選択・数値・記述（文章）・記述（図示）で定期考査の練習）
+os.makedirs("ginou", exist_ok=True)
+shutil.copyfile("技能筆記練習.html", "ginou/index.html")
+print("生成: ginou/index.html")
+
 # 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
     out = sys.argv[1]
