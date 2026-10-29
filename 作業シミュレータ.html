@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>技能試験 作業シミュレータ</title>
+<style>
+  :root {
+    --bg: #f3f5f4; --card: #fff; --ink: #151a18; --muted: #5d6763; --line: #d9dfdc;
+    --accent: #0f6b4f; --bad: #b91c1c; --warn: #b45309; --sel: #2563eb;
+  }
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14.5px/1.6 "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; }
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 12px 16px 32px; }
+  h1 { font-size: 20px; margin: 0; display: inline-block; }
+  h2 { font-size: 16px; margin: 0 0 6px; }
+  h3 { font-size: 14.5px; margin: 10px 0 4px; }
+  .ver { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .sub { color: var(--muted); font-size: 12.5px; margin-left: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .note { font-size: 12.5px; color: var(--muted); }
+  button { font: inherit; color: var(--ink); border: 1px solid var(--line); background: var(--card);
+           border-radius: 6px; padding: 5px 11px; cursor: pointer; touch-action: manipulation; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 700; }
+  button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+  .probs button { min-width: 48px; padding: 4px 7px; }
+  .modes button { font-weight: 700; padding: 6px 14px; }
+  .main { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 12px; align-items: start; margin-top: 8px; }
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+  .list button { display: block; width: 100%; text-align: left; margin: 0 0 4px; padding: 6px 9px; }
+  .list button.on { background: #e6f2ec; color: var(--ink); border-color: var(--accent); }
+  .list .st { float: right; font-size: 12px; font-weight: 700; }
+  .st.ok { color: var(--accent); } .st.ng { color: var(--bad); } .st.todo { color: var(--muted); }
+  .src { font-size: 11.5px; color: var(--muted); }
+  .src a { color: inherit; }
+  /* 順番 */
+  .pool, .seq { display: flex; flex-wrap: wrap; gap: 6px; min-height: 46px; padding: 6px; border: 1px dashed var(--line); border-radius: 8px; background: #fafbfa; }
+  .seq { background: #fff; border-style: solid; flex-direction: column; flex-wrap: nowrap; }
+  .cardbtn { text-align: left; padding: 7px 10px; background: #fff; border: 1.5px solid #c9d2cd; border-radius: 8px; }
+  .seq .cardbtn { border-color: var(--accent); background: #f0f8f4; cursor: default; }
+  .seq .cardbtn b { color: var(--accent); margin-right: 6px; }
+  .shake { animation: shake .35s; border-color: var(--bad) !important; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  .msg { min-height: 1.6em; margin: 6px 0; font-size: 14px; }
+  .msg.err { color: var(--bad); font-weight: 600; } .msg.ok { color: var(--accent); font-weight: 700; }
+  /* 作業 */
+  .ctl { display: grid; grid-template-columns: 170px 1fr 70px; gap: 6px 10px; align-items: center; margin: 4px 0; }
+  .ctl input[type=range] { width: 100%; }
+  .ctl .val { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .seg { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+  .seg button { padding: 4px 10px; }
+  .sect { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
+  svg.side { width: 100%; height: auto; display: block; background: #fcfcfa; border: 1px solid var(--line); border-radius: 6px; margin: 6px 0; }
+  table.wires { border-collapse: collapse; font-size: 13.5px; margin: 4px 0; }
+  table.wires td, table.wires th { border: 1px solid var(--line); padding: 3px 7px; text-align: left; }
+  .chip { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid #888; vertical-align: -2px; margin-right: 4px; }
+  .issue { border-left: 4px solid var(--bad); background: #fef2f2; border-radius: 4px; padding: 5px 8px; margin: 5px 0; font-size: 13.5px; }
+  .issue.tip { border-color: var(--warn); background: #fffbeb; }
+  .issue.good { border-color: var(--accent); background: #ecfdf5; color: var(--accent); font-weight: 700; }
+  .issue .rule { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .verdict { font-size: 18px; font-weight: 800; margin: 4px 0 8px; }
+  .verdict.ok { color: var(--accent); } .verdict.ng { color: var(--bad); }
+  svg text { font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>技能試験 作業シミュレータ<span class="ver" id="ver"></span></h1><span class="sub">第二種電気工事士 ― 作業の順番・作り方・欠陥の確認</span>
+  <div class="bar probs" id="probs"></div>
+  <div class="bar modes" id="modes">
+    <button data-m="order">① 作業の順番</button>
+    <button data-m="work">② 作業をする</button>
+    <button data-m="check">③ 点検（欠陥の確認）</button>
+  </div>
+  <div class="main">
+    <div class="card"><div id="side"></div></div>
+    <div class="card"><div id="body"></div></div>
+  </div>
+  <p class="src">欠陥の基準は 一般財団法人 電気技術者試験センター「技能試験の欠陥の判断基準」（<a href="https://www.shiken.or.jp/construction/upload/handankizyun2017.pdf" target="_blank" rel="noopener">PDF</a>・<a href="https://www.shiken.or.jp/construction/second/defect/" target="_blank" rel="noopener">案内</a>）。
+    数値の決まりが無い寸法は HOZAN「第二種電工試験の虎」などの目安で、「目安」と書いて欠陥とは区別する。
+    問題（配線・施工条件）は「複線図れんしゅう」と同じもの（施工条件は仮）。</p>
+</div>
+<script>
+"use strict";
+const VER = "2026-10-29a";
+// KIT-BEGIN（tools/export-kit.js が書く。手で直さない）
+const KIT = [{"id":"k1","no":1,"title":"No.1　位置表示灯内蔵スイッチと3つの照明","note":"スイッチ イ（位置表示灯内蔵）は引掛シーリング イ、ロ はランプレセプタクル ロ、ハ は蛍光灯 ハ を点滅する。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","位置表示灯内蔵スイッチは、スイッチが切のとき表示灯が点く（異時点滅と同じ働き）。端子は普通のスイッチと同じ2つ","スイッチ3つへは VVF1.6-2C を2本使う（電源の黒と、イ・ロ・ハの返り線）。枠の中の渡り線は黒"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"swH","name":"位置表示灯内蔵スイッチ イ","typeName":"位置表示灯内蔵スイッチ","label":"イ","place":"SW","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"SW","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sc","type":"sw1","name":"スイッチ ハ","typeName":"スイッチ","label":"ハ","place":"SW","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Fc","type":"fl","name":"蛍光灯（施工省略） ハ","typeName":"蛍光灯（施工省略）","label":"ハ","place":"Fc","omit":true,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"Ca","parts":["Ca"]},{"id":"SW","parts":["Sa","Sb","Sc"]},{"id":"Lb","parts":["Lb"]},{"id":"Fc","parts":["Fc"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"EM-EEF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（EM-EEF2.0-2C）"},{"id":"c1","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"SW","b":"B1","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"],"mm":"1.6","name":"位置表示灯内蔵スイッチ イの枠 と B1 の間のケーブル（VVF1.6-2C×2）"},{"id":"c3","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c4","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"Fc","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"蛍光灯（施工省略） ハ と B2 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r10"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r10"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Sb","term":"1","lab":"","w":false}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Sc","term":"1","lab":"","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r11"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r11"}},{"cable":"c3","color":"白","a":{"kind":"joint","box":"B1","joint":"#r11"},"b":{"kind":"joint","box":"B2","joint":"#r12"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r13"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r13"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r14"}},{"cable":"c3","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r14"},"b":{"kind":"joint","box":"B2","joint":"#r15"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Sc","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r16"}},{"cable":"c3","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r16"},"b":{"kind":"joint","box":"B2","joint":"#r17"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r12"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Fc","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r12"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r15"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Fc","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r17"}}],"joints":[{"id":"#r10","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r11","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r12","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r13","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r14","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r15","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r16","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r17","box":"B2","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k2","no":2,"title":"No.2　常時点灯の確認表示灯と2口コンセント","note":"スイッチ イ はランプレセプタクル イ（2つ）を点滅する。確認表示灯（パイロットランプ）は常時点灯。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","確認表示灯（パイロットランプ）は常時点灯とする（電源の黒と白のあいだにつなぐ）","コンセントからコンセントへは、コンセントの端子で渡す"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Pl","type":"pl","name":"確認表示灯（パイロットランプ）","typeName":"確認表示灯（パイロットランプ）","label":"","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"Lb","omit":true,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"O2","type":"outlet2","name":"コンセント（2口）","typeName":"コンセント（2口）","label":"","place":"O2","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"O1","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"O1","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"La","parts":["La"]},{"id":"F","parts":["Sa","Pl"]},{"id":"Lb","parts":["Lb"]},{"id":"O2","parts":["O2"]},{"id":"O1","parts":["O1"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"F","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ イの枠 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c4","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"O2","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（2口） と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"O1","b":"O2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント と コンセント（2口） の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r27"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r27"},"b":{"kind":"joint","box":"B2","joint":"#r28"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r29"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r29"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r29"},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r31"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r31"},"b":{"kind":"joint","box":"B2","joint":"#r32"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r28"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Pl","term":"1","lab":"","w":false}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"O2","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r28"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Pl","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"O2","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r30"}},{"cable":"c3","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r32"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r32"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"O2","term":"L","lab":"B","w":false},"b":{"kind":"term","part":"O1","term":"L","lab":"B","w":false}},{"cable":"c6","color":"白","a":{"kind":"term","part":"O2","term":"W","lab":"W","w":true},"b":{"kind":"term","part":"O1","term":"W","lab":"W","w":true}}],"joints":[{"id":"#r27","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r28","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r29","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r30","box":"B2","join":"小","n":4,"n16":4,"n20":0},{"id":"#r31","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r32","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k3","no":3,"title":"No.3　タイムスイッチと接地極付コンセント","note":"タイムスイッチ イ は引掛シーリング イ を、スイッチ ロ はランプレセプタクル ロ を入り切りする。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","タイムスイッチは端子台で代用する。端子は左から S1・S2・L1","S1 には電源の黒、S2（接地側）には白、L1 から引掛シーリングへ","接地極付コンセントの接地極（E）から接地極（E_D）へは緑の接地線（E1.6）"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"Sa","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Ta","type":"ts","name":"タイムスイッチ イ","typeName":"タイムスイッチ","label":"イ","place":"Ta","omit":false,"terms":[{"k":"S1","lab":"S1","desc":"","w":false},{"k":"S2","lab":"S2","desc":"","w":true},{"k":"L1","lab":"L1","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"OE","type":"outletE","name":"コンセント（接地極付）","typeName":"コンセント（接地極付）","label":"","place":"OE","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"G","omit":true,"terms":[{"k":"E","lab":"E","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"Sa","parts":["Sa"]},{"id":"Ta","parts":["Ta"]},{"id":"Ca","parts":["Ca"]},{"id":"Lb","parts":["Lb"]},{"id":"OE","parts":["OE"]},{"id":"G","parts":["G"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"Ta","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"タイムスイッチ イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ca","b":"Ta","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と タイムスイッチ イ の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"OE","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（接地極付） と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c7","a":"OE","b":"G","spec":"E1.6","colors":["緑"],"mm":"1.6","name":"コンセント（接地極付） と 接地極（施工省略） の間のケーブル（E1.6）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r42"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r42"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r42"},"b":{"kind":"joint","box":"B2","joint":"#r43"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r44"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r44"},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r46"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r46"},"b":{"kind":"joint","box":"B2","joint":"#r47"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Ta","term":"S1","lab":"S1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r43"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"OE","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r43"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Ta","term":"S2","lab":"S2","w":true},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"OE","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r45"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r47"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ta","term":"S2","lab":"S2","w":true},"b":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ta","term":"L1","lab":"L1","w":false},"b":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false}},{"cable":"c7","color":"緑","a":{"kind":"term","part":"OE","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"G","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r42","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r43","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r44","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r45","box":"B2","join":"小","n":4,"n16":4,"n20":0},{"id":"#r46","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r47","box":"B2","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k4","no":4,"title":"No.4　三相200V の電動機と電源表示灯","note":"単相100V（B）と三相200V（BE）の2つの電源。スイッチ イ は引掛シーリング イ を点滅する。電源表示灯は三相側で常に点く。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","三相電源の色は R 相 赤・S 相 白・T 相 黒","電源表示灯（ランプレセプタクル）は S 相と T 相のあいだにつなぐ。受金ねじ部に S 相（白）","電動機（施工省略）へは VVF2.0-3C の3本を R・S・T にそれぞれつなぐ"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"PX","type":"brkBE","name":"漏電遮断器","typeName":"漏電遮断器","label":"","place":"PX","omit":false,"terms":[{"k":"R","lab":"R","desc":"","w":false},{"k":"S","lab":"S","desc":"","w":false},{"k":"T","lab":"T","desc":"","w":false}]},{"id":"Lr","type":"lamp","name":"電源表示灯","typeName":"ランプレセプタクル","label":"","place":"Lr","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"M","type":"motor","name":"電動機（施工省略）","typeName":"電動機（施工省略）","label":"","place":"M","omit":true,"terms":[{"k":"U","lab":"U","desc":"","w":false},{"k":"V","lab":"V","desc":"","w":false},{"k":"W3","lab":"W","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"PX","parts":["PX"]},{"id":"Lr","parts":["Lr"]},{"id":"M","parts":["M"]},{"id":"Ca","parts":["Ca"]},{"id":"F","parts":["Sa","O"]}],"cables":[{"id":"c0","a":"PW","b":"B2","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B2 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"PX","b":"B1","spec":"VVF2.0-3C","colors":["黒","白","赤"],"mm":"2.0","name":"漏電遮断器 と B1 の間のケーブル（VVF2.0-3C）"},{"id":"c2","a":"M","b":"B1","spec":"VVF2.0-3C","colors":["黒","白","赤"],"mm":"2.0","name":"電動機（施工省略） と B1 の間のケーブル（VVF2.0-3C）"},{"id":"c3","a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"電源表示灯 と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ca","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"F","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ イの枠 と B2 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c1","color":"赤","a":{"kind":"term","part":"PX","term":"R","lab":"R","w":false},"b":{"kind":"joint","box":"B1","joint":"#r57"}},{"cable":"c2","color":"赤","a":{"kind":"term","part":"M","term":"U","lab":"U","w":false},"b":{"kind":"joint","box":"B1","joint":"#r57"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"PX","term":"S","lab":"S","w":false},"b":{"kind":"joint","box":"B1","joint":"#r58"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"M","term":"V","lab":"V","w":false},"b":{"kind":"joint","box":"B1","joint":"#r58"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Lr","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r58"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"PX","term":"T","lab":"T","w":false},"b":{"kind":"joint","box":"B1","joint":"#r59"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"M","term":"W3","lab":"W","w":false},"b":{"kind":"joint","box":"B1","joint":"#r59"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Lr","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r59"}},{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B2","joint":"#r60"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r60"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B2","joint":"#r61"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r61"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r61"}},{"cable":"c5","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r62"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r62"}}],"joints":[{"id":"#r57","box":"B1","join":"小","n":2,"n16":0,"n20":2},{"id":"#r58","box":"B1","join":"中","n":3,"n16":1,"n20":2},{"id":"#r59","box":"B1","join":"中","n":3,"n16":1,"n20":2},{"id":"#r60","box":"B2","join":"小","n":2,"n16":1,"n20":1},{"id":"#r61","box":"B2","join":"小","n":3,"n16":2,"n20":1},{"id":"#r62","box":"B2","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k5","no":5,"title":"No.5　200V コンセントと100V の照明","note":"スイッチ イ は蛍光灯 イ（施工省略）、ロ はランプレセプタクル ロ を点滅する。200V の接地極付コンセントは別の電源（BE）から。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","電源側（B・BE・接地端子）は5極の端子台で代用する","200V の回路は VVF2.0-3C（黒・赤・緑）。黒と赤は電源の2本に（どちら側でもよい）、緑は接地","スイッチ2つとコンセントへは VVF1.6-2C を2本使う（心線の数は未確認）"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"PX","type":"brkBE","name":"漏電遮断器","typeName":"漏電遮断器","label":"","place":"P2","omit":false,"terms":[{"k":"L1","lab":"L1","desc":"","w":false},{"k":"L2","lab":"L2","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"P2","omit":true,"terms":[{"k":"E","lab":"E","desc":"","w":false}]},{"id":"Lr","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lr","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Fl","type":"fl","name":"蛍光灯（施工省略） イ","typeName":"蛍光灯（施工省略）","label":"イ","place":"Fl","omit":true,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"O200","type":"outlet200","name":"コンセント（20A 250V 接地極付）","typeName":"コンセント（20A 250V 接地極付）","label":"","place":"O200","omit":false,"terms":[{"k":"X","lab":"","desc":"","w":false},{"k":"Y","lab":"","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"P2","parts":["PX","G"]},{"id":"Lr","parts":["Lr"]},{"id":"F","parts":["Sa","Sb","O"]},{"id":"Fl","parts":["Fl"]},{"id":"O200","parts":["O200"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"P2","b":"O200","spec":"VVF2.0-3C","colors":["黒","赤","緑"],"mm":"2.0","name":"漏電遮断器の枠 と コンセント（20A 250V 接地極付） の間のケーブル（VVF2.0-3C）"},{"id":"c2","a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"F","b":"B1","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"],"mm":"1.6","name":"スイッチ イの枠 と B1 の間のケーブル（VVF1.6-2C×2）"},{"id":"c4","a":"Fl","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"蛍光灯（施工省略） イ と B1 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r73"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r73"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"Sb","term":"1","lab":"","w":false}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Lr","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Fl","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r74"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r75"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Fl","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r75"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r76"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Lr","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r76"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"PX","term":"L1","lab":"L1","w":false},"b":{"kind":"term","part":"O200","term":"X","lab":"","w":false}},{"cable":"c1","color":"赤","a":{"kind":"term","part":"PX","term":"L2","lab":"L2","w":false},"b":{"kind":"term","part":"O200","term":"Y","lab":"","w":false}},{"cable":"c1","color":"緑","a":{"kind":"term","part":"G","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"O200","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r73","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r74","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r75","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r76","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k6","no":6,"title":"No.6　3路スイッチで2灯と露出形コンセント","note":"2つの3路スイッチ イ のどちらからでも、引掛シーリング イ（2つ）を点滅できる。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","3路スイッチの記号「0」の端子には電源側または負荷側の線を、記号「1」「3」の端子にはスイッチどうしを結ぶ線をつなぐ"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"O","type":"outletRo","name":"露出形コンセント","typeName":"露出形コンセント","label":"","place":"O","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sa","omit":false,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Cb","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Cb","omit":true,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sb","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sb","omit":false,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"O","parts":["O"]},{"id":"Sa","parts":["Sa"]},{"id":"Ca","parts":["Ca"]},{"id":"Cb","parts":["Cb"]},{"id":"Sb","parts":["Sb"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"O","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"露出形コンセント と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"Sa","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B1 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c4","a":"Ca","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"Cb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"Sb","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B2 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r85"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Sa","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B1","joint":"#r85"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"O","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r85"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r86"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r86"}},{"cable":"c3","color":"白","a":{"kind":"joint","box":"B1","joint":"#r86"},"b":{"kind":"joint","box":"B2","joint":"#r87"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Sa","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B1","joint":"#r88"}},{"cable":"c3","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r88"},"b":{"kind":"joint","box":"B2","joint":"#r89"}},{"cable":"c2","color":"赤","a":{"kind":"term","part":"Sa","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B1","joint":"#r90"}},{"cable":"c3","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r90"},"b":{"kind":"joint","box":"B2","joint":"#r91"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r87"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Cb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r87"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"Sb","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r89"}},{"cable":"c6","color":"赤","a":{"kind":"term","part":"Sb","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B2","joint":"#r91"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"Sb","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B2","joint":"#r92"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r92"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Cb","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r92"}}],"joints":[{"id":"#r85","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r86","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r87","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r88","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r89","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r90","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r91","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r92","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k7","no":7,"title":"No.7　3路と4路スイッチで3か所から点滅","note":"3路スイッチ イ（2つ）と4路スイッチ イ の、どれを切り替えてもランプレセプタクル イ（2つ）が点滅する。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","3路スイッチの記号「0」の端子には電源側または負荷側の線を、記号「1」「3」の端子にはスイッチどうしを結ぶ線をつなぐ","4路スイッチは 2–1・4–3（平行）と 2–3・4–1（交差）が切り替わる。2・4 を一方の3路スイッチへ、1・3 をもう一方へ","4路スイッチへは VVF1.6-2C を2本使う。右のボックスはアウトレットボックス"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Sa","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sa","omit":false,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"Lb","omit":true,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"S4","type":"sw4","name":"4路スイッチ イ","typeName":"4路スイッチ","label":"イ","place":"S4","omit":false,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"2","lab":"2","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false},{"k":"4","lab":"4","desc":"","w":false}]},{"id":"Sb","type":"sw3","name":"3路スイッチ イ","typeName":"3路スイッチ","label":"イ","place":"Sb","omit":false,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"0","lab":"0","desc":"","w":false},{"k":"3","lab":"3","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"obox","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"Sa","parts":["Sa"]},{"id":"La","parts":["La"]},{"id":"Lb","parts":["Lb"]},{"id":"S4","parts":["S4"]},{"id":"Sb","parts":["Sb"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Sa","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B1 の間のケーブル（VVF1.6-3C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Lb","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"S4","b":"B2","spec":"VVF1.6-2C×2","colors":["黒","白","黒","白"],"mm":"1.6","name":"4路スイッチ イ と B2 の間のケーブル（VVF1.6-2C×2）"},{"id":"c6","a":"Sb","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"3路スイッチ イ と B2 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r101"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Sa","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B1","joint":"#r101"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r102"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r102"},"b":{"kind":"joint","box":"B2","joint":"#r103"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Sa","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B1","joint":"#r104"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r104"},"b":{"kind":"joint","box":"B2","joint":"#r105"}},{"cable":"c1","color":"赤","a":{"kind":"term","part":"Sa","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B1","joint":"#r106"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r106"},"b":{"kind":"joint","box":"B2","joint":"#r107"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r103"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r103"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"S4","term":"2","lab":"2","w":false},"b":{"kind":"joint","box":"B2","joint":"#r105"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"S4","term":"4","lab":"4","w":false},"b":{"kind":"joint","box":"B2","joint":"#r107"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"S4","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r108"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"Sb","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r108"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"S4","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B2","joint":"#r109"}},{"cable":"c6","color":"赤","a":{"kind":"term","part":"Sb","term":"3","lab":"3","w":false},"b":{"kind":"joint","box":"B2","joint":"#r109"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"Sb","term":"0","lab":"0","w":false},"b":{"kind":"joint","box":"B2","joint":"#r110"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r110"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r110"}}],"joints":[{"id":"#r101","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r102","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r103","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r104","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r105","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r106","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r107","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r108","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r109","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r110","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k8","no":8,"title":"No.8　リモコンリレーで3つの照明","note":"リモコンリレー イ・ロ・ハ が、引掛シーリング イ、ランプレセプタクル ロ、引掛シーリング ハ（施工省略）をそれぞれ入り切りする。リモコンスイッチとトランスは施工省略。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","リモコンリレーは6極の端子台で代用する。1–2 がイ、3–4 がロ、5–6 がハ","電源の黒をボックスで分けて 1・3・5 に、2・4・6 からそれぞれの照明へ","各リモコンリレーへは、それぞれ VVF1.6-2C を使う（3本）"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ra","type":"rly","name":"リモコンリレー イ","typeName":"リモコンリレー","label":"イ","place":"RY","omit":false,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"2","lab":"2","desc":"","w":false}]},{"id":"Rb","type":"rly","name":"リモコンリレー ロ","typeName":"リモコンリレー","label":"ロ","place":"RY","omit":false,"terms":[{"k":"1","lab":"3","desc":"","w":false},{"k":"2","lab":"4","desc":"","w":false}]},{"id":"Rc","type":"rly","name":"リモコンリレー ハ","typeName":"リモコンリレー","label":"ハ","place":"RY","omit":false,"terms":[{"k":"1","lab":"5","desc":"","w":false},{"k":"2","lab":"6","desc":"","w":false}]},{"id":"Ci","type":"ceil","name":"引掛シーリング（丸） イ","typeName":"引掛シーリング（丸）","label":"イ","place":"Ci","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Lr","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lr","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Ch","type":"ceilK","name":"引掛シーリング（角） ハ","typeName":"引掛シーリング（角）","label":"ハ","place":"Ch","omit":true,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"obox","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"RY","parts":["Ra","Rb","Rc"]},{"id":"Ci","parts":["Ci"]},{"id":"Lr","parts":["Lr"]},{"id":"Ch","parts":["Ch"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVR2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B1 の間のケーブル（VVR2.0-2C）"},{"id":"c1","a":"RY","b":"B1","spec":"VVF1.6-2C×3","colors":["黒","白","黒","白","黒","白"],"mm":"1.6","name":"リモコンリレー イの枠 と B1 の間のケーブル（VVF1.6-2C×3）"},{"id":"c2","a":"Ci","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（丸） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"Lr","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ch","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） ハ と B1 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ra","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Rb","term":"1","lab":"3","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Rc","term":"1","lab":"5","w":false},"b":{"kind":"joint","box":"B1","joint":"#r119"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Ci","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Lr","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ch","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r120"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ra","term":"2","lab":"2","w":false},"b":{"kind":"joint","box":"B1","joint":"#r121"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Ci","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r121"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Rb","term":"2","lab":"4","w":false},"b":{"kind":"joint","box":"B1","joint":"#r122"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Lr","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r122"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Rc","term":"2","lab":"6","w":false},"b":{"kind":"joint","box":"B1","joint":"#r123"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ch","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r123"}}],"joints":[{"id":"#r119","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r120","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r121","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r122","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r123","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k9","no":9,"title":"No.9　接地極付接地端子付コンセント（EET）","note":"スイッチ イ はランプレセプタクル イ と引掛シーリング イ を点滅する。EET の先の2口コンセントは施工省略。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","EET の接地極（E）から接地極（E_D）へは緑の接地線（E1.6）（施工省略かどうかは未確認）","EET から施工省略の2口コンセントへ渡す"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"Sa","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Ci","type":"ceil","name":"引掛シーリング（丸） イ","typeName":"引掛シーリング（丸）","label":"イ","place":"Ci","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"EET","type":"outletEET","name":"コンセント（接地極付接地端子付）","typeName":"コンセント（接地極付接地端子付）","label":"","place":"EET","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]},{"id":"O2","type":"outlet2","name":"コンセント（2口）","typeName":"コンセント（2口）","label":"","place":"O2","omit":true,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"G","omit":true,"terms":[{"k":"E","lab":"E","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"La","parts":["La"]},{"id":"Sa","parts":["Sa"]},{"id":"Ci","parts":["Ci"]},{"id":"EET","parts":["EET"]},{"id":"O2","parts":["O2"]},{"id":"G","parts":["G"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c2","a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"Sa","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"Ci","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（丸） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"EET","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"コンセント（接地極付接地端子付） と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c6","a":"O2","b":"EET","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（2口） と コンセント（接地極付接地端子付） の間のケーブル（VVF1.6-2C）"},{"id":"c7","a":"EET","b":"G","spec":"E1.6","colors":["緑"],"mm":"1.6","name":"コンセント（接地極付接地端子付） と 接地極（施工省略） の間のケーブル（E1.6）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r133"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"EET","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r133"}},{"cable":"c1","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r133"},"b":{"kind":"joint","box":"B2","joint":"#r134"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r135"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"EET","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r135"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Ci","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r135"}},{"cable":"c1","color":"白","a":{"kind":"joint","box":"B1","joint":"#r135"},"b":{"kind":"joint","box":"B2","joint":"#r136"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Ci","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r137"}},{"cable":"c1","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r137"},"b":{"kind":"joint","box":"B2","joint":"#r138"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r134"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r136"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r138"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r138"}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"EET","term":"L","lab":"B","w":false},"b":{"kind":"term","part":"O2","term":"L","lab":"B","w":false}},{"cable":"c6","color":"白","a":{"kind":"term","part":"EET","term":"W","lab":"W","w":true},"b":{"kind":"term","part":"O2","term":"W","lab":"W","w":true}},{"cable":"c7","color":"緑","a":{"kind":"term","part":"EET","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"G","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r133","box":"B1","join":"中","n":3,"n16":1,"n20":2},{"id":"#r134","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r135","box":"B1","join":"中","n":4,"n16":2,"n20":2},{"id":"#r136","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r137","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r138","box":"B2","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k10","no":10,"title":"No.10　同時点滅の確認表示灯","note":"スイッチ イ は引掛シーリング イ とランプレセプタクル イ を点滅する。確認表示灯（パイロットランプ）は同時点滅。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","確認表示灯（パイロットランプ）は、引掛シーリング及びランプレセプタクルと同時点滅とする（照明と並列）"],"parts":[{"id":"PW","type":"brkB","name":"配線用遮断器","typeName":"配線用遮断器","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Pl","type":"pl","name":"確認表示灯（パイロットランプ） イ","typeName":"確認表示灯（パイロットランプ）","label":"イ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"Ca","parts":["Ca"]},{"id":"La","parts":["La"]},{"id":"F","parts":["Pl","Sa","O"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"配線用遮断器 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"La","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"F","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"確認表示灯（パイロットランプ） イの枠 と B1 の間のケーブル（VVF1.6-3C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r146"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r146"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r147"}},{"cable":null,"color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"term","part":"Pl","term":"2","lab":"","w":false}},{"cable":"c3","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r148"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r148"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r148"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"term","part":"Pl","term":"1","lab":"","w":false}}],"joints":[{"id":"#r146","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r147","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r148","box":"B1","join":"小","n":3,"n16":3,"n20":0}]},{"id":"k11","no":11,"title":"No.11　金属管（ねじなし電線管）の配線","note":"スイッチ イ は引掛シーリング イ、ロ はランプレセプタクル ロ を点滅する。スイッチ イ とコンセントへは金属管（E19）の中の IV1.6。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","金属管（E19）の中は IV1.6 の3本（黒・白・赤）。黒は電源側、白はコンセントの W、赤はスイッチの返り線","ボックスと金属管のボンド線は、施工条件に指定があるときだけ（この練習では扱わない）"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"Sb","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"obox","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"Ca","parts":["Ca"]},{"id":"Lb","parts":["Lb"]},{"id":"F","parts":["Sa","O"]},{"id":"Sb","parts":["Sb"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"Lb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"F","b":"B1","spec":"IV1.6（E19）","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ イの枠 と B1 の間のケーブル（IV1.6（E19））"},{"id":"c4","a":"Sb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ ロ と B1 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r156"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r156"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r156"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r157"}},{"cable":"c3","color":"赤","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r158"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r158"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r159"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r159"}}],"joints":[{"id":"#r156","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r157","box":"B1","join":"中","n":4,"n16":3,"n20":1},{"id":"#r158","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r159","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k12","no":12,"title":"No.12　合成樹脂製可とう電線管（PF管）の配線","note":"スイッチ イ は引掛シーリング イ、ロ はランプレセプタクル ロ を点滅する。スイッチ ロ とコンセントへは PF管（PF16）の中の IV1.6。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","PF管（PF16）の中は IV1.6 の3本（黒・白・赤）。黒は電源側、白はコンセントの W、赤はスイッチの返り線","右のボックスはアウトレットボックス"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Lb","type":"lamp","name":"ランプレセプタクル ロ","typeName":"ランプレセプタクル","label":"ロ","place":"Lb","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"Ca","type":"ceilK","name":"引掛シーリング（角） イ","typeName":"引掛シーリング（角）","label":"イ","place":"Ca","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sb","type":"sw1","name":"スイッチ ロ","typeName":"スイッチ","label":"ロ","place":"F","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"O","type":"outlet","name":"コンセント","typeName":"コンセント","label":"","place":"F","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"Sa","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"obox","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"Lb","parts":["Lb"]},{"id":"Ca","parts":["Ca"]},{"id":"F","parts":["Sb","O"]},{"id":"Sa","parts":["Sa"]}],"cables":[{"id":"c0","a":"PW","b":"B2","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B2 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"B2","b":"B1","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B2 と B1 の間のケーブル（VVF1.6-3C）"},{"id":"c2","a":"Lb","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル ロ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c3","a":"Ca","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"引掛シーリング（角） イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"F","b":"B2","spec":"IV1.6（PF16）","colors":["黒","白","赤"],"mm":"1.6","name":"スイッチ ロの枠 と B2 の間のケーブル（IV1.6（PF16））"},{"id":"c5","a":"Sa","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ イ と B2 の間のケーブル（VVF1.6-2C）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B2","joint":"#r168"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r168"}},{"cable":null,"color":"黒","a":{"kind":"term","part":"Sb","term":"1","lab":"","w":false},"b":{"kind":"term","part":"O","term":"L","lab":"B","w":false}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r168"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B2","joint":"#r169"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"O","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r169"}},{"cable":"c1","color":"白","a":{"kind":"joint","box":"B2","joint":"#r169"},"b":{"kind":"joint","box":"B1","joint":"#r170"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r171"}},{"cable":"c1","color":"黒","a":{"kind":"joint","box":"B2","joint":"#r171"},"b":{"kind":"joint","box":"B1","joint":"#r172"}},{"cable":"c4","color":"赤","a":{"kind":"term","part":"Sb","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B2","joint":"#r173"}},{"cable":"c1","color":"赤","a":{"kind":"joint","box":"B2","joint":"#r173"},"b":{"kind":"joint","box":"B1","joint":"#r174"}},{"cable":"c2","color":"白","a":{"kind":"term","part":"Lb","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r170"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"Ca","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B1","joint":"#r170"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"Ca","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r172"}},{"cable":"c2","color":"黒","a":{"kind":"term","part":"Lb","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B1","joint":"#r174"}}],"joints":[{"id":"#r168","box":"B2","join":"小","n":3,"n16":2,"n20":1},{"id":"#r169","box":"B2","join":"小","n":3,"n16":2,"n20":1},{"id":"#r170","box":"B1","join":"小","n":3,"n16":3,"n20":0},{"id":"#r171","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r172","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r173","box":"B2","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r174","box":"B1","join":"小○","n":2,"n16":2,"n20":0}]},{"id":"k13","no":13,"title":"No.13　自動点滅器と屋外灯","note":"スイッチ イ はランプレセプタクル イ を点滅する。自動点滅器 ロ は、暗くなると屋外灯 ロ（施工省略）を点ける。","cond":["電源からの接地側電線には、すべて白色を使用する","電源から点滅器・コンセント（端子台で代用する器具を含む）までの非接地側電線には、すべて黒色を使用する","ランプレセプタクルの受金ねじ部、引掛シーリングの接地側極端子（W）、コンセントの接地側極端子（W）には白色の電線を結線する","ボックスを経由する電線は、すべて接続箇所を設ける","ボックス内の接続は、すべてリングスリーブによる圧着接続とする（大きさと刻印を決める）","記載のない電線の種類は VVF1.6 とする（公表問題の注記）","自動点滅器は端子台で代用する。端子は 1・2・3","1 には電源の黒、2（接地側）には白（電源からと屋外灯から）、3 から屋外灯へ","屋外灯へは VVR1.6-2C。接地極付コンセントの接地極から接地極（E_D）へは緑の接地線（E1.6）"],"parts":[{"id":"PW","type":"src","name":"電源","typeName":"電源","label":"","place":"PW","omit":false,"terms":[{"k":"L","lab":"L","desc":"","w":false},{"k":"N","lab":"N","desc":"","w":false}]},{"id":"Sa","type":"sw1","name":"スイッチ イ","typeName":"スイッチ","label":"イ","place":"Sa","omit":false,"terms":[{"k":"1","lab":"","desc":"","w":false},{"k":"2","lab":"","desc":"","w":false}]},{"id":"La","type":"lamp","name":"ランプレセプタクル イ","typeName":"ランプレセプタクル","label":"イ","place":"La","omit":false,"terms":[{"k":"W","lab":"W","desc":"受金ねじ部","w":true},{"k":"C","lab":"B","desc":"中心接触部","w":false}]},{"id":"OE","type":"outletE","name":"コンセント（接地極付）","typeName":"コンセント（接地極付）","label":"","place":"OE","omit":false,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false},{"k":"E","lab":"E","desc":"","w":false}]},{"id":"G","type":"gnd","name":"接地極（施工省略）","typeName":"接地極（施工省略）","label":"","place":"G","omit":true,"terms":[{"k":"E","lab":"E","desc":"","w":false}]},{"id":"A","type":"swA","name":"自動点滅器 ロ","typeName":"自動点滅器","label":"ロ","place":"A","omit":false,"terms":[{"k":"1","lab":"1","desc":"","w":false},{"k":"2","lab":"2","desc":"","w":true},{"k":"3","lab":"3","desc":"","w":false}]},{"id":"Od","type":"outdoor","name":"屋外灯（施工省略） ロ","typeName":"屋外灯（施工省略）","label":"ロ","place":"Od","omit":true,"terms":[{"k":"W","lab":"W","desc":"","w":true},{"k":"L","lab":"B","desc":"","w":false}]}],"boxes":[{"id":"B1","kind":"box","join":"sleeve"},{"id":"B2","kind":"box","join":"sleeve"}],"places":[{"id":"PW","parts":["PW"]},{"id":"Sa","parts":["Sa"]},{"id":"La","parts":["La"]},{"id":"OE","parts":["OE"]},{"id":"G","parts":["G"]},{"id":"A","parts":["A"]},{"id":"Od","parts":["Od"]}],"cables":[{"id":"c0","a":"PW","b":"B1","spec":"VVF2.0-2C","colors":["黒","白"],"mm":"2.0","name":"電源 と B1 の間のケーブル（VVF2.0-2C）"},{"id":"c1","a":"Sa","b":"B1","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"スイッチ イ と B1 の間のケーブル（VVF1.6-2C）"},{"id":"c2","a":"B1","b":"B2","spec":"VVF1.6-3C","colors":["黒","白","赤"],"mm":"1.6","name":"B1 と B2 の間のケーブル（VVF1.6-3C）"},{"id":"c3","a":"La","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"ランプレセプタクル イ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c4","a":"OE","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"コンセント（接地極付） と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c5","a":"A","b":"B2","spec":"VVF1.6-2C","colors":["黒","白"],"mm":"1.6","name":"自動点滅器 ロ と B2 の間のケーブル（VVF1.6-2C）"},{"id":"c6","a":"Od","b":"A","spec":"VVR1.6-2C","colors":["黒","白"],"mm":"1.6","name":"屋外灯（施工省略） ロ と 自動点滅器 ロ の間のケーブル（VVR1.6-2C）"},{"id":"c7","a":"OE","b":"G","spec":"E1.6","colors":["緑"],"mm":"1.6","name":"コンセント（接地極付） と 接地極（施工省略） の間のケーブル（E1.6）"}],"wires":[{"cable":"c0","color":"黒","a":{"kind":"term","part":"PW","term":"L","lab":"L","w":false},"b":{"kind":"joint","box":"B1","joint":"#r184"}},{"cable":"c1","color":"黒","a":{"kind":"term","part":"Sa","term":"1","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r184"}},{"cable":"c2","color":"黒","a":{"kind":"joint","box":"B1","joint":"#r184"},"b":{"kind":"joint","box":"B2","joint":"#r185"}},{"cable":"c0","color":"白","a":{"kind":"term","part":"PW","term":"N","lab":"N","w":false},"b":{"kind":"joint","box":"B1","joint":"#r186"}},{"cable":"c2","color":"白","a":{"kind":"joint","box":"B1","joint":"#r186"},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c1","color":"白","a":{"kind":"term","part":"Sa","term":"2","lab":"","w":false},"b":{"kind":"joint","box":"B1","joint":"#r188"}},{"cable":"c2","color":"赤","a":{"kind":"joint","box":"B1","joint":"#r188"},"b":{"kind":"joint","box":"B2","joint":"#r189"}},{"cable":"c5","color":"黒","a":{"kind":"term","part":"A","term":"1","lab":"1","w":false},"b":{"kind":"joint","box":"B2","joint":"#r185"}},{"cable":"c4","color":"黒","a":{"kind":"term","part":"OE","term":"L","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r185"}},{"cable":"c5","color":"白","a":{"kind":"term","part":"A","term":"2","lab":"2","w":true},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c4","color":"白","a":{"kind":"term","part":"OE","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c3","color":"白","a":{"kind":"term","part":"La","term":"W","lab":"W","w":true},"b":{"kind":"joint","box":"B2","joint":"#r187"}},{"cable":"c3","color":"黒","a":{"kind":"term","part":"La","term":"C","lab":"B","w":false},"b":{"kind":"joint","box":"B2","joint":"#r189"}},{"cable":"c6","color":"白","a":{"kind":"term","part":"A","term":"2","lab":"2","w":true},"b":{"kind":"term","part":"Od","term":"W","lab":"W","w":true}},{"cable":"c6","color":"黒","a":{"kind":"term","part":"A","term":"3","lab":"3","w":false},"b":{"kind":"term","part":"Od","term":"L","lab":"B","w":false}},{"cable":"c7","color":"緑","a":{"kind":"term","part":"OE","term":"E","lab":"E","w":false},"b":{"kind":"term","part":"G","term":"E","lab":"E","w":false}}],"joints":[{"id":"#r184","box":"B1","join":"小","n":3,"n16":2,"n20":1},{"id":"#r185","box":"B2","join":"小","n":3,"n16":3,"n20":0},{"id":"#r186","box":"B1","join":"小","n":2,"n16":1,"n20":1},{"id":"#r187","box":"B2","join":"小","n":4,"n16":4,"n20":0},{"id":"#r188","box":"B1","join":"小○","n":2,"n16":2,"n20":0},{"id":"#r189","box":"B2","join":"小○","n":2,"n16":2,"n20":0}]}];
+// KIT-END
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const COLORS = { "黒": "#1f1f1f", "白": "#ffffff", "赤": "#d62828", "緑": "#1a7f3a" };
+
+/* ============================================================
+   出典と基準
+   DEF: 欠陥（試験センターの判断基準。文言は基準の要旨・抜粋）
+   目安（数値の決まりが無いもの）は TIP として、欠陥と分けて出す
+   ============================================================ */
+const SRC = {
+  hantei: { name: "試験センター「欠陥の判断基準」", url: "https://www.shiken.or.jp/construction/upload/handankizyun2017.pdf" },
+  hozan:  { name: "HOZAN 施工寸法", url: "https://www.hozan.co.jp/corp/denko2/pg/1process/" },
+  p738:   { name: "HOZAN P-738 取扱説明書", url: "https://www.hozan.co.jp/download/manual/P-738.pdf" },
+  dk28:   { name: "HOZAN DK-28 取扱説明書", url: "https://www.hozan.co.jp/download/manual/DK-28.pdf" },
+  pana:   { name: "パナソニック 圧着マーク", url: "https://www2.panasonic.biz/jp/terasu/skill/dictionary/crimpingmark.html" },
+};
+const DEF = {
+  wrongTerm:  { cat: "誤接続・誤結線", text: "誤接続、誤結線のもの" },
+  polarity:   { cat: "電線の色別・極性", text: "電線の色別、配線器具の極性が施工条件に相違したもの" },
+  sleevePick: { cat: "リングスリーブ", text: "リングスリーブの選択を誤ったもの（JIS C 2806 の組み合わせ）" },
+  sleeveMark: { cat: "リングスリーブ", text: "圧着マークが不適正のもの" },
+  tipHidden:  { cat: "リングスリーブ", text: "リングスリーブを上から目視して、接続する心線の先端が一本でも見えないもの" },
+  tipLong:    { cat: "リングスリーブ", text: "リングスリーブの上端から心線が5mm以上露出したもの" },
+  onInsul:    { cat: "リングスリーブ", text: "絶縁被覆の上から圧着したもの" },
+  overStrip:  { cat: "リングスリーブ", text: "絶縁被覆のむき過ぎで、リングスリーブの下端から心線が10mm以上露出したもの" },
+  sheathShort:{ cat: "リングスリーブ", text: "ケーブル外装のはぎ取り不足で、絶縁被覆が20mm以下のもの" },
+  leftWrap:   { cat: "巻き付けによる結線", text: "心線を左巻きにしたもの" },
+  wrapBad:    { cat: "巻き付けによる結線", text: "心線の巻き付けが不足、又は重ね巻きしたもの" },
+  ringExpose: { cat: "器具への結線", text: "ランプレセプタクル又は露出形コンセントの結線にあっては、ねじの端から心線が5mm以上露出したもの" },
+  noBase:     { cat: "器具への結線", text: "ケーブル外装が台座の中に入っていないもの" },
+  pushExpose: { cat: "器具への結線", text: "心線が差込口から2mm以上露出したもの（引掛シーリングは1mm以上）" },
+  pullOut:    { cat: "器具への結線", text: "電線を引っ張って外れるもの" },
+  ceilInsul:  { cat: "器具への結線", text: "引掛シーリングで、絶縁被覆が台座の下端から5mm以上露出したもの" },
+  blockExpose:{ cat: "器具への結線", text: "端子台の端から心線が5mm以上露出したもの" },
+  notScrewed: { cat: "器具への結線", text: "心線をねじで締め付けていないもの" },
+  unfinished: { cat: "未完成", text: "未完成のもの（作業をしていない所がある）" },
+};
+
+/* ============================================================
+   器具ごとの作業の種類と寸法
+   ring:  ねじ締め・輪作り（ランプレセプタクル・露出形コンセント）
+   push:  差込（埋込連用器具）  ceil: 差込（引掛シーリング。露出は1mm で欠陥）
+   block: 端子台（代用する器具）  none: 作業なし（電源・施工省略）
+   ============================================================ */
+const WORK = {
+  lamp: "ring", outletRo: "ring",
+  sw1: "push", sw3: "push", sw4: "push", swH: "push", pl: "push",
+  outlet: "push", outlet2: "push", outletE: "push", outletET: "push", outletEET: "push", outlet200: "push",
+  ceilK: "ceil", ceil: "ceil",
+  brkB: "block", brkBE: "block", swA: "block", ts: "block", rly: "block",
+};
+const WORKNAME = { ring: "ねじ締め（輪作り）", push: "差込（埋込連用器具）", ceil: "差込（引掛シーリング）", block: "端子台（ねじ締め）" };
+/* 目安（HOZAN など）。sheath: シース、core: 心線の被覆。欠陥の基準ではない */
+const GUIDE = {
+  ring:  { sheath: [40, 50], core: [18, 22], src: "hozan", why: "ランプレセプタクルは外装 40〜50mm・被覆 20mm（HOZAN）。外装が長すぎると台座に入らない" },
+  push:  { sheath: [90, 110], core: [12, 12], src: "hozan", why: "埋込連用器具は外装 約100mm、被覆は器具裏のストリップゲージ（この練習では 12mm）" },
+  ceil:  { sheath: [18, 22], core: [10, 10], src: "hozan", why: "引掛シーリングは外装 約20mm、被覆はストリップゲージ（この練習では 10mm）" },
+  block: { sheath: [40, 50], core: [10, 12], src: "hozan", why: "端子台は外装 40〜50mm・被覆 10〜12mm（HOZAN ほか）" },
+  joint: { sheath: [90, 110], core: [18, 22], src: "hozan", why: "ボックス内のリングスリーブ接続は外装 約100mm・被覆 約20mm（HOZAN）" },
+};
+/* アプリの見なし（実物の寸法ではなく、このアプリで欠陥かどうかを決めるための仮の大きさ） */
+const MODEL = {
+  pushGauge: 12,      // 埋込連用器具の差込の深さ（ストリップゲージ）
+  ceilGauge: 10,      // 引掛シーリングの差込の深さ
+  ceilBase: 10,       // 引掛シーリングの台座の中に入る被覆の長さ
+  blockDepth: 10,     // 端子台で座金の下に入る心線の長さ
+  lampBase: 55,       // ランプレセプタクル・露出形コンセント: これより長くシースをはぐと、外装が台座に入らない
+};
+
+/* ============================================================
+   リングスリーブ（JIS C 2806）。1.6mm×2本だけが刻印「○」
+   ============================================================ */
+function sleeveFor(n16, n20) {
+  const a = n16, b = n20;
+  if (b === 0) return a === 2 ? { size: "小", mark: "○" } : a >= 3 && a <= 4 ? { size: "小", mark: "小" } : a >= 5 && a <= 6 ? { size: "中", mark: "中" } : null;
+  if (b === 1) return a >= 1 && a <= 2 ? { size: "小", mark: "小" } : a >= 3 && a <= 5 ? { size: "中", mark: "中" } : null;
+  if (b === 2) return a === 0 ? { size: "小", mark: "小" } : a <= 3 ? { size: "中", mark: "中" } : null;
+  if (b === 3 || b === 4) return a === 0 ? { size: "中", mark: "中" } : null;
+  return null;
+}
+
+/* ============================================================
+   作業の順番。答えは1つに決めず、物理的に必要な前後（after）だけで判定する
+   ============================================================ */
+const ORDER = {
+  flow: { name: "全体の流れ", cards: [
+    { id: "a", t: "材料と工具を確かめる" },
+    { id: "b", t: "複線図を描く（接続点と刻印も決める）" },
+    { id: "c", t: "寸法を測ってケーブルを切る", after: { a: "材料がそろっているか確かめてから切る。足りない材料は試験の始めに申し出る。", b: "複線図で、どこへ何本行くかを決めてから切る。" } },
+    { id: "d", t: "器具に結線する", after: { c: "ケーブルを切ってから、器具側をはいで結線する。" } },
+    { id: "e", t: "ボックス内の接続（リングスリーブで圧着）", after: { c: "ケーブルを切ってから、ボックスの所をはいで接続する。" } },
+    { id: "f", t: "点検する（複線図と見比べ、欠陥がないか）", after: { d: "全部の作業が終わってから点検する。", e: "全部の作業が終わってから点検する。" } },
+  ], note: "「器具に結線する」と「ボックス内の接続」は、どちらが先でもよい。多くの教材は器具が先。" },
+  ring: { name: "ランプレセプタクル・露出形コンセント", cards: [
+    { id: "r1", t: "ケーブルを台座の穴に通す" },
+    { id: "r2", t: "シースをはぐ（目安 40〜50mm）" },
+    { id: "r3", t: "心線の被覆をはぐ（約20mm）", after: { r2: "シースをはがないと、中の心線の被覆ははげない。" } },
+    { id: "r4", t: "被覆の端から約3mmで、心線を直角に曲げる", after: { r3: "被覆をはいだ心線でないと、輪は作れない。" } },
+    { id: "r5", t: "右巻き（時計回り）に輪を作る", after: { r4: "まず根元を直角に曲げてから輪にする。", r1: "輪を作ると台座の穴を通らなくなる。台座に通してから輪を作る。" } },
+    { id: "r6", t: "白線を受金ねじ部の端子（W）、黒線をもう一方へ。ねじで締める", after: { r5: "輪を作ってから、ねじにかけて締める。" } },
+  ], note: "シースをはぐのと、台座に通すのは、どちらが先でもよい。" },
+  push: { name: "埋込連用器具（スイッチ・コンセント・表示灯）", cards: [
+    { id: "p1", t: "取付枠に器具を取り付ける（器具の数で位置が決まる）" },
+    { id: "p2", t: "シースをはぐ（目安 約100mm）" },
+    { id: "p3", t: "器具裏のストリップゲージに合わせて被覆をはぐ", after: { p2: "シースをはがないと、中の心線の被覆ははげない。" } },
+    { id: "p4", t: "心線を差込口の奥まで差し込む（W 側に白）", after: { p3: "被覆をはいでから差し込む。" } },
+    { id: "p5", t: "引っ張って抜けないか、心線が見えていないか確かめる", after: { p4: "差し込んでから確かめる。" } },
+  ], note: "取付枠への取り付けは、差し込む前でも後でもよい。" },
+  ceil: { name: "引掛シーリング", cards: [
+    { id: "c1", t: "シースをはぐ（目安 約20mm）" },
+    { id: "c2", t: "ストリップゲージに合わせて被覆をはぐ", after: { c1: "シースをはがないと、中の心線の被覆ははげない。" } },
+    { id: "c3", t: "W 側に白、もう一方に黒を差し込む", after: { c2: "被覆をはいでから差し込む。" } },
+    { id: "c4", t: "心線が見えていないか（1mm）、被覆が台座から出すぎていないか確かめる", after: { c3: "差し込んでから確かめる。" } },
+  ] },
+  block: { name: "端子台（遮断器・自動点滅器などの代用）", cards: [
+    { id: "b1", t: "シースをはぐ（目安 40〜50mm）" },
+    { id: "b2", t: "心線の被覆をはぐ（約10〜12mm）", after: { b1: "シースをはがないと、中の心線の被覆ははげない。" } },
+    { id: "b3", t: "心線を座金の下に差し込む（端子の記号を確かめる）", after: { b2: "被覆をはいでから差し込む。" } },
+    { id: "b4", t: "ねじを締める", after: { b3: "心線を差し込んでから締める。" } },
+    { id: "b5", t: "心線が5mm以上出ていないか、締まっているか確かめる", after: { b4: "締めてから確かめる。" } },
+  ] },
+  sleeve: { name: "リングスリーブで圧着（ボックス内）", cards: [
+    { id: "s1", t: "ボックスに入るケーブルのシースをはぐ（目安 約100mm）" },
+    { id: "s2", t: "心線の被覆をはぐ（約20mm）", after: { s1: "シースをはがないと、中の心線の被覆ははげない。" } },
+    { id: "s3", t: "つなぐ心線の先をそろえる", after: { s2: "被覆をはいでから、心線の先をそろえる。" } },
+    { id: "s4", t: "線の太さと本数から、スリーブの大きさと刻印を決める" },
+    { id: "s5", t: "スリーブに心線を通す（被覆との間 約2mm）", after: { s3: "先をそろえてから通さないと、先端が1本見えなくなる。", s4: "どのスリーブを使うか決めてから通す。" } },
+    { id: "s6", t: "刻印に合ったダイスで圧着する", after: { s5: "スリーブに通してから圧着する。" } },
+    { id: "s7", t: "圧着マークを確かめ、先端を 1〜3mm 残して切る", after: { s6: "圧着してから先端を切る。" } },
+  ], note: "スリーブの大きさを決めるのは、いつでもよい（複線図を描くときに決めておくと速い）。" },
+};
+
+/* ============================================================
+   問題から作業の単位を作る
+   器具の場所ごと（同じ取付枠の器具はまとめて）と、ボックスごと
+   ============================================================ */
+let P = null, mode = "order", unitId = null, orderSet = "flow";
+const store = {};                          // 問題ごとの作業の結果 { [unitId]: params }
+function prob(id) { return KIT.find(p => p.id === id); }
+function partOf(id) { return P.parts.find(p => p.id === id); }
+function cableOf(id) { return P.cables.find(c => c.id === id); }
+function placeName(pl) { const ps = (P.places.find(x => x.id === pl) || { parts: [] }).parts.map(partOf); return ps.map(p => p.name).join("・"); }
+function units() {
+  const out = [];
+  P.places.forEach(pl => {
+    const ps = pl.parts.map(partOf), kinds = [...new Set(ps.filter(p => !p.omit && WORK[p.type]).map(p => WORK[p.type]))];
+    if (!kinds.length) return;
+    const ends = [];
+    P.wires.forEach((w, i) => [w.a, w.b].forEach((e, side) => { if (e.kind === "term" && pl.parts.includes(e.part)) ends.push({ wi: i, side, e }); }));
+    out.push({ id: "pl:" + pl.id, kind: "dev", place: pl.id, name: ps.map(p => p.name).join("・"), work: kinds, ends });
+  });
+  P.boxes.forEach(b => {
+    const js = P.joints.filter(j => j.box === b.id);
+    if (!js.length) return;
+    out.push({ id: "bx:" + b.id, kind: "box", box: b.id, name: "ボックス " + b.id + " の接続", joints: js });
+  });
+  return out;
+}
+/* 器具の場所に来るケーブル（とその心線） */
+function cablesAt(place) {
+  const cs = P.cables.filter(c => c.a === place || c.b === place);
+  return cs.map(c => ({ c, wires: P.wires.map((w, i) => ({ w, i })).filter(x => x.w.cable === c.id) }));
+}
+function jumpersAt(place) {                  // 渡り線（同じ取付枠の中の器具どうし）
+  return P.wires.map((w, i) => ({ w, i })).filter(x => !x.w.cable && x.w.a.kind === "term" && x.w.b.kind === "term"
+    && [x.w.a.part, x.w.b.part].every(id => (P.places.find(p => p.id === place) || { parts: [] }).parts.includes(id)));
+}
+function endAt(w, place) {                   // 線 w の、その場所の側の端
+  const pl = (P.places.find(p => p.id === place) || { parts: [] }).parts;
+  return [w.a, w.b].find(e => e.kind === "term" && pl.includes(e.part));
+}
+function otherEnd(w, place) { const e = endAt(w, place); return e === w.a ? w.b : w.a; }
+function endText(e) {
+  if (e.kind === "joint") return "ボックス " + e.box;
+  const p = partOf(e.part); return p.name + (e.lab ? " の " + e.lab : "");
+}
+function termText(part, k) { const p = partOf(part), t = p.terms.find(x => x.k === k); return p.name + " の端子" + (t && t.lab ? "「" + t.lab + "」" : "（" + k + "）") + (t && t.desc ? "（" + t.desc + "）" : ""); }
+
+/* ============================================================
+   画面の骨組み
+   ============================================================ */
+function drawProbs() {
+  const host = $("probs"); host.innerHTML = "";
+  KIT.forEach(p => { const b = document.createElement("button"); b.textContent = "No." + p.no; b.classList.toggle("on", P && P.id === p.id);
+    b.onclick = () => openProb(p.id); host.appendChild(b); });
+}
+function setMode(m) { mode = m; document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.m === m)); draw(); }
+document.querySelectorAll("#modes button").forEach(b => { b.onclick = () => setMode(b.dataset.m); });
+function openProb(id) {
+  P = prob(id); store[P.id] = store[P.id] || load(P.id) || {};
+  const us = units(); unitId = us.length ? us[0].id : null;
+  drawProbs(); draw();
+}
+function draw() { if (mode === "order") drawOrder(); else if (mode === "work") drawWork(); else drawCheck(); }
+const KEY = "sagyou:";
+function save() { try { localStorage.setItem(KEY + P.id, JSON.stringify(store[P.id])); } catch (e) {} }
+function load(id) { try { return JSON.parse(localStorage.getItem(KEY + id) || "null"); } catch (e) { return null; } }
+
+/* ============================================================
+   ① 作業の順番
+   ============================================================ */
+let orderState = { set: null, done: [], miss: 0, pool: [] };
+function orderSetsFor() {
+  const kinds = new Set(); units().forEach(u => { if (u.kind === "dev") u.work.forEach(k => kinds.add(k)); else kinds.add("sleeve"); });
+  return ["flow", ...["ring", "push", "ceil", "block", "sleeve"].filter(k => kinds.has(k))];
+}
+function startOrder(set) {
+  orderSet = set; const cards = ORDER[set].cards.slice();
+  for (let i = cards.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cards[i], cards[j]] = [cards[j], cards[i]]; }
+  orderState = { set, done: [], miss: 0, pool: cards.map(c => c.id) };
+}
+let seed = 12345; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+function drawOrder() {
+  const sets = orderSetsFor();
+  if (!sets.includes(orderSet)) orderSet = "flow";
+  if (orderState.set !== orderSet) startOrder(orderSet);
+  $("side").innerHTML = `<h2>どの作業の順番？</h2><div class="list">` + sets.map(s => `<button data-s="${s}" class="${s === orderSet ? "on" : ""}">${esc(ORDER[s].name)}</button>`).join("") + `</div>
+    <p class="note">No.${P.no} の作業に出てくるものだけを並べている。</p>`;
+  $("side").querySelectorAll("button[data-s]").forEach(b => { b.onclick = () => { startOrder(b.dataset.s); drawOrder(); }; });
+  const O = ORDER[orderSet], byId = id => O.cards.find(c => c.id === id), fin = !orderState.pool.length;
+  $("body").innerHTML = `<h2>${esc(O.name)}：正しい順にカードを押す</h2>
+    <div class="msg" id="omsg"></div>
+    <h3>やった順</h3><div class="seq" id="seq">${orderState.done.map((id, i) => `<div class="cardbtn"><b>${i + 1}</b>${esc(byId(id).t)}</div>`).join("") || '<span class="note">ここに並ぶ</span>'}</div>
+    <h3>カード</h3><div class="pool" id="pool">${orderState.pool.map(id => `<button class="cardbtn" data-c="${id}">${esc(byId(id).t)}</button>`).join("") || '<span class="note">全部並べた</span>'}</div>
+    <div class="bar"><button id="oAgain">もう一度（並べ直す）</button></div>
+    ${fin ? `<div class="issue ${orderState.miss ? "tip" : "good"}">${orderState.miss ? "できた。順番の間違いは " + orderState.miss + " 回。もう一度やってみよう。" : "間違えずに並べられた！"}${O.note ? `<span class="rule">${esc(O.note)}</span>` : ""}</div>` : ""}`;
+  $("oAgain").onclick = () => { startOrder(orderSet); drawOrder(); };
+  $("pool").querySelectorAll("button[data-c]").forEach(b => { b.onclick = () => pickCard(b.dataset.c, b); });
+}
+function pickCard(id, el) {
+  const O = ORDER[orderSet], c = O.cards.find(x => x.id === id);
+  const lack = Object.keys(c.after || {}).find(k => !orderState.done.includes(k));
+  if (lack) {
+    orderState.miss++; el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+    const m = $("omsg"); m.className = "msg err"; m.textContent = "まだ早い。" + c.after[lack]; return;
+  }
+  orderState.done.push(id); orderState.pool = orderState.pool.filter(x => x !== id);
+  drawOrder(); const m = $("omsg"); m.className = "msg ok"; m.textContent = "よし。" + (orderState.pool.length ? "次は？" : "");
+}
+
+/* ============================================================
+   ② 作業をする
+   ============================================================ */
+function sideList() {
+  const us = units();
+  $("side").innerHTML = `<h2>No.${P.no} の作業</h2><div class="list">` + us.map(u => {
+    const r = store[P.id][u.id], res = r && r.done ? evalUnit(u, r) : null;
+    const st = !res ? '<span class="st todo">まだ</span>' : res.defects.length ? `<span class="st ng">欠陥 ${res.defects.length}</span>` : '<span class="st ok">✓</span>';
+    return `<button data-u="${esc(u.id)}" class="${u.id === unitId ? "on" : ""}">${st}${esc(u.name)}<br><span class="note">${esc(u.kind === "box" ? "リングスリーブで圧着" : u.work.map(k => WORKNAME[k]).join("・"))}</span></button>`;
+  }).join("") + `</div><p class="note">作業をしない所: ${esc(omitList())}</p>`;
+  $("side").querySelectorAll("button[data-u]").forEach(b => { b.onclick = () => { unitId = b.dataset.u; draw(); }; });
+}
+function omitList() {
+  const names = P.parts.filter(p => p.omit || !WORK[p.type]).map(p => p.name);
+  return names.length ? names.join("、") + "（電源・施工省略）" : "なし";
+}
+function defaults(u) {                       // 作業を始める前の値（わざと「まだやっていない」状態）
+  if (u.kind === "box") return { done: false, sheath: {}, core: 0, j: {} };
+  return { done: false, sheath: {}, core: {}, bend: 3, dir: "", wrap: 0, conn: {} };
+}
+function drawWork() {
+  sideList();
+  const u = units().find(x => x.id === unitId); if (!u) { $("body").innerHTML = "作業がない。"; return; }
+  const r = store[P.id][u.id] = store[P.id][u.id] || defaults(u);
+  if (u.kind === "box") drawBoxWork(u, r); else drawDevWork(u, r);
+}
+let binds = [], rid = 0;                                             // 画面を書いたあとに、スライダーをつなぐ
+function bindAll() { binds.forEach(f => f()); binds = []; }
+function rangeRow(label, val, min, max, step, onIn, unit) {
+  const id = "rg" + (rid++);
+  binds.push(() => { const el = $(id); if (!el) return; el.oninput = () => { onIn(+el.value); $(id + "v").textContent = el.value + (unit || ""); redrawPreview(); }; el.onchange = () => save(); });
+  return `<div class="ctl"><label for="${id}">${esc(label)}</label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"><span class="val" id="${id}v">${val}${unit || ""}</span></div>`;
+}
+let redrawPreview = () => {};
+
+/* ---------- 器具の結線 ---------- */
+function drawDevWork(u, r) {
+  const ps = (P.places.find(x => x.id === u.place)).parts.map(partOf).filter(p => !p.omit && WORK[p.type]);
+  const cs = cablesAt(u.place).filter(x => x.wires.some(y => endAt(y.w, u.place))), jm = jumpersAt(u.place);
+  const kinds = u.work, ring = kinds.includes("ring");
+  const g = GUIDE[kinds[0]];
+  let h = `<h2>${esc(u.name)}</h2><p class="note">${esc(kinds.map(k => WORKNAME[k]).join("・"))}。${esc(g.why)}（目安）。</p>`;
+  h += `<svg class="side" id="prev" viewBox="0 0 ${ring ? 900 : 700} 205"></svg>`;
+  cs.forEach(({ c }) => {
+    r.sheath[c.id] = r.sheath[c.id] || 0; r.core[c.id] = r.core[c.id] || 0;
+    h += `<div class="sect"><h3>${esc(c.spec)}（${esc(c.name.replace(/の間のケーブル.*$/, ""))}）</h3>`
+      + rangeRow("シースをはぐ長さ", r.sheath[c.id], 0, 150, 5, v => { r.sheath[c.id] = v; }, "mm")
+      + rangeRow("心線の被覆をはぐ長さ", r.core[c.id], 0, 30, 1, v => { r.core[c.id] = v; }, "mm") + `</div>`;
+  });
+  if (jm.length) { r.core.jump = r.core.jump || 0;
+    h += `<div class="sect"><h3>渡り線（${jm.length} 本）</h3>` + rangeRow("心線の被覆をはぐ長さ", r.core.jump, 0, 30, 1, v => { r.core.jump = v; }, "mm") + `</div>`; }
+  if (ring) {
+    h += `<div class="sect"><h3>輪作り</h3>`
+      + rangeRow("曲げる所（被覆の端から）", r.bend, 0, 10, 1, v => { r.bend = v; }, "mm")
+      + `<div class="ctl"><span>巻く向き</span><span class="seg" id="dirSeg"><button data-v="右" class="${r.dir === "右" ? "on" : ""}">右巻き（時計回り）</button><button data-v="左" class="${r.dir === "左" ? "on" : ""}">左巻き（反時計回り）</button></span><span></span></div>`
+      + `<div class="ctl"><span>巻く量</span><span class="seg" id="wrapSeg">${[[0.5, "半周"], [0.75, "3/4周"], [1, "ほぼ1周"], [1.25, "1周と1/4（重なる）"]].map(([v, t]) => `<button data-v="${v}" class="${r.wrap === v ? "on" : ""}">${t}</button>`).join("")}</span><span></span></div></div>`;
+  }
+  // どの線をどの端子へ
+  const rows = [];
+  cs.forEach(({ c, wires }) => wires.forEach(({ w, i }) => { const e = endAt(w, u.place); if (e) rows.push({ i, w, c, e }); }));
+  jm.forEach(({ w, i }) => { rows.push({ i, w, c: null, e: w.a, jump: "a" }); rows.push({ i, w, c: null, e: w.b, jump: "b" }); });
+  const terms = ps.flatMap(p => p.terms.map(t => ({ v: p.id + "." + t.k, t: termText(p.id, t.k) })));
+  h += `<div class="sect"><h3>どの線を、どの端子へ</h3><table class="wires"><tr><th>線</th><th>行き先・来る所</th><th>つなぐ端子</th></tr>` + rows.map(x => {
+    const key = x.i + (x.jump ? ":" + x.jump : ""), cur = r.conn[key] || "";
+    const from = x.c ? x.c.spec : "渡り線", other = x.jump ? endText(x.jump === "a" ? x.w.b : x.w.a) : endText(otherEnd(x.w, u.place));
+    return `<tr><td><span class="chip" style="background:${COLORS[x.w.color] || "#888"}"></span>${esc(x.w.color)}（${esc(from)}）</td><td>${esc(other)}</td><td><select data-k="${esc(key)}"><option value="">えらぶ</option>${terms.map(t => `<option value="${esc(t.v)}"${t.v === cur ? " selected" : ""}>${esc(t.t)}</option>`).join("")}</select></td></tr>`;
+  }).join("") + `</table></div>`;
+  h += `<div class="bar"><button class="primary" id="finish">この作業を終える（点検に出す）</button><button id="redo">やり直す</button></div><div id="res"></div>`;
+  $("body").innerHTML = h; bindAll();
+  const seg = (id, key, cast) => { const el = $(id); if (!el) return; el.querySelectorAll("button").forEach(b => { b.onclick = () => { r[key] = cast(b.dataset.v); save(); drawDevWork(u, r); }; }); };
+  seg("dirSeg", "dir", String); seg("wrapSeg", "wrap", Number);
+  $("body").querySelectorAll("select[data-k]").forEach(s => { s.onchange = () => { r.conn[s.dataset.k] = s.value; save(); }; });
+  $("finish").onclick = () => { r.done = true; save(); sideList(); showResult(u, r); };
+  $("redo").onclick = () => { store[P.id][u.id] = defaults(u); save(); drawWork(); };
+  redrawPreview = () => devPreview(u, r, cs, ring);
+  redrawPreview();
+  if (r.done) showResult(u, r);
+}
+function devPreview(u, r, cs, ring) {
+  const s = $("prev"); if (!s) return;
+  const k = 3.2, x0 = 30;                                    // 1mm = 3.2 の大きさで横から見た図
+  let g = `<text x="${x0}" y="18" font-size="13" fill="#5d6763">横から見た図（1目盛り 10mm）</text>`;
+  for (let mm = 0; mm <= 200; mm += 10) g += `<line x1="${x0 + mm * k}" y1="186" x2="${x0 + mm * k}" y2="${mm % 50 ? 180 : 174}" stroke="#9ca3af"/>` + (mm % 50 ? "" : `<text x="${x0 + mm * k}" y="198" font-size="10" text-anchor="middle" fill="#6b7280">${mm}</text>`);
+  const c = cs[0]; if (c) {
+    const sh = r.sheath[c.c.id] || 0, co = r.core[c.c.id] || 0, ws = c.wires.filter(y => endAt(y.w, u.place));
+    const end = x0 + 200 * k, sx = end - sh * k;              // 右端がケーブルの先
+    g += `<rect x="${x0 - 10}" y="60" width="${sx - x0 + 10}" height="${12 + ws.length * 16}" rx="5" fill="#d9d6cf" stroke="#9a9488"/>`;
+    ws.forEach((y, n) => { const cy = 72 + n * 16, col = COLORS[y.w.color] || "#888", ix = end - co * k;
+      g += `<rect x="${sx}" y="${cy - 5}" width="${Math.max(0, ix - sx)}" height="10" rx="2" fill="${col}" stroke="#555"/>`;
+      g += `<line x1="${ix}" y1="${cy}" x2="${end}" y2="${cy}" stroke="#b87333" stroke-width="3.5"/>`; });
+    g += `<text x="${(x0 + sx) / 2}" y="54" font-size="12" text-anchor="middle" fill="#5d6763">シース</text>`;
+    if (sh) g += `<text x="${sx + 4}" y="50" font-size="12" fill="#0f6b4f">← ${sh}mm →</text>`;
+  }
+  if (ring) {                                                  // 輪の形（上から見た図）
+    const cx = 810, cy = 100, R = 22, turn = r.wrap || 0, dir = r.dir === "左" ? -1 : 1;
+    g += `<circle cx="${cx}" cy="${cy}" r="9" fill="#e5e7eb" stroke="#6b7280"/><text x="${cx}" y="${cy - 34}" font-size="12" text-anchor="middle" fill="#5d6763">ねじ（上から）</text>`;
+    if (turn) { const a0 = Math.PI / 2, a1 = a0 - dir * turn * 2 * Math.PI, n = 40; let d = "";
+      for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n, rr = R - (turn > 1 && i > n * 0.8 ? 3 : 0); d += (i ? "L" : "M") + (cx + rr * Math.cos(a)).toFixed(1) + " " + (cy + rr * Math.sin(a)).toFixed(1); }
+      g += `<path d="M${cx} ${cy + R + 30} L${cx} ${cy + R}" stroke="#b87333" stroke-width="4" fill="none"/><path d="${d}" stroke="#b87333" stroke-width="4" fill="none"/>`;
+      g += `<text x="${cx}" y="${cy + R + 46}" font-size="12" text-anchor="middle" fill="#5d6763">${r.dir ? r.dir + "巻き" : "向き未定"}・${turn}周</text>`; }
+  }
+  s.innerHTML = g;
+}
+
+/* ---------- ボックス内の接続 ---------- */
+function drawBoxWork(u, r) {
+  const cs = P.cables.filter(c => c.a === u.box || c.b === u.box);
+  let h = `<h2>${esc(u.name)}</h2><p class="note">リングスリーブで圧着。${esc(GUIDE.joint.why)}（目安）。スリーブと被覆の間は約2mm、先端は 1〜3mm 残して切る（HOZAN P-738）。</p>`;
+  h += `<div class="sect"><h3>ボックスに入るケーブルのシース</h3>` + cs.map(c => { r.sheath[c.id] = r.sheath[c.id] || 0;
+    return rangeRow(c.spec + "（" + (c.a === u.box ? endName(c.b) : endName(c.a)) + " へ）", r.sheath[c.id], 0, 150, 5, v => { r.sheath[c.id] = v; }, "mm"); }).join("")
+    + rangeRow("心線の被覆をはぐ長さ（全部）", r.core, 0, 30, 1, v => { r.core = v; }, "mm") + `</div>`;
+  u.joints.forEach((j, n) => {
+    const x = r.j[j.id] = r.j[j.id] || { size: "", mark: "", align: false, gap: 0, tip: -1 };
+    const ws = P.wires.filter(w => [w.a, w.b].some(e => e.kind === "joint" && e.joint === j.id))
+      .map(w => { const o = w.a.kind === "joint" && w.a.joint === j.id ? w.b : w.a; return `<span class="chip" style="background:${COLORS[w.color] || "#888"}"></span>${esc(w.color)}：${esc(endText(o))}`; });
+    h += `<div class="sect"><h3>接続点 ${n + 1}（${wireText(j)}）</h3><p class="note">つなぐ線：${ws.join("　")}</p>
+      <div class="ctl"><span>心線の先</span><span class="seg" data-j="${j.id}" data-k="align"><button data-v="1" class="${x.align ? "on" : ""}">そろえた</button><button data-v="0" class="${x.align ? "" : "on"}">そろえていない</button></span><span></span></div>
+      <div class="ctl"><span>スリーブの大きさ</span><span class="seg" data-j="${j.id}" data-k="size">${["小", "中", "大"].map(v => `<button data-v="${v}" class="${x.size === v ? "on" : ""}">${v}</button>`).join("")}</span><span></span></div>
+      <div class="ctl"><span>圧着工具のダイス（刻印）</span><span class="seg" data-j="${j.id}" data-k="mark">${["○", "小", "中", "大"].map(v => `<button data-v="${v}" class="${x.mark === v ? "on" : ""}">${v}</button>`).join("")}</span><span></span></div>`
+      + rangeRow("被覆とスリーブの間", x.gap, 0, 15, 1, v => { x.gap = v; }, "mm")
+      + rangeRow("切ったあとの先端の長さ", x.tip, -1, 10, 1, v => { x.tip = v; }, "mm") + `<p class="note">先端 −1mm は「切りすぎて、スリーブの中に先端が隠れた」。</p></div>`;
+  });
+  h += `<div class="bar"><button class="primary" id="finish">この作業を終える（点検に出す）</button><button id="redo">やり直す</button></div><div id="res"></div>`;
+  $("body").innerHTML = h; bindAll();
+  $("body").querySelectorAll(".seg[data-j]").forEach(sg => sg.querySelectorAll("button").forEach(b => { b.onclick = () => {
+    const x = r.j[sg.dataset.j], k = sg.dataset.k; x[k] = k === "align" ? b.dataset.v === "1" : b.dataset.v; save(); drawBoxWork(u, r); }; }));
+  $("finish").onclick = () => { r.done = true; save(); sideList(); showResult(u, r); };
+  $("redo").onclick = () => { store[P.id][u.id] = defaults(u); save(); drawWork(); };
+  redrawPreview = () => {};
+  if (r.done) showResult(u, r);
+}
+function endName(pl) { return P.boxes.some(b => b.id === pl) ? "ボックス " + pl : placeName(pl); }
+function wireText(j) { return [j.n16 ? "1.6mm×" + j.n16 + "本" : "", j.n20 ? "2.0mm×" + j.n20 + "本" : ""].filter(Boolean).join("＋"); }
+
+/* ============================================================
+   評価: 欠陥（判断基準）と目安
+   ============================================================ */
+function evalUnit(u, r) {
+  const defects = [], tips = [];
+  const D = (key, where) => defects.push({ def: DEF[key], where });
+  const T = (text) => tips.push(text);
+  if (u.kind === "box") {
+    const cs = P.cables.filter(c => c.a === u.box || c.b === u.box);
+    cs.forEach(c => { const sh = r.sheath[c.id] || 0, name = c.spec;
+      if (!sh) D("unfinished", name + " のシースをはいでいない");
+      else if (sh - r.core <= 20) D("sheathShort", name + "：シース " + sh + "mm − 被覆 " + r.core + "mm ＝ 被覆が " + (sh - r.core) + "mm");
+      else if (sh < GUIDE.joint.sheath[0] || sh > GUIDE.joint.sheath[1] + 20) T(name + " のシース " + sh + "mm（目安 約100mm）"); });
+    if (!r.core) D("unfinished", "心線の被覆をはいでいない");
+    u.joints.forEach((j, n) => {
+      const x = r.j[j.id] || {}, at = "接続点 " + (n + 1) + "（" + wireText(j) + "）", need = sleeveFor(j.n16, j.n20);
+      if (!x.size || !x.mark) { D("unfinished", at + "：スリーブかダイスを選んでいない"); return; }
+      if (need && x.size !== need.size) D("sleevePick", at + "：「" + x.size + "」を選んだ");
+      if (need && x.mark !== need.mark) D("sleeveMark", at + "：ダイス「" + x.mark + "」で圧着した");
+      if (!x.align) D("tipHidden", at + "：心線の先をそろえていないので、短い1本の先端が見えない");
+      if (x.tip < 0) D("tipHidden", at + "：切りすぎて先端がスリーブの中に隠れた");
+      if (x.tip >= 5) D("tipLong", at + "：先端 " + x.tip + "mm");
+      else if (x.tip > 3) T(at + "：先端 " + x.tip + "mm（目安 1〜3mm）");
+      if (x.gap <= 0) D("onInsul", at + "：被覆がスリーブに入った");
+      if (x.gap >= 10) D("overStrip", at + "：被覆とスリーブの間 " + x.gap + "mm");
+      else if (x.gap > 4) T(at + "：被覆とスリーブの間 " + x.gap + "mm（目安 約2mm）");
+      if (r.core && r.core < 12) D("onInsul", at + "：被覆を " + r.core + "mm しかはいでいないので、スリーブの中に被覆が入る");
+    });
+    return { defects, tips };
+  }
+  const ps = (P.places.find(x => x.id === u.place)).parts.map(partOf);
+  const cs = cablesAt(u.place).filter(x => x.wires.some(y => endAt(y.w, u.place)));
+  const kinds = u.work, kind = kinds[0];
+  cs.forEach(({ c }) => {
+    const sh = r.sheath[c.id] || 0, co = r.core[c.id] || 0, g = GUIDE[kind];
+    if (!sh || !co) { D("unfinished", c.spec + "：シースか被覆をはいでいない"); return; }
+    if (kind === "ring" && sh >= MODEL.lampBase) D("noBase", c.spec + "：シース " + sh + "mm（このアプリでは " + MODEL.lampBase + "mm 以上で台座に入らないと見なす）");
+    else if (sh < g.sheath[0] || sh > g.sheath[1]) T(c.spec + " のシース " + sh + "mm（目安 " + g.sheath.join("〜") + "mm）");
+    if (sh - co < 5) D("unfinished", c.spec + "：シースより被覆を長くはいだ（被覆が残っていない）");
+    checkCore(kind, co, c.spec, D, T);
+    if (kind === "ceil" && sh - co - MODEL.ceilBase >= 5) D("ceilInsul", c.spec + "：被覆が台座から " + (sh - co - MODEL.ceilBase) + "mm 出ている（台座の中は " + MODEL.ceilBase + "mm と見なす）");
+  });
+  if (jumpersAt(u.place).length) { if (!r.core.jump) D("unfinished", "渡り線の被覆をはいでいない"); else checkCore(kind, r.core.jump, "渡り線", D, T); }
+  if (kinds.includes("ring")) {
+    if (!r.dir || !r.wrap) D("unfinished", "輪を作っていない");
+    else {
+      if (r.dir === "左") D("leftWrap", "左巻き（ねじを締めると輪が開く）");
+      if (r.wrap < 0.75) D("wrapBad", "巻き付けが " + r.wrap + "周（不足）");
+      if (r.wrap > 1) D("wrapBad", "重ね巻き");
+      if (r.wrap === 0.75) T("巻き付けが 3/4周。解説では 3/4周以下を不足とするものがある。ほぼ1周に");
+    }
+    if (r.bend >= 5) D("ringExpose", "被覆の端から " + r.bend + "mm の所で曲げたので、ねじの端から心線が " + r.bend + "mm 出る");
+    else if (r.bend > 3) T("曲げる所 " + r.bend + "mm（目安 約3mm）");
+  }
+  // 結線
+  const rows = [];
+  cs.forEach(({ wires }) => wires.forEach(({ w, i }) => { const e = endAt(w, u.place); if (e) rows.push({ key: String(i), w, e }); }));
+  jumpersAt(u.place).forEach(({ w, i }) => { rows.push({ key: i + ":a", w, e: w.a }); rows.push({ key: i + ":b", w, e: w.b }); });
+  rows.forEach(x => {
+    const got = r.conn[x.key]; if (!got) { D("unfinished", x.w.color + "の線をつないでいない"); return; }
+    const want = x.e.part + "." + x.e.term;
+    if (got === want || same(got, want)) return;
+    const [gp, gk] = got.split("."), gt = partOf(gp).terms.find(t => t.k === gk);
+    if (gt && gt.w && x.w.color !== "白") D("polarity", termText(gp, gk) + " に" + x.w.color + "の線（W は白）");
+    else D("wrongTerm", x.w.color + "の線（" + endText(otherEnd(x.w, u.place) || x.e) + "）を " + termText(gp, gk) + " につないだ");
+  });
+  return { defects, tips };
+}
+/* 入れ替えてもよい端子（スイッチの 1・2、3路の 1・3 など） */
+const SWAP = { sw1: [["1", "2"]], swH: [["1", "2"]], pl: [["1", "2"]], rly: [["1", "2"]], sw3: [["1", "3"]], sw4: [["1", "3"], ["2", "4"]], outlet200: [["X", "Y"]] };
+function same(got, want) {
+  const [gp, gk] = got.split("."), [wp, wk] = want.split("."); if (gp !== wp) return false;
+  const p = partOf(gp); return (SWAP[p.type] || []).some(g => g.includes(gk) && g.includes(wk));
+}
+function checkCore(kind, co, name, D, T) {
+  if (kind === "push" || kind === "ceil") {
+    const gauge = kind === "ceil" ? MODEL.ceilGauge : MODEL.pushGauge, lim = kind === "ceil" ? 1 : 2, ex = co - gauge;
+    if (ex >= lim) D("pushExpose", name + "：被覆 " + co + "mm − 差込の深さ " + gauge + "mm ＝ 心線が " + ex + "mm 見える");
+    else if (co < gauge - 3) D("pullOut", name + "：被覆を " + co + "mm しかはいでいない（差込の深さ " + gauge + "mm）。奥まで入らず、引っ張ると抜ける");
+    else if (co !== gauge) T(name + "：被覆 " + co + "mm（ストリップゲージ " + gauge + "mm に合わせる）");
+  } else if (kind === "block") {
+    const ex = co - MODEL.blockDepth;
+    if (ex >= 5) D("blockExpose", name + "：被覆 " + co + "mm − 座金の下 " + MODEL.blockDepth + "mm ＝ 心線が " + ex + "mm 出る");
+    else if (co < 7) D("notScrewed", name + "：被覆を " + co + "mm しかはいでいないので、ねじが心線を締め付けない");
+    else if (co < 10 || co > 12) T(name + "：被覆 " + co + "mm（目安 10〜12mm）");
+  } else if (kind === "ring") {
+    if (co < 12) D("unfinished", name + "：被覆を " + co + "mm しかはいでいないので、輪が作れない");
+    else if (co < 18 || co > 22) T(name + "：被覆 " + co + "mm（目安 約20mm）");
+  }
+}
+function showResult(u, r) {
+  const res = evalUnit(u, r), host = $("res"); if (!host) return;
+  host.innerHTML = `<div class="sect"><h3>この作業の点検</h3>` + (res.defects.length
+    ? res.defects.map(d => `<div class="issue">${esc(d.where)}<span class="rule">欠陥：${esc(d.def.cat)} ―「${esc(d.def.text)}」</span></div>`).join("")
+    : `<div class="issue good">欠陥なし</div>`) + res.tips.map(t => `<div class="issue tip">目安より：${esc(t)}</div>`).join("") + `</div>`;
+}
+
+/* ============================================================
+   ③ 点検（全体）
+   ============================================================ */
+function drawCheck() {
+  const us = units();
+  let total = 0, todo = 0, h = "";
+  us.forEach(u => { const r = store[P.id][u.id];
+    if (!r || !r.done) { todo++; h += `<div class="issue"><b>${esc(u.name)}</b>：まだ作業していない<span class="rule">欠陥：未完成</span></div>`; total++; return; }
+    const res = evalUnit(u, r); total += res.defects.length;
+    h += res.defects.map(d => `<div class="issue"><b>${esc(u.name)}</b>：${esc(d.where)}<span class="rule">欠陥：${esc(d.def.cat)} ―「${esc(d.def.text)}」</span></div>`).join("");
+    h += res.tips.map(t => `<div class="issue tip"><b>${esc(u.name)}</b>：目安より ${esc(t)}</div>`).join(""); });
+  $("side").innerHTML = `<h2>No.${P.no} の点検</h2><p class="note">技能試験は、欠陥が1つでもあれば不合格。</p><div class="bar"><button id="goWork">② 作業へ戻る</button><button id="clearAll">この問題の作業を全部消す</button></div>`;
+  $("body").innerHTML = `<div class="verdict ${total ? "ng" : "ok"}">${total ? "欠陥 " + total + " か所 ― 不合格" : "欠陥なし ― 合格"}</div>`
+    + (todo ? `<p class="note">まだ作業していない所が ${todo} つある。</p>` : "") + (h || `<div class="issue good">すべての作業で欠陥なし</div>`);
+  $("goWork").onclick = () => setMode("work");
+  $("clearAll").onclick = () => { store[P.id] = {}; save(); drawCheck(); };
+}
+
+/* ---------- 始める ---------- */
+$("ver").textContent = "版 " + VER;
+openProb(KIT[0].id);
+setMode("order");
+</script>
+</body>
+</html>
