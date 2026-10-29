@@ -719,8 +719,14 @@ for (const id of ["k1","k4","k5"]) { E(`openProblem("${id}")`);
   ok(E("(()=>{const st=refState(P); return st.joints.every(j=>j.join) && judge(st).length===0;})()"),id+": お手本の●には全部、正しい接続方法が入っている"); }
 E(`openProblem("k4")`);
 ok(E("(()=>{const st=refState(P); return st.joints.some(j=>wiresAt(st,j.id).n20===2&&wiresAt(st,j.id).n16===0&&j.join==='小');})()"),"No.4: 2.0mm×2本の●は「小・小」（2.0mm が数えられている）");
-ok(E("PROBLEMS.filter(pr=>pr.official).every(pr=>pr.cond.some(c=>/すべてリングスリーブ/.test(c)))"),"候補問題 No.1〜13 の施工条件に「ボックス内の接続はすべてリングスリーブ」");
-ok(E(`(()=>{let ok=true; for(const pr of PROBLEMS){ openProblem(pr.id); const st=refState(P); if(st.joints.some(j=>!j.join||j.join[0]==="差")) ok=false; } return ok;})()`),"全問題のお手本の●は、すべてリングスリーブ");
+ok(E("PROBLEMS.filter(pr=>pr.official&&pr.no!==1).every(pr=>pr.cond.some(c=>/すべてリングスリーブ/.test(c)))"),"候補問題 No.2〜13 の施工条件に「ボックス内の接続はすべてリングスリーブ」");
+ok(E("(()=>{const p=PROBLEMS.find(p=>p.id==='k1'); return p.condTag==='先生の資料' && p.cond.some(c=>/A部分は、リングスリーブ/.test(c)) && p.cond.some(c=>/B部分は、差込形コネクタ/.test(c)) && p.cond.some(c=>/「ロ」のタンブラスイッチは、取付枠の中央/.test(c));})()"),"No.1 は先生の資料の施工条件（A はリングスリーブ・B は差込形コネクタ・ロは中央）");
+ok(E(`(()=>{let ok=true; for(const pr of PROBLEMS){ if(pr.id==="k1") continue; openProblem(pr.id); const st=refState(P); if(st.joints.some(j=>!j.join||j.join[0]==="差")) ok=false; } return ok;})()`),"No.1 以外のお手本の●は、すべてリングスリーブ");
+ok(E(`(()=>{ openProblem("k1"); const st=refState(P), a=st.joints.filter(j=>j.box==="B1"), b=st.joints.filter(j=>j.box==="B2");
+  return a.length===5 && a.every(j=>j.join[0]!=="差") && b.map(j=>j.join).sort().join()==="差2,差2,差3" && judge(st).length===0; })()`),"No.1 のお手本: A（B1）の5か所はリングスリーブ、B（B2）は差込形コネクタ 3本用1・2本用2（資料と同じ）");
+E(`openProblem("k1"); S=refState(P); view=S; sel={end:S.joints.find(j=>j.box==="B2").id, joint:S.joints.find(j=>j.box==="B2").id}; render();`);
+ok([...d.querySelectorAll("#joinBtns button")].every(b=>/差込/.test(b.textContent)) && d.querySelectorAll("#joinBtns button").length===3,"No.1 の B（B2）の●を選ぶと、差込形コネクタのボタンが出る");
+E(`sel=null; render();`);
 E(`openProblem("k4")`);
 ok(/JIS C 2806/.test($("howBox").textContent) && d.querySelectorAll("#howBox table.sleeve tr").length===4,"「描き方」の窓に刻印の早見表");
 

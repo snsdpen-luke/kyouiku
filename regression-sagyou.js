@@ -15,16 +15,20 @@ const tap = sel => { const el = d.querySelector(sel); if (!el) throw new Error("
 
 /* 正しい作業の値（テストだけで使う。アプリには答えを出すボタンを置かない） */
 E(`window.goodParams = u => {
-  if (u.kind === "box") { const r = { done: true, sheath: {}, core: 20, j: {} };
+  const t = teach();
+  if (u.kind === "cut") { const r = { done: true, len: {} }; t.cut.forEach(c => { r.len[c.n] = c.len; }); return r; }
+  if (u.kind === "box") { const g = guideOf(u.conn ? "conn" : "joint"), r = { done: true, sheath: {}, core: u.conn ? gaugeOf("conn") : 20, j: {} };
     P.cables.filter(c => c.a === u.box || c.b === u.box).forEach(c => { r.sheath[c.id] = 100; });
-    u.joints.forEach(j => { const s = sleeveFor(j.n16, j.n20); r.j[j.id] = { size: s.size, mark: s.mark, align: true, gap: 2, tip: 2 }; });
+    u.joints.forEach(j => { if (u.conn) { r.j[j.id] = { conn: String(j.n), deep: true }; return; }
+      const s = sleeveFor(j.n16, j.n20); r.j[j.id] = { size: s.size, mark: s.mark, align: true, gap: 2, tip: 2 }; });
     return r; }
-  const kind = u.work[0], g = GUIDE[kind], core = { ring: 20, push: MODEL.pushGauge, ceil: MODEL.ceilGauge, block: 11 }[kind];
-  const r = { done: true, sheath: {}, core: {}, bend: 3, dir: "右", wrap: 1, conn: {} };
+  const kind = u.work[0], g = guideOf(kind), core = { ring: 20, push: gaugeOf("push"), ceil: gaugeOf("ceil"), block: 11 }[kind];
+  const r = { done: true, sheath: {}, core: {}, bend: 3, dir: "右", wrap: 1, conn: {}, face: "表", pos: {} };
   cablesAt(u.place).forEach(({ c }) => { r.sheath[c.id] = Math.round((g.sheath[0] + g.sheath[1]) / 2); r.core[c.id] = core; });
   r.core.jump = core;
-  cablesAt(u.place).forEach(({ wires }) => wires.forEach(({ w, i }) => { const e = endAt(w, u.place); if (e) r.conn[String(i)] = e.part + "." + e.term; }));
-  jumpersAt(u.place).forEach(({ w, i }) => { r.conn[i + ":a"] = w.a.part + "." + w.a.term; r.conn[i + ":b"] = w.b.part + "." + w.b.term; });
+  const n = u.frame.length, order = t && t.frame && t.frame.order.every(id => u.frame.includes(id)) ? t.frame.order : u.frame;
+  order.forEach((id, i) => { r.pos[id] = n === 1 ? "中央" : n === 2 ? ["上", "下"][i] : ["上", "中央", "下"][i]; });
+  connRows(u).forEach(x => { r.conn[x.key] = x.e.part + "." + x.e.term; });
   return r; };
 window.defsOf = (u, r) => evalUnit(u, r).defects.map(x => Object.keys(DEF).find(k => DEF[k] === x.def));`);
 
@@ -54,7 +58,7 @@ ok(jd("(r,x)=>{ x.gap = 0; }").includes("onInsul"), "被覆との間 0mm → 「
 ok(jd("(r)=>{ const k = Object.keys(r.sheath)[0]; r.sheath[k] = 40; }").includes("sheathShort") && !jd("(r)=>{ const k = Object.keys(r.sheath)[0]; r.sheath[k] = 41; }").includes("sheathShort"), "シース40mm・被覆20mm（被覆20mm）は欠陥、41mm は欠陥でない（絶縁被覆が20mm以下）");
 
 console.log("\n【C】器具への結線");
-const dev = (type, mut) => JSON.parse(E(`(()=>{ for (const p of KIT) { openProb(p.id); const u = units().find(u => u.kind === "dev" && u.work[0] === ${JSON.stringify(type)});
+const dev = (type, mut) => JSON.parse(E(`(()=>{ for (const p of KIT) { if (TEACH[p.id]) continue; openProb(p.id); const u = units().find(u => u.kind === "dev" && u.work[0] === ${JSON.stringify(type)});
   if (u) { const r = goodParams(u); (${mut})(r, u); return JSON.stringify(defsOf(u, r)); } } return "null"; })()`));
 ok(dev("ring", r => { r.dir = "左"; }).includes("leftWrap"), "輪作り: 左巻き → 欠陥");
 ok(dev("ring", r => { r.wrap = 0.5; }).includes("wrapBad") && dev("ring", r => { r.wrap = 1.25; }).includes("wrapBad"), "輪作り: 半周（不足）・重ね巻き → 欠陥");
@@ -70,7 +74,7 @@ ok(dev("ring", (r, u) => { const ks = Object.keys(r.conn); const a = r.conn[ks[0
   ok(!res.includes("wrongTerm"), "スイッチの 1・2 は入れ替えても誤結線にならない"); }
 
 console.log("\n【D】作業の順番");
-E(`openProb("k1"); setMode("order"); startOrder("ring"); drawOrder();`);
+E(`openProb("k2"); setMode("order"); startOrder("ring"); drawOrder();`);
 tap('#pool [data-c="r3"]');
 ok(/まだ早い/.test($("omsg").textContent) && /シース/.test($("omsg").textContent) && E("orderState.miss") === 1, "シースをはぐ前に被覆をはぐ → 「まだ早い」と理由");
 ["r2", "r3", "r4"].forEach(c => tap(`#pool [data-c="${c}"]`));
@@ -79,7 +83,32 @@ tap('#pool [data-c="r5"]'); ok(/台座/.test($("omsg").textContent), "台座に�
 ok(E("orderState.pool.length") === 0 && /間違い/.test($("body").textContent), "全部並べると、間違いの回数を言う");
 E(`startOrder("flow"); drawOrder();`); ["b", "a", "c", "e", "d", "f"].forEach(c => tap(`#pool [data-c="${c}"]`));
 ok(E("orderState.miss") === 0 && E("orderState.pool.length") === 0, "全体の流れ: 複線図が先・ボックス接続が先でもよい（決まった前後だけを見る）");
-ok(E(`JSON.stringify(orderSetsFor())`) === JSON.stringify(["flow", "ring", "push", "ceil", "sleeve"]), "No.1 では、出てくる作業の順番だけを選べる");
+ok(E(`JSON.stringify(orderSetsFor())`) === JSON.stringify(["flow", "ring", "push", "sleeve"]), "No.2 では、出てくる作業の順番だけを選べる");
+
+console.log("\n【G】先生の資料（No.1）");
+E(`openProb("k1"); setMode("order"); startOrder("flow"); drawOrder();`);
+ok(E("orderDef('flow').cards.length") === 8 && /資料の8つ/.test(d.querySelector("#side").textContent) && /先生の配布資料/.test(d.querySelector("#side").textContent), "No.1 の全体の流れは、資料の8つ（①複線図〜⑧見直す）");
+tap('#pool [data-c="t3"]'); ok(/まだ早い/.test($("omsg").textContent), "資料の順: ケーブルを切る前に はがす → まだ早い");
+["t1", "t2", "t3", "t6", "t4", "t7", "t5", "t8"].forEach(c => tap(`#pool [data-c="${c}"]`));
+ok(E("orderState.pool.length") === 0 && /40 分/.test($("body").textContent), "④〜⑦は、はいだあとならどれからでもよい。目安の時間 合わせて40分");
+ok(E(`JSON.stringify(orderSetsFor())`) === JSON.stringify(["flow", "ring", "push", "ceil", "sleeve", "conn"]), "No.1 には、差込形コネクタの順番もある（B は差込形コネクタ）");
+ok(E("units()[0].kind") === "cut" && E("units().find(u=>u.box==='B2').conn") === true && /A（B1）/.test(E("units().find(u=>u.box==='B1').name")), "No.1 の作業: ケーブルを切る・A（B1）はリングスリーブ・B（B2）は差込形コネクタ");
+const k1 = (sel, mut) => JSON.parse(E(`(()=>{ openProb("k1"); const u = units().find(${sel}), r = goodParams(u); (${mut})(r, u); return JSON.stringify(defsOf(u, r).concat(evalUnit(u, r).tips.length ? ["tip"] : [])); })()`));
+ok(k1("u=>u.kind==='cut'", r => {}).length === 0, "切る長さを資料どおり（250・300・300・300・350・300・250）にすると欠陥なし");
+ok(k1("u=>u.kind==='cut'", r => { r.len[2] = 280; }).includes("tip") && !k1("u=>u.kind==='cut'", r => { r.len[2] = 280; }).includes("dimShort") && k1("u=>u.kind==='cut'", r => { r.len[2] = 220; }).includes("dimShort"), "2 を 280mm → 資料と違う（目安・欠陥ではない）、220mm（図の150が70になる）→ 寸法50%以下の欠陥");
+ok(k1("u=>u.conn", r => { const j = Object.keys(r.j)[0]; r.j[j].conn = "4"; }).includes("connPick"), "B: 本数に合わないコネクタ → 欠陥");
+ok(k1("u=>u.conn", r => { r.core = 14; }).includes("connBottom") && k1("u=>u.conn", r => { r.core = 10; }).includes("connTip"), "B: 被覆14mm（根元に心線）・10mm（先が見えない）→ 欠陥（ゲージ12mm）");
+ok(k1("u=>u.conn", r => { const j = Object.keys(r.j)[0]; r.j[j].deep = false; }).includes("connTip"), "B: 途中まで → 先から心線が見えない");
+ok(k1("u=>u.place==='SW'", r => { r.pos.Sb = "上"; r.pos.Sa = "中央"; }).includes("frameCenter"), "ロを中央に付けない → 欠陥（施工条件）");
+ok(k1("u=>u.place==='SW'", r => { r.pos.Sa = "下"; r.pos.Sc = "上"; }).includes("frameOrder"), "上からイ・ロ・ハでない → 配置の欠陥");
+ok(k1("u=>u.place==='SW'", r => { r.face = "裏"; }).includes("frameFlip"), "取付枠を裏返し → 欠陥");
+ok(k1("u=>u.place==='SW'", r => { const k = Object.keys(r.core).find(k=>k!=="jump"); r.core[k] = 12; }).includes("pushExpose"), "スイッチ: 資料のゲージ 約10mm に 12mm → 心線が2mm見える");
+ok(k1("u=>u.box==='B1'", r => { const j = Object.keys(r.j)[0]; r.j[j].tip = 3; }).includes("tip"), "A: 先端 3mm は資料の目安（1〜2mm）より長い（欠陥ではない）");
+E(`openProb("k1"); units().forEach(u => { store[P.id][u.id] = goodParams(u); }); setMode("check");`);
+ok(d.querySelectorAll("#chk .issue.good").length === 8 && /合格/.test(d.querySelector(".verdict").textContent), "点検: 資料の⑧見直すチェック 8つが全部 ☑");
+E(`store[P.id]["pl:SW"].face = "裏"; drawCheck();`);
+ok([...d.querySelectorAll("#chk .issue")].some(x => /✗/.test(x.textContent) && /中央/.test(x.textContent)), "枠を裏返すと「ロのスイッチは取付枠の中央か」に ✗");
+E(`store[P.id] = {}; save();`);
 
 console.log("\n【E】画面");
 E(`setMode("work")`);

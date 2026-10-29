@@ -324,7 +324,7 @@
 
 <script>
 "use strict";
-const VER = "2026-10-14b";
+const VER = "2026-10-29b";
 document.getElementById("ver").textContent = "版 " + VER;
 
 /* ============================================================
@@ -434,10 +434,11 @@ function SRC(id, x, y, type, sub, terms, place) {
 }
 function RLY(id, label, x, y, t1, t2) { return { id, type: "rly", label, x, y, place: "RY", terms: [{ k: "1", lab: t1 }, { k: "2", lab: t2 }] }; }
 function K(o) {
+  const teach = !!o.condAll;                                         // 先生が配った施工条件があれば、それを使う
   return Object.assign({ potColor: { L: "黒", N: "白", E: "緑" } }, o, {
     id: "k" + o.no, official: true, tab: "No." + o.no, title: "No." + o.no + "　" + o.title,
-    cond: COMMON_COND.concat(o.cond || []), condTag: "仮",
-    condNote: "ネットの解説サイト（検索結果の要約）と回路からの読みで作った仮の施工条件。公式の施工条件に差し替える予定。",
+    cond: teach ? o.condAll.concat(o.cond || []) : COMMON_COND.concat(o.cond || []), condTag: teach ? "先生の資料" : "仮",
+    condNote: teach ? o.condNote : "ネットの解説サイト（検索結果の要約）と回路からの読みで作った仮の施工条件。公式の施工条件に差し替える予定。",
   });
 }
 
@@ -571,10 +572,16 @@ const PROBLEMS = [
     parts: [SRC("PW", 90, 300), PT("Ca", "ceilK", "イ", 360, 80),
             PT("Sa", "swH", "イ", 280, 560, "SW"), PT("Sb", "sw1", "ロ", 360, 560, "SW"), PT("Sc", "sw1", "ハ", 440, 560, "SW"),
             PT("Lb", "lamp", "ロ", 720, 80), PT("Fc", "fl", "ハ", 720, 560)],
-    boxes: [{ id: "B1", x: 360, y: 300 }, { id: "B2", x: 720, y: 300 }],
+    boxes: [{ id: "B1", x: 360, y: 300 }, { id: "B2", x: 720, y: 300, join: "conn" }],   // 先生の資料: A（B1）はリングスリーブ、B（B2）は差込形コネクタ
     cables: [C("PW", "B1", "EM-EEF2.0-2C"), C("Ca", "B1"), C("SW", "B1", "VVF1.6-2C×2"), C("B1", "B2", "VVF1.6-3C"),
              C("Lb", "B2"), C("Fc", "B2")],
     expect: [{ p: "Ca", f: s => s.Sa }, { p: "Lb", f: s => s.Sb }, { p: "Fc", f: s => s.Sc }, { p: "Sa", f: s => !s.Sa }],
+    condAll: [   // 先生が生徒に配った「候補問題 No.1」の施工条件（2026-10-29 受け取り）
+      "配線及び器具の配置は、図に従って行うこと。なお、「ロ」のタンブラスイッチは、取付枠の中央に取り付けること",
+      "電線の色別（絶縁被覆の色）は、次によること。① 電源からの接地側電線には、すべて白色を使用する。② 電源から点滅器までの非接地側電線には、すべて黒色を使用する。③ 次の器具の端子には、白色の電線を結線する。・ランプレセプタクルの受金ねじ部の端子 ・引掛シーリングローゼットの接地側極端子（接地側と表示）",
+      "VVF用ジョイントボックス部分を経由する電線は、その部分ですべて接続箇所を設け、接続方法は、次によること。① A部分は、リングスリーブによる接続とする。② B部分は、差込形コネクタによる接続とする",
+      "（このアプリでは A部分＝ボックス B1、B部分＝ボックス B2）"],
+    condNote: "先生が配った「候補問題 No.1」の施工条件。",
     cond: ["位置表示灯内蔵スイッチは、スイッチが切のとき表示灯が点く（異時点滅と同じ働き）。端子は普通のスイッチと同じ2つ",
            "スイッチ3つへは VVF1.6-2C を2本使う（電源の黒と、イ・ロ・ハの返り線）。枠の中の渡り線は黒"],
     ref: [["PW.L", "B1:1", "黒"], ["Sa.1", "B1:1", "黒"], ["Sa.1", "Sb.1", "黒"], ["Sb.1", "Sc.1", "黒"],
