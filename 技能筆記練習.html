@@ -42,6 +42,8 @@ h1{font-size:19px;margin:0}
 .fig svg{max-width:100%;height:auto;max-height:260px}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .opts.long{grid-template-columns:1fr}
+.opts.three{grid-template-columns:1fr 1fr 1fr}
+.opts.three .opt{font-size:14.5px;min-height:44px;padding:8px 10px}
 .opt{font-size:16px;text-align:left;padding:10px 14px;border-radius:10px;border:2px solid var(--line);background:var(--card);cursor:pointer;min-height:50px;display:flex;gap:10px;align-items:center}
 .opt .mk{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--sub);display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--sub)}
 .opt.pick{border-color:var(--accent);background:var(--accent-soft)}
@@ -143,7 +145,7 @@ textarea{font:inherit;font-size:17px;width:100%;min-height:110px;padding:10px;bo
 </div>
 <script>
 "use strict";
-const VER = "2026-10-30c";
+const VER = "2026-10-30d";
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const MK = ["ア", "イ", "ウ", "エ", "オ", "カ"];
@@ -210,39 +212,39 @@ const symSvg = (type, w, h, k) => `<svg viewBox="0 0 ${w || 90} ${h || 60}" widt
 const GLOSS = [
   { k: "欠陥", d: "技能試験は作品に欠陥が1つでもあれば不合格。何が欠陥かは試験センターの「欠陥の判断基準」で決まっている。" },
   { k: "施工条件", d: "試験問題に書かれている作業の決まり。電線の色・接続の方法・取付枠の位置などを指定する。守らないと回路が正しくても欠陥。" },
-  { k: "接地側", m: ["接地側", "白色", "白"], d: "大地につながっている側の電線。白色を使う。ランプレセプタクルの受金ねじ部や、W・N・接地側と書かれた端子につなぐ。" },
-  { k: "非接地側", d: "接地されていない側の電線。電源から点滅器（スイッチ）まで黒色を使う。" },
+  { k: "接地側", m: ["接地側", "白色", "白"], d: "大地（地面）につながっている側の電線。" },
+  { k: "非接地側", d: "大地につながっていない側の電線。" },
   { k: "返り線", m: ["返り線"], d: "スイッチから照明へ戻る電線。スイッチを入れると、ここに電気が来る。色は施工条件の指定がなければ残った色を使う。" },
   { k: "渡り線", m: ["渡り線", "わたり線"], d: "同じ取付枠の器具どうしを、ボックスを通らずに直接つなぐ短い電線。" },
-  { k: "リングスリーブ", m: ["リングスリーブ", "スリーブ"], d: "電線どうしをつなぐ金属の筒。試験で使うのは小と中。リングスリーブ用圧着工具で圧着し、刻印（○・小・中）を付ける。" },
-  { k: "刻印（圧着マーク）", m: ["刻印", "圧着マーク"], d: "圧着したときにスリーブに付く印。電線の太さと本数で決まる。試験で使うのは ○・小・中 の3つ。" },
-  { k: "差込形コネクタ", m: ["差込形コネクタ", "コネクタ"], d: "心線を差し込むだけでつなげる器具。2本用・3本用・4本用など、つなぐ本数に合わせて選ぶ。" },
+  { k: "リングスリーブ", m: ["リングスリーブ", "スリーブ"], d: "電線どうしをつなぐ金属の筒。リングスリーブ用圧着工具で圧着してつなぐ。" },
+  { k: "刻印（圧着マーク）", m: ["刻印", "圧着マーク"], d: "圧着したときにスリーブに付く印。" },
+  { k: "差込形コネクタ", m: ["差込形コネクタ", "コネクタ"], d: "心線を差し込むだけで電線どうしをつなげる器具。" },
   { k: "VVF", m: ["VVF"], d: "600V ビニル絶縁ビニルシースケーブル平形。1.6mm・2.0mm、2心・3心などがある。" },
   { k: "EM-EEF", m: ["EM-EEF", "エコケーブル"], d: "600V ポリエチレン絶縁耐燃性ポリエチレンシースケーブル平形（エコケーブル）。外装が硬く、ストリッパではぎにくいことがある。" },
-  { k: "VVR", m: ["VVR"], d: "600V ビニル絶縁ビニルシースケーブル丸形。中に介在物が入っている。介在物が抜けると欠陥。" },
+  { k: "VVR", m: ["VVR"], d: "600V ビニル絶縁ビニルシースケーブル丸形。中に介在物（すき間をうめる詰め物）が入っている。" },
   { k: "IV", m: ["IV"], d: "600V ビニル絶縁電線。外装（シース）が無いので、金属管や PF 管の中に通して使う。" },
   { k: "シース（外装）", m: ["シース", "外装"], d: "ケーブルのいちばん外側の被覆。中の絶縁電線を守る。" },
   { k: "絶縁被覆", m: ["絶縁被覆", "被覆"], d: "1本1本の心線を包む被覆。色（黒・白・赤・緑）で区別する。" },
   { k: "心線", m: ["心線"], d: "電線の中の銅線。" },
-  { k: "ストリップゲージ", m: ["ストリップゲージ", "ゲージ"], d: "器具やコネクタに付いている目盛り。被覆をはぐ長さの目安。これに合わせると心線が見えない。" },
-  { k: "取付枠", m: ["取付枠"], d: "埋込連用のスイッチやコンセントを取り付ける金属の枠。器具1個は中央、2個は上下、3個は全部の位置に付ける。" },
-  { k: "受金ねじ部", m: ["受金ねじ部"], d: "ランプレセプタクルの、電球のねじが入る金具。接地側（白）をつなぐ。" },
+  { k: "ストリップゲージ", m: ["ストリップゲージ", "ゲージ"], d: "器具やコネクタに付いている、被覆をはぐ長さの目盛り。" },
+  { k: "取付枠", m: ["取付枠"], d: "埋込連用のスイッチやコンセントを取り付ける金属の枠。器具を3つまで付けられる。" },
+  { k: "受金ねじ部", m: ["受金ねじ部"], d: "ランプレセプタクルの、電球のねじが入る金具。" },
   { k: "引掛シーリング", m: ["引掛シーリング"], d: "照明器具を引っ掛けて付ける器具。角形と丸形がある。端子に「接地側」の表示がある。" },
   { k: "ランプレセプタクル", m: ["ランプレセプタクル"], d: "電球を付ける器具。端子はねじ締めで、心線で輪（の）の字を作って結線する。" },
-  { k: "3路スイッチ", m: ["3路"], d: "2か所から同じ照明を点けたり消したりするスイッチ。端子は 0・1・3。0 が共通の端子。" },
+  { k: "3路スイッチ", m: ["3路"], d: "2か所から同じ照明を点けたり消したりするときに使うスイッチ。端子は 0・1・3 の3つ。" },
   { k: "4路スイッチ", m: ["4路"], d: "3路スイッチ2つのあいだに入れて、3か所以上から点滅できるようにするスイッチ。" },
   { k: "確認表示灯（パイロットランプ）", m: ["確認表示灯", "パイロットランプ"], d: "点いているかを知らせる小さなランプ。つなぎ方で、常時点灯・同時点滅・異時点滅が変わる。" },
-  { k: "位置表示灯内蔵スイッチ", m: ["位置表示灯"], d: "暗い所でスイッチの位置が分かるよう、切のときに光るスイッチ。記号は ●H。" },
+  { k: "位置表示灯内蔵スイッチ", m: ["位置表示灯"], d: "暗い所でスイッチの位置が分かるよう、小さな表示灯が入ったスイッチ。" },
   { k: "端子台", m: ["端子台"], d: "試験で、タイムスイッチ・自動点滅器・リモコンリレーなどの代わりに使う部品。ねじで締めて結線する。" },
-  { k: "ねじなし電線管", m: ["ねじなし", "金属管", "E19"], d: "ねじを切らない金属管。ねじなしボックスコネクタでボックスにつなぎ、止めねじは頭がねじ切れるまで締める。" },
+  { k: "ねじなし電線管", m: ["ねじなし", "金属管", "E19"], d: "ねじを切らない金属管。ねじなしボックスコネクタでボックスにつなぐ。" },
   { k: "PF管", m: ["PF", "合成樹脂製可とう電線管"], d: "合成樹脂製可とう電線管。曲げられる樹脂の管。PF管用コネクタとロックナットでボックスにつなぐ。" },
   { k: "ボンド線", m: ["ボンド"], d: "金属管とボックスを電気的につなぐ接地用の線。ねじなしボックスコネクタの接地用端子とボックスの接地用ねじ穴につなぐ。" },
-  { k: "ゴムブッシング", m: ["ゴムブッシング"], d: "ボックスの穴にはめ、ケーブルの外装が傷つかないようにするゴム。穴の大きさに合ったものを使う。" },
-  { k: "配線用遮断器", m: ["配線用遮断器"], d: "電流が流れすぎたとき回路を切るブレーカ。記号は B。接地側極（N）に白をつなぐ。" },
+  { k: "ゴムブッシング", m: ["ゴムブッシング"], d: "ボックスの穴にはめるゴムの部品。" },
+  { k: "配線用遮断器", m: ["配線用遮断器"], d: "電流が流れすぎたとき回路を切るブレーカ。記号は B。" },
   { k: "漏電遮断器", m: ["漏電遮断器"], d: "漏電したとき回路を切るブレーカ。記号は BE。" },
   { k: "単線図", m: ["単線図", "配線図"], d: "電線の本数を書かず、器具とケーブルのつながりを1本の線で表した図。試験問題の図はこれ。" },
   { k: "複線図", m: ["複線図"], d: "電線を1本ずつ描いた図。単線図から描き直して、どこを何色の線でつなぐかを決める。" },
-  { k: "施工省略", m: ["施工省略"], d: "配線図で一点鎖線で囲まれた部分。作らなくてよい（ケーブルの端は出しておく）。" },
+  { k: "施工省略", m: ["施工省略"], d: "配線図で、作らなくてよいと示された部分。" },
 ];
 
 /* ============================================================
@@ -385,9 +387,9 @@ const UKEGANE = `<svg viewBox="0 0 520 230" style="width:100%;max-width:440px" r
   <rect x="245" y="150" width="30" height="12" fill="#f1c27d" stroke="#8a5a2b" stroke-width="2"/>
   <circle cx="150" cy="180" r="9" fill="#e8c35a" stroke="#8a6d1c" stroke-width="2"/><circle cx="370" cy="180" r="9" fill="#e8c35a" stroke="#8a6d1c" stroke-width="2"/>
   <path d="M60 60H186" stroke="#0f6b4f" stroke-width="2"/><text x="10" y="40" font-size="17" font-weight="700" fill="#0f6b4f">受金ねじ部</text><text x="10" y="58" font-size="13" fill="#333">電球のねじが入る金具</text>
-  <path d="M150 200V188" stroke="#0f6b4f" stroke-width="2" fill="none"/><text x="70" y="222" font-size="14" font-weight="700" fill="#0f6b4f">受金ねじ部の端子 → 白</text>
+  <path d="M150 200V188" stroke="#0f6b4f" stroke-width="2" fill="none"/><text x="80" y="222" font-size="14" font-weight="700" fill="#0f6b4f">受金ねじ部の端子</text>
   <path d="M460 120H280V156" stroke="#b91c1c" stroke-width="2" fill="none"/><text x="370" y="112" font-size="17" font-weight="700" fill="#b91c1c">中心接触部</text>
-  <path d="M370 200V188" stroke="#b91c1c" stroke-width="2" fill="none"/><text x="300" y="222" font-size="14" font-weight="700" fill="#b91c1c">中心接触部の端子 → 黒</text>
+  <path d="M370 200V188" stroke="#b91c1c" stroke-width="2" fill="none"/><text x="310" y="222" font-size="14" font-weight="700" fill="#b91c1c">中心接触部の端子</text>
 </svg>`;
 const figOf = q => q.fig || (q.figZ ? tanSvg(q.figZ) : "") + (/受金ねじ部/.test(q.q + (q.o || []).join("")) && !q.fig ? UKEGANE : "");
 /* 接続点に要る刻印・コネクタ（ボックスの決まりと、集まる線の太さ・本数から） */
@@ -919,6 +921,71 @@ KF.forEach(k => {
     ex: `差込形コネクタでつなぐ接続点のうち、${n}本が集まる所が ${c} か所（試験の材料表の数と同じ）。`, src: SRC_R8() }));
 });
 /*KOUHO-END*/
+/*SEL150-START*/
+/* ============================================================
+   試験範囲 150問（先生の選定 2026-10-30）。ここまでで作った問題から選び、改変・新規を足す。
+   kan: 知＝知識・技能／思＝思考・判断・表現。lv: A 易しい／B 標準／C 難しい
+   ============================================================ */
+{
+  const byId = id => BANK.find(q => q.id === id);
+  const set = (id, o) => Object.assign(byId(id), o);
+  /* 改変：暗記で解けないように 250mm に */
+  set("kekkan-14", { q: "配線図に 250mm と書かれた部分を作った。何 mm 以下だと欠陥になるか。", a: 125, ex: "250mm の 50% は 125mm。2-2「配線図に示された寸法の 50% 以下」は欠陥（ちょうど 125mm も欠陥）。" });
+  /* 改変：ヒント（＋100・＋50）を消す */
+  set("tejun-11", { q: "図の A 〜 引掛シーリング（図の寸法 150mm）のケーブルを切る長さは何 mm か（授業の資料の目安で）。" });
+  /* 改変：欠陥を「すべて」選ぶ（複数選択。全部合って正解） */
+  const MQ = "作品を点検した。次のア〜エのうち、欠陥になるものを すべて 選べ。欠陥がなければ オ を選べ。";
+  set("kekkan-23", { t: "m", q: MQ, o: ["スイッチの差込口から、心線が 3mm 見えている", "ランプレセプタクルのねじの端から、心線が 4mm 出ている", "リングスリーブの下端から、心線が 10mm 見えている", "引掛シーリングの差込口から見える心線は 1mm 未満である", "欠陥はない"], a: [0, 2],
+    ex: "ア：8-9（2mm 以上）で欠陥。イ：5mm 未満なので欠陥ではない。ウ：6-2 ハ（10mm 以上。ちょうど 10mm も欠陥）。エ：1mm 未満なので欠陥ではない。" });
+  set("kekkan-26", { t: "m", q: MQ, o: ["引掛シーリングの台座の下端から、絶縁被覆が 5mm 出ている", "配線図で 200mm の所が、100mm になっている", "2.0mm × 1本 と 1.6mm × 2本 を、小スリーブで刻印「小」で圧着した", "ランプレセプタクルの輪作りを、右巻き（時計回り）にした", "欠陥はない"], a: [0, 1],
+    ex: "ア：8-10（5mm 以上。ちょうど 5mm も欠陥）。イ：2-2（50% 以下。ちょうど 50% も欠陥）。ウ・エ：正しい。" });
+  set("kekkan-33", { t: "m", q: MQ, o: ["1.6mm × 4本 を、小スリーブで刻印「小」で圧着した", "2.0mm × 2本 と 1.6mm × 1本 を、小スリーブで圧着した", "1.6mm × 2本 を、小スリーブで刻印「小」で圧着した", "端子台の端から、心線が 4mm 出ている", "欠陥はない"], a: [1, 2],
+    ex: "ア：正しい。イ：2.0mm × 2本 と 1.6mm × 1本 は中スリーブ（6-1 イ）。ウ：1.6mm × 2本 の刻印は「○」（6-1 ロ）。エ：5mm 未満なので欠陥ではない。" });
+  set("kekkan-40", { t: "m", q: MQ, o: ["取付枠を裏返しにして器具を付けた", "取付枠に器具が1個で、中央に付けた", "ボックスを通る電線を、接続せずにそのまま通した", "ケーブルにペンで印をつけた", "欠陥はない"], a: [0, 2],
+    ex: "ア：11-2 で欠陥。イ：1個は中央。正しい。ウ：2-4（接続方法が施工条件に相違）で欠陥。エ：ペンで印をつけても問題ない。" });
+  /* 新規 */
+  add("sleeve", { id: "sleeve-new1", t: "n", digits: 1, unit: "本", q: "1.6mm の電線だけをつなぐとき、小スリーブでつなげるのは最大何本までか。", a: 4, ex: "1.6mm × 3〜4本 は小スリーブ・刻印「小」。1.6mm × 5本 からは中スリーブ。", src: SRC_JIS });
+  add("sleeve", { id: "sleeve-new2", t: "n", digits: 1, unit: "本", q: "2.0mm の電線だけをつなぐとき、小スリーブでつなげるのは最大何本までか。", a: 2, ex: "2.0mm × 2本 は小スリーブ・刻印「小」。2.0mm × 3本 からは中スリーブ。", src: SRC_JIS });
+  /* 改変：接続の問題から電線のリストを消す。単線図から自分で接続点を見つけ、方法（スリーブかコネクタか）も選ぶ */
+  const PICK = ["リングスリーブ・刻印「○」", "リングスリーブ・刻印「小」", "リングスリーブ・刻印「中」", "差込形コネクタ 2本用", "差込形コネクタ 3本用", "差込形コネクタ 4本用"];
+  const PICKV = ["○", "小", "中", "2本用", "3本用", "4本用"];
+  const CONN = [
+    ["kouho-14", "k1", "B1", { pot: "N" }, "電源の白"], ["kouho-16", "k1", "B1", { term: "Sa.2" }, "位置表示灯内蔵スイッチ イ の返り線"],
+    ["kouho-24", "k2", "B2", { pot: "N" }, "白の電線"], ["kouho-30", "k3", "B2", { pot: "N" }, "白の電線"], ["kouho-40", "k5", "B1", { pot: "N" }, "100V の白の電線"],
+    ["kouho-43", "k6", "B1", { pot: "L" }, "電源の黒"], ["kouho-61", "k8", "B1", { pot: "L" }, "電源の黒"], ["kouho-66", "k9", "B1", { pot: "L" }, "電源の黒"],
+    ["kouho-68", "k9", "B1", { pot: "N" }, "電源の白"], ["kouho-71", "k9", "B2", { term: "La.C" }, "ランプレセプタクル イ の黒"], ["kouho-73", "k10", "B1", { pot: "N" }, "電源の白"], ["kouho-76", "k11", "B1", { pot: "N" }, "電源の白"],
+  ];
+  CONN.forEach(([id, zid, bid, sel, what]) => {
+    const z = ZUSHI.find(x => x.id === zid), P = zPrep(z), lines = zAnswerLines(z), cs = comps(lines);
+    const groups = {}; lines.forEach(l => [l.a, l.b].forEach((e, i) => { if (e.startsWith(bid + ":")) (groups[e] = groups[e] || []).push(l); }));
+    const j = Object.keys(groups).find(g => { const net = cs.find(c => c.all.includes(g)).all;
+      return sel.term ? net.includes(sel.term) && groups[g].some(l => l.a === sel.term || l.b === sel.term) : net.some(t => P.term[t] && P.term[t].part.id === "PW" && P.term[t].t.pot === sel.pot); });
+    const need = needMark(z, bid, groups[j].map(l => ({ a: (l.a === j ? l.b : l.a).replace(":", "#"), b: j.replace(":", "#") })));
+    const b = P.box[bid], place = b.name === "ボックス" ? "ボックス" : b.name + " 部分";
+    set(id, { t: "c", fix: true, figZ: zid, group: "conn-" + zid + bid + j, o: PICK, a: PICKV.indexOf(need), need,
+      q: `図の配線の ${place}で、${what}がつながる接続点に使うものはどれか。\n施工条件：${ZCOND[zid]}`,
+      ex: `複線図を描くと、${place}の${what}の接続点には ${groups[j].length}本が集まる（2.0mm と 1.6mm の本数で決まる）。答えは ${PICK[PICKV.indexOf(need)]}。` });
+  });
+  /* 範囲の 150問（ID・観点・難易度） */
+  const SEL = `kekkan-1 知 B,kekkan-2 知 A,kekkan-3 知 B,kekkan-4 知 C,kekkan-5 知 B,kekkan-6 知 B,kekkan-7 知 B,kekkan-8 知 A,kekkan-13 知 A,kekkan-14 思 B,
+kekkan-17 思 B,kekkan-19 思 B,kekkan-21 思 B,kekkan-22 思 B,kekkan-23 思 C,kekkan-25 思 C,kekkan-26 思 C,kekkan-28 思 B,kekkan-29 思 B,kekkan-31 思 C,kekkan-33 思 C,kekkan-34 思 B,
+kekkan-36 思 B,kekkan-37 思 B,kekkan-40 思 B,kekkan-42 思 B,kekkan-43 思 B,kekkan-47 思 C,kekkan-51 思 C,kekkan-56 思 B,kekkan-57 思 C,kekkan-64 思 C,
+kekkan-71 知 A,kekkan-72 知 B,kekkan-73 知 B,kekkan-74 知 B,kekkan-75 知 B,kekkan-78 知 C,kekkan-81 思 B,kekkan-82 思 B,kekkan-83 思 B,kekkan-85 思 C,
+sleeve-1 知 A,sleeve-3 知 B,sleeve-4 知 B,sleeve-6 知 C,sleeve-7 知 B,sleeve-9 知 B,sleeve-11 知 C,sleeve-14 知 C,sleeve-new1 思 B,sleeve-new2 思 B,sleeve-31 知 A,sleeve-36 思 B,
+jouken-1 知 A,jouken-3 知 A,jouken-4 知 A,jouken-7 知 A,jouken-8 知 B,jouken-11 知 B,jouken-12 知 B,jouken-13 知 B,jouken-14 知 A,jouken-16 知 B,jouken-17 知 B,jouken-21 思 B,jouken-23 知 B,
+kigou-4 知 B,kigou-5 知 B,kigou-6 知 B,kigou-9 知 B,kigou-10 知 B,kigou-11 知 B,kigou-12 知 B,kigou-15 知 B,kigou-16 知 C,kigou-17 知 C,kigou-18 知 C,kigou-20 知 B,kigou-22 知 A,kigou-25 知 B,kigou-27 知 C,kigou-33 知 B,kigou-47 知 B,
+kougu-2 知 B,kougu-3 知 B,kougu-6 知 A,kougu-7 知 B,kougu-10 知 B,kougu-13 知 B,kougu-15 知 B,kougu-16 知 A,
+tejun-4 知 A,tejun-5 知 A,tejun-6 思 C,tejun-11 思 B,tejun-14 思 C,tejun-15 思 C,tejun-16 思 B,tejun-19 知 B,tejun-20 知 B,tejun-22 知 B,tejun-23 知 B,tejun-24 思 B,
+fukusen-1 知 A,fukusen-2 知 B,fukusen-4 知 B,fukusen-5 知 A,fukusen-6 知 B,fukusen-8 知 B,fukusen-9 知 B,fukusen-10 知 B,fukusen-11 知 C,fukusen-12 知 C,fukusen-13 知 B,
+fukusen-19 思 B,fukusen-21 思 B,fukusen-23 思 C,fukusen-24 思 C,fukusen-29 思 B,fukusen-30 思 C,fukusen-31 思 C,
+kouho-1 思 B,kouho-2 思 B,kouho-5 思 C,kouho-6 思 C,kouho-9 思 C,kouho-12 思 B,
+kouho-14 思 C,kouho-16 思 C,kouho-24 思 C,kouho-30 思 C,kouho-40 思 C,kouho-43 思 C,kouho-61 思 C,kouho-66 思 C,kouho-68 思 C,kouho-71 思 C,kouho-73 思 C,kouho-76 思 C,
+kouho-95 思 B,kouho-100 思 B,kouho-106 思 B,kouho-112 思 C,kouho-125 思 C,kouho-126 思 C,kouho-130 思 C,kouho-107 知 B,kouho-141 知 B,kouho-150 知 C`
+    .split(",").map(s => s.trim().split(" "));
+  const keep = SEL.map(([id, kan, lv]) => { const q = byId(id); q.kan = kan; q.lv = lv; return q; });
+  BANK.splice(0, BANK.length, ...keep);
+}
+/*SEL150-END*/
 /*BANK-END*/
 
 /* ============================================================
@@ -947,20 +1014,30 @@ function markNumber(q, v) {
 const S_MIN = 10;   // 文章は 10 字以上
 function judge(q, v) {
   if (q.t === "c") return v === q.a;
+  if (q.t === "m") return Array.isArray(v) && v.slice().sort().join() === q.a.slice().sort().join();   // すべて合って正解（部分点なし）
   if (q.t === "n") return markNumber(q, v) === q.a;
   if (q.t === "s") { const s = norm(v); if (s.length < S_MIN) return false; return q.keys.every(g => g.some(w => s.includes(norm(w)))); }
   if (q.t === "d") return zushiScore(q.z, v).ok;
   return false;
 }
 const keyHits = (q, v) => { const s = norm(v); return q.keys.map(g => ({ w: g[0], hit: g.some(w => s.includes(norm(w))) })); };
-const answerText = q => q.t === "c" ? q.o[q.a] : q.t === "n" ? q.a + (q.unit || "") : q.t === "d" ? "（解答例の図を見る）" : q.model;
-const hasAnswer = (q, v) => q.t === "c" ? v !== undefined : q.t === "n" ? markNumber(q, v) !== null : q.t === "d" ? !!(v && v.lines && v.lines.length) : !!(v && String(v).trim());
+const answerText = q => q.t === "c" ? q.o[q.a] : q.t === "m" ? q.a.map(i => MK[i]).join("・") + "（" + q.a.map(i => q.o[i]).join("／") + "）" : q.t === "n" ? q.a + (q.unit || "") : q.t === "d" ? "（解答例の図を見る）" : q.model;
+const hasAnswer = (q, v) => q.t === "c" ? v !== undefined : q.t === "m" ? Array.isArray(v) && v.length > 0 : q.t === "n" ? markNumber(q, v) !== null : q.t === "d" ? !!(v && v.lines && v.lines.length) : !!(v && String(v).trim());
 
 /* ============================================================
    画面
    ============================================================ */
 /* 模擬テストの配分（本試験 30問の仮の形）。語群選択 20問×3点・数値 4問×2点・記述（文章）4問×4点・記述（図示）2問×8点 ＝ 100点 */
-const EXAM = { n: 30, minutes: 50, kinds: { c: 20, n: 4, s: 4, d: 2 }, pts: { c: 3, n: 2, s: 4, d: 8 } };
+/* 模擬テスト（定期考査と同じ組み方。先生の選定 2026-10-30）。知識・技能 50点＋思考・判断・表現 50点＝100点、47問・50分。
+   記述（図示）は時間がかかるので入れない。単線図は1回のテストで2つまで */
+const isK5 = q => q.cat === "kekkan" && (q.t === "m" || (q.t === "c" && q.o.length === 5));
+const EXAM = { minutes: 50, sec: [
+  { name: "知識・技能", kan: "知", n: 25, pt: 2, pick: q => q.kan === "知" && (q.t === "c" || q.t === "n") },
+  { name: "思考・判断・表現（欠陥の判断）", kan: "思", n: 10, pt: 2, multi: 2, pick: q => isK5(q) },
+  { name: "思考・判断・表現（単線図・計算）", kan: "思", n: 10, pt: 2, figMax: 2, pick: q => q.kan === "思" && (q.t === "c" || q.t === "n") && !isK5(q) },
+  { name: "思考・判断・表現（記述）", kan: "思", n: 2, pt: 5, pick: q => q.kan === "思" && q.t === "s" },
+] };
+EXAM.n = EXAM.sec.reduce((s, x) => s + x.n, 0);
 let S = { view: "home" };     // view: home / q / result
 let tick = null;
 
@@ -977,11 +1054,11 @@ function home() {
   const stat = c => { const qs = BANK.filter(q => q.cat === c.id), done = qs.filter(q => rec[q.id]), ok = qs.filter(q => rec[q.id] && rec[q.id].last === 1);
     return `${qs.length}問` + (done.length ? `・いま正解 ${ok.length}` : ""); };
   $("card").innerHTML = `
-    <p class="lead">第二種電気工事士の技能試験（複線図・施工条件・欠陥の判断基準・器具と工具）を、筆記の問題で練習します。<br>
-    答え方は定期考査と同じ4つです。<br>
-    ① 語群選択：記号の ○ をぬる　② 数値：位ごとに 0〜9 の ○ をぬる　③ 記述（文章）：指定語句をすべて使って書く　④ 記述（図示）：複線図の線・色・刻印を書き込む</p>
+    <p class="lead">中間考査の範囲は、ここにある <b>${BANK.length}問</b> です。第二種電気工事士の技能試験（複線図・施工条件・欠陥の判断基準・器具と工具）を、筆記の問題で練習します。<br>
+    答え方は定期考査と同じです。① 語群選択：記号の ○ をぬる（「すべて選べ」は当てはまるものを全部）　② 数値：位ごとに 0〜9 の ○ をぬる　③ 記述（文章）：指定語句をすべて使って書く　④ 記述（図示）：複線図の線・色・刻印を書き込む（練習だけ）<br>
+    模擬テストは本番と同じ組み方：知識・技能 50点＋思考・判断・表現 50点＝100点。</p>
     <div class="big">
-      <button class="btn" id="goExam">模擬テスト（${EXAM.n}問・${EXAM.minutes}分）</button>
+      <button class="btn" id="goExam">模擬テスト（${EXAM.n}問・100点・${EXAM.minutes}分）</button>
       <button class="btn ghost" id="goWrong" ${nW ? "" : "disabled"}>まちがえた問題（${nW}問）</button>
       <button class="btn ghost" id="goAll">全部から10問</button>
     </div>
@@ -997,7 +1074,7 @@ function home() {
 }
 
 const byId = id => BANK.find(q => q.id === id);
-function prepOrder(q) { if (q.t !== "c") return null; const idx = q.o.map((_, i) => i); return q.fix ? idx : shuffle(idx); }
+function prepOrder(q) { if (q.t === "m") return q.o.map((_, i) => i); if (q.t !== "c") return null; const idx = q.o.map((_, i) => i); return q.fix ? idx : shuffle(idx); }
 
 function startPractice(ids, title) {
   if (!ids.length) return home();
@@ -1005,15 +1082,28 @@ function startPractice(ids, title) {
   ids.forEach(id => S.ord[id] = prepOrder(byId(id)));
   render();
 }
-function startExam() {
-  /* 答え方ごとの数を守り、分野はかたよらないように順に取る */
-  const used = new Set(), ids = [];
-  Object.entries(EXAM.kinds).forEach(([t, n]) => {
-    const byCat = shuffle(CATS.map(c => shuffle(BANK.filter(q => q.t === t && q.cat === c.id))).filter(a => a.length));
-    let k = 0, got = 0, guard = 0;
-    while (got < n && guard++ < 999) { const pool = byCat[k++ % byCat.length]; const q = pool.find(x => !used.has(x.group || x.id)); if (q) { used.add(q.group || q.id); ids.push(q.id); got++; } }
+/* 模擬テストの問題を選ぶ。区分ごとの数を守り、分野はかたよらないように順に取る。単線図は2つまで */
+function makeExam(rnd) {
+  const sh = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor((rnd || Math.random)() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const used = new Set(), ids = [], pts = {}, sec = {};
+  /* 単線図は2つまで。単線図・計算の区分が足りる組み合わせになるまで選び直す */
+  const all = [...new Set(BANK.filter(q => q.figZ).map(q => q.figZ))], s3 = EXAM.sec[2];
+  let figs = [];
+  for (let k = 0; k < 200; k++) { const f = sh(all).slice(0, 2); if (BANK.filter(q => s3.pick(q) && (!q.figZ || f.includes(q.figZ))).length >= s3.n + 2) { figs = f; break; } }
+  EXAM.sec.forEach((x, si) => {
+    let pool = BANK.filter(q => x.pick(q) && !used.has(q.group || q.id) && (!q.figZ || figs.includes(q.figZ)));
+    const take = [];
+    if (x.multi) sh(pool.filter(q => q.t === "m")).slice(0, x.multi).forEach(q => take.push(q));
+    const byCat = sh(CATS.map(c => sh(pool.filter(q => q.cat === c.id && !take.includes(q)))).filter(a => a.length));
+    let k = 0, guard = 0;
+    while (take.length < x.n && guard++ < 999) { const p = byCat[k++ % byCat.length]; const q = p.find(y => !take.includes(y) && !used.has(y.group || y.id)); if (q) { take.push(q); used.add(q.group || q.id); } }
+    take.forEach(q => { used.add(q.group || q.id); ids.push(q.id); pts[q.id] = x.pt; sec[q.id] = si; });
   });
-  S = { view: "q", mode: "exam", title: "模擬テスト", ids, i: 0, ans: {}, done: {}, ord: {}, t0: Date.now() };
+  return { ids, pts, sec };
+}
+function startExam() {
+  S = { view: "q", mode: "exam", title: "模擬テスト", ...makeExam(), i: 0, ans: {}, done: {}, ord: {}, t0: Date.now() };
+  const ids = S.ids;
   ids.forEach(id => S.ord[id] = prepOrder(byId(id)));
   startTimer(); render();
 }
@@ -1022,12 +1112,14 @@ function stopTimer() { if (tick) clearInterval(tick); tick = null; $("timer").te
 function showTimer() { if (!S.t0) return; const s = Math.floor((Date.now() - S.t0) / 1000), m = Math.floor(s / 60);
   $("timer").textContent = `${m}分${String(s % 60).padStart(2, "0")}秒 ／ ${EXAM.minutes}分`; $("timer").style.color = m >= EXAM.minutes ? "var(--ng)" : ""; }
 
-const KIND = { c: "語群選択（記号をぬる）", n: "数値（数字をぬる）", s: "記述（文章）", d: "記述（図示）" };
+const KIND = { c: "語群選択（記号をぬる）", m: "語群選択（すべて選ぶ）", n: "数値（数字をぬる）", s: "記述（文章）", d: "記述（図示）" };
+const picked = (q, v, oi) => q.t === "m" ? Array.isArray(v) && v.includes(oi) : v === oi;
+const rightOpt = (q, oi) => q.t === "m" ? q.a.includes(oi) : oi === q.a;
 /* 解答欄の部品 */
 function bubbleRow(q, v, shown) {
   const ord = S.ord[q.id];
-  return `<div class="sheet"><span class="sheet-h">解答欄</span>${ord.map((oi, k) => {
-    let cls = v === oi ? "fill" : ""; if (shown && oi === q.a) cls += " right"; if (shown && v === oi && oi !== q.a) cls += " wrong";
+  return `<div class="sheet"><span class="sheet-h">解答欄${q.t === "m" ? "（すべて）" : ""}</span>${ord.map((oi, k) => {
+    let cls = picked(q, v, oi) ? "fill" : ""; if (shown && rightOpt(q, oi)) cls += " right"; if (shown && picked(q, v, oi) && !rightOpt(q, oi)) cls += " wrong";
     return `<button class="bub ${cls}" data-o="${oi}" ${shown ? "disabled" : ""} aria-label="${MK[k]}">${MK[k]}</button>`; }).join("")}</div>`;
 }
 function digitGrid(q, v, shown) {
@@ -1060,11 +1152,12 @@ function render() {
   const c = CATS.find(x => x.id === q.cat);
   let h = `<div class="tags"><span class="tag kind">${KIND[q.t]}</span><span class="tag">${esc(c.name)}</span>${q.sub ? `<span class="tag">${esc(q.sub)}</span>` : ""}</div>
     <div class="q">${esc(q.q)}</div>` + (q.t !== "d" && figOf(q) ? `<div class="fig">${figOf(q)}</div>` : "");
-  if (q.t === "c") {
+  if (q.t === "c" || q.t === "m") {
     const ord = S.ord[id], long = q.o.some(s => String(s).length > 18) || q.oSvg;
-    h += `<div class="opts ${long ? "long" : ""}">` + ord.map((oi, k) => {
-      let cls = v === oi ? "pick" : "";
-      if (shown) cls = oi === q.a ? (v === oi ? "right" : "miss") : (v === oi ? "wrong" : "");
+    h += `<div class="opts ${long && q.o.length !== 6 ? "long" : q.o.length === 6 ? "three" : ""}">` + ord.map((oi, k) => {
+      const p = picked(q, v, oi), r = rightOpt(q, oi);
+      let cls = p ? "pick" : "";
+      if (shown) cls = r ? (p ? "right" : "miss") : (p ? "wrong" : "");
       return `<button class="opt ${cls}" data-o="${oi}" ${shown ? "disabled" : ""}><span class="mk">${MK[k]}</span>${q.oSvg ? q.oSvg[oi] : ""}<span>${esc(q.o[oi])}</span></button>`;
     }).join("") + `</div>` + bubbleRow(q, v, shown);
   } else if (q.t === "n") {
@@ -1076,7 +1169,7 @@ function render() {
     h += zTools(q, v, shown) + `<div class="zbox">${zSvg(q.z, v, S.zsel, false)}</div>`;
   }
   if (shown) {
-    const ok = judge(q, v), mk = q.t === "c" ? MK[S.ord[id].indexOf(q.a)] + "　" : "";
+    const ok = judge(q, v), mk = q.t === "c" ? MK[S.ord[id].indexOf(q.a)] + "　" : "";   // すべて選ぶ（m）は answerText に記号が入る
     h += `<div class="fb ${ok ? "ok" : "ng"}"><b class="h">${ok ? "正解" : "ちがいます"}　答え：${esc(mk + answerText(q))}</b>`;
     if (q.t === "s") h += `<div class="keys">指定語句：${keyHits(q, v).map(k => `<span class="key ${k.hit ? "hit" : "lack"}">${esc(k.w)}${k.hit ? " ✓" : " なし"}</span>`).join("")}</div><div>模範解答：${esc(q.model)}</div>`;
     if (q.t === "d") h += zReport(q, v);
@@ -1093,7 +1186,7 @@ function render() {
   $("card").innerHTML = h;
   $("card").className = "card" + (q.t === "d" ? " dmode" : "") + (shown ? " shown" : "");
   document.querySelector(".main").classList.toggle("wide", q.t === "d");
-  setSide([q.q, (q.o || []).join(" "), shown ? (q.ex || "") + answerText(q) : ""]);
+  setSide([q.q, shown ? (q.o || []).join(" ") + (q.ex || "") + answerText(q) : ""]);   // 答え合わせの前は、問題文の用語だけ（選択肢の用語の説明は答えになることがある）
   bind(q);
 }
 function zReport(q, v) {
@@ -1104,7 +1197,14 @@ function zReport(q, v) {
 }
 function bind(q) {
   const id = q.id;
-  document.querySelectorAll(".opt, .bub[data-o]").forEach(b => b.onclick = () => { S.ans[id] = +b.dataset.o; render(); });
+  document.querySelectorAll(".opt, .bub[data-o]").forEach(b => b.onclick = () => {
+    const oi = +b.dataset.o;
+    if (q.t === "m") {   // すべて選ぶ：押すたびに付け外し。「欠陥はない」はほかと一緒に選べない
+      const none = q.o.indexOf("欠陥はない"); let a = Array.isArray(S.ans[id]) ? S.ans[id].slice() : [];
+      a = a.includes(oi) ? a.filter(x => x !== oi) : oi === none ? [oi] : a.filter(x => x !== none).concat([oi]);
+      S.ans[id] = a.sort();
+    } else S.ans[id] = oi;
+    render(); });
   document.querySelectorAll(".bub[data-d]").forEach(b => b.onclick = () => { const a = Array.isArray(S.ans[id]) ? S.ans[id].slice() : Array(digitsOf(q)).fill(null);
     const c = +b.dataset.c, d = +b.dataset.d; a[c] = a[c] === d ? null : d; S.ans[id] = a; render(); });
   const tin = $("tin");
@@ -1147,15 +1247,17 @@ function bindZ(q) {
 function finish() {
   const exam = S.mode === "exam";
   /* 図示は項目ごとの部分点（できた割合 × 配点、切り捨て） */
-  const rows = S.ids.map(id => { const q = byId(id), ok = judge(q, S.ans[id]), pt = exam ? EXAM.pts[q.t] : 1;
+  const rows = S.ids.map(id => { const q = byId(id), ok = judge(q, S.ans[id]), pt = exam ? S.pts[id] : 1;
     const got = ok ? pt : q.t === "d" && exam ? Math.floor(zushiScore(q.z, S.ans[id]).frac * pt) : 0; return { q, ok, pt, got }; });
   if (exam) rows.forEach(r => mark(r.q.id, r.ok));
   stopTimer();
   const got = rows.reduce((s, r) => s + r.got, 0), full = rows.reduce((s, r) => s + r.pt, 0);
   const byCat = CATS.map(c => { const rs = rows.filter(r => r.q.cat === c.id); return { c, n: rs.length, ok: rs.filter(r => r.ok).length }; }).filter(x => x.n);
+  const kan = k => { const rs = rows.filter(r => EXAM.sec[S.sec[r.q.id]].kan === k); return `${rs.reduce((s, r) => s + r.got, 0)} / ${rs.reduce((s, r) => s + r.pt, 0)} 点`; };
   const min = S.t0 ? Math.round((Date.now() - S.t0) / 60000) : null;
   S.view = "result"; head(S.title + "　結果", 100);
   $("card").innerHTML = `<div class="score">${exam ? `${got} / ${full} 点` : `${rows.filter(r => r.ok).length} / ${rows.length} 問 正解`}</div>
+    ${exam ? `<p class="lead"><b>知識・技能 ${kan("知")}</b>　／　<b>思考・判断・表現 ${kan("思")}</b></p>` : ""}
     ${min !== null ? `<p class="lead">かかった時間 約${min}分（目安 ${EXAM.minutes}分）</p>` : ""}
     <div class="bars">${byCat.map(x => `<div class="bar"><span>${esc(x.c.name)}</span><div class="track"><div class="fill" style="width:${x.ok / x.n * 100}%"></div></div><span class="num">${x.ok} / ${x.n}</span></div>`).join("")}</div>
     <h3>ふりかえり（番号を押すと、その問題の答えと解説）</h3>
@@ -1163,7 +1265,7 @@ function finish() {
     <div id="rev"></div>
     <div class="row"><button class="btn ghost" id="home">はじめの画面へ</button>${rows.some(r => !r.ok) ? `<button class="btn" id="redo">まちがえた問題をもう一度</button>` : ""}</div>`;
   document.querySelectorAll(".qlist button").forEach(b => b.onclick = () => { const r = rows[+b.dataset.j], q = r.q, v = S.ans[q.id];
-    const yours = q.t === "c" ? (v === undefined ? "（無回答）" : q.o[v]) : q.t === "n" ? (markNumber(q, v) ?? "（無回答）") : q.t === "d" ? `${r.got} / ${r.pt} 点` : (v || "（無回答）");
+    const yours = q.t === "c" ? (v === undefined ? "（無回答）" : q.o[v]) : q.t === "m" ? (Array.isArray(v) && v.length ? v.map(i => MK[i]).join("・") : "（無回答）") : q.t === "n" ? (markNumber(q, v) ?? "（無回答）") : q.t === "d" ? `${r.got} / ${r.pt} 点` : (v || "（無回答）");
     $("rev").innerHTML = `<div class="fb ${r.ok ? "ok" : "ng"}"><b class="h">${b.textContent}．${esc(q.q)}</b>あなたの答え：${esc(yours)}<br>答え：${esc(answerText(q))}`
       + (q.t === "s" ? `<div class="keys">指定語句：${keyHits(q, v).map(k => `<span class="key ${k.hit ? "hit" : "lack"}">${esc(k.w)}</span>`).join("")}</div>` : "")
       + (q.t === "d" ? `<div class="zbox">${zSvg(q.z, v, null, false)}</div>` + zReport(q, v) : "")
