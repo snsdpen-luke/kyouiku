@@ -23,7 +23,7 @@ ok(new Set(B.map(q => q.id)).size === B.length, "id が重複していない");
 ok(B.every(q => ["c", "n", "s", "d"].includes(q.t)), "答え方は 語群選択・数値・記述（文章）・記述（図示）の4つだけ");
 ok(B.every(q => G.CATS.some(c => c.id === q.cat)), "どの問題も分野がある");
 ok(B.every(q => q.src), "どの問題にも出典（根拠）がある");
-ok(B.filter(q => q.t === "c").every(q => q.o.length >= 2 && q.o.length <= 4 && Number.isInteger(q.a) && q.a >= 0 && q.a < q.o.length), "語群選択：選択肢は 2〜4、正解の番号が範囲内");
+ok(B.filter(q => q.t === "c").every(q => q.o.length >= 2 && q.o.length <= 5 && Number.isInteger(q.a) && q.a >= 0 && q.a < q.o.length), "語群選択：選択肢は 2〜5、正解の番号が範囲内");
 ok(B.filter(q => q.t === "c").every(q => new Set(q.o.map(String)).size === q.o.length || q.oSvg), "語群選択：同じ選択肢が2つない");
 ok(B.filter(q => q.t === "n").every(q => Number.isInteger(q.a) && q.a >= 0 && String(q.a).length <= (q.digits || 3)), "数値：答えが位の数に収まる整数");
 ok(B.filter(q => q.t === "s").every(q => G.judge(q, q.model)), "記述（文章）：模範解答は指定語句をすべて含み、正解になる");
@@ -34,8 +34,8 @@ console.log("    内訳: " + JSON.stringify(counts) + "　分野: " + G.CATS.map
 console.log("\n【B】図示：お手本は満点、白紙・誤りは減点");
 const D = B.filter(q => q.t === "d");
 ok(D.length >= 17, `図示の問題が 17 以上（${D.length}）`);
-const ansVal = q => JSON.parse(E(`(()=>{ const q=GINOU.BANK.find(x=>x.id===${JSON.stringify(q.id)}), z=q.z, P=zPrep(z);
-  const map={}, cnt={}; Object.keys(P.ansGroups).forEach(j=>{const b=j.split(":")[0]; cnt[b]=(cnt[b]||0)+1; map[j]=b+"#"+cnt[b];});
+const ansVal = q => JSON.parse(E(`(()=>{ const z=ZUSHI.find(x=>x.id===${JSON.stringify(q.z ? q.z.id : q)}), P=zPrep(z);
+  const map=zAnsMap(z);
   const lines=z.ref.map(([a,b,c])=>({a:map[a]||a,b:map[b]||b,c}));
   const by={}; lines.forEach(l=>[l.a,l.b].forEach(e=>{ if(P.slots[e]) (by[e]=by[e]||[]).push(l); }));
   const marks={}; Object.keys(by).forEach(s=>marks[s]=needMark(z,P.slots[s].box,by[s]));
@@ -68,17 +68,36 @@ const OFFICIAL = {
   k1: { A: ["小", "小", "○", "○", "○"], B: ["3本用", "2本用", "2本用"] }, k2: { A: ["小", "小", "○"], B: ["4本用", "3本用", "3本用"] },
   k3: { A: ["小", "小", "○"], B: ["4本用", "3本用", "2本用"] }, k4: { A: ["3本用", "3本用", "2本用"], B: ["小", "小", "○"] },
   k6: { A: ["3本用", "3本用", "2本用", "2本用"], B: ["小", "小", "○", "○"] }, k7: { A: ["小", "小", "○", "○"], B: ["3本用", "3本用", "2本用", "2本用", "2本用", "2本用"] },
-  k8: { "ボックス": ["4本用", "4本用", "○", "○", "○"] }, k9: { A: ["2本用", "2本用", "3本用"], B: ["中", "中", "○"] }, k10: { "ボックス": ["中", "小", "3本用"] },
+  k5: { "ボックス": ["4本用", "小", "○", "○"] }, k8: { "ボックス": ["4本用", "4本用", "○", "○", "○"] }, k9: { A: ["2本用", "2本用", "3本用"], B: ["中", "中", "○"] }, k10: { "ボックス": ["中", "小", "3本用"] },
   k11: { "ボックス": ["中", "小", "2本用", "2本用"] }, k12: { A: ["3本用", "2本用", "2本用"], B: ["小", "小", "○", "○"] }, k13: { A: ["小", "小", "○"], B: ["4本用", "3本用", "2本用"] },
 };
 Object.entries(OFFICIAL).forEach(([id, exp]) => {
-  const q = D.find(x => x.z.id === id), v = ansVal(q), got = {};
-  Object.entries(v.marks).forEach(([s, m]) => { const b = q.z.boxes.find(b => b.id === s.split("#")[0]).name; (got[b] = got[b] || []).push(m); });
+  const z = E("ZUSHI").find(x => x.id === id), v = ansVal(id), got = {};
+  Object.entries(v.marks).forEach(([s, m]) => { const b = z.boxes.find(b => b.id === s.split("#")[0]).name; (got[b] = got[b] || []).push(m); });
   const same = Object.keys(exp).every(b => JSON.stringify((got[b] || []).slice().sort()) === JSON.stringify(exp[b].slice().sort())) && Object.keys(got).length === Object.keys(exp).length;
-  ok(same, `No.${q.z.no}: ${Object.entries(exp).map(([b, m]) => b + " " + m.join("・")).join(" ／ ")}` + (same ? "" : " → アプリ: " + JSON.stringify(got)));
+  ok(same, `No.${z.no}: ${Object.entries(exp).map(([b, m]) => b + " " + m.join("・")).join(" ／ ")}` + (same ? "" : " → アプリ: " + JSON.stringify(got)));
 });
 /* 接続点ごとの語群選択の正解も同じ表から */
 ok(B.filter(q => q.group && q.group.startsWith("pt-")).length >= 40, "接続点ごとの刻印・コネクタの問題が 40 問以上");
+ok(B.filter(q => q.group && q.group.startsWith("pt-")).every(q => { const z = E("ZUSHI").find(x => x.id === q.group.slice(3).split("B")[0]); return z && q.figZ === z.id; }), "接続点の問題には、その配線の単線図が付く");
+
+console.log("\n【F】剛さんの指摘（2026-10-30）");
+const allText = q => [q.q, q.ex || "", q.model || "", (q.o || []).join("|"), q.sub || "", q.src || ""].join(" ");
+ok(B.every(q => !/No\.\s?\d/.test(allText(q))), "候補問題の番号（No.7 など）を問題・選択肢・解説・出典に出さない");
+ok(B.filter(q => q.figZ).every(q => /<svg/.test(E("tanSvg")(q.figZ))), "番号の代わりに付ける単線図が描ける");
+ok(B.every(q => !(q.o || []).some(o => /大スリーブ|刻印「大」/.test(o) || o === "大")), "リングスリーブの「大」を選択肢に出さない");
+ok(!E("MARKS").sleeve.includes("大"), "図示の刻印にも「大」を出さない");
+ok(B.every(q => !/外装（シース）をはぐ|外装をはぐ/.test(q.q + (q.o || []).join(""))), "「外装をはぐ」ではなく「ケーブルをはぐ」");
+ok(!B.some(q => /9711/.test(q.q) || /1\.6mm の心線 2本をリングスリーブでつなぐときの/.test(q.q) || /エコケーブル（EM-EEF）の外装をはぐときに/.test(q.q) || /絶縁被覆の傷は/.test(q.q)), "指摘の4問を消した");
+ok(B.every(q => !/欠陥になるか。\n/.test(q.q) && !(q.o || []).includes("欠陥にならない")), "欠陥の2択（なる・ならない）が無い");
+const K5 = B.filter(q => q.cat === "kekkan" && q.o && q.o.length === 5);
+ok(K5.length >= 50 && K5.every(q => q.o[4] === "欠陥はない"), `欠陥の5択（ア〜エ＋オ 欠陥はない）が 50 問以上（${K5.length}）`);
+ok(K5.some(q => q.a === 4) && K5.some(q => q.a < 4), "欠陥がある問題と、欠陥はない問題の両方がある");
+ok(K5.every(q => { const d = E("KK").filter(k => q.o.slice(0, 4).includes(k[1])); return d.length === 4 && d.filter(k => k[2]).length === (q.a === 4 ? 0 : 1) && new Set(d.map(k => k[0])).size === 4; }), "5択は、欠陥が0か1つだけで、同じ話題が2つ入らない");
+ok(B.filter(q => /受金ねじ部/.test(q.q + (q.o || []).join(""))).every(q => /受金ねじ部/.test(E("figOf")(q))), "受金ねじ部が出る問題には、受金ねじ部の図が付く");
+{ const z = E("ZUSHI").find(x => x.id === "k1"), P = E("zPrep")(z), b = P.box.B1;
+  ok(Object.values(P.slots).filter(s => s.box === "B1").every(s => Math.abs(Math.hypot(s.x - b.x, s.y - b.y) - 44) < 0.01), "接続点はボックスのふちに並ぶ（中を通る線とかぶらない）");
+  const m = E("zAnsMap")(z); ok(new Set(Object.values(m)).size === Object.keys(m).length, "お手本の接続点は、それぞれ別の場所に置く"); }
 
 console.log("\n【D】画面と模擬テスト");
 G.startExam();
