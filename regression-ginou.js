@@ -117,10 +117,10 @@ for (let k = 0; k < 40; k++) {   // 何回作っても条件を守る
   const pts = X.ids.reduce((s, id) => s + X.pts[id], 0), chi = X.ids.filter(id => G.EXAM.sec[X.sec[id]].kan === "知").reduce((s, id) => s + X.pts[id], 0);
   const figs = new Set(qs.filter(q => q.figZ).map(q => q.figZ));
   const good = X.ids.length === 47 && pts === 100 && chi === 50 && qs.filter(q => q.t === "m").length >= 2 && qs.every(q => q.t !== "d") && figs.size <= 2
-    && new Set(qs.map(q => q.group || q.id)).size === 47 && qs.filter(q => q.t === "s").length === 2;
+    && new Set(qs.map(q => q.group || q.id)).size === 47 && qs.filter(q => q.t === "s").length === 2 && qs.every(q => !(q.rel || []).some(r => X.ids.includes(r)));
   if (!good) { okMany = false; console.log("    × " + JSON.stringify({ n: X.ids.length, pts, chi, figs: [...figs] })); break; }
 }
-ok(okMany, "模擬テストは 47問・100点（知識・技能 50点／思考・判断・表現 50点）、すべて選べ 2問以上、記述（文章）2問、図示なし、単線図は2つまで、同じ問題なし（40回作って確かめる）");
+ok(okMany, "模擬テストは 47問・100点（知識・技能 50点／思考・判断・表現 50点）、すべて選べ 2問以上、記述（文章）2問、図示なし、単線図は2つまで、同じ問題なし、記述の指定語句が答えになる問題と一緒に出さない（40回作って確かめる）");
 G.startExam();
 const S = G.S;
 /* 語群：ぬる */

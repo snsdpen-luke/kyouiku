@@ -145,7 +145,7 @@ textarea{font:inherit;font-size:17px;width:100%;min-height:110px;padding:10px;bo
 </div>
 <script>
 "use strict";
-const VER = "2026-10-30d";
+const VER = "2026-10-30e";
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const MK = ["ア", "イ", "ウ", "エ", "オ", "カ"];
@@ -789,7 +789,7 @@ const SRC_FK = "出典：複線図の描き方（授業）と、令和8年度 �
   ["3路スイッチで、電源側または負荷側の線をつなぐ端子の記号は。", ["0", "1", "3", "1 と 3"], "1・3 はスイッチ相互間の線。"],
 ].forEach(([q, o, ex]) => add("fukusen", { t: "c", q, o, a: 0, ex, src: SRC_FK }));
 [
-  ["1か所のジョイントボックスに、電源（VVF1.6-2C）・ランプ（VVF1.6-2C）・スイッチ（VVF1.6-2C）が来る（練習1の形）。ボックスの中の接続点はいくつか。", 3, "電源の黒＋スイッチへの黒／電源の白＋ランプの白／スイッチからの返り線＋ランプの黒 の3か所。"],
+  ["1か所のジョイントボックスに、電源（VVF1.6-2C）・ランプ（VVF1.6-2C）・スイッチ（VVF1.6-2C）が来る。ボックスの中の接続点はいくつか。", 3, "電源の黒＋スイッチへの黒／電源の白＋ランプの白／スイッチからの返り線＋ランプの黒 の3か所。"],
   ["練習1の形（電源・ランプ・スイッチが1つのボックス）で、電源の白とランプの白をつなぐ接続点に集まる電線は何本か。", 2, "電源の白とランプの W へ行く白の 2本。1.6mm × 2本なら小スリーブ・刻印「○」。"],
 ].forEach(([q, a, ex]) => add("fukusen", { t: "n", q, a, unit: "本", ex, src: SRC_FK }));
 /* ---------- 記述式（文章）。指定語句をすべて使って書く ---------- */
@@ -983,6 +983,10 @@ kouho-14 思 C,kouho-16 思 C,kouho-24 思 C,kouho-30 思 C,kouho-40 思 C,kouho
 kouho-95 思 B,kouho-100 思 B,kouho-106 思 B,kouho-112 思 C,kouho-125 思 C,kouho-126 思 C,kouho-130 思 C,kouho-107 知 B,kouho-141 知 B,kouho-150 知 C`
     .split(",").map(s => s.trim().split(" "));
   const keep = SEL.map(([id, kan, lv]) => { const q = byId(id); q.kan = kan; q.lv = lv; return q; });
+  /* 記述（文章）の指定語句が答えになってしまう問題。同じテストに一緒に出さない */
+  const REL = { "jouken-21": ["jouken-3"], "kekkan-81": ["kekkan-2", "kekkan-3"], "kekkan-82": ["kekkan-6", "kekkan-7"], "jouken-23": ["jouken-8"], "tejun-23": ["tejun-4", "tejun-5"],
+    "fukusen-23": ["fukusen-12"], "fukusen-24": ["fukusen-11"], "kekkan-83": ["kekkan-36", "kekkan-37"], "sleeve-36": ["sleeve-new1", "sleeve-new2"] };
+  Object.entries(REL).forEach(([a, bs]) => bs.forEach(b => { [[a, b], [b, a]].forEach(([x, y]) => { const q = byId(x); (q.rel = q.rel || []).push(y); }); }));
   BANK.splice(0, BANK.length, ...keep);
 }
 /*SEL150-END*/
@@ -1091,7 +1095,7 @@ function makeExam(rnd) {
   let figs = [];
   for (let k = 0; k < 200; k++) { const f = sh(all).slice(0, 2); if (BANK.filter(q => s3.pick(q) && (!q.figZ || f.includes(q.figZ))).length >= s3.n + 2) { figs = f; break; } }
   EXAM.sec.forEach((x, si) => {
-    let pool = BANK.filter(q => x.pick(q) && !used.has(q.group || q.id) && (!q.figZ || figs.includes(q.figZ)));
+    let pool = BANK.filter(q => x.pick(q) && !used.has(q.group || q.id) && !(q.rel || []).some(r => ids.includes(r)) && (!q.figZ || figs.includes(q.figZ)));
     const take = [];
     if (x.multi) sh(pool.filter(q => q.t === "m")).slice(0, x.multi).forEach(q => take.push(q));
     const byCat = sh(CATS.map(c => sh(pool.filter(q => q.cat === c.id && !take.includes(q)))).filter(a => a.length));
