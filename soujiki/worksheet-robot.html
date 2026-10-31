@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>掃除機の頭脳ラボ ワークシート</title>
+<style>
+  @page { size: A4; margin: 11mm 13mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; font-size: 10pt; line-height: 1.5;
+         color: #111; background: #fff; max-width: 190mm; margin: 0 auto; padding: 6mm 0; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111; padding-bottom: 3px; margin-bottom: 6px; }
+  h1 { font-size: 14pt; margin: 0; }
+  .who span { display: inline-block; border-bottom: 1px solid #111; min-width: 26mm; margin-left: 4px; }
+  h2 { font-size: 11pt; margin: 10px 0 3px; padding-left: 6px; border-left: 4px solid #111; }
+  p { margin: 2px 0; }
+  .note { font-size: 8.8pt; color: #444; }
+  .line { border-bottom: 1px solid #999; height: 7mm; }
+  table { width: 100%; border-collapse: collapse; margin: 3px 0; }
+  th, td { border: 1px solid #111; padding: 2px 4px; vertical-align: top; }
+  th { background: #eee; font-size: 9pt; }
+  td { height: 8.5mm; }
+  .box { border: 1px solid #111; min-height: 14mm; padding: 2px 5px; margin: 3px 0; }
+  .blank { display: inline-block; border-bottom: 1px solid #111; min-width: 15mm; }
+  .rule { border: 1px dashed #111; padding: 3px 8px; margin: 5px 0; font-size: 9pt; }
+  .goal { border: 1.5px solid #111; padding: 4px 8px; font-weight: bold; margin: 5px 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .page-break { break-before: page; }
+  code { font-family: Menlo, Consolas, monospace; font-size: 9pt; }
+  @media screen { body { padding: 16px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>掃除機の頭脳ラボ</h1>
+  <div class="who">電子計測制御　ペア<span></span>　名前<span></span></div>
+</header>
+
+<div class="goal">目標：リビングをできるだけ広く掃除し、電池が切れる前に充電台へ戻す</div>
+<p>ドローンの実習では、姿勢を保つ制御（PID）を扱いました。今日は、ロボットが「何を感じたら、何をするか」を決めるプログラムを作ります。</p>
+<div class="rule"><b>進め方</b>　① 数値は画面の履歴に残るので、紙には予想と考えたことを書きます　② 1回に変えるのは1か所だけにします</div>
+
+<h2>1　本物と比べる</h2>
+<p>最初のプログラム（ぶつかったら少し下がって向きを変える／それ以外は直進）のまま、走らせてみましょう。</p>
+<p>清掃率 <span class="blank"></span> %　　結末 <span class="blank"></span></p>
+<p>動画の本物の掃除機と比べて、動き方の違いを2つ書きましょう。本物はなぜそう動くのだと思いますか。</p>
+<div class="line"></div><div class="line"></div>
+
+<h2>2　帰らせる</h2>
+<p><code>if battery &lt; □:</code> と <code>go_home</code> を使って、充電台へ帰る処理を足しましょう。何 % で帰らせるのがよいでしょうか。</p>
+<table>
+  <tr><th style="width:16%">帰る電池</th><th style="width:34%">予想（帰れるか・清掃率）</th><th style="width:14%">清掃率</th><th style="width:12%">結末</th><th>気づいたこと</th></tr>
+  <tr><td>　　　%</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>　　　%</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>　　　%</td><td></td><td></td><td></td><td></td></tr>
+</table>
+<p>帰り始める電池の値を少し変えただけで、帰れたり帰れなかったりすることがあります。なぜでしょうか。</p>
+<div class="line"></div><div class="line"></div>
+
+<h2>3　掃除のしかたを設計する</h2>
+<p>清掃率を上げる作戦を考えましょう。使える命令：<code>forward</code>・<code>back</code>・<code>turn</code>・<code>follow_wall</code>・<code>spiral</code>・<code>mode</code> など（画面の「動作の命令」の表）。</p>
+<p>作戦（ひとことで）：</p>
+<div class="line"></div>
+<p>作戦を<b>状態遷移図</b>で描きましょう（丸＝モード、矢印＝切り替えの条件）。描いてから、プログラムにします。</p>
+<div class="box" style="min-height:42mm"></div>
+
+<div class="page-break"></div>
+
+<h2>4　試して直す</h2>
+<table>
+  <tr><th style="width:8%">試行</th><th style="width:34%">変えたところ</th><th style="width:13%">清掃率</th><th style="width:12%">結末</th><th>何が起きたか・次にどうするか</th></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+<p class="note">よく起きること：同じ場所を回り続ける／壁に押しつけたまま動かなくなる／ジグザグが途中で崩れる。どれも、原因はプログラムの中にあります。</p>
+
+<h2>5　ペアのベスト</h2>
+<p>充電台に帰れたときの清掃率 <span class="blank"></span> %　　プログラムの行数 <span class="blank"></span></p>
+<p><code>if</code>・<code>elif</code> の順番を入れ替えて、結果が変わったことはありましたか。順番が大事なのはなぜでしょうか。</p>
+<div class="line"></div><div class="line"></div>
+
+<h2>6　レベル2：今の掃除機（地図と方位センサを持つ）</h2>
+<p>画面の「レベル2」に切り替えると、位置 <code>x</code>・<code>y</code>、方位 <code>heading</code>、<code>go_to</code>・<code>go_dirty</code> などが使えます。レベル1 のベストをこえられるでしょうか。</p>
+<table>
+  <tr><th style="width:8%">試行</th><th style="width:40%">使った命令・作戦</th><th style="width:13%">清掃率</th><th style="width:12%">結末</th><th>レベル1 と比べて</th></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<h2>7　まとめ</h2>
+<div class="two">
+  <div>
+    <p>(a) ランダムに向きを変えるだけの作戦の、<b>強み</b>と<b>弱み</b>は何でしょうか。</p>
+    <div class="box" style="min-height:22mm"></div>
+  </div>
+  <div>
+    <p>(b) 地図と方位センサがあると、何が解決しましたか。それでも解決しなかったことは何ですか。</p>
+    <div class="box" style="min-height:22mm"></div>
+  </div>
+</div>
+
+</body>
+</html>
