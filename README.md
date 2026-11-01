@@ -36,7 +36,7 @@
 | 距離センサ 第2時 | <https://snsdpen-luke.github.io/kyouiku/dist2/> （ミリ波レーダー・ACCへの橋） |
 | 自動駐車をつくろう | <https://snsdpen-luke.github.io/kyouiku/parking/> （手動駐車9ステージ。全クリアで自動制御のページへ） |
 | 駐車を学習する車 | <https://snsdpen-luke.github.io/kyouiku/parking2/> （試作：手動の記録を集める→表で見る→学習して自動運転） |
-| 自動運転への階段 | <https://snsdpen-luke.github.io/kyouiku/parking3/> （手動でデータ集め→データ分析→レベル1：ブレーキ、2：アクセル、3：シフト、4：ハンドルを自動（4で全部の操作を車が行う）。関所：手動3回成功→③、レベル1で2回→2、レベル2で1回→3、レベル3で1回→4。先生は末尾に ?all で全部開く。?easy で歩行者・車をゆるくする。レベル5は準備中。確認は `node regression-parking3.js 自動運転への階段.html`） |
+| 自動運転への階段 | <https://snsdpen-luke.github.io/kyouiku/parking3/> （手動でデータ集め→データ分析→レベル1：ブレーキ、2：アクセル、3：シフト、4：ハンドルを自動（4で全部の操作を車が行う）、5：全部（路面 晴れ・雨・雪を車が測って、路面ごとの数字に切り替える。10回まとめてテストで9回以上成功・平均70点以上なら完成）。関所：手動3回成功→③、レベル1で2回→2、レベル2で1回→3、レベル3で1回→4、レベル4で1回→5。先生は末尾に ?all で全部開く。?easy で歩行者・車をゆるくする。確認は `node regression-parking3.js 自動運転への階段.html`） |
 | 複線図れんしゅう | <https://snsdpen-luke.github.io/kyouiku/fukusen/> |
 | 速い・遅いの正体 | <https://snsdpen-luke.github.io/kyouiku/speed/> |
 | 電波はどこまで届くか | <https://snsdpen-luke.github.io/kyouiku/wifi/> |
