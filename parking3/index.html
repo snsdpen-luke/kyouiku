@@ -403,6 +403,14 @@ function apWheel(a,cam,ph,ks,lane){
  if(ph==='kiri')return Math.max(-1,Math.min(1,(cam.th-Math.PI/2)*2*ks))*WMAX;
  if(a.sub!=='straight'&&cam.th<Math.PI/2-AP.turnBack)return landX(cam)>AP.lead?0:-WMAX;
  a.sub='straight';const thd=Math.PI/2-Math.max(-0.35,Math.min(0.35,AP.kx*cam.offR));return Math.max(-1,Math.min(1,AP.kth*(cam.th-thd)*ks))*WMAX;}
+// やり直し（レベル4）：前に出る道を「ハンドル7通り × 距離5通り」計算して、まわりに近づきすぎず、
+// そのあとまっすぐ下がれば枠の真ん中に入るものを選ぶ
+function nearPad(W,g,pad){const c=Math.cos(g.th),n=Math.sin(g.th);for(const [qx,qy] of obstaclePoints(W).concat(dynPoints(W))){const dx=qx-g.x,dy=qy-g.y,a=dx*c+dy*n,b=-dx*n+dy*c;if(a>-RO-pad&&a<FO+pad&&b>-HW-pad&&b<HW+pad)return true;}return false;}
+function planKiri(W,s,pad){let best=null;for(const w of [-540,-360,-180,0,180,360,540])for(const d of [0.8,1.2,1.8,2.5,3.2]){const g={x:s.x,y:s.y,th:s.th,d:w/WMAX*DMAX};let ok=true;
+  for(let k=0;k<Math.round(d/0.1);k++){move(g,1,0.1);if(hit(W,g)||nearPad(W,g,pad)){ok=false;break;}}if(!ok)continue;
+  const sn=Math.max(0.2,Math.sin(g.th)),xl=g.x-(g.y-(ENTRY-1.5))*Math.cos(g.th)/sn; // まっすぐ下がったら、うしろの車輪がどこに着くか
+  const cost=Math.abs(xl-W.gc)+0.6*Math.abs(g.th-Math.PI/2)+0.05*d;if(!best||cost<best.cost)best={w,d,cost,th:g.th,off:xl-W.gc};}
+ return best||{w:0,d:0.8,cost:99};}
 // 車のコンピュータの1コマ。m.ap にいまの段取り（ph）を持つ。シフトを変えたら {g,why,...} を返す
 function autoPilot(m,W,sens,dt,lv){const s=m.s,p=m.p,a=m.ap||(m.ap={ph:'start',t:0,camT:1,cam:null,planB:false,pbT:0,odo:0,kiriFrom:0,clearT:0,nk:0});
  a.camT+=dt;if(a.camT>=LON.sample||!a.cam){a.camT=0;a.cam=camera(W,s);}const cam=a.cam,v=m.c.v;a.t+=dt;a.odo+=v*dt;
@@ -416,18 +424,18 @@ function autoPilot(m,W,sens,dt,lv){const s=m.s,p=m.p,a=m.ap||(m.ap={ph:'start',t
   if(a.clearT>=AP.clear){m.hold=false;a.clearT=0;}}
  if(a.ph==='start'){if(a.t>=AP.wait){out=shift('D','スタート');a.ph='fwd';}}
  else if(a.ph==='fwd'||a.ph==='kiri'){
-  if(lv>=4)steer(apWheel(a,cam,a.ph,ks,lane));
+  if(lv>=4)steer(a.ph==='kiri'&&a.kp?a.kp.w:apWheel(a,cam,a.ph,ks,lane));
   if(a.ph==='fwd'&&m.hold&&v===0&&m.trig&&m.trig[0]==='f'){a.hf=(a.hf||0)+dt;if(a.hf>=AP.stuck&&landX(cam)>=-0.1){a.hf=0;a.blocked=true;a.planB=true;a.pbT=0;a.ph='stop1';a.t=0;}}else a.hf=0;
   if(a.ph==='fwd'&&cam.off+planStop(v,W.grip)>=A+(a.more||0)){a.planB=true;a.pbT=0;a.ph='stop1';a.t=0;}
-  if(a.ph==='kiri'&&a.odo-a.kiriFrom>=AP.kiriDist){a.planB=true;a.pbT=0;a.ph='stop1';a.t=0;}}
- else if(a.ph==='stop1'){if(v===0){let ready=true;if(lv>=4){a.sub='';const w=apWheel(a,cam,'back',ks,lane);steer(w);ready=Math.abs(m.wheel-w)<5;}
+  if(a.ph==='kiri'){a.kt=(m.hold&&v===0)?(a.kt||0)+dt:0;if(a.odo-a.kiriFrom>=(lv>=4&&a.kp?a.kp.d:AP.kiriDist)||a.kt>=AP.stuck){a.planB=true;a.pbT=0;a.ph='stop1';a.t=0;}}}
+ else if(a.ph==='stop1'){if(v===0){let ready=true;if(lv>=4){a.sub=a.nk&&Math.abs(cam.th-Math.PI/2)<0.45?'straight':'';const w=apWheel(a,cam,'back',ks,lane);steer(w);ready=Math.abs(m.wheel-w)<5;}
    if(lv>=4&&!a.nk&&a.t>=AP.wait&&landX(cam)<-0.1){a.planB=false;a.more=(a.more||0)+0.3-landX(cam);a.ph='fwd';a.t=0;out={g:'D',why:'ここからでは枠に入れない → もう少し前へ',off:cam.off,A,th:cam.th};}
    else if(a.t>=AP.wait&&ready){a.planB=false;out=shift('R',a.nk?'もう一度バック':a.blocked?'前がふさがれた → ここから入れるので切り返す':'切り返す位置に着いた');a.blocked=false;a.ph='back';}}else a.t=0;}
  else if(a.ph==='back'){
   if(lv>=4)steer(apWheel(a,cam,'back',ks,lane));
   if(m.hold&&v===0){const front=s.y+FO*Math.sin(s.th);const inSlot=m.trig==='r'&&front<ENTRY+0.6&&Math.abs(cam.th-Math.PI/2)<0.3;
    if(inSlot&&a.t>=0.3){out=shift('P','枠の奥に着いた');a.ph='park';}
-   else if(!inSlot&&a.t>=AP.stuck&&a.clearT===0&&a.nk<3){a.nk++;a.kiriFrom=a.odo;out=shift('D','近すぎて進めない → 切り返し');a.ph='kiri';}}
+   else if(!inSlot&&a.t>=AP.stuck&&a.clearT===0&&a.nk<3){a.nk++;a.kiriFrom=a.odo;a.kt=0;if(lv>=4)a.kp=planKiri(W,s,Math.max(0.1,p.corner*0.6));out=shift('D','近すぎて進めない → 切り返し');if(a.kp){out.kw=a.kp.w;out.kd=a.kp.d;}a.ph='kiri';}}
   else a.t=0;}
  if(a.planB)a.pbT+=dt;
  return out;}
@@ -897,6 +905,8 @@ function advice(r){const P=r.p||{},lv=r.level,R=r.rows,E=r.events||[],road=r.con
   if(lv>=2&&P.vf<6/3.6)add(T('accel'),`「前進の目標」を <b>上げる</b>（今 ${kh(P.vf)} → ${kh(P.vf+1/3.6)} km/h くらい）${rn}`,`前進で動いていた時間 ${fmt(parts.d,1)} 秒。通路は広いので速くしやすい。`);
   else if(lv>=2&&P.vt<3/3.6)add(T('accel'),`「バックの目標」を <b>上げる</b>（+0.5 km/h くらい）${rn}`,`バックで動いていた時間 ${fmt(parts.r,1)} 秒。上げたら、ブレーキの余裕も見直す。`);
   if(lv<2)add('','レベル2で、アクセルも車に任せよう','レベル1では速さはあなたの運転のまま。');}
+ {const nk=E.filter(e=>e.type==='shift'&&/切り返し/.test(e.why||'')).length,gap=(r.cond.sw-2*HW)/2;
+  if(nk>=2&&r.result!=='成功'&&P.corner>gap-0.05)add(T('brake'),`「四すみ」の余裕を <b>小さく</b>（止める距離 今 ${fmt(P.corner*100)} cm → ${fmt(Math.max(0.05,gap-0.12)*100)} cm くらい）`,`${nk} 回やり直しても入れなかった。枠の中では、となりの車まで片側 約 ${fmt(gap*100)} cm しかない。止める距離がそれより大きいと、すみのセンサが止めてしまう。`);}
  if(lv>=3&&E.some(e=>e.type==='shift'&&/前へ/.test(e.why||'')))add('shift','「切り返す位置」を <b>先へ</b>（+0.3 m くらい）','手前すぎて、ハンドルをいっぱいに切っても枠に届かず、前に出直した（時間がかかった）。');
  const ri=R.findIndex(x=>x[6]==='R');let cr=0;{let pv=0;if(ri>=0)R.slice(ri).forEach(x=>{const d=x[1];if(Math.abs(d)>0.03&&d*pv<0)cr++;if(Math.abs(d)>0.03)pv=d;});}
  // 測った結果（まわりの車なし）：直す強さ 2 くらいが一番正確。3 をこえると、ふらついてかえってずれる
@@ -946,7 +956,7 @@ function revUI(){const r=RV.run;const tl=X.cvT.c;tl.clearRect(0,0,720,30);if(!r)
    html+=`<div class="src">切り返す位置 <b>${m2(ev.A)}</b> ＝ 記録からの数字 <b>${m2(P.baseA!=null?P.baseA:AP_BASE.A)}</b> ＋ あなたが決めた余裕 <b>${sgnM(P.mA||0)}</b>。`+(P.srcA&&P.srcA.length?'　記録からの数字は、あなたが手動で R に入れた位置の平均：'+P.srcA.map(x=>`${x.label} ${m2(x.v)}`).join('、'):'　（まだ記録を反映していないので、仮の数字です）')+`</div>`;}
   else if(ev.g==='P'){html=`<div class="chain">${box('s','① 測った（センサ・カメラ）',`うしろのセンサ <b>${ev.rear==null?'—':cm(ev.rear)}</b><br>車の向き ${fmt(ev.th*180/Math.PI)}°`)}${ar}${box('j','② くらべた（コンピュータ）','枠の奥まで下がって<br>止まった')}${ar}${box('j','③ 決めた（コンピュータ）','駐車おわり')}${ar}${box('a','④ 動かした（アクチュエータ）','シフトを <b>P</b>')}</div>`;}
   else{html=`<div class="chain">${box('s','① 測った（カメラ）',`止める枠の真ん中から<br><b>${m2(ev.off)}</b>・向き ${fmt(ev.th*180/Math.PI)}°`)}${ar}${box('j','② くらべた（コンピュータ）',ev.why.split(' → ')[0])}${ar}${box('j','③ 決めた（コンピュータ）',ev.why.split(' → ')[1]||'')}${ar}${box('a','④ 動かした（アクチュエータ）','シフトを <b>D</b>')}</div>`;
-   html+=`<div class="src">${/前へ/.test(ev.why)?'切り返す位置が手前すぎて、ハンドルをいっぱいに切っても枠の真ん中まで届かない。車が気づいて、もう少し前へ出た。そのぶん時間がかかった。':'となりの車や柱に近すぎて、そのままでは下がれなかった。'}</div>`;}}
+   html+=`<div class="src">${/前へ/.test(ev.why)?'切り返す位置が手前すぎて、ハンドルをいっぱいに切っても枠の真ん中まで届かない。車が気づいて、もう少し前へ出た。そのぶん時間がかかった。':'となりの車や柱に近すぎて、そのままでは下がれなかった。'+(ev.kw!=null?`　車は前に出る道を 35 通り（ハンドル7通り × 距離5通り）計算して、ハンドル <b>${ev.kw===0?'まっすぐ':(ev.kw<0?'左 ':'右 ')+Math.abs(ev.kw)+'°'}</b> で <b>${fmt(ev.kd,1)} m</b> 前に出ることにした。そのあとは、ずれと向きを直しながら下がる。`:'')}</div>`;}}
  else if(ev.bad){const last=r.rows[r.rows.length-1];html=`<div class="chain">${box('s','① 測った（カメラ）',`枠の真ん中とのずれ <b>${fmt(Math.abs(last[1])*100)} cm</b><br>向きのずれ <b>${fmt(Math.abs(last[3]-Math.PI/2)*180/Math.PI,1)}°</b>`)}${ar}${box('j','② くらべた',`ずれてよいのは<br>${fmt(LEVEL_ST.tol*100)} cm・${fmt(LEVEL_ST.ang*180/Math.PI,0)}° まで`)}${ar}${box('x','③ 結果',`<b>${ev.bad}</b>`)}</div>`;
   html+=`<div class="src">${r.level>=4?'ハンドルは車が「ずれ × 直す強さ」で回した。直す強さを変えると、ずれ方はどう変わる？　切り返す位置はちょうどよかった？':'シフトは車が、ハンドルはあなたが操作した。どこでずれた？'}</div>`;}
  else{const seen=ev.seen||{};const lines=Object.keys(seen).map(id=>`${nm(id)}：${seen[id]===null?'何も映っていない':cm(seen[id])}`).join('<br>');const any=Object.values(seen).some(v=>v!==null);
