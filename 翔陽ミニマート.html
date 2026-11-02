@@ -24,7 +24,7 @@
 <div id="stage"><canvas id="cv"></canvas></div>
 <script>
 "use strict";
-const VER = "2026-11-02a";
+const VER = "2026-11-02b";
 
 
 /* =====================================================================
@@ -628,6 +628,72 @@ function guideTarget(g) {
 
 
 /* =====================================================================
+   2.5 BGM（音のファイルは使わない。Web Audio でその場で鳴らすオリジナルの曲）
+   iPhone は画面に触るまで音を出せないので、最初のタップ／キーで鳴り始める。♪ボタンで ON/OFF
+   ===================================================================== */
+const BGM_STEP = 0.25;                  // 8分音符 1つの秒（テンポ 120）
+const BGM_VOL = 0.10;                   // 全体の音量
+const BGM_KEY = "shoyo-mart-bgm";       // ON/OFF の保存先
+/* メロディ。1小節 8つ（8分音符）× 8小節。数字は MIDI のノート番号（72 = ド）、0 は休み */
+const BGM_SONG = [
+  72, 0, 76, 79, 76, 0, 74, 72,   69, 0, 72, 76, 74, 72, 69, 0,
+  65, 69, 72, 0, 74, 72, 69, 65,  67, 0, 71, 74, 79, 0, 77, 74,
+  76, 0, 79, 84, 79, 76, 72, 0,   81, 79, 76, 72, 74, 0, 76, 0,
+  77, 76, 74, 72, 69, 0, 72, 74,  71, 0, 74, 0, 72, 0, 0, 0,
+];
+const BGM_ROOTS = [48, 45, 41, 43, 48, 45, 41, 43];   // 小節ごとのベースの根音（ド・ラ・ファ・ソ）
+const bgm = { ctx: null, master: null, noise: null, timer: null, nextT: 0, step: 0, on: true };
+try { bgm.on = localStorage.getItem(BGM_KEY) !== "off"; } catch (e) {}
+const midiHz = n => 440 * Math.pow(2, (n - 69) / 12);
+function bgmTone(freq, t, dur, type, vol) {
+  const a = bgm.ctx, o = a.createOscillator(), v = a.createGain();
+  o.type = type; o.frequency.value = freq;
+  v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(vol, t + 0.01); v.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(v); v.connect(bgm.master); o.start(t); o.stop(t + dur + 0.02);
+}
+function bgmHat(t) {
+  const a = bgm.ctx, s = a.createBufferSource(), f = a.createBiquadFilter(), v = a.createGain();
+  s.buffer = bgm.noise; f.type = "highpass"; f.frequency.value = 7000;
+  v.gain.setValueAtTime(0.25, t); v.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  s.connect(f); f.connect(v); v.connect(bgm.master); s.start(t); s.stop(t + 0.06);
+}
+function bgmPlayStep(i, t) {
+  const n = BGM_SONG[i]; if (n) bgmTone(midiHz(n), t, BGM_STEP * 0.9, "square", 0.22);
+  if (i % 2 === 0) {                     // ベースは4分音符：根音・5度・オクターブ上・5度
+    const r = BGM_ROOTS[Math.floor(i / 8)], k = (i / 2) % 4;
+    bgmTone(midiHz(r + [0, 7, 12, 7][k]), t, BGM_STEP * 1.8, "triangle", 0.55);
+  } else bgmHat(t);
+}
+function bgmSchedule() {
+  const a = bgm.ctx; if (!a || a.state !== "running") return;
+  if (bgm.nextT < a.currentTime) bgm.nextT = a.currentTime + 0.05;   // 止まっていた後は今から鳴らし直す
+  while (bgm.nextT < a.currentTime + 0.2) { bgmPlayStep(bgm.step, bgm.nextT); bgm.nextT += BGM_STEP; bgm.step = (bgm.step + 1) % BGM_SONG.length; }
+}
+function bgmStart() {                    // タップやキーの処理の中から呼ぶ（iPhone の決まり）
+  if (!bgm.on || document.hidden) return;
+  try {
+    if (!bgm.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      bgm.ctx = new AC(); bgm.master = bgm.ctx.createGain(); bgm.master.gain.value = BGM_VOL; bgm.master.connect(bgm.ctx.destination);
+      bgm.noise = bgm.ctx.createBuffer(1, Math.round(bgm.ctx.sampleRate * 0.1), bgm.ctx.sampleRate);
+      const d = bgm.noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (bgm.ctx.state !== "running") bgm.ctx.resume();
+    if (!bgm.timer) bgm.timer = setInterval(bgmSchedule, 50);
+  } catch (e) { bgm.ctx = null; }        // 音が出せない環境では黙って遊べるようにする
+}
+function bgmPause() {
+  if (bgm.timer) { clearInterval(bgm.timer); bgm.timer = null; }
+  try { if (bgm.ctx && bgm.ctx.state === "running") bgm.ctx.suspend(); } catch (e) {}
+}
+function bgmToggle() {
+  bgm.on = !bgm.on;
+  try { localStorage.setItem(BGM_KEY, bgm.on ? "on" : "off"); } catch (e) {}
+  if (bgm.on) bgmStart(); else bgmPause();
+}
+
+
+/* =====================================================================
    3. 画面（Canvas）
    ===================================================================== */
 const cv = document.getElementById("cv");
@@ -877,6 +943,7 @@ function drawHUD() {
   text("¥ " + Math.floor(g.money).toLocaleString("ja-JP"), 50, 30, 17, "#fff", "left");
   // 管理メニューのボタン（お金の下。幅 360 でも右の「つぎ」と重ならない）
   smallButton("manage-open", "お店の管理", 10, 56, 110, 30, "#fff176");
+  smallButton("bgm", bgm.on ? "♪ ON" : "♪ OFF", 126, 56, 64, 30, bgm.on ? "#fff" : "#bbb");
   // つぎに建てる物
   if (g.build) {
     const c = COURSE_BY_ID[g.build.course];
@@ -1001,6 +1068,7 @@ function drawTitle() {
     text("進み具合を消して最初から？", W / 2, H * 0.76 + 20, 13, "#fff"); button("reset-yes", "消す", W / 2 - 130, H * 0.76 + 36, 120, 28, "#f27c7c"); button("reset-no", "やめる", W / 2 + 10, H * 0.76 + 36, 120, 28, "#fff"); }
   text("翔陽高校 文化祭 配布 ／ 通信なし・進み具合はこの端末に保存", W / 2, H - 40, 10, "#cfe6c4");
   text("版 " + VER, W - 8, H - 12, 10, "#cfe6c4", "right", 400);
+  smallButton("bgm", bgm.on ? "♪ 音楽 ON" : "♪ 音楽 OFF", W - 106, 14, 92, 30, bgm.on ? "#fff" : "#bbb");
 }
 function drawHowto() {
   buttons.length = 0;
@@ -1012,8 +1080,8 @@ function drawHowto() {
     ["③ 売る", "棚に置くとお客が取って レジに並ぶ"],
     ["④ 会計", "レジのそばに立つと会計が進み お金が積もる"],
     ["⑤ 建てる", "お金を持って白い丸に立つ。流れ込んで建つ"],
-    ["お店の管理", "左上のボタン（パソコンは M）で強化・運試し・ミッション"],
-    ["パソコン", "矢印キー か WASD で歩く"],
+    ["お店の管理・音楽", "左上「お店の管理」で強化・運試し。♪ で音楽 ON/OFF"],
+    ["パソコン", "矢印キー か WASD で歩く。M で管理、B で音楽"],
   ];
   let y = 150;
   for (const [h, b] of lines) { text(h, 24, y, 15, "#fff176", "left"); text(b, 24, y + 22, 13, "#fff", "left", 500); y += 62; }
@@ -1073,6 +1141,7 @@ function frame(now) {
 function toLogical(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale }; }
 function hitButton(p) { for (const b of buttons) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.id; return null; }
 function onButton(id) {
+  if (id === "bgm") { bgmToggle(); return; }
   if (id === "manage-close") { mode = "play"; return; }
   if (UPGRADES[id] || id === "lottery" || id === "staff-gacha" || id.startsWith("mission-")) { manageAction(id); return; }
   if (id === "new") { if (hasSave) confirmReset = true; else startNew(); }
@@ -1085,8 +1154,11 @@ function onButton(id) {
 let downOnManageOpen = false;            // 管理を開いた指の「離す」で、管理画面のボタンを押さないため
 cv.addEventListener("pointerdown", e => {
   e.preventDefault(); const p = toLogical(e);
+  bgmStart();
   if (mode !== "play") return;
-  if (hitButton(p) === "manage-open") { downOnManageOpen = true; openManage(); return; }
+  const pressed = hitButton(p);
+  if (pressed === "manage-open") { downOnManageOpen = true; openManage(); return; }
+  if (pressed === "bgm") { downOnManageOpen = true; bgmToggle(); return; }
   if (joy.active) return;
   joy.active = true; joy.id = e.pointerId; joy.ox = p.x; joy.oy = p.y; joy.dx = 0; joy.dy = 0;
   try { cv.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1098,6 +1170,7 @@ cv.addEventListener("pointermove", e => {
   const k = Math.min(1, l / 40); joy.dx = l ? dx / l * k : 0; joy.dy = l ? dy / l * k : 0;
 });
 function onUp(e) {
+  if (hitButton(toLogical(e)) !== "bgm") bgmStart();   // iPhone はタップの「離す」でも音を許す
   if (downOnManageOpen) { downOnManageOpen = false; return; }
   if (mode !== "play") { const id = hitButton(toLogical(e)); if (id) onButton(id); return; }
   if (joy.active && e.pointerId === joy.id) { joy.active = false; joy.dx = joy.dy = 0; }
@@ -1107,6 +1180,8 @@ cv.addEventListener("pointercancel", onUp);
 cv.addEventListener("contextmenu", e => e.preventDefault());
 window.addEventListener("keydown", e => {
   keys[e.key] = true;
+  if (e.key === "b" || e.key === "B") { bgmToggle(); return; }
+  bgmStart();
   const isManageKey = e.key === "m" || e.key === "M" || e.key === "Escape";
   if (isManageKey && mode === "play") { openManage(); e.preventDefault(); return; }
   if (isManageKey && mode === "manage") { mode = "play"; e.preventDefault(); return; }
@@ -1117,7 +1192,10 @@ window.addEventListener("keydown", e => {
 });
 window.addEventListener("keyup", e => { keys[e.key] = false; });
 window.addEventListener("blur", () => { for (const k in keys) keys[k] = false; joy.active = false; if (g && (mode === "play" || mode === "manage")) writeSave(g); });
-document.addEventListener("visibilitychange", () => { if (document.hidden && g && (mode === "play" || mode === "manage")) writeSave(g); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { bgmPause(); if (g && (mode === "play" || mode === "manage")) writeSave(g); }
+  else if (bgm.ctx) bgmStart();          // 一度鳴らした後なら、戻ってきたとき鳴らし直してよい
+});
 if (ctx) requestAnimationFrame(frame);   // jsdom（検証）には Canvas が無い。計算だけ叩けるよう描画は始めない
 
 
@@ -1125,7 +1203,7 @@ if (ctx) requestAnimationFrame(frame);   // jsdom（検証）には Canvas が�
 window.MART = { VER, WORLD_W, WORLD_H, PLAYER_SPEED, HELPER_SPEED, CUST_SPEED, CARRY_MAX, HELPER_CARRY, PICK_INTERVAL, NEAR,
   SHELF_CAP, shelfCap, GROW_TIME, MACHINE_IN_CAP, MACHINE_OUT_CAP, MACHINE_TIME, CUST_MAX, SPAWN_SLOW, SPAWN_FAST, PAY_TIME, CUST_PATIENCE,
   BUILD_MIN_RATE, GATE, START, PRODUCTS, PRODUCT_ORDER, COURSES, COURSE_BY_ID, SHELF_SLOTS, REG, CASH, QUEUE0, QUEUE_STEP,
-  UPGRADES, LOTTERY, GACHA_PRICE, STAFF_POOL, MISSIONS,
+  UPGRADES, LOTTERY, GACHA_PRICE, STAFF_POOL, MISSIONS, BGM_SONG, BGM_ROOTS, bgm,
   newGame, unlock, step, interact, spawnCustomer, stepCustomer, stepBuild, chooseTask, aiMove, sourceCount, acceptsFor,
   machinePos, shelfPos, spotOf, nextCourse, rectCenter, serialize, restore, guideTarget, SAVE_KEY,
   staffBonus, helperSpeed, upgradeCost, buyUpgrade, pullLottery, pullStaffGacha, eventPool,

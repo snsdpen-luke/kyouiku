@@ -274,6 +274,13 @@ console.log("【H】管理メニュー（強化・おみくじ・ガチャ）");
   ok(g2.staffRoster.length===1000&&n>450&&n<650,"ガチャの N はおよそ55%（"+n/10+"%）");
 }
 
+console.log("【I】BGM");
+{
+  ok(M.BGM_SONG.length===64&&M.BGM_ROOTS.length===M.BGM_SONG.length/8,"メロディは 8小節×8音、ベースの根音は小節ごとに1つ");
+  ok(M.BGM_SONG.every(n=>n===0||(n>=55&&n<=88)),"メロディの音は耳に痛くない高さに収まる");
+  ok(!M.bgm.ctx&&!M.bgm.timer,"触る前は音を鳴らさない（Web Audio を作らない）");
+}
+
 console.log("\n【エラー】");
 ok(errs.length===0,"読み込みと計算中に JavaScript エラーが出ていない"+(errs.length?"：\n    "+errs.join("\n    "):""));
 

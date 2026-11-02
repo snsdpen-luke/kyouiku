@@ -5,7 +5,7 @@
 　　 `build.py` が `../kyouiku-free.github.io/mart/index.html` に写す。その箱は組織 `kyouiku-free` の公開リポジトリで、
 　　 コミットの作者は `kyouiku-free`（個人名を出さないため。箱の中の git config で設定済み）
 　　 旧 `mart/index.html` → <https://snsdpen-luke.github.io/kyouiku/mart/> も同じ物が出る
-検証: `node regression-mart.js 翔陽ミニマート.html`（jsdom・105項目）
+検証: `node regression-mart.js 翔陽ミニマート.html`（jsdom・108項目）
 
 ## 0. これは何か
 
@@ -124,7 +124,9 @@
 
 ## 4. 既知の制限（意図的）
 
-- 音なし（文化祭はうるさい。ダービーと同じ方針）
+- 音は BGM だけ（2026-11-02 に追加）。音のファイルは使わず、Web Audio でオリジナルの曲（8小節・テンポ120）をその場で鳴らす。
+  曲は `BGM_SONG`（メロディ）／`BGM_ROOTS`（ベース）、音量は `BGM_VOL`。最初のタップで鳴り始め（iPhone の決まり）、♪ボタン／B キーで ON/OFF（端末に保存）。
+  裏に回すと止まる。iPhone は消音スイッチが入っていると鳴らない。効果音はない
 - 絵は全部コードで描く記号。誰かが絵を描くなら `person` / `item` / `drawMachine` を差し替える
 - 人どうしのランキングなし（サーバーなし）。完成画面はスクショで持ち帰る前提
 - 壁に当たり判定はない（人も客も区画をすり抜ける）。迷路にしない代わりに通路の絵で誘導
