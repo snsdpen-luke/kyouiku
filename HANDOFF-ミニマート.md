@@ -1,7 +1,10 @@
 # 翔陽ミニマート 〜8コースで文化祭〜 — 引き継ぎ書
 
 本体: `翔陽ミニマート.html`（単一HTML・ビルド不要・通信なし・画像ファイルなし）
-配布: `mart/index.html`（`build.py` の生成物）→ <https://snsdpen-luke.github.io/kyouiku/mart/>
+配布: **<https://kyouiku-free.github.io/mart/>**（来校者に配る URL。QR はこちら）
+　　 `build.py` が `../kyouiku-free.github.io/mart/index.html` に写す。その箱は組織 `kyouiku-free` の公開リポジトリで、
+　　 コミットの作者は `kyouiku-free`（個人名を出さないため。箱の中の git config で設定済み）
+　　 旧 `mart/index.html` → <https://snsdpen-luke.github.io/kyouiku/mart/> も同じ物が出る
 検証: `node regression-mart.js 翔陽ミニマート.html`（jsdom・105項目）
 
 ## 0. これは何か
@@ -134,7 +137,8 @@
 # 例：長すぎる → COURSES の elec / cashier の price を下げる
 node regression-mart.js 翔陽ミニマート.html    # 【G】のバランス項目が落ちたら、数値が目的から外れている
 python3 build.py                              # mart/index.html を作り直す
-git add -A && git commit -m "…" && git push   # 30秒〜1分で来校者のスマホに反映。QR は変えなくてよい
+git add -A && git commit -m "…" && git push   # 元の箱
+cd ../kyouiku-free.github.io && git add -A && git commit -m "…" && git push   # 来校者の URL。30秒〜1分で反映。QR は変えなくてよい
 ```
 
 版表示（タイトル画面右下 `版 2026-11-02a`）も更新する。`const VER="…"` を書き換える。

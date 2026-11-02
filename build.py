@@ -60,6 +60,15 @@ print("生成: uma/index.html")
 os.makedirs("mart", exist_ok=True)
 shutil.copyfile(SRC4, "mart/index.html")
 print("生成: mart/index.html")
+# 来校者に配る URL は https://kyouiku-free.github.io/mart/（個人名の出ない別の箱）。横に clone してあればそこにも写す。
+# 写したあと、その箱で git commit / push する（作者は kyouiku-free。個人名で記録しない）
+FREE = os.path.join("..", "kyouiku-free.github.io")
+if os.path.isdir(FREE):
+    os.makedirs(os.path.join(FREE, "mart"), exist_ok=True)
+    shutil.copyfile(SRC4, os.path.join(FREE, "mart", "index.html"))
+    print("生成: ../kyouiku-free.github.io/mart/index.html")
+else:
+    print("注意: ../kyouiku-free.github.io が無い。来校者用の URL は更新されない")
 
 # 1e) こえサンプラー。マイクを使うので https の GitHub Pages で配る
 os.makedirs("sampler", exist_ok=True)
