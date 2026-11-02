@@ -780,7 +780,7 @@ function scoreRun(ok){if(!ok)return {total:0,acc:0,spd:0,smo:0,rank:'X'};const s
 function saveAuto(result){if(!m.rows.length)return null;const sc=scoreRun(result==='成功');const q=m.p;const e={n:(tlog.length?tlog[tlog.length-1].n:0)+1,lv:LV,seed:W.cd.seed,road:W.cd.road||null,mR:q.mR,mC:q.mC,vf:q.vf,vt:q.vt,kp:q.kp,A:q.baseA+(q.mA||0),mA:q.mA||0,ks:q.ks,result,time:+m.t.toFixed(1),score:sc.total,rank:sc.rank};
  tlog.push(e);if(tlog.length>40)tlog=tlog.slice(-40);saveL();m.lastLog={sc,e};
  aruns.push({id:Date.now(),cond:W.cd,level:LV,result,score:sc.total,rank:sc.rank,sc:{acc:sc.acc,spd:sc.spd,smo:sc.smo,kiri:sc.kiri,stops:sc.stops},time:+m.t.toFixed(1),rows:m.rows,events:m.events,
-  p:{stop:q.stop,corner:q.corner,baseR:q.baseR,baseC:q.baseC,mR:q.mR,mC:q.mC,vf:q.vf,vt:q.vt,kp:q.kp,src:q.src||null,baseA:q.baseA,mA:q.mA||0,A:q.baseA+(q.mA||0),ks:q.ks,srcA:q.srcA||null,road:LV===5&&P1.road?JSON.parse(JSON.stringify(P1.road)):null}});if(aruns.length>10)aruns=aruns.slice(-10);saveA();return m.lastLog;}
+  p:{stop:q.stop,corner:q.corner,baseR:q.baseR,baseC:q.baseC,mR:q.mR,mC:q.mC,vf:q.vf,vt:q.vt,kp:q.kp,src:q.src||null,baseA:q.baseA,mA:q.mA||0,A:q.baseA+(q.mA||0),ks:q.ks,srcA:q.srcA||null,road:LV===5&&P1.road?JSON.parse(JSON.stringify(P1.road)):null}});if(aruns.length>10)aruns=aruns.slice(-10);saveA();RV.run=null;RV.i=0;return m.lastLog;} // 走るたびに、④では直前の走行を選ぶ
 let RV={run:null,i:0,play:false,acc:0};
 function buildRev(){const box=$('rlist');box.innerHTML='';if(!aruns.length){box.innerHTML='<div class="note" style="padding:8px;line-height:1.6">まだ自動運転の記録がありません。③で自動運転をすると、ここに残ります（最新8回分）。</div>';RV.run=null;revUI();return;}
  if(!RV.run||!aruns.includes(RV.run))RV.run=aruns[aruns.length-1];
