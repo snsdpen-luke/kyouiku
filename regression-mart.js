@@ -235,6 +235,45 @@ function auto(seed){
   ok(g.customers.every(c=>c.x>=20&&c.x<=M.WORLD_W-20&&c.y>=20&&c.y<=M.WORLD_H-20),"お客も世界の外に出ない");
 }
 
+console.log("【H】管理メニュー（強化・おみくじ・ガチャ）");
+{
+  const g=M.newGame(5); g.money=1e6;
+  for(const id in M.UPGRADES){ for(let i=0;i<10;i++) M.buyUpgrade(g,id); }
+  ok(Object.keys(M.UPGRADES).every(id=>{const u=M.UPGRADES[id]; return g.upgrades[u.key]===(id==="hire-staff"?0:u.max);}),"強化は最大Lvで止まる（店員は普通科の前は雇えない）");
+  M.unlock(g,"food"); M.unlock(g,"home"); M.unlock(g,"gen");
+  for(let i=0;i<10;i++) M.buyUpgrade(g,"hire-staff");
+  ok(g.upgrades.staff===M.UPGRADES["hire-staff"].max,"普通科の後は店員を最大まで雇える");
+  const m0=g.money; const r=M.buyUpgrade(g,"upgrade-shelf");
+  ok(!r.ok&&g.money===m0,"最大の強化を押してもお金は減らない");
+  ok(M.shelfCap(g)===M.SHELF_CAP+8,"棚の拡張 Lv.4 で棚は +8");
+  g.shelves.veg.stock=M.shelfCap(g); const s=M.restore(JSON.parse(JSON.stringify(M.serialize(g))));
+  ok(s.shelves.veg.stock===M.shelfCap(g),"拡張した棚の在庫が保存→復元で減らない");
+  const over=M.restore({ver:2,unlocked:["shop","agri"],upgrades:{shelf:99,marketing:-3,staff:7},shelves:{}});
+  ok(over.upgrades.shelf===4&&over.upgrades.marketing===0&&over.upgrades.staff===4,"上限を超えた古い保存の強化は丸める");
+  g.shelves.veg.stock=M.SHELF_CAP;
+  ok(M.acceptsFor(g,"veg")&&M.acceptsFor(g,"veg").kind==="shelf","拡張した棚は 9個目からも補充先になる");
+}
+{
+  const L=M.LOTTERY, ev=L.big.p*(L.big.min+L.big.max)/2+L.win.p*(L.win.min+L.win.max)/2;
+  ok(ev<L.price,"おみくじの平均の戻り（¥"+ev.toFixed(1)+"）は値段（¥"+L.price+"）より低い");
+  const g=M.newGame(11); g.money=50*20000; for(let i=0;i<20000;i++) M.pullLottery(g);
+  ok(g.money<50*20000*0.8,"おみくじを2万回引くとお金は減る（連打で稼げない）");
+  const g2=M.newGame(12); g2.money=100; ok(M.pullLottery(g2).ok&&g2.money!==100,"¥50 あれば引ける");
+  const g3=M.newGame(13); g3.money=10; ok(!M.pullLottery(g3).ok&&g3.money===10,"お金が足りなければ引けず減らない");
+}
+{
+  const g=M.newGame(3); M.unlock(g,"food"); M.unlock(g,"home"); M.unlock(g,"gen");
+  const v0=M.helperSpeed(g);
+  g.staffRoster.push({...M.STAFF_POOL.find(s=>s.rarity==="N")});
+  ok(M.helperSpeed(g)>v0,"N「元気な店員」で手伝いが本当に速くなる");
+  g.staffRoster=Array.from({length:50},()=>({...M.STAFF_POOL[0]}));
+  ok(M.staffBonus(g,"sales")<=1.8&&M.staffBonus(g,"helper")<=1.7&&M.staffBonus(g,"machine")<=1.7,"店員の能力は積んでも上限で止まる");
+  const g2=M.newGame(4); g2.money=299; ok(!M.pullStaffGacha(g2).ok&&g2.staffRoster.length===0,"¥300 未満ではガチャを回せない");
+  g2.money=300*1000; for(let i=0;i<1000;i++) M.pullStaffGacha(g2);
+  const n=g2.staffRoster.filter(s=>s.rarity==="N").length;
+  ok(g2.staffRoster.length===1000&&n>450&&n<650,"ガチャの N はおよそ55%（"+n/10+"%）");
+}
+
 console.log("\n【エラー】");
 ok(errs.length===0,"読み込みと計算中に JavaScript エラーが出ていない"+(errs.length?"：\n    "+errs.join("\n    "):""));
 

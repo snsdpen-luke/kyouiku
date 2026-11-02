@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2f6b2c">
-<title>翔陽ミニマート 〜8コースで文化祭〜</title>
+<title>翔陽ミニマート 〜8系列で文化祭〜</title>
 <style>
   /* 翔陽ミニマート — 文化祭の来校者に QR で配るスマホのタイクーン（My Mini Mart 風）。
      単一HTML・ビルド不要・通信なし。絵は全部コードで描く（画像ファイルなし）。 */
@@ -24,7 +24,8 @@
 <div id="stage"><canvas id="cv"></canvas></div>
 <script>
 "use strict";
-const VER = "2026-10-05a";
+const VER = "2026-11-02a";
+
 
 /* =====================================================================
    1. 定数（調整はここ）
@@ -38,7 +39,7 @@ const CARRY_MAX = 8;                    // 自分が背負える数
 const HELPER_CARRY = 6;                 // 手伝いが背負える数
 const PICK_INTERVAL = 0.12;             // 1個拾う／置くのにかかる秒。近づくだけで自動
 const NEAR = 48;                        // 「近い」とみなす距離 px
-const SHELF_CAP = 8;                    // 棚に並ぶ数
+const SHELF_CAP = 8;                    // 棚に並ぶ数（棚の拡張で +2 ずつ増える。shelfCap(g) を使う）
 const GROW_TIME = 5;                    // 畑・資材置き場が 1個 できるまでの秒
 const MACHINE_IN_CAP = 8;               // 加工機の投入口に入る数
 const MACHINE_OUT_CAP = 12;             // 加工機の出口に溜まる数
@@ -51,7 +52,19 @@ const BUILD_MIN_RATE = 25;              // 建設にお金を流し込む速さ�
 const GATE  = { x: 620, y: 1640 };      // お客の出入口（校門）
 const START = { x: 620, y: 1180 };      // 自分の最初の位置
 
-/* 売る物。price は売値。course はこれを作るコース */
+
+/* 管理メニューの強化。値段は base + step × 今のLv。max で止まる */
+const UPGRADES = {
+  "upgrade-shelf":     { key: "shelf",     base: 150, step: 120, max: 4 },
+  "upgrade-marketing": { key: "marketing", base: 180, step: 150, max: 4 },
+  "hire-staff":        { key: "staff",     base: 250, step: 200, max: 4 },
+};
+/* おみくじ。1回 ¥50。もらえる額の平均（約¥32）は値段より低い。引き続けるとお金は減る */
+const LOTTERY = { price: 50, big: { p: 0.05, min: 300, max: 500 }, win: { p: 0.15, min: 60, max: 100 } };
+const GACHA_PRICE = 300;                // 店員ガチャ 1回
+
+
+/* 売る物。price は売値。course はこれを作る系列 */
 const PRODUCTS = {
   veg:   { name: "やさい",    price: 3,  color: "#5fbf4a", dark: "#3f8f30", course: "agri" },
   jam:   { name: "ジャム",    price: 8,  color: "#d14b4b", dark: "#8f2b2b", course: "food" },
@@ -63,35 +76,38 @@ const PRODUCTS = {
 };
 const PRODUCT_ORDER = ["veg", "jam", "bento", "house", "robot", "lamp"];   // 棚に並ぶ順
 
-/* コース。この順に建てる（1つ前が建つと次が建てられる）。
+
+/* 系列。この順に建てる（1つ前が建つと次が建てられる）。
    kind: source 畑／shop 売店／machine 加工（in → out）／hq 本部／upgrade 設備 */
 const COURSES = [
-  { id: "agri", name: "農業園芸コース",     short: "農業園芸", rect: [80, 1080, 300, 240],  price: 0,    kind: "source",  item: "veg",
+  { id: "agri", name: "農業園芸",     short: "農業園芸", rect: [80, 1080, 300, 240],  price: 0,    kind: "source",  item: "veg",
     desc: "畑でやさいを育てる。近づくと収穫" },
-  { id: "shop", name: "商業コース",         short: "商業",     rect: [430, 760, 400, 320],  price: 0,    kind: "shop",
+  { id: "shop", name: "商業系列",         short: "商業",     rect: [430, 760, 400, 320],  price: 0,    kind: "shop",
     desc: "売店。棚に置けばお客が買う。レジに立つと会計" },
-  { id: "food", name: "農業食品製造コース", short: "食品製造", rect: [80, 760, 300, 240],   price: 60,   kind: "machine", in: "veg", out: "jam",
+  { id: "food", name: "農業食品製造", short: "食品製造", rect: [80, 760, 300, 240],   price: 60,   kind: "machine", in: "veg", out: "jam",
     desc: "やさい → ジャム" },
-  { id: "home", name: "家庭科コース",       short: "家庭科",   rect: [860, 760, 300, 240],  price: 150,  kind: "machine", in: "veg", out: "bento",
+  { id: "home", name: "家庭科系列",       short: "家庭科",   rect: [860, 760, 300, 240],  price: 150,  kind: "machine", in: "veg", out: "bento",
     desc: "やさい → お弁当" },
   { id: "gen",  name: "普通科",             short: "普通科",   rect: [860, 1080, 300, 240], price: 300,  kind: "hq",
     desc: "文化祭 実行委員本部。呼び込みでお客が増える。手伝いの生徒が1人来る" },
-  { id: "arch", name: "建築コース",         short: "建築",     rect: [860, 440, 300, 240],  price: 500,  kind: "machine", in: "mat", out: "house",
+  { id: "arch", name: "建築",         short: "建築",     rect: [860, 440, 300, 240],  price: 500,  kind: "machine", in: "mat", out: "house",
     yard: [860, 220, 300, 180], desc: "資材置き場つき。ざいりょう → ミニハウス" },
-  { id: "mech", name: "機械コース",         short: "機械",     rect: [80, 440, 300, 240],   price: 800,  kind: "machine", in: "mat", out: "robot",
+  { id: "mech", name: "機械",         short: "機械",     rect: [80, 440, 300, 240],   price: 800,  kind: "machine", in: "mat", out: "robot",
     desc: "ざいりょう → ロボット" },
-  { id: "elec", name: "電気コース",         short: "電気",     rect: [470, 440, 300, 240],  price: 1000, kind: "machine", in: "mat", out: "lamp",
+  { id: "elec", name: "電気電子",         short: "電気電子",     rect: [470, 440, 300, 240],  price: 1000, kind: "machine", in: "mat", out: "lamp",
     desc: "ざいりょう → LEDランプ" },
-  { id: "cashier", name: "商業コース レジ係", short: "レジ係", rect: null, spot: [780, 880], price: 1400, kind: "upgrade",
-    desc: "商業コースの生徒がレジに立つ。自分がいなくても会計が進む" },
+  { id: "cashier", name: "商業系列 レジ係", short: "レジ係", rect: null, spot: [780, 880], price: 1400, kind: "upgrade",
+    desc: "商業系列の生徒がレジに立つ。自分がいなくても会計が進む" },
 ];
 const COURSE_BY_ID = {}; for (const c of COURSES) COURSE_BY_ID[c.id] = c;
+
 
 /* 売店の中の配置（世界座標） */
 const SHELF_SLOTS = [[490, 840], [570, 840], [650, 840], [490, 960], [570, 960], [650, 960]];
 const REG   = { x: 770, y: 1000 };      // レジ
 const CASH  = { x: 710, y: 1025 };      // お金が積もる所
 const QUEUE0 = { x: 770, y: 1052 }, QUEUE_STEP = 34;   // 会計待ちの列の先頭と間隔
+
 
 /* =====================================================================
    2. ゲームの計算（描画と分けてある。regression-mart.js はここを叩く）
@@ -108,6 +124,7 @@ function mulberry32(seed) {
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
 
+
 function rectCenter(r) { return { x: r[0] + r[2] / 2, y: r[1] + r[3] / 2 }; }
 function plotsOf(rect) {                 // 畑・資材置き場：3×2 の区画
   const c = rectCenter(rect), out = [];
@@ -118,6 +135,7 @@ function machinePos(id) {                // 加工機の本体・投入口・出
   const c = rectCenter(COURSE_BY_ID[id].rect);
   return { body: { x: c.x, y: c.y + 10 }, in: { x: c.x - 95, y: c.y + 65 }, out: { x: c.x + 95, y: c.y + 65 } };
 }
+function shelfCap(g) { return SHELF_CAP + (g.upgrades ? g.upgrades.shelf * 2 : 0); }
 function shelfPos(prod) {
   const s = SHELF_SLOTS[PRODUCT_ORDER.indexOf(prod)];
   return { x: s[0], y: s[1], front: { x: s[0], y: s[1] + 38 } };
@@ -125,6 +143,7 @@ function shelfPos(prod) {
 function queuePos(i) { return { x: QUEUE0.x, y: QUEUE0.y + i * QUEUE_STEP }; }
 function spotOf(c) { return c.spot ? { x: c.spot[0], y: c.spot[1] } : rectCenter(c.rect); }
 function nextCourse(g) { return COURSES.find(c => !g.unlocked[c.id]) || null; }
+
 
 function newGame(seed) {
   const g = {
@@ -135,12 +154,16 @@ function newGame(seed) {
     reg: { queue: [], payProg: 0, cash: 0, cashier: false, operator: false },
     build: null, floats: [], sold: 0, revenue: 0, served: 0, left: 0,
     complete: false, completeAt: 0, auto: false,
+    upgrades: { shelf: 0, marketing: 0, staff: 0 },
+    event: null, eventTimer: 32, luck: 0, lotteryWins: 0, staffGachaCount: 0, staffRoster: [],
+    achievements: {}, missionClaimed: {}, eventCount: 0, bestRevenue: 0,
   };
   g.plots.veg = plotsOf(COURSE_BY_ID.agri.rect);
   g.plots.mat = plotsOf(COURSE_BY_ID.arch.yard);
   unlock(g, "agri"); unlock(g, "shop");
   return g;
 }
+
 
 function unlock(g, id) {
   const c = COURSE_BY_ID[id];
@@ -157,7 +180,9 @@ function unlock(g, id) {
   if (!nx && !g.complete) { g.complete = true; g.completeAt = g.t; }
 }
 
+
 function addFloat(g, x, y, s, color) { g.floats.push({ x, y, s, color: color || "#fff", t: 0 }); if (g.floats.length > 20) g.floats.shift(); }
+
 
 /* ---- 拾う・置く。自分も手伝いも同じ。近づくだけで PICK_INTERVAL ごとに 1個 ---- */
 function sourceCount(g, item) {          // 今すぐ拾える数
@@ -173,7 +198,7 @@ function interact(g, a, cap) {
   let done = null;
   // 置く（棚 → 加工機の投入口）
   for (const prod of PRODUCT_ORDER) {
-    const sh = g.shelves[prod]; if (!sh || sh.stock >= SHELF_CAP) continue;
+    const sh = g.shelves[prod]; if (!sh || sh.stock >= shelfCap(g)) continue;
     if (dist(a, shelfPos(prod).front) > NEAR) continue;
     const i = a.carry.indexOf(prod); if (i < 0) continue;
     a.carry.splice(i, 1); sh.stock++; done = "shelf"; break;
@@ -204,10 +229,11 @@ function interact(g, a, cap) {
   return done;
 }
 
+
 /* ---- 手伝いの生徒の頭脳。検証の自動操縦（g.auto）でも自分の体を動かす ---- */
 function acceptsFor(g, item) {           // この品を置ける所
   const sh = g.shelves[item];
-  if (sh && sh.stock < SHELF_CAP) return { kind: "shelf", prod: item, pos: shelfPos(item).front };
+  if (sh && sh.stock < shelfCap(g)) return { kind: "shelf", prod: item, pos: shelfPos(item).front };
   for (const c of COURSES) if (c.kind === "machine" && g.unlocked[c.id] && c.in === item && g.machines[c.id].in < MACHINE_IN_CAP)
     return { kind: "machine", id: c.id, pos: machinePos(c.id).in };
   return null;
@@ -219,7 +245,7 @@ function chooseTask(g, a, isPlayer, cap) {
     // 拾ったときの行き先を優先。だめなら持っている物が置ける所
     if (a.dest) {
       const d = a.dest; a.dest = null;
-      if (d.kind === "shelf" && g.shelves[d.prod] && g.shelves[d.prod].stock < SHELF_CAP && a.carry.includes(d.prod)) return { kind: "deliver", dst: d };
+      if (d.kind === "shelf" && g.shelves[d.prod] && g.shelves[d.prod].stock < shelfCap(g) && a.carry.includes(d.prod)) return { kind: "deliver", dst: d };
       if (d.kind === "machine" && g.machines[d.id].in < MACHINE_IN_CAP && a.carry.includes(COURSE_BY_ID[d.id].in)) return { kind: "deliver", dst: d };
     }
     const counts = {}; for (const it of a.carry) counts[it] = (counts[it] || 0) + 1;
@@ -229,11 +255,11 @@ function chooseTask(g, a, isPlayer, cap) {
   } else {
     for (const prod of PRODUCT_ORDER) {
       const sh = g.shelves[prod]; if (!sh) continue;
-      const need = SHELF_CAP - sh.stock; if (need <= 0) continue;
+      const need = shelfCap(g) - sh.stock; if (need <= 0) continue;
       const src = sourceCount(g, prod); if (src <= 0) continue;
       const dest = { kind: "shelf", prod, pos: shelfPos(prod).front };
       const from = prod === "veg" ? { kind: "plot", item: "veg" } : { kind: "machine", id: PRODUCTS[prod].course };
-      consider(need / SHELF_CAP * 2 + PRODUCTS[prod].price / 30 + Math.min(src, 4) / 8, { kind: "pick", from, item: prod, dest });
+      consider(need / shelfCap(g) * 2 + PRODUCTS[prod].price / 30 + Math.min(src, 4) / 8, { kind: "pick", from, item: prod, dest });
     }
     for (const c of COURSES) {
       if (c.kind !== "machine" || !g.unlocked[c.id]) continue;
@@ -275,7 +301,7 @@ function taskDone(g, a, task, cap, dt) {
     case "pick": return a.carry.length >= cap || sourceCount(g, task.item) <= 0;
     case "deliver": {
       const d = task.dst;
-      if (d.kind === "shelf") return !g.shelves[d.prod] || g.shelves[d.prod].stock >= SHELF_CAP || !a.carry.includes(d.prod);
+      if (d.kind === "shelf") return !g.shelves[d.prod] || g.shelves[d.prod].stock >= shelfCap(g) || !a.carry.includes(d.prod);
       return g.machines[d.id].in >= MACHINE_IN_CAP || !a.carry.includes(COURSE_BY_ID[d.id].in);
     }
     case "build": return !g.build || g.build.course !== task.course || g.money <= 0;
@@ -306,6 +332,7 @@ function moveActor(a, mv, speed, dt) {
   if (Math.abs(mv.dx) > 0.2) a.face = mv.dx > 0 ? 1 : -1;
 }
 
+
 /* ---- お客 ---- */
 const CUST_COLORS = ["#e36b6b", "#f0a24a", "#8e6bd6", "#48b89a", "#e0729f", "#6f8fe8", "#b5b24f", "#4fb0d6"];
 function spawnCustomer(g) {
@@ -316,7 +343,11 @@ function spawnCustomer(g) {
   const pool = stocked.length ? stocked : all;
   const want = pool[Math.floor(g.rnd() * pool.length)];
   let qty = 1 + (g.rnd() < 0.5 ? 1 : 0) + (PRODUCTS[want].price <= 8 && g.rnd() < 0.4 ? 1 : 0);
-  const c = { id: g.custId++, x: GATE.x + (g.rnd() - 0.5) * 80, y: GATE.y, state: "toShelf", want, qty, carry: [],
+  const roll = g.rnd();
+  const type = roll < 0.12 ? "富豪" : roll < 0.30 ? "せっかち" : roll < 0.48 ? "大食い" : "ふつう";
+  if (type === "富豪") qty = Math.min(4, qty + 1);
+  if (type === "大食い") qty = Math.min(4, qty + 2);
+  const c = { id: g.custId++, type, x: GATE.x + (g.rnd() - 0.5) * 80, y: GATE.y, state: "toShelf", want, qty, carry: [],
               wait: 0, patience: 0, bubble: "", bubbleT: 0, color: CUST_COLORS[Math.floor(g.rnd() * CUST_COLORS.length)],
               face: 1, walk: 0, moving: false, side: (g.rnd() - 0.5) * 50 };
   g.customers.push(c);
@@ -343,7 +374,7 @@ function stepCustomer(g, c, dt) {
       if (sh && sh.stock > 0) { if (c.wait >= 0.45) { sh.stock--; c.carry.push(c.want); c.wait = 0; c.patience = 0; } }
       else {
         c.patience += dt; if (c.patience > 1.5) { c.bubble = "？"; c.bubbleT = 0.5; }
-        if (c.patience >= CUST_PATIENCE) {
+        if (c.patience >= CUST_PATIENCE * (c.type === "せっかち" ? 0.55 : 1)) {
           if (c.carry.length > 0) toQueue(g, c);
           else { c.state = "leave"; c.bubble = "…"; c.bubbleT = 2; g.left++; }
         }
@@ -358,6 +389,11 @@ function stepCustomer(g, c, dt) {
         g.reg.payProg += dt;
         if (g.reg.payProg >= PAY_TIME) {
           let total = 0; for (const it of c.carry) total += PRODUCTS[it].price;
+          if (c.type === "富豪") total = Math.round(total * 1.8);
+          if (g.event && (g.event.id === "sale" || g.event.id === "shop-event")) total = Math.round(total * 1.5);
+          if (g.event && g.event.id === "badluck") total = Math.round(total * 0.75);
+          total = Math.round(total * (1 + g.upgrades.marketing * 0.08));
+          total = Math.floor(total * staffBonus(g, "sales"));
           g.reg.cash += total; g.revenue += total; g.sold += c.carry.length; g.served++;
           addFloat(g, REG.x, REG.y - 60, "+¥" + total, "#fff176");
           g.reg.queue.shift(); g.reg.payProg = 0;
@@ -373,6 +409,7 @@ function stepCustomer(g, c, dt) {
 }
 function toQueue(g, c) { g.reg.queue.push(c); c.state = "queue"; }
 
+
 /* ---- 建設 ---- */
 function stepBuild(g, p, dt) {
   if (!g.build || g.money <= 0) return;
@@ -387,6 +424,44 @@ function stepBuild(g, p, dt) {
     addFloat(g, s.x, s.y - 40, c.short + " 完成！", "#fff");
   }
 }
+
+
+/* ---- 文化祭イベント（運要素）。一定時間ごとに1つ起きる ---- */
+function eventPool(g) {
+  return [
+    { id: "sale", name: "🎉 タイムセール！", desc: "売上1.5倍", duration: 18 },
+    { id: "rush", name: "👥 大盛況！", desc: "お客がたくさん来る", duration: 16 },
+    { id: "badluck", name: "🌧️ 小雨…", desc: "売上が少し減る", duration: 14 },
+    { id: "gift", name: "🎁 差し入れ！", desc: "臨時収入 +¥80", duration: 1 },
+    { id: "bonus", name: "🍀 幸運の日！", desc: "臨時収入 +¥30〜150", duration: 1 },
+    ...[
+      ["agri", "agri-event", "🌱 豊作イベント！", "畑の成長が速い"],
+      ["shop", "shop-event", "🛍️ 商業系列特売！", "売上ボーナス"],
+      ["food", "food-event", "🍓 ジャム大人気！", "加工スピードアップ"],
+      ["home", "home-event", "🍱 お弁当フェア！", "お客が増える"],
+      ["gen", "gen-event", "📣 呼び込み成功！", "お客が増える"],
+      ["arch", "arch-event", "🏠 建築体験大盛況！", "臨時収入 +¥100"],
+      ["mech", "mech-event", "🤖 ロボット展示！", "臨時収入 +¥120"],
+      ["elec", "elec-event", "💡 LEDイルミネーション！", "臨時収入 +¥150"]
+    ].filter(([course]) => g.unlocked[course]).map(([, id, name, desc]) => ({ id, name, desc, duration: id === "agri-event" || id === "food-event" ? 18 : 14 }))
+  ];
+}
+function stepEvent(g, dt) {
+  g.eventTimer -= dt;
+  if (g.eventTimer <= 0) {
+    const pool = eventPool(g);
+    const ev = pool[Math.floor(g.rnd() * pool.length)];
+    const p = g.player;
+    g.event = { ...ev, left: ev.duration }; g.eventCount++;
+    if (ev.id === "gift") { g.money += 80; addFloat(g, p.x, p.y - 70, "差し入れ +¥80", "#fff176"); }
+    if (ev.id === "bonus") { const prize = 30 + Math.floor(g.rnd() * 121); g.money += prize; addFloat(g, p.x, p.y - 70, "幸運 +¥" + prize, "#fff176"); }
+    const eventPrizes = { "arch-event": 100, "mech-event": 120, "elec-event": 150 };
+    if (eventPrizes[ev.id]) { g.money += eventPrizes[ev.id]; addFloat(g, p.x, p.y - 70, "イベント +¥" + eventPrizes[ev.id], "#fff176"); }
+    g.eventTimer = 35 + g.rnd() * 35;
+  }
+  if (g.event) { g.event.left -= dt; if (g.event.left <= 0) g.event = null; }
+}
+
 
 /* ---- 1フレームぶん進める。inp は自分の移動 {dx,dy}（長さ 0〜1） ---- */
 function step(g, dt, inp) {
@@ -404,35 +479,95 @@ function step(g, dt, inp) {
   }
   stepBuild(g, p, dt);
 
+
   if (g.helper) {
     const h = g.helper;
-    moveActor(h, aiMove(g, h, dt, false, HELPER_CARRY), HELPER_SPEED, dt);
+    moveActor(h, aiMove(g, h, dt, false, HELPER_CARRY), helperSpeed(g), dt);
     h.pickT -= dt;
     interact(g, h, HELPER_CARRY);
   }
 
-  for (const item of ["veg", "mat"]) for (const pl of g.plots[item]) if (pl.grow < 1) pl.grow = Math.min(1, pl.grow + dt / GROW_TIME);
+
+  const growBoost = g.event && g.event.id === "agri-event" ? 2.5 : 1;
+  for (const item of ["veg", "mat"]) for (const pl of g.plots[item]) if (pl.grow < 1) pl.grow = Math.min(1, pl.grow + dt * growBoost / GROW_TIME);
   for (const id in g.machines) {
     const m = g.machines[id];
-    if (m.in > 0 && m.out < MACHINE_OUT_CAP) { m.prog += dt; if (m.prog >= MACHINE_TIME) { m.prog = 0; m.in--; m.out++; } }
+    const machineBoost = (g.event && g.event.id === "food-event" && id === "food" ? 2.5 : 1) * staffBonus(g, "machine");
+    if (m.in > 0 && m.out < MACHINE_OUT_CAP) { m.prog += dt * machineBoost; if (m.prog >= MACHINE_TIME) { m.prog = 0; m.in--; m.out++; } }
     else m.prog = 0;
   }
 
+
   g.reg.operator = g.reg.cashier || dist(p, REG) <= NEAR * 1.5;
-  g.nextCust -= dt;
-  if (g.nextCust <= 0) { spawnCustomer(g); g.nextCust = (g.unlocked.gen ? SPAWN_FAST : SPAWN_SLOW) * (0.7 + g.rnd() * 0.6); }
+  stepEvent(g, dt);
+  if (g.event && (g.event.id === "rush" || g.event.id === "home-event" || g.event.id === "gen-event")) g.nextCust -= dt * 1.8; else g.nextCust -= dt;
+  if (g.nextCust <= 0) { spawnCustomer(g); g.nextCust = (g.unlocked.gen ? SPAWN_FAST : SPAWN_SLOW) * (0.7 + g.rnd() * 0.6) / (1 + g.upgrades.marketing * 0.10); }
   for (const c of g.customers) stepCustomer(g, c, dt);
   g.customers = g.customers.filter(c => c.state !== "gone");
+
 
   for (const f of g.floats) f.t += dt;
   g.floats = g.floats.filter(f => f.t < 1.4);
 }
 
+
+/* ---- 店員ガチャ：レア度ごとに固有の能力を持つ ---- */
+const STAFF_POOL = [
+  { name: "伝説の店長", rarity: "SSR", weight: 3, sales: 1.15, helper: 1.25, machine: 1.20, color: "#ffdf57", skill: "売上+15%・手伝い+25%・加工+20%" },
+  { name: "敏腕マネージャー", rarity: "SR", weight: 12, sales: 1.10, helper: 1.15, machine: 1.10, color: "#e59aff", skill: "売上+10%・手伝い+15%・加工+10%" },
+  { name: "接客の達人", rarity: "R", weight: 30, sales: 1.07, helper: 1.00, machine: 1.00, color: "#8bcaff", skill: "売上+7%" },
+  { name: "元気な店員", rarity: "N", weight: 55, sales: 1.00, helper: 1.04, machine: 1.00, color: "#d8e4d8", skill: "手伝い+4%" },
+];
+function staffBonus(g, key) {
+  // 同じ種類の能力は加算式で積み重なり、極端な倍率にならないよう上限を設定
+  let bonus = 1;
+  for (const staff of (g.staffRoster || [])) bonus += Math.max(0, (staff[key] || 1) - 1);
+  return Math.min(key === "sales" ? 1.8 : 1.7, bonus);
+}
+function helperSpeed(g) { return HELPER_SPEED * (1 + g.upgrades.staff * 0.18) * staffBonus(g, "helper"); }
+
+
+/* ---- 管理メニューの計算。結果は {ok, msg, color} で返し、表示は画面側がする ---- */
+function upgradeCost(g, id) { const u = UPGRADES[id]; return u.base + u.step * g.upgrades[u.key]; }
+function upgradeAvailable(g, id) {
+  const u = UPGRADES[id];
+  if (g.upgrades[u.key] >= u.max) return false;
+  if (id === "hire-staff" && !g.helper) return false;
+  return true;
+}
+function buyUpgrade(g, id) {
+  const u = UPGRADES[id];
+  if (g.upgrades[u.key] >= u.max) return { ok: false, msg: "もう最大まで強化した", color: "#ff9999" };
+  if (id === "hire-staff" && !g.helper) return { ok: false, msg: "普通科を先に建てよう", color: "#ff9999" };
+  const cost = upgradeCost(g, id);
+  if (g.money < cost) return { ok: false, msg: "お金が足りない（¥" + cost + "）", color: "#ff9999" };
+  g.money -= cost; g.upgrades[u.key]++;
+  return { ok: true, msg: "強化した！ Lv." + g.upgrades[u.key], color: "#fff176" };
+}
+function pullLottery(g) {
+  if (g.money < LOTTERY.price) return { ok: false, msg: "お金が足りない（¥" + LOTTERY.price + "）", color: "#ff9999" };
+  g.money -= LOTTERY.price;
+  const r = g.rnd(), prizeOf = k => k.min + Math.floor(g.rnd() * (k.max - k.min + 1));
+  if (r < LOTTERY.big.p) { const prize = prizeOf(LOTTERY.big); g.money += prize; g.lotteryWins++; return { ok: true, msg: "大当たり！ +¥" + prize, color: "#fff176" }; }
+  if (r < LOTTERY.big.p + LOTTERY.win.p) { const prize = prizeOf(LOTTERY.win); g.money += prize; return { ok: true, msg: "当たり +¥" + prize, color: "#fff176" }; }
+  return { ok: true, msg: "はずれ… また挑戦！", color: "#fff" };
+}
+function pullStaffGacha(g) {
+  if (g.money < GACHA_PRICE) return { ok: false, msg: "ガチャは¥" + GACHA_PRICE + "必要", color: "#ff9999" };
+  g.money -= GACHA_PRICE;
+  let roll = g.rnd() * 100, picked = STAFF_POOL[STAFF_POOL.length - 1];
+  for (const staff of STAFF_POOL) { roll -= staff.weight; if (roll < 0) { picked = staff; break; } }
+  const staff = { ...picked };
+  g.staffRoster.push(staff); g.staffGachaCount = (g.staffGachaCount || 0) + 1;
+  return { ok: true, msg: staff.rarity + "！「" + staff.name + "」", color: staff.color };
+}
+
+
 /* ---- 保存（端末の中だけ） ---- */
 const SAVE_KEY = "shoyo-mart-v1";
 function serialize(g) {
   return {
-    ver: 1, t: Math.round(g.t), money: Math.floor(g.money), unlocked: Object.keys(g.unlocked),
+    ver: 3, t: Math.round(g.t), money: Math.floor(g.money), upgrades: g.upgrades, staffGachaCount: g.staffGachaCount || 0, staffRoster: g.staffRoster || [], achievements: g.achievements, missionClaimed: g.missionClaimed, eventCount: g.eventCount, lotteryWins: g.lotteryWins, bestRevenue: Math.max(g.bestRevenue || 0, g.revenue), unlocked: Object.keys(g.unlocked),
     shelves: Object.fromEntries(Object.entries(g.shelves).map(([k, v]) => [k, v.stock])),
     machines: Object.fromEntries(Object.entries(g.machines).map(([k, v]) => [k, [v.in, v.out]])),
     build: g.build ? { course: g.build.course, paid: Math.floor(g.build.paid) } : null,
@@ -443,10 +578,16 @@ function serialize(g) {
 }
 function restore(s) {
   const g = newGame();
-  if (!s || s.ver !== 1) return g;
+  if (!s || ![1, 2, 3].includes(s.ver)) return g;
   for (const id of COURSES.map(c => c.id)) if (s.unlocked.includes(id) && !g.unlocked[id]) unlock(g, id);
   g.t = s.t || 0; g.money = s.money || 0;
-  for (const k in s.shelves) if (g.shelves[k]) g.shelves[k].stock = clamp(s.shelves[k] | 0, 0, SHELF_CAP);
+  if (s.ver >= 2) {
+    const up = s.upgrades || {};
+    for (const id in UPGRADES) { const u = UPGRADES[id]; g.upgrades[u.key] = clamp(up[u.key] | 0, 0, u.max); }   // 上限を超えた古い保存も丸める
+    g.achievements = s.achievements || {}; g.missionClaimed = s.missionClaimed || {}; g.eventCount = s.eventCount || 0; g.lotteryWins = s.lotteryWins || 0; g.bestRevenue = s.bestRevenue || 0;
+  }
+  if (s.ver >= 3) { g.staffGachaCount = s.staffGachaCount || 0; g.staffRoster = Array.isArray(s.staffRoster) ? s.staffRoster : []; }
+  for (const k in s.shelves) if (g.shelves[k]) g.shelves[k].stock = clamp(s.shelves[k] | 0, 0, shelfCap(g));
   for (const k in s.machines) if (g.machines[k]) { g.machines[k].in = clamp(s.machines[k][0] | 0, 0, MACHINE_IN_CAP); g.machines[k].out = clamp(s.machines[k][1] | 0, 0, MACHINE_OUT_CAP); }
   if (s.build && g.build && g.build.course === s.build.course) g.build.paid = clamp(s.build.paid | 0, 0, COURSE_BY_ID[g.build.course].price);
   g.reg.cash = s.cash || 0; g.sold = s.sold || 0; g.revenue = s.revenue || 0; g.served = s.served || 0;
@@ -458,6 +599,7 @@ function restore(s) {
 function loadSave() { try { const v = localStorage.getItem(SAVE_KEY); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
 function writeSave(g) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(serialize(g))); } catch (e) {} }
 function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+
 
 /* 画面の矢印が指す所（迷わせない）。描画用だが判断の筋は計算側に置く */
 function guideTarget(g) {
@@ -475,7 +617,7 @@ function guideTarget(g) {
   if (g.reg.queue.length > 0 && !g.reg.cashier && dist(p, REG) > NEAR * 1.5) return { pos: REG, label: "レジ" };
   if (!g.helper || g.t < 60) {
     for (const prod of PRODUCT_ORDER) {
-      const sh = g.shelves[prod]; if (!sh || sh.stock >= SHELF_CAP / 2) continue;
+      const sh = g.shelves[prod]; if (!sh || sh.stock >= (shelfCap(g)) / 2) continue;
       if (sourceCount(g, prod) <= 0) continue;
       const tg = prod === "veg" ? g.plots.veg.find(pl => pl.grow >= 1) : machinePos(PRODUCTS[prod].course).out;
       if (tg) return { pos: tg, label: prod === "veg" ? "収穫" : "受け取る" };
@@ -483,6 +625,7 @@ function guideTarget(g) {
   }
   return null;
 }
+
 
 /* =====================================================================
    3. 画面（Canvas）
@@ -502,9 +645,13 @@ window.addEventListener("resize", resize);
 if (window.visualViewport) window.visualViewport.addEventListener("resize", resize);
 resize();
 
+
 let g = null, mode = "title", cam = { x: 0, y: 0 }, camInit = false;
 let hasSave = !!loadSave();
 let saveTimer = 0, idleT = 0, confirmReset = false;
+let notice = null;                       // 管理画面の上に出す一言（お金が足りない・ガチャの結果など）
+function say(s, color) { notice = { s, color: color || "#fff", until: performance.now() + 2200 }; }
+
 
 function rr(x, y, w, h, r) {
   ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
@@ -559,6 +706,7 @@ function person(a, color, isPlayer) {   // 人。a.x,a.y は足元
     text(a.bubble, x, y - 70 - a.carry.length * 7, 13, "#333");
   }
 }
+
 
 function drawZoneFloor(c) {
   const r = c.rect; if (!r) return;
@@ -692,6 +840,7 @@ function drawArrow(pos, label, lift) {
   if (label) textStroke(label, pos.x, y - 34, 12, "#fff");
 }
 
+
 function drawWorld() {
   const p = g.player;
   const tx = clamp(p.x - W / 2, 0, WORLD_W - W), ty = clamp(p.y - H / 2 + 20, 0, WORLD_H - H);
@@ -726,6 +875,8 @@ function drawHUD() {
   ctx.fillStyle = "rgba(0,0,0,.45)"; rr(10, 12, 150, 36, 18); ctx.fill();
   ctx.fillStyle = "#3cb46e"; rr(20, 22, 22, 16, 3); ctx.fill(); ctx.fillStyle = "#fff176"; ctx.beginPath(); ctx.arc(31, 30, 4, 0, Math.PI * 2); ctx.fill();
   text("¥ " + Math.floor(g.money).toLocaleString("ja-JP"), 50, 30, 17, "#fff", "left");
+  // 管理メニューのボタン（お金の下。幅 360 でも右の「つぎ」と重ならない）
+  smallButton("manage-open", "お店の管理", 10, 56, 110, 30, "#fff176");
   // つぎに建てる物
   if (g.build) {
     const c = COURSE_BY_ID[g.build.course];
@@ -735,11 +886,13 @@ function drawHUD() {
     ctx.fillStyle = "#f9e04b"; rr(W - 190, 36, 170 * clamp((g.money + g.build.paid) / c.price, 0, 1), 6, 3); ctx.fill();
   } else {
     ctx.fillStyle = "rgba(0,0,0,.45)"; rr(W - 200, 12, 190, 36, 18); ctx.fill();
-    text("8コース 全部そろった！", W - 105, 30, 12, "#fff176");
+    text("8系列 全部そろった！", W - 105, 30, 12, "#fff176");
   }
-  // 建ったコース
+  // 建った系列
   let n = 0; for (const c of COURSES) if (g.unlocked[c.id]) n++;
   text(n + " / " + COURSES.length + " 区画", W - 105, 60, 11, "rgba(255,255,255,.85)");
+  // イベント
+  if (g.event) { ctx.fillStyle = "rgba(120,40,130,.82)"; rr(W / 2 - 150, 94, 300, 28, 14); ctx.fill(); text(g.event.name + " " + g.event.desc, W / 2, 108, 12, "#fff"); }
   // ヒント
   let hint = "";
   if (g.t < 25 && !g.player.moving) hint = "画面をなぞって歩く";
@@ -754,21 +907,90 @@ function drawHUD() {
   }
 }
 
+
+/* ---- 管理・運試し・実績 ---- */
+const MISSIONS = [
+  { id: "sell10", name: "まずは10個販売", desc: "商品を10個売る", goal: 10, value: g => g.sold, reward: 80 },
+  { id: "serve10", name: "人気のお店", desc: "お客を10人接客", goal: 10, value: g => g.served, reward: 120 },
+  { id: "build3", name: "拡張開始", desc: "3区画以上を建設", goal: 3, value: g => Object.values(g.unlocked).filter(Boolean).length, reward: 150 },
+  { id: "events3", name: "運も実力！", desc: "イベントを3回発生させる", goal: 3, value: g => g.eventCount, reward: 100 }
+];
+const ACHIEVEMENT_COUNT = 5;
+function checkAchievements() {
+  const checks = [ ["firstSale", g.sold >= 1], ["bigSeller", g.sold >= 100], ["rich", g.revenue >= 1000], ["lucky", g.lotteryWins >= 1], ["allCourses", !g.build] ];
+  for (const [id, ok] of checks) if (ok && !g.achievements[id]) { g.achievements[id] = true; addFloat(g, g.player.x, g.player.y - 70, "実績解除！", "#fff176"); }
+}
+function drawManage() {
+  buttons.length = 0; drawWorld(); drawOverlayBG();
+  textStroke("お店の経営・運試し", W / 2, 52, 24, "#fff176");
+  text("所持金 ¥" + Math.floor(g.money).toLocaleString("ja-JP") + "　売上 ¥" + g.revenue.toLocaleString("ja-JP"), W / 2, 84, 12, "#fff");
+  text("店員 " + (g.staffRoster || []).length + "人　ガチャ累計 " + (g.staffGachaCount || 0) + "回", W / 2, 103, 11, "#fff");
+  let y = 120;
+  const up = (id, label, desc) => {
+    const u = UPGRADES[id], lv = g.upgrades[u.key];
+    if (lv >= u.max) return [id, label + " Lv." + lv + "　最大", desc, false];
+    return [id, label + " Lv." + lv + "　¥" + upgradeCost(g, id), desc, upgradeAvailable(g, id)];
+  };
+  const rows = [
+    up("upgrade-shelf", "棚を拡張", "棚の最大在庫 +2"),
+    up("upgrade-marketing", "宣伝を強化", "客足と売上がアップ"),
+    up("hire-staff", "店員を雇う", g.helper ? "手伝いの生徒が速くなる" : "普通科を建てると雇える"),
+    ["lottery", "おみくじを引く　¥" + LOTTERY.price, "大当たり5%（¥300〜500）・当たり15%（¥60〜100）", true],
+    ["staff-gacha", "店員ガチャを回す　¥" + GACHA_PRICE, "SSR 3% / SR 12% / R 30% / N 55%", true]
+  ];
+  for (const [id, label, desc, enabled] of rows) {
+    button(id, label, W / 2 - 150, y, 300, 34, enabled ? (id === "staff-gacha" ? "#d8b4ff" : "#f9e04b") : "#aaa", 16);
+    text(desc, W / 2, y + 43, 10, "#fff"); y += 56;
+  }
+  if ((g.staffRoster || []).length) {
+    const latest = g.staffRoster.slice(-3).reverse();
+    text("獲得した店員（新しい順・最大3人表示）", W / 2, y + 1, 10, "#fff176"); y += 16;
+    for (const st of latest) { text(st.rarity + "「" + st.name + "」 " + st.skill, W / 2, y, 9, st.color || "#fff"); y += 15; }
+  }
+  text("ミッション", W / 2, y + 4, 15, "#fff176"); y += 26;
+  for (const m of MISSIONS) {
+    const done = !!g.missionClaimed[m.id], progress = Math.min(m.goal, m.value(g));
+    text((done ? "✓ " : "") + m.name + "  " + progress + "/" + m.goal + (done ? " 済" : "  報酬¥" + m.reward), W / 2 - 150, y, 11, done ? "#9be7a2" : "#fff", "left");
+    if (!done && progress >= m.goal) smallButton("mission-" + m.id, "受け取る", W / 2 + 150 - 84, y - 12, 84, 24, "#9be7a2");
+    y += 26;
+  }
+  const ach = Object.values(g.achievements).filter(Boolean).length;
+  text("実績 " + ach + "/" + ACHIEVEMENT_COUNT + "　イベント " + g.eventCount + "回　最高売上 ¥" + Math.max(g.bestRevenue, g.revenue).toLocaleString("ja-JP"), W / 2, y + 2, 10, "#fff");
+  if (notice && performance.now() < notice.until) {
+    ctx.fillStyle = "rgba(0,0,0,.75)"; rr(W / 2 - 150, H - 98, 300, 34, 17); ctx.fill();
+    text(notice.s, W / 2, H - 81, 14, notice.color);
+  }
+  button("manage-close", "お店に戻る", W / 2 - 110, H - 56, 220, 42, "#fff");
+}
+function manageAction(id) {
+  let r = null;
+  if (UPGRADES[id]) r = buyUpgrade(g, id);
+  else if (id === "staff-gacha") r = pullStaffGacha(g);
+  else if (id === "lottery") r = pullLottery(g);
+  else if (id.startsWith("mission-")) {
+    const m = MISSIONS.find(x => "mission-" + x.id === id);
+    if (m && !g.missionClaimed[m.id] && m.value(g) >= m.goal) { g.missionClaimed[m.id] = true; g.money += m.reward; r = { ok: true, msg: "報酬 +¥" + m.reward, color: "#fff176" }; }
+  }
+  if (r) say(r.msg, r.color);
+  checkAchievements(); writeSave(g); hasSave = true;
+}
+
 /* ---- 画面：タイトル・あそびかた・完成 ---- */
 const buttons = [];
-function button(id, label, x, y, w, h, color) {
+function button(id, label, x, y, w, h, color, size) {
   buttons.push({ id, x, y, w, h });
   ctx.fillStyle = "rgba(0,0,0,.25)"; rr(x + 2, y + 4, w, h, 14); ctx.fill();
   ctx.fillStyle = color || "#f9e04b"; rr(x, y, w, h, 14); ctx.fill();
-  text(label, x + w / 2, y + h / 2, 17, "#333");
+  text(label, x + w / 2, y + h / 2, size || 17, "#333");
 }
+function smallButton(id, label, x, y, w, h, color) { button(id, label, x, y, w, h, color, 13); }
 function drawOverlayBG() { ctx.fillStyle = "rgba(20,60,20,.72)"; ctx.fillRect(0, 0, W, H); }
 function drawTitle() {
   buttons.length = 0;
   if (g) drawWorld(); else { ctx.fillStyle = "#7ccb5a"; ctx.fillRect(0, 0, W, H); }
   drawOverlayBG();
   textStroke("翔陽ミニマート", W / 2, H * 0.22, 40, "#fff176", "center", "rgba(0,0,0,.6)");
-  textStroke("〜 8コースで文化祭 〜", W / 2, H * 0.22 + 44, 18, "#fff");
+  textStroke("〜 8系列で文化祭 〜", W / 2, H * 0.22 + 44, 18, "#fff");
   text("歩いて 拾って 棚に置く。売れたお金で", W / 2, H * 0.40, 14, "#e8f5e0");
   text("機械・電気・建築・家庭科・農業園芸・", W / 2, H * 0.40 + 24, 14, "#e8f5e0");
   text("農業食品製造・商業・普通科 を建てていく", W / 2, H * 0.40 + 48, 14, "#e8f5e0");
@@ -790,18 +1012,19 @@ function drawHowto() {
     ["③ 売る", "棚に置くとお客が取って レジに並ぶ"],
     ["④ 会計", "レジのそばに立つと会計が進み お金が積もる"],
     ["⑤ 建てる", "お金を持って白い丸に立つ。流れ込んで建つ"],
+    ["お店の管理", "左上のボタン（パソコンは M）で強化・運試し・ミッション"],
     ["パソコン", "矢印キー か WASD で歩く"],
   ];
   let y = 150;
   for (const [h, b] of lines) { text(h, 24, y, 15, "#fff176", "left"); text(b, 24, y + 22, 13, "#fff", "left", 500); y += 62; }
-  text("目標：8つのコース全部を建てる。10〜20分", W / 2, y + 10, 13, "#e8f5e0");
+  text("目標：8つの系列全部を建てる。10〜20分", W / 2, y + 10, 13, "#e8f5e0");
   button("start", "スタート", W / 2 - 120, H - 110, 240, 54);
 }
 function drawComplete() {
   buttons.length = 0;
   drawWorld(); drawOverlayBG();
   textStroke("完成！", W / 2, 130, 44, "#fff176");
-  textStroke("翔陽高校 8コース 全部そろった", W / 2, 180, 18, "#fff");
+  textStroke("翔陽高校 8系列 全部そろった", W / 2, 180, 18, "#fff");
   const m = Math.floor(g.completeAt / 60), s = Math.floor(g.completeAt % 60);
   const rows = [["かかった時間", m + "分" + (s < 10 ? "0" : "") + s + "秒"], ["売った数", g.sold + "個"], ["売上", "¥" + g.revenue.toLocaleString("ja-JP")], ["お客", g.served + "人"]];
   let y = 240; for (const [k, v] of rows) { text(k, W / 2 - 20, y, 15, "#e8f5e0", "right"); text(v, W / 2 + 10, y, 17, "#fff", "left"); y += 34; }
@@ -810,6 +1033,7 @@ function drawComplete() {
   text("農業食品製造 ／ 商業 ／ 普通科", W / 2, y + 80, 12, "#e8f5e0");
   button("continue-play", "つづけて遊ぶ", W / 2 - 120, H - 110, 240, 54);
 }
+
 
 /* =====================================================================
    4. 進行とループ
@@ -827,18 +1051,21 @@ function inputVector() {
   const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
   return { dx, dy };
 }
+function openManage() { mode = "manage"; notice = null; joy.active = false; joy.dx = joy.dy = 0; }
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
   ctx.setTransform(scale * devicePixelRatio, 0, 0, scale * devicePixelRatio, 0, 0);
   ctx.clearRect(0, 0, W, H);
   if (mode === "play") {
+    buttons.length = 0;
     const inp = inputVector();
     idleT = (inp.dx || inp.dy) ? 0 : idleT + dt;
-    step(g, dt, inp);
+    step(g, dt, inp); checkAchievements(); g.bestRevenue = Math.max(g.bestRevenue || 0, g.revenue);
     drawWorld(); drawHUD();
     saveTimer += dt; if (saveTimer > 3) { saveTimer = 0; writeSave(g); hasSave = true; }
     if (g.complete && !shownComplete) { shownComplete = true; writeSave(g); mode = "complete"; }
-  } else if (mode === "title") drawTitle();
+  } else if (mode === "manage") drawManage();
+  else if (mode === "title") drawTitle();
   else if (mode === "howto") drawHowto();
   else if (mode === "complete") drawComplete();
   requestAnimationFrame(frame);
@@ -846,6 +1073,8 @@ function frame(now) {
 function toLogical(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale }; }
 function hitButton(p) { for (const b of buttons) if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return b.id; return null; }
 function onButton(id) {
+  if (id === "manage-close") { mode = "play"; return; }
+  if (UPGRADES[id] || id === "lottery" || id === "staff-gacha" || id.startsWith("mission-")) { manageAction(id); return; }
   if (id === "new") { if (hasSave) confirmReset = true; else startNew(); }
   else if (id === "continue") startContinue();
   else if (id === "reset-yes") { clearSave(); hasSave = false; confirmReset = false; startNew(); }
@@ -853,9 +1082,11 @@ function onButton(id) {
   else if (id === "start") mode = "play";
   else if (id === "continue-play") mode = "play";
 }
+let downOnManageOpen = false;            // 管理を開いた指の「離す」で、管理画面のボタンを押さないため
 cv.addEventListener("pointerdown", e => {
   e.preventDefault(); const p = toLogical(e);
   if (mode !== "play") return;
+  if (hitButton(p) === "manage-open") { downOnManageOpen = true; openManage(); return; }
   if (joy.active) return;
   joy.active = true; joy.id = e.pointerId; joy.ox = p.x; joy.oy = p.y; joy.dx = 0; joy.dy = 0;
   try { cv.setPointerCapture(e.pointerId); } catch (err) {}
@@ -867,6 +1098,7 @@ cv.addEventListener("pointermove", e => {
   const k = Math.min(1, l / 40); joy.dx = l ? dx / l * k : 0; joy.dy = l ? dy / l * k : 0;
 });
 function onUp(e) {
+  if (downOnManageOpen) { downOnManageOpen = false; return; }
   if (mode !== "play") { const id = hitButton(toLogical(e)); if (id) onButton(id); return; }
   if (joy.active && e.pointerId === joy.id) { joy.active = false; joy.dx = joy.dy = 0; }
 }
@@ -875,22 +1107,28 @@ cv.addEventListener("pointercancel", onUp);
 cv.addEventListener("contextmenu", e => e.preventDefault());
 window.addEventListener("keydown", e => {
   keys[e.key] = true;
+  const isManageKey = e.key === "m" || e.key === "M" || e.key === "Escape";
+  if (isManageKey && mode === "play") { openManage(); e.preventDefault(); return; }
+  if (isManageKey && mode === "manage") { mode = "play"; e.preventDefault(); return; }
   if (mode === "title" && (e.key === "Enter" || e.key === " ")) onButton(hasSave ? "continue" : "new");
   else if (mode === "howto" && (e.key === "Enter" || e.key === " ")) onButton("start");
   else if (mode === "complete" && (e.key === "Enter" || e.key === " ")) onButton("continue-play");
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
 });
 window.addEventListener("keyup", e => { keys[e.key] = false; });
-window.addEventListener("blur", () => { for (const k in keys) keys[k] = false; joy.active = false; if (g && mode === "play") writeSave(g); });
-document.addEventListener("visibilitychange", () => { if (document.hidden && g && mode === "play") writeSave(g); });
+window.addEventListener("blur", () => { for (const k in keys) keys[k] = false; joy.active = false; if (g && (mode === "play" || mode === "manage")) writeSave(g); });
+document.addEventListener("visibilitychange", () => { if (document.hidden && g && (mode === "play" || mode === "manage")) writeSave(g); });
 if (ctx) requestAnimationFrame(frame);   // jsdom（検証）には Canvas が無い。計算だけ叩けるよう描画は始めない
+
 
 /* 検証用の窓口（regression-mart.js）。描画は含まない */
 window.MART = { VER, WORLD_W, WORLD_H, PLAYER_SPEED, HELPER_SPEED, CUST_SPEED, CARRY_MAX, HELPER_CARRY, PICK_INTERVAL, NEAR,
-  SHELF_CAP, GROW_TIME, MACHINE_IN_CAP, MACHINE_OUT_CAP, MACHINE_TIME, CUST_MAX, SPAWN_SLOW, SPAWN_FAST, PAY_TIME, CUST_PATIENCE,
+  SHELF_CAP, shelfCap, GROW_TIME, MACHINE_IN_CAP, MACHINE_OUT_CAP, MACHINE_TIME, CUST_MAX, SPAWN_SLOW, SPAWN_FAST, PAY_TIME, CUST_PATIENCE,
   BUILD_MIN_RATE, GATE, START, PRODUCTS, PRODUCT_ORDER, COURSES, COURSE_BY_ID, SHELF_SLOTS, REG, CASH, QUEUE0, QUEUE_STEP,
+  UPGRADES, LOTTERY, GACHA_PRICE, STAFF_POOL, MISSIONS,
   newGame, unlock, step, interact, spawnCustomer, stepCustomer, stepBuild, chooseTask, aiMove, sourceCount, acceptsFor,
   machinePos, shelfPos, spotOf, nextCourse, rectCenter, serialize, restore, guideTarget, SAVE_KEY,
+  staffBonus, helperSpeed, upgradeCost, buyUpgrade, pullLottery, pullStaffGacha, eventPool,
   state: () => g, setMode: (m) => { mode = m; }, load: (s) => { g = restore(s); camInit = false; shownComplete = g.complete; mode = "play"; } };
 </script>
 </body>
