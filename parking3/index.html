@@ -519,13 +519,14 @@ const saveP=()=>{try{localStorage.setItem(PKEY,JSON.stringify(P1))}catch(e){}};
 
 let mode='drive',W=null,selRun=null,LV=2;
 const BT={on:false,q:[],k:0,res:[]}; // レベル5の10回テスト
-// 関所：③にはいつでも入れる（記録がなければ仮の数字で走る）。レベル1・2ははじめから開いている。レベル2・3・4で1回成功すると、次のレベルが開く。先生は URL に ?all を付けると全部開く
-const ALL=/[?&]all\b/.test(location.search);const NEED_MANUAL=0,NEED=[0,0,1,1,1],NEED_L1=NEED[1];
+// 関所：③にはいつでも入れる（記録がなければ仮の数字で走る）。レベル1・2ははじめから開いている。レベル2・3・4で3回成功すると、次のレベルが開く。先生は URL に ?all を付けると全部開く
+const ALL=/[?&]all\b/.test(location.search);const NEED_MANUAL=0,NEED=[0,0,3,3,3],NEED_L1=NEED[1];
 const ownRuns=()=>runs.filter(r=>r.cond&&!r.demo);
 const l1Wins=()=>tlog.filter(e=>e.lv===1&&e.result==='成功').length;
-const winsAt=k=>tlog.filter(e=>e.lv===k&&e.result==='成功').length;
+const WKEY='stairs-wins-v2';let wins={};try{wins=JSON.parse(localStorage.getItem(WKEY)||'{}')||{}}catch(e){}if(typeof wins!=='object'||Array.isArray(wins))wins={};
+const winsAt=k=>wins[k]||0;const addWin=k=>{wins[k]=(wins[k]||0)+1;try{localStorage.setItem(WKEY,JSON.stringify(wins))}catch(e){}};
 const LV_MAX=5;
-const lvOpen=n=>{if(n<=1)return true;if(n>LV_MAX)return false;if(ALL)return true;let f=false;try{f=localStorage.getItem('stairs-lv'+n+'open')==='1'}catch(e){}return f||winsAt(n-1)>=NEED[n-1];};
+const lvOpen=n=>{if(n<=1)return true;if(n>LV_MAX)return false;if(ALL)return true;let f=false;try{f=localStorage.getItem('stairs2-lv'+n+'open')==='1'}catch(e){}return f||winsAt(n-1)>=NEED[n-1];};
 const lv2Open=()=>lvOpen(2);
 function autoLock(){return '';} // ③の関所はなし（記録がなければ仮の数字で走る）
 function lockUI(){modeBtns[2].classList.toggle('lock',!!autoLock());}
@@ -545,6 +546,7 @@ const modeBtns=[...document.querySelectorAll('#modes button[data-m]')];
 function buildLv(){const g=$('lvsel');g.innerHTML='';LVS.forEach(([n],i)=>{const k=i+1,b=document.createElement('button');b.innerHTML=`<b>${k}</b> ${n}`;
   const rest=k>1&&k<=LV_MAX?Math.max(0,NEED[k-1]-winsAt(k-1)):0,lk=k>LV_MAX?'準備中':!lvOpen(k)?`レベル${k-1}で ${NEED[k-1]} 回成功すると開きます（あと ${rest} 回）`:'';
   b.disabled=!!lk;b.title=lk||LVS[i][1];b.classList.toggle('sel',LV===k);b.onclick=()=>{if(LV!==k)curTab=TABS[k-1];LV=k;setMode('auto');};g.appendChild(b);});
+ {const k=LVS.findIndex((x,i)=>i+1<=LV_MAX&&!lvOpen(i+1))+1;if(k>1){const sp=document.createElement('span');sp.className='note';sp.textContent=`レベル${k}まで あと ${Math.max(0,NEED[k-1]-winsAt(k-1))} 回成功`;g.appendChild(sp);}}
  $('lvName').textContent=`レベル${LV}：${LVS[LV-1][0]}`;lockUI();}
 function tabUI(){if(TABS.indexOf(curTab)>=LV)curTab=TABS[LV-1];document.querySelectorAll('#ptabs button').forEach((b,i)=>{b.hidden=i>=LV;b.classList.toggle('sel',b.dataset.t===curTab);});
  document.querySelectorAll('#s1box .tp').forEach(d=>d.hidden=d.dataset.t!==curTab);$('ptabs').hidden=LV<2;$('ptabs').classList.toggle('five',LV>=5);}
@@ -743,8 +745,8 @@ function tickDrive(dt){if(!m.crash&&!m.done&&!TR.over){m.at+=dt;while(m.at>=FIX)
    if(m.gear==='P'&&m.c.v===0&&(m.rows.length||m.mode!=='manual')&&m.t>0){const j=judge(W,m.s);
     if(j.ok){m.done=true;tone([523,659,784],0.25,0.07,'triangle');
      if(m.mode==='manual'){const id=nextId++;runs.push({id,cond:W.cd,rows:m.rows,demo:false,color:COLORS[(id-1)%COLORS.length]});save();selRun=id;const sc=scoreRun(true);runs[runs.length-1].score=sc.total;runs[runs.length-1].rank=sc.rank;save();showOv('win','駐車成功！',`記録として保存しました（${stageRuns().length} 回目・${fmt(m.t,1)} 秒）`,scoreHTML(sc,null,null));}
-     else{const L=saveAuto('成功');const k='stairs-bestscore-'+LV;let b=null;try{b=+localStorage.getItem(k)||null}catch(e){}const nb=b===null||L.sc.total>b;if(nb){try{localStorage.setItem(k,String(L.sc.total))}catch(e){}}
-      let op='';const nx=LV+1;if(nx<=LV_MAX&&!ALL){let was=false;try{was=localStorage.getItem('stairs-lv'+nx+'open')==='1'}catch(e){}if(!was&&winsAt(LV)>=NEED[LV]){try{localStorage.setItem('stairs-lv'+nx+'open','1')}catch(e){}op=`<div class="best">レベル${nx}（${LVS[nx-1][1]}）が開きました！</div>`;}}
+     else{const L=saveAuto('成功');addWin(LV);const k='stairs-bestscore-'+LV;let b=null;try{b=+localStorage.getItem(k)||null}catch(e){}const nb=b===null||L.sc.total>b;if(nb){try{localStorage.setItem(k,String(L.sc.total))}catch(e){}}
+      let op='';const nx=LV+1;if(nx<=LV_MAX&&!ALL){let was=false;try{was=localStorage.getItem('stairs2-lv'+nx+'open')==='1'}catch(e){}if(!was&&winsAt(LV)>=NEED[LV]){try{localStorage.setItem('stairs2-lv'+nx+'open','1')}catch(e){}op=`<div class="best">レベル${nx}（${LVS[nx-1][1]}）が開きました！</div>`;}else if(!was&&NEED[LV]>winsAt(LV)){op=`<div class="best n">レベル${nx}まで、あと ${NEED[LV]-winsAt(LV)} 回成功</div>`;}}
       showOv('win','駐車成功！',`レベル${LV}　${fmt(m.t,1)} 秒`,scoreHTML(L.sc,L.e,{nb,b})+op);}break;}
     else if(lvOf(m.mode)>=3&&m.ap&&m.ap.ph==='park'){m.done=true;m.events.push({i:m.rows.length-1,type:'crash',seen:{},bad:j.t});const L=saveAuto('ずれて止まった');tone([180],0.35,0.12,'sawtooth');showOv('lose','駐車失敗',j.t,L?scoreHTML(L.sc,L.e,{}):'');break;}
     else if(m.msgT<=0)say(j.t);}}}
