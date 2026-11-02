@@ -121,6 +121,9 @@ tr.click{cursor:pointer}
 .rrun.sel{border-color:var(--sens)}
 .rrun .ok{color:var(--good);font-weight:700}.rrun .ng{color:var(--danger);font-weight:700}
 .why{display:flex;flex-direction:column;gap:6px}
+.next{background:#fff8e1;border:2px solid #e0b000;border-radius:8px;padding:6px 10px;font-size:14px;line-height:1.5;text-align:left;max-width:640px}
+.next h4{margin:0 0 2px;font-size:14px;color:#9a6b00}.next ol{margin:0;padding-left:20px}.next li{margin:2px 0}.next small{color:var(--sub);font-size:12px}
+.next .tg{display:inline-block;background:var(--sens);color:#fff;border-radius:9px;padding:0 8px;font-size:12px}.next button{font-size:12px;padding:1px 8px;margin-left:4px}
 .toast{position:absolute;left:50%;top:118px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:12px 20px;border-radius:10px;font-size:16px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;white-space:nowrap}.toast.on{opacity:1}
 .steps button.lock{opacity:.45}
 #pRev .rv{min-height:0;overflow-y:auto;padding-right:4px}
@@ -139,6 +142,11 @@ tr.click{cursor:pointer}
 .cond .same{margin-left:8px;background:var(--copper);color:#fff;border-radius:10px;padding:1px 9px;font-size:13px;font-weight:700}
 .slh{font-size:13px;font-weight:700;color:var(--sens);margin-top:2px}
 .slh.you{color:var(--copper)}
+#s1box{flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:4px}
+.how{font-size:12px;line-height:1.45;background:var(--panel);border-radius:6px;padding:3px 7px}.how #baseBox,.how #baseBoxA,.how #baseBoxH{font-weight:700;color:var(--sens)}
+.eff{grid-column:1/-1;display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--sub);margin:-3px 0 0;line-height:1.3}
+.pred{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--copper);line-height:1.3}.pred.ng{color:var(--danger)}
+.rng{display:flex;align-items:center;gap:3px;min-width:0}.rng input{flex:1;min-width:0}.rng button{padding:0 7px;font-size:14px;line-height:1.35;border-width:1.5px;border-radius:5px}
 .accm{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
 .accm b{color:var(--sens);font-size:14px}
 .accbar{width:22px;height:48px;border:2px solid var(--sens);border-radius:6px;position:relative;overflow:hidden;background:var(--paper)}
@@ -201,50 +209,47 @@ tr.click{cursor:pointer}
       <div id="s1box" hidden>
         <div class="ptabs" id="ptabs"><span class="rt">調整する操作</span><button data-t="brake">ブレーキ</button><button data-t="accel">アクセル</button><button data-t="shift">シフト</button><button data-t="steer">ハンドル</button><button data-t="road">路面</button></div>
         <div class="tp" data-t="brake">
-          <div class="slh">コンピュータに入った数字 <span class="note" id="fromNote"></span></div>
-          <div class="note" id="baseBox" style="font-size:13px;color:var(--ink)"></div>
-          <div class="note lv5n" hidden>レベル5では、前・うしろの余裕は「路面ごと」の表の数字を使います。</div>
-          <div class="slh you">あなたが決める余裕 <span class="note">（ぎりぎり ← → 手前で止める）</span></div>
+          <div class="how">センサの距離が「止める距離」より近い → 車がブレーキ。<br>止める距離 ＝ 記録 <span id="baseBox"></span> ＋ あなたの余裕 <span class="note" id="fromNote"></span></div>
+          <div class="note lv5n" hidden>レベル5では、前・うしろの余裕は「路面」の表の数字を使います。</div>
           <div class="sl">
-            <label for="pS">前・うしろ <small id="pSB"></small></label><input id="pS" type="range" min="-0.3" max="0.8" step="0.01" value="0"><span class="val" id="pSV"></span>
-            <label for="pC">四すみ <small id="pCB"></small></label><input id="pC" type="range" min="-0.3" max="0.4" step="0.01" value="0"><span class="val" id="pCV"></span>
+            <label for="pS">前・うしろ</label><input id="pS" type="range" min="-0.3" max="0.8" step="0.01" value="0"><span class="val" id="pSV"></span>
+            <div class="eff"><span>◀ 小さく：近くで止まる（ぶつかりやすい）</span><span>大きく：手前で止まる ▶</span></div>
+            <div class="pred" id="prS"></div>
+            <label for="pC">四すみ</label><input id="pC" type="range" min="-0.3" max="0.4" step="0.01" value="0"><span class="val" id="pCV"></span>
+            <div class="eff"><span>◀ 小さく：となりの車ぎりぎりまで進む</span><span>大きく：早めに止まる ▶</span></div>
           </div>
         </div>
         <div class="tp" data-t="accel">
-          <div class="note lv5n" hidden>レベル5では、前進・バックの速さは「路面ごと」の表の数字を使います。</div>
-          <div class="slh you">あなたが決める目標の速さ</div>
+          <div class="how">アクセル ＝（目標の速さ − 車輪速センサの速さ）× 直す強さ</div>
+          <div class="note lv5n" hidden>レベル5では、前進・バックの速さは「路面」の表の数字を使います。</div>
           <div class="sl">
-            <label for="pF">前進の速さ</label><input id="pF" type="range" min="0.5" max="9" step="0.1" value="4"><span class="val" id="pFV"></span>
-            <label for="pV">バックの速さ</label><input id="pV" type="range" min="0.5" max="5" step="0.1" value="2"><span class="val" id="pVV"></span>
+            <label for="pF">前進の目標</label><input id="pF" type="range" min="0.5" max="9" step="0.1" value="4"><span class="val" id="pFV"></span>
+            <label for="pV">バックの目標</label><input id="pV" type="range" min="0.5" max="5" step="0.1" value="2"><span class="val" id="pVV"></span>
+            <div class="eff"><span>◀ 遅く：安全・時間がかかる</span><span>速く：早く着く・止まりにくい ▶</span></div>
+            <div class="pred" id="stopNote"></div>
+            <label for="pK">直す強さ</label><input id="pK" type="range" min="0" max="20" step="0.1" value="1"><span class="val" id="pKV"></span>
+            <div class="eff"><span>◀ 小さく：目標まで届かない</span><span>大きく：すぐ届く（強すぎはふらつく）▶</span></div>
+            <div class="pred" id="prK"></div>
           </div>
-          <div class="note" id="stopNote" style="font-size:12px;color:var(--copper)"></div>
-          <div class="sl">
-            <label for="pK">直す強さ</label><input id="pK" type="range" min="0" max="20" step="0.5" value="1"><span class="val" id="pKV"></span>
-          </div>
-          <div class="note">車は「目標の速さ − 測った速さ」×「直す強さ」の分だけアクセルを踏みます。</div>
         </div>
         <div class="tp" data-t="shift">
-          <div class="slh">コンピュータに入った数字 <span class="note" id="fromNoteA"></span></div>
-          <div class="note" id="baseBoxA" style="font-size:13px;color:var(--ink)"></div>
-          <div class="slh you">あなたが決める余裕 <span class="note">（手前で切り返す ← → 先まで進む）</span></div>
+          <div class="how">カメラで「枠の真ん中から何 m 先か」を測り、切り返す位置で止まって R。<br><span id="baseBoxA"></span> <span class="note" id="fromNoteA"></span></div>
           <div class="sl">
             <label for="pA">切り返す位置</label><input id="pA" type="range" min="-1.5" max="2" step="0.05" value="0"><span class="val" id="pAV"></span>
+            <div class="eff"><span>◀ 手前：曲がりきれず前に出直す</span><span>先：まっすぐ下がる分、時間がかかる ▶</span></div>
           </div>
-          <div class="note">カメラで「止める枠の真ん中から、どれだけ先へ進んだか」を測り、この位置で止まって R に入れます。枠の奥でうしろのセンサが反応して止まったら P に入れます。</div>
         </div>
         <div class="tp" data-t="steer">
-          <div class="slh">コンピュータに入った数字 <span class="note" id="fromNoteH"></span></div>
-          <div class="note" id="baseBoxH" style="font-size:13px;color:var(--ink)"></div>
-          <div class="slh you">あなたが決める直す強さ</div>
+          <div class="how">ハンドル ＝ カメラで測った（位置のずれ・向きのずれ）× 直す強さ<br><span id="baseBoxH"></span> <span class="note" id="fromNoteH"></span></div>
           <div class="sl">
             <label for="pH">直す強さ</label><input id="pH" type="range" min="0.2" max="4" step="0.1" value="1"><span class="val" id="pHV"></span>
+            <div class="eff"><span>◀ 小さく：直しきれずななめ</span><span>大きく：すぐ直る（強すぎはふらつく）▶</span></div>
           </div>
-          <div class="note">カメラで測った「枠の真ん中とのずれ」と「向きのずれ」×「直す強さ」の分だけハンドルを切ります。</div>
         </div>
         <div class="tp" data-t="road">
           <div class="slh you">路面ごとの数字 <span class="note">車は路面を測って、その行に切り替える</span></div>
           <table class="rtbl" id="roadTbl"></table>
-          <div class="note">止まるまでに進む：バックでセンサが気づいてから止まるまでに進む距離（計算）</div>
+          <div class="note">止まるまでに進む：バックでセンサが気づいてから止まるまでに進む距離（計算）。雪ではのびる → 速さを下げるか、余裕を大きく。</div>
         </div>
         <div class="note" id="prevNote" style="color:var(--copper)"></div>
       </div>
@@ -512,17 +517,17 @@ const saveA=()=>{try{localStorage.setItem(AKEY,JSON.stringify(aruns))}catch(e){a
 const PKEY='stairs-p1';let P1={vf:4/3.6,vt:2/3.6,kp:1,stop:0.45,corner:0.3,baseR:0.45,baseC:0.3,mR:0,mC:0};try{Object.assign(P1,JSON.parse(localStorage.getItem(PKEY)||'{}'))}catch(e){}
 const saveP=()=>{try{localStorage.setItem(PKEY,JSON.stringify(P1))}catch(e){}};
 
-let mode='drive',W=null,selRun=null,LV=1;
+let mode='drive',W=null,selRun=null,LV=2;
 const BT={on:false,q:[],k:0,res:[]}; // レベル5の10回テスト
-// 関所：手動で NEED_MANUAL 回成功＋②で反映 → ③。レベル1で2回・レベル2で1回・レベル3で1回成功すると、次のレベルが開く。先生は URL に ?all を付けると全部開く
-const ALL=/[?&]all\b/.test(location.search);const NEED_MANUAL=3,NEED=[0,2,1,1,1],NEED_L1=NEED[1];
+// 関所：③にはいつでも入れる（記録がなければ仮の数字で走る）。レベル1・2ははじめから開いている。レベル2・3・4で1回成功すると、次のレベルが開く。先生は URL に ?all を付けると全部開く
+const ALL=/[?&]all\b/.test(location.search);const NEED_MANUAL=0,NEED=[0,0,1,1,1],NEED_L1=NEED[1];
 const ownRuns=()=>runs.filter(r=>r.cond&&!r.demo);
 const l1Wins=()=>tlog.filter(e=>e.lv===1&&e.result==='成功').length;
 const winsAt=k=>tlog.filter(e=>e.lv===k&&e.result==='成功').length;
 const LV_MAX=5;
 const lvOpen=n=>{if(n<=1)return true;if(n>LV_MAX)return false;if(ALL)return true;let f=false;try{f=localStorage.getItem('stairs-lv'+n+'open')==='1'}catch(e){}return f||winsAt(n-1)>=NEED[n-1];};
 const lv2Open=()=>lvOpen(2);
-function autoLock(){if(ALL)return '';const n=ownRuns().length;if(n<NEED_MANUAL)return `①で駐車に ${NEED_MANUAL} 回成功すると、③に進めます（今 ${n} 回）`;if(!P1.from)return '②で「運転の記録を車のコンピュータに反映する」を押すと、③に進めます';return '';}
+function autoLock(){return '';} // ③の関所はなし（記録がなければ仮の数字で走る）
 function lockUI(){modeBtns[2].classList.toggle('lock',!!autoLock());}
 function toast(t){let d=$('toast');if(!d){d=document.createElement('div');d.id='toast';d.className='toast';stage.appendChild(d);}d.textContent=t;d.classList.add('on');clearTimeout(toast.tm);toast.tm=setTimeout(()=>d.classList.remove('on'),3200);}
 if(!ALL)$('demoBtn').hidden=true;
@@ -539,14 +544,14 @@ function buildStages(){$('condTxt').innerHTML='今回の条件：<b>'+condText(W
 const modeBtns=[...document.querySelectorAll('#modes button[data-m]')];
 function buildLv(){const g=$('lvsel');g.innerHTML='';LVS.forEach(([n],i)=>{const k=i+1,b=document.createElement('button');b.innerHTML=`<b>${k}</b> ${n}`;
   const rest=k>1&&k<=LV_MAX?Math.max(0,NEED[k-1]-winsAt(k-1)):0,lk=k>LV_MAX?'準備中':!lvOpen(k)?`レベル${k-1}で ${NEED[k-1]} 回成功すると開きます（あと ${rest} 回）`:'';
-  b.disabled=!!lk;b.title=lk||LVS[i][1];if(lk&&k<=LV_MAX)b.innerHTML+=`<small> あと${rest}回</small>`;b.classList.toggle('sel',LV===k);b.onclick=()=>{if(LV!==k)curTab=TABS[k-1];LV=k;setMode('auto');};g.appendChild(b);});
+  b.disabled=!!lk;b.title=lk||LVS[i][1];b.classList.toggle('sel',LV===k);b.onclick=()=>{if(LV!==k)curTab=TABS[k-1];LV=k;setMode('auto');};g.appendChild(b);});
  $('lvName').textContent=`レベル${LV}：${LVS[LV-1][0]}`;lockUI();}
 function tabUI(){if(TABS.indexOf(curTab)>=LV)curTab=TABS[LV-1];document.querySelectorAll('#ptabs button').forEach((b,i)=>{b.hidden=i>=LV;b.classList.toggle('sel',b.dataset.t===curTab);});
  document.querySelectorAll('#s1box .tp').forEach(d=>d.hidden=d.dataset.t!==curTab);$('ptabs').hidden=LV<2;$('ptabs').classList.toggle('five',LV>=5);}
 document.querySelectorAll('#ptabs button').forEach(b=>b.onclick=()=>{curTab=b.dataset.t;tabUI();});
 function setMode(k){if(k==='auto'){const lk=autoLock();if(lk){toast(lk);return;}while(LV>1&&!lvOpen(LV))LV--;}mode=k;modeBtns.forEach(b=>b.classList.toggle('sel',b.dataset.m===k));$('pDrive').hidden=k==='anal'||k==='review';$('pAnal').hidden=k!=='anal';$('pRev').hidden=k!=='review';
  const au=k==='auto';if(au&&setMode.lv!==LV){curTab=TABS[LV-1];setMode.lv=LV;}m.mode=au?'lv'+LV:'manual';$('s1box').hidden=!au;$('lvsel').hidden=!au;$('cvGraph').hidden=!(au&&LV>=2);
- if(BT.on)stopBatch();const l5=au&&LV===5;if(l5)initRoad();$('batch').hidden=!l5;document.querySelectorAll('.lv5n').forEach(d=>d.hidden=!l5);['pS','pF','pV'].forEach(i=>$(i).disabled=l5);
+ if(BT.on)stopBatch();const l5=au&&LV===5;if(l5)initRoad();$('batch').hidden=!l5;document.querySelectorAll('.lv5n').forEach(d=>d.hidden=!l5);['pS','pF','pV'].forEach(i=>{$(i).disabled=l5;$(i).parentNode.querySelectorAll('button').forEach(b=>b.disabled=l5);});
  ac.hidden=au&&LV>=2;$('accMeter').hidden=!(au&&LV>=2);$('gate').classList.toggle('car',au&&LV>=3);$('gk').textContent=au&&LV>=3?'車':'↑↓';wc.classList.toggle('car',au&&LV>=4);
  if(mode!=='review'&&m.mode!=='manual'&&m.rows.length>20&&!m.done&&!m.crash)saveAuto('途中でやめた');buildLv();tabUI();resetDrive();rolesUI();if(au){fromUI();pUI();}if(k==='anal'){buildAnal();}if(k==='review'){buildRev();}}
 modeBtns.forEach(b=>b.onclick=()=>setMode(b.dataset.m));
@@ -678,13 +683,17 @@ const sgn=v=>(v>=0?'+':'−')+fmt(Math.abs(v)*100)+'cm';
 const sgnM=v=>(v>=0?'+':'−')+fmt(Math.abs(v),2)+'m';
 function pUI(){P1.mR=+$('pS').value;P1.mC=+$('pC').value;if(P1.baseR==null)P1.baseR=0.45;if(P1.baseC==null)P1.baseC=0.3;P1.stop=Math.max(0.05,P1.baseR+P1.mR);P1.corner=Math.max(0.03,P1.baseC+P1.mC);
  $('baseBox').textContent=`前・うしろ ${fmt(P1.baseR*100)}cm　四すみ ${fmt(P1.baseC*100)}cm`+(P1.src?'':'（仮）');
- $('pSV').textContent=`${sgn(P1.mR)} → ${fmt(P1.stop*100)}cm`;$('pCV').textContent=`${sgn(P1.mC)} → ${fmt(P1.corner*100)}cm`;P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('stopNote').textContent=`止まるまでに進む：前進 約${fmt(stopDist(P1.vf)*100)}cm・バック 約${fmt(stopDist(P1.vt)*100)}cm`;$('pKV').textContent=fmt(P1.kp,1);
+ $('pSV').textContent=`${sgn(P1.mR)} → ${fmt(P1.stop*100)}cm`;$('pCV').textContent=`${sgn(P1.mC)} → ${fmt(P1.corner*100)}cm`;P1.vf=+$('pF').value/3.6;$('pFV').textContent=fmt($('pF').value,1)+' km/h';P1.vt=+$('pV').value/3.6;P1.kp=+$('pK').value;$('pVV').textContent=fmt($('pV').value,1)+' km/h';$('stopNote').textContent=`→ 気づいてから止まるまでに進む：前進 ${fmt(stopDist(P1.vf)*100)} cm・バック ${fmt(stopDist(P1.vt)*100)} cm`;$('pKV').textContent=fmt(P1.kp,1);
  // レベル3・4：切り返す位置と通路を走る道（記録からの数字）、あなたが決める余裕・直す強さ
  if(P1.baseA==null)P1.baseA=AP_BASE.A;P1.mA=+$('pA').value;P1.ks=+$('pH').value;
  $('baseBoxA').textContent=`切り返す位置：止める枠の真ん中から ${fmt(P1.baseA,2)} m 先`+(P1.srcA?'':'（仮）');$('pAV').textContent=`${sgnM(P1.mA).replace('m','')} → ${fmt(P1.baseA+P1.mA,2)}m`;
  $('baseBoxH').textContent=`通路では、枠の入口の白線から ${fmt(AP_BASE.lane-ENTRY,1)} m のところを走る（決まり）`;$('pHV').textContent=fmt(P1.ks,1);
  const lv=lvOf(m.mode),pv=[...tlog].reverse().find(e=>e.lv===lv);$('prevNote').innerHTML=pv?`前回のレベル${lv}：${pv.result==='成功'?pv.score+' 点':pv.result}（${fmt(pv.time,1)} 秒）`:'';
- m.p=effP();roadUI();saveP();}
+ predUI();m.p=effP();roadUI();saveP();}
+// 「今の数字だとこうなる」の見込み（計算）
+function predUI(){const lv=lvOf(m.mode),v=lv>=2?P1.vt:0.6,sd=stopDist(v),gap=P1.stop-sd,kv=fmt(v*3.6,1);
+ const ps=$('prS');ps.classList.toggle('ng',gap<=0.02);ps.textContent=gap>0.02?`→ バック ${kv} km/h${lv<2?'（アクセルを踏まないとき）':''}なら、うしろの物まで 約 ${fmt(gap*100)} cm で止まる見込み`:`→ バック ${kv} km/h だと止まるまでに ${fmt(sd*100)} cm 進む。止まりきれずにぶつかる！`;
+ const f=P1.kp*LON.amax/(P1.kp*LON.amax+LON.drag),pk=$('prK');pk.textContent=P1.kp<=0?'→ 直す強さ 0 では、アクセルを踏まない（動かない）':`→ 実際に出る速さ：前進 約 ${fmt(P1.vf*f*3.6,1)} km/h・バック 約 ${fmt(P1.vt*f*3.6,1)} km/h（目標の ${Math.round(f*100)}%）`;}
 // レベル5：路面ごとの数字（前進の速さ・バックの速さ・前うしろの余裕）。車は測った路面の行に切り替える。ほかの数字はレベル1〜4のまま
 function initRoad(){if(P1.road)return;P1.road={};ROAD_KEYS.forEach(k=>P1.road[k]={vf:P1.vf,vt:P1.vt,mR:P1.mR||0});}
 function effP(){if(lvOf(m.mode)!==5||!P1.road)return P1;const k=W&&W.road||'dry',r=P1.road[k];return Object.assign({},P1,{vf:r.vf,vt:r.vt,mR:r.mR,stop:Math.max(0.05,P1.baseR+r.mR),road:k});}
@@ -696,6 +705,11 @@ function roadUI(){const t=$('roadTbl');if(!t||!P1.road)return;const cur=lvOf(m.m
 $('roadTbl').onclick=e=>{const b=e.target.closest&&e.target.closest('button[data-k]');if(!b||!P1.road)return;const r=P1.road[b.dataset.k],f=b.dataset.f,[st,lo,hi]=RSTEP[f];
  r[f]=+Math.max(lo,Math.min(hi,r[f]+st*(+b.dataset.d))).toFixed(4);pUI();};
 ['pF','pV','pK','pS','pC','pA','pH'].forEach(i=>$(i).oninput=pUI);
+// つまみの両側に −／＋（1目盛りずつ動かす）。タップで細かく合わせられる
+document.querySelectorAll('#s1box input[type=range]').forEach(inp=>{const w=document.createElement('div');w.className='rng';inp.parentNode.insertBefore(w,inp);
+ const mk=(d,t)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.setAttribute('aria-label',d<0?'少しへらす':'少しふやす');
+  b.onclick=()=>{if(inp.disabled)return;inp.value=Math.max(+inp.min,Math.min(+inp.max,+inp.value+d*(+inp.step))).toFixed(3);inp.dispatchEvent(new Event('input'));};return b;};
+ w.append(mk(-1,'−'),inp,mk(1,'＋'));});
 $('pF').value=+((P1.vf||4/3.6)*3.6).toFixed(1);$('pV').value=+(P1.vt*3.6).toFixed(1);$('pK').value=P1.kp;$('pS').value=P1.mR||0;$('pC').value=P1.mC||0;$('pA').value=P1.mA||0;$('pH').value=P1.ks==null?1:P1.ks;pUI();
 
 /* 運転 */
@@ -714,7 +728,7 @@ function showOv(kind,t,s,x){if(BT.on)return;$('ov').hidden=false;$('ov').classNa
 $('ovSame').onclick=()=>{$('ov').hidden=true;keepCond=W.cd;resetDrive();};
 $('ovRev').onclick=()=>{$('ov').hidden=true;setMode('review');};
 function usedTxt(e){return `前・うしろ <b>${sgn(e.mR)}</b>　四すみ <b>${sgn(e.mC)}</b>`+(e.lv>=2?`　前進 <b>${fmt(e.vf*3.6,1)}</b>・バック <b>${fmt(e.vt*3.6,1)}</b> km/h　直す強さ <b>${fmt(e.kp,1)}</b>`:'')+(e.lv>=3?`<br>切り返す位置 <b>${fmt((e.A!=null?e.A:AP_BASE.A),2)} m</b>（余裕 ${sgnM(e.mA||0)}）`:'')+(e.lv>=4?`　ハンドルの直す強さ <b>${fmt(e.ks,1)}</b>`:'');}
-function scoreHTML(sc,e,best){const used=e?`<div class="used">今回の余裕：${usedTxt(e)}</div>`:'';if(!sc.total)return `<div class="scr"><div class="rank X">✕</div><div><div class="pts">0<small> 点</small></div><div class="sub3"><span>安全</span><b>✕</b></div></div></div>${used}<div class="note">④で、なぜそうなったか見てみよう</div>`;
+function scoreHTML(sc,e,best){const nx=e&&aruns.length?adviceHTML(aruns[aruns.length-1],false):'';const used=(e?`<div class="used">今回の余裕：${usedTxt(e)}</div>`:'')+nx;if(!sc.total)return `<div class="scr"><div class="rank X">✕</div><div><div class="pts">0<small> 点</small></div><div class="sub3"><span>安全</span><b>✕</b></div></div></div>${used}<div class="note">④で、なぜそうなったか見てみよう</div>`;
  return `<div class="scr"><div class="rank ${sc.rank==='A+'?'AP':sc.rank}">${sc.rank}</div><div><div class="pts" data-to="${sc.total}"${best&&best.nb?' data-best="1"':''}><span>0</span><small> 点</small></div><div class="sub3"><span>正確（枠の真ん中・まっすぐ）</span><b>${sc.acc} / 30</b><span>速さ</span><b>${sc.spd} / 40</b><span>なめらか（切り返し ${sc.kiri} 回・途中で止まった ${sc.stops} 回）</span><b>${sc.smo} / 30</b></div></div></div>`+
  (sc.over?`<div class="note">もっと早く駐車できるはず。どこで時間を使った？</div>`:'')+
  (best?(best.nb?`<div class="best">自己ベスト更新！</div>`:`<div class="best n">レベル${e.lv}の自己ベスト ${best.b} 点</div>`):'')+used;}
@@ -763,7 +777,7 @@ function scoreRun(ok){if(!ok)return {total:0,acc:0,spd:0,smo:0,rank:'X'};const s
  return {total,acc,spd,smo:sm.pts,kiri:sm.kiri,stops:sm.stops,over,rank};}
 function saveAuto(result){if(!m.rows.length)return null;const sc=scoreRun(result==='成功');const q=m.p;const e={n:(tlog.length?tlog[tlog.length-1].n:0)+1,lv:LV,seed:W.cd.seed,road:W.cd.road||null,mR:q.mR,mC:q.mC,vf:q.vf,vt:q.vt,kp:q.kp,A:q.baseA+(q.mA||0),mA:q.mA||0,ks:q.ks,result,time:+m.t.toFixed(1),score:sc.total,rank:sc.rank};
  tlog.push(e);if(tlog.length>40)tlog=tlog.slice(-40);saveL();m.lastLog={sc,e};
- aruns.push({id:Date.now(),cond:W.cd,level:LV,result,score:sc.total,rank:sc.rank,time:+m.t.toFixed(1),rows:m.rows,events:m.events,
+ aruns.push({id:Date.now(),cond:W.cd,level:LV,result,score:sc.total,rank:sc.rank,sc:{acc:sc.acc,spd:sc.spd,smo:sc.smo,kiri:sc.kiri,stops:sc.stops},time:+m.t.toFixed(1),rows:m.rows,events:m.events,
   p:{stop:q.stop,corner:q.corner,baseR:q.baseR,baseC:q.baseC,mR:q.mR,mC:q.mC,vf:q.vf,vt:q.vt,kp:q.kp,src:q.src||null,baseA:q.baseA,mA:q.mA||0,A:q.baseA+(q.mA||0),ks:q.ks,srcA:q.srcA||null,road:LV===5&&P1.road?JSON.parse(JSON.stringify(P1.road)):null}});if(aruns.length>10)aruns=aruns.slice(-10);saveA();return m.lastLog;}
 let RV={run:null,i:0,play:false,acc:0};
 function buildRev(){const box=$('rlist');box.innerHTML='';if(!aruns.length){box.innerHTML='<div class="note" style="padding:8px;line-height:1.6">まだ自動運転の記録がありません。③で自動運転をすると、ここに残ります（最新8回分）。</div>';RV.run=null;revUI();return;}
@@ -844,6 +858,52 @@ function roadHTML(r){const P=r.p||{},T=P.road,k=r.cond.road||'dry',g=ROADS[k].gr
  if(r.result!=='成功'&&k!=='dry')hs.push(`「${ROADS[k].name}」の行の、どの数字を変える？　変えると、時間はどうなる？`);
  if(r.result==='成功')hs.push('この路面で、もっと速くできる数字はある？　ほかの路面でも同じ数字で大丈夫？');
  return `<div class="acc2"><div class="note" style="font-size:13px">路面のふりかえり（① 雨滴センサ・外の気温で路面を測る → ② 路面ごとの表とくらべる → ③ その行の数字に切り替える → ④ アクセル・ブレーキを動かす）</div>${tb}`+hs.map(h=>`<div class="hint">● ${h}</div>`).join('')+'</div>';}
+// ===== 次の運転でためすこと =====
+// 1回の記録から「どのタブの、どの数字を、どちらへ、どのくらい」動かすとよいかを、大事な順に最大3つ出す
+const TABN={brake:'ブレーキ',accel:'アクセル',shift:'シフト',steer:'ハンドル',road:'路面'};
+function advice(r){const P=r.p||{},lv=r.level,R=r.rows,E=r.events||[],road=r.cond.road||'dry',g=ROADS[road].grip,out=[],kh=v=>fmt(v*3.6,1),cmT=v=>fmt(Math.abs(v)*100)+' cm';
+ const T=t=>lv===5&&(t==='brake'||t==='accel')?'road':t,rn=lv===5?`（表の「${ROADS[road].name}」の行）`:'';
+ const add=(tab,what,why)=>{if(out.length<3&&!out.some(o=>o.what===what))out.push({tab,what,why});};
+ const crash=E.find(e=>e.type==='crash'&&!e.bad),bad=E.find(e=>e.bad),last=R[R.length-1],gear=last?last[6]:'';
+ const f=lv>=2?P.kp*LON.amax/(P.kp*LON.amax+LON.drag):1,tl=40+(r.cond.night?5:0)+(r.cond.cars>=3?3:0),parts=timeParts(R);
+ if(crash){const ab=crash.afterBrake,dir=gear==='R'?'バック':'前進',vNow=gear==='R'?P.vt:(P.vf||P.vt);
+  // 止まるまでに進む距離が dist 以下になる速さ（0.1 km/h ずつ下げてさがす）
+  const vFor=dist=>{let v=vNow;while(v>0.5/3.6&&stopDist(v,g)>dist)v-=0.1/3.6;return Math.max(0.5/3.6,v);};
+  if(crash.ped){if(lv>=2)add(T('accel'),`「${dir}の目標」を <b>下げる</b>（今 ${kh(vNow)} → ${kh(Math.max(0.5/3.6,vNow-1/3.6))} km/h くらい）${rn}`,'歩行者が急に前に出た。遅いほど、気づいてからすぐ止まれる。');
+   add(T('brake'),`「前・うしろ」の余裕を <b>大きく</b>（+10 cm くらい）${rn}`,'早めにブレーキを始めれば、歩行者の手前で止まれる。');}
+  else if(ab){const sd=stopDist(ab.v||0,g),need=Math.ceil((sd-ab.d+0.05)*20)/20,ctr=ab.id==='f'||ab.id==='r',room=ctr?0.3:0.15;
+   const why=`センサは ${cmT(ab.d)} で気づいたが、${kh(ab.v||0)} km/h では止まるまでに ${cmT(sd)} 進む。`;
+   if(need<=room)add(T('brake'),`「${ctr?'前・うしろ':'四すみ'}」の余裕を <b>大きく</b>（+${fmt(Math.max(0.05,need)*100)} cm くらい）${ctr?rn:''}`,why+'もっと手前でブレーキを始める。');
+   if(lv>=2)add(T('accel'),`「${dir}の目標」を <b>下げる</b>（今 ${kh(vNow)} → ${kh(vFor(ab.d+(need<=room?need:0)))} km/h くらい）${rn}`,need<=room?'遅いほど、止まるまでに進む距離が短くなる。':why+`余裕を大きくするだけでは足りない。速さを下げる。`);
+   else if(need>room)add(T('brake'),`「${ctr?'前・うしろ':'四すみ'}」の余裕を <b>大きく</b>（+${fmt(room*100)} cm くらい）`,why+'アクセルはあなた。ゆっくり近づこう。');}
+  else{if(lv>=2&&gear==='R'&&P.vt>2.5/3.6)add(T('accel'),`「バックの目標」を <b>下げる</b>（今 ${kh(P.vt)} → ${kh(P.vt-0.5/3.6)} km/h くらい）${rn}`,'バックが速いと、ハンドルで直すのが間に合わず、車の横がこすれる。');
+   if(lv>=4&&gear==='R')add('shift','「切り返す位置」を <b>先へ</b>（+0.2 m くらい）','曲がりはじめが早いと、内側のすみが当たる。④の再生で、どこが当たったか見よう。');
+   else if(lv<4)add('','ハンドルの回し方（あなた）を見直す','センサの見える範囲の外（車の横）が当たった。④の再生で、どこで当たったか見よう。');
+   add(T('brake'),'「四すみ」の余裕を <b>大きく</b>（+5 cm くらい）','すみのセンサが早めに気づいて止まる。');}}
+ if(r.result==='待たせすぎ'||(r.result==='成功'&&r.time>tl*0.8)){
+  if(lv>=2&&f<0.85)add('accel',`「直す強さ」を <b>大きく</b>（今 ${fmt(P.kp,1)} → 4 くらい）`,`今は目標の ${Math.round(f*100)}% の速さしか出ていない。直す強さを大きくすると、目標に近づく。`);
+  if(parts.auto>3)add(T('brake'),`「前・うしろ」の余裕を <b>小さく</b>（−5 cm くらい）${rn}`,`車のブレーキで止まっていた時間が ${fmt(parts.auto,1)} 秒。手前で止まりすぎていない？`);
+  if(lv>=2&&P.vf<6/3.6)add(T('accel'),`「前進の目標」を <b>上げる</b>（今 ${kh(P.vf)} → ${kh(P.vf+1/3.6)} km/h くらい）${rn}`,`前進で動いていた時間 ${fmt(parts.d,1)} 秒。通路は広いので速くしやすい。`);
+  else if(lv>=2&&P.vt<3/3.6)add(T('accel'),`「バックの目標」を <b>上げる</b>（+0.5 km/h くらい）${rn}`,`バックで動いていた時間 ${fmt(parts.r,1)} 秒。上げたら、ブレーキの余裕も見直す。`);
+  if(lv<2)add('','レベル2で、アクセルも車に任せよう','レベル1では速さはあなたの運転のまま。');}
+ if(lv>=3&&E.some(e=>e.type==='shift'&&/前へ/.test(e.why||'')))add('shift','「切り返す位置」を <b>先へ</b>（+0.3 m くらい）','手前すぎて、ハンドルをいっぱいに切っても枠に届かず、前に出直した（時間がかかった）。');
+ const ri=R.findIndex(x=>x[6]==='R');let cr=0;{let pv=0;if(ri>=0)R.slice(ri).forEach(x=>{const d=x[1];if(Math.abs(d)>0.03&&d*pv<0)cr++;if(Math.abs(d)>0.03)pv=d;});}
+ // 測った結果（まわりの車なし）：直す強さ 2 くらいが一番正確。3 をこえると、ふらついてかえってずれる
+ const ksUp=cr>=3?false:P.ks<1.8?true:P.ks>2.5?false:null,ksTxt=up=>up?`ハンドルの「直す強さ」を <b>大きく</b>（今 ${fmt(P.ks,1)} → ${fmt(Math.min(4,P.ks+0.3),1)}）`:`ハンドルの「直す強さ」を <b>小さく</b>（今 ${fmt(P.ks,1)} → ${fmt(Math.max(0.2,P.ks-0.3),1)}）`;
+ if(bad){if(lv>=4){
+   add('steer',ksTxt(ksUp!==false),cr>=3?`ずれが右・左と ${cr} 回入れかわった（ふらついた）。`:'ずれを直しきれないまま止まった。');}
+  else add('','バックでまっすぐになったら、ハンドルを戻す（あなた）','シフトは車、ハンドルはあなた。④の再生で、どこでずれたか見よう。');}
+ if(r.result==='成功'&&!out.length){const c=r.sc||{};
+  if(c.acc!=null&&c.acc<24){const off=Math.abs(last[1])*100,ang=Math.abs(last[3]-Math.PI/2)*180/Math.PI;
+   if(lv>=4&&ksUp===null)add(T('accel'),`「バックの目標」を <b>下げる</b>（今 ${kh(P.vt)} → ${kh(Math.max(0.5/3.6,P.vt-0.5/3.6))} km/h くらい）${rn}`,`正確の点が ${c.acc} / 30（枠の真ん中から ${fmt(off)} cm・向き ${fmt(ang,1)}° ずれた）。ハンドルの直す強さはちょうどよい。ゆっくり下がると、直す時間がふえる。`);
+   else if(lv>=4)add('steer',ksTxt(ksUp),`正確の点が ${c.acc} / 30（枠の真ん中から ${fmt(off)} cm・向き ${fmt(ang,1)}° ずれた）。`+(cr>=3?`ずれが右・左と ${cr} 回入れかわった（ふらついた）。`:'ずれを直しきれていない。'));
+   else add('','枠の真ん中でまっすぐ止める（あなたのハンドル）',`正確の点が ${c.acc} / 30（枠の真ん中から ${fmt(off)} cm・向き ${fmt(ang,1)}° ずれた）。`);}
+  else if(c.spd!=null&&c.spd<34&&lv>=2)add(T('accel'),`「前進の目標」を <b>上げる</b>（+0.5 km/h くらい）${rn}`,`速さの点が ${c.spd} / 40。上げたら、ブレーキの余裕も見直す。`);
+  else add('','新しい条件でもためす（夜・車が多い・柱あり）','ちがう条件でも同じ数字で通るか、確かめる。');}
+ return out;}
+function adviceHTML(r,btn){const a=advice(r);if(!a.length)return '';
+ return `<div class="next"><h4>次の運転でためすこと</h4><ol>`+a.map(x=>`<li>${x.tab?`<span class="tg">${TABN[x.tab]}</span> `:''}${x.what}<br><small>${x.why}</small>${btn&&x.tab?` <button data-tab="${x.tab}">${TABN[x.tab]}を開いて 同じ条件で ③へ</button>`:''}</li>`).join('')+`</ol></div>`;}
+$('why').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-tab]');if(!b||!RV.run)return;LV=RV.run.level;keepCond=RV.run.cond;setMode('auto');curTab=b.dataset.tab;tabUI();const x=$('s1box');x.classList.remove('flash');void x.offsetWidth;x.classList.add('flash');setTimeout(()=>x.classList.remove('flash'),1600);});
 function revWorld(r){return makeWorldC(r.cond);}
 function rowState(Wd,row){const th=row[3];return {x:Wd.gc+row[1]-1.3*Math.cos(th),y:row[2],th,d:row[4]*DMAX};}
 function revUI(){const r=RV.run;const tl=X.cvT.c;tl.clearRect(0,0,720,30);if(!r){$('why').innerHTML='';$('rTime').textContent='';return;}
@@ -857,7 +917,7 @@ function revUI(){const r=RV.run;const tl=X.cvT.c;tl.clearRect(0,0,720,30);if(!r)
  $('rTime').textContent=fmt(r.rows[RV.i][0],1)+' 秒 / '+fmt(r.time,1)+' 秒';
  let ev=null;r.events.forEach(e=>{if(e.i<=RV.i&&RV.i-e.i<=40)ev=e;});
  if(!ev){const nb=r.events.filter(e=>e.type==='brake').length,nc=r.events.filter(e=>e.type==='crash').length;
-  $('why').innerHTML=`<div class="note" style="font-size:14px;line-height:1.7">この運転で、車がブレーキを踏んだのは <b>${nb} 回</b>${nc?'、ぶつかったのは <b>1 回</b>':''}。<br>上の <span style="color:var(--sens)">▲</span>（ブレーキ）${r.level>=3?'・<span style="color:var(--good)">■</span>（シフト）':''}${r.level>=5?'・<span style="color:var(--steel)">路</span>（路面）':''}や <span style="color:var(--danger)">✕</span>（ぶつかった・ずれた）を押すと、その場面の理由が出ます。</div>`+(r.level>=5?roadHTML(r):'')+(r.level>=3?levelHTML(r):'')+`<div class="acc2">${timeHTML(r)}</div>`+(r.level>=2?accelHTML(r):'')+logHTML();return;}
+  $('why').innerHTML=adviceHTML(r,true)+`<div class="note" style="font-size:14px;line-height:1.7">この運転で、車がブレーキを踏んだのは <b>${nb} 回</b>${nc?'、ぶつかったのは <b>1 回</b>':''}。<br>上の <span style="color:var(--sens)">▲</span>（ブレーキ）${r.level>=3?'・<span style="color:var(--good)">■</span>（シフト）':''}${r.level>=5?'・<span style="color:var(--steel)">路</span>（路面）':''}や <span style="color:var(--danger)">✕</span>（ぶつかった・ずれた）を押すと、その場面の理由が出ます。</div>`+(r.level>=5?roadHTML(r):'')+(r.level>=3?levelHTML(r):'')+`<div class="acc2">${timeHTML(r)}</div>`+(r.level>=2?accelHTML(r):'')+logHTML();return;}
  const nm=id=>(SENSORS.find(x=>x.id===id)||{}).name||id;const cm=v=>fmt(v*100)+' cm';
  const box=(c,h,t)=>`<div class="bx ${c}"><h5>${h}</h5>${t}</div>`,ar='<span class="ar2">→</span>';
  let html;
