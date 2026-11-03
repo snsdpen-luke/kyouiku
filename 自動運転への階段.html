@@ -1134,7 +1134,7 @@ function showBatch(){const R=BT.res,ok=R.filter(x=>x.result==='成功').length,a
    提出：先生の Apps Script（parking3-report.gs）へ本文を POST し、届いたかは提出IDを JSONP で問い合わせて確かめる。
    （本文が長いので、URL に載せる JSONP だけでは送れない）。届かなければ「文章をコピー」して Classroom に貼る */
 const VER='2026-11-04';
-let SHEET_URL=''; // 先生の Apps Script ウェブアプリの URL（https://script.google.com/macros/s/…/exec）。空のあいだは「コピー」だけ
+let SHEET_URL='https://script.google.com/macros/s/AKfycbzB7ZVuSMBOY7Nx15K6vqcCQDpNjUfLwbheO38DHdmZjtzEhpBSsNxqbEMJWxSyZj0msA/exec'; // 先生の Apps Script ウェブアプリの URL（https://script.google.com/macros/s/…/exec）。空のあいだは「コピー」だけ
 const REPKEY='stairs-report-v1';
 let REP={no:'',name:'',ans:['','','','',''],q2:[null,null],pend:null,sent:0,lastAt:null};
 try{const o=JSON.parse(localStorage.getItem(REPKEY)||'{}');if(o&&typeof o==='object')Object.assign(REP,o);}catch(e){}
