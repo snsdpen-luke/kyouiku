@@ -20,27 +20,14 @@ ok(!/\bconfirm\(|\balert\(/.test(src),"confirm / alert を使っていない（C
 
 console.log("【A】パッド・BGM・キー");
 ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,scream,kaese,bangHard,steps,whisper,kaere","効果音は8個（うめき声2・悲鳴・返せ・ドアをはげしくたたく・足音・ささやき・帰れ）");
-ok(S.PADS.every(p=>typeof S.SYNTH[p.id]==="function"),"どの効果音にも合成の関数がある");
-ok(S.BGMS.length===5&&S.BGMS.filter(b=>!b.file).every(b=>typeof S.BGM_SYNTH[b.id]==="function"),"BGM は5つ・動画の BGM 以外には合成の関数がある");
-{ const raw=Buffer.from(S.BED_WAV,"base64");
-  ok(S.BGMS[0].id==="bed"&&S.BGMS[0].file&&raw.slice(0,4).toString()==="RIFF"&&raw.slice(8,12).toString()==="WAVE","1番目の BGM は廃校徘徊の動画の BGM（WAV）");
-  const sr=raw.readUInt32LE(24), ch=raw.readUInt16LE(22), bits=raw.readUInt16LE(34), sec=(raw.length-44)/(sr*ch*bits/8);
-  ok(sec>8&&sec<12,"動画の BGM は約"+sec.toFixed(1)+"秒（"+sr+"Hz）でくり返す");
-  const a=raw.readInt16LE(44)/32768, z=raw.readInt16LE(raw.length-2)/32768;
-  ok(Math.abs(a-z)<.1,"動画の BGM のつなぎ目に大きな段差がない（"+Math.abs(a-z).toFixed(3)+"）");
-  /* ブザー音（1895Hz）が消えている：その周波数の強さが、すぐ横の周波数と変わらない */
-  const n=(raw.length-44)>>1, x=new Float64Array(n); for(let i=0;i<n;i++) x[i]=raw.readInt16LE(44+2*i)/32768;
-  const lv=f=>{ let re=0,im=0; for(let i=0;i<n;i++){ const w=.5-.5*Math.cos(2*Math.PI*i/n); re+=x[i]*w*Math.cos(2*Math.PI*f*i/sr); im+=x[i]*w*Math.sin(2*Math.PI*f*i/sr); } return 20*Math.log10(Math.hypot(re,im)/n*4+1e-12); };
-  const bz=lv(1894.95), nb=(lv(1880)+lv(1910))/2;
-  ok(bz<nb+6,"動画の BGM にブザー音（1895Hz）が残っていない（"+bz.toFixed(0)+" dB、横の周波数 "+nb.toFixed(0)+" dB）");
-  /* ブザー音（129.8Hz の「ブー」）が消えている：いちばん強かった 2倍音 258.4Hz が、横の周波数と変わらない */
-  const b2=lv(258.4), n2=(lv(238)+lv(279))/2;
-  ok(b2<n2+6,"動画の BGM にブザー音（129.8Hz とその倍音）が残っていない（258Hz "+b2.toFixed(0)+" dB、横 "+n2.toFixed(0)+" dB）"); }
+ok(S.PADS.every(p=>typeof S.SYNTH[p.id]==="function"||S.SAMPLE_WAV[p.id]),"どの効果音にも、合成の関数か録音がある");
+ok(S.SAMPLE_WAV.kaere&&S.SAMPLE_WAV.kaere.length===3&&!S.SYNTH.kaere,"「帰れ！」は動画から切り出した録音3つ（合成ではない）");
+ok(S.BGMS.map(b=>b.id).join()==="drone,musicbox,heart,wind"&&S.BGMS.every(b=>typeof S.BGM_SYNTH[b.id]==="function"),"BGM は4つ（廃校徘徊の動画の BGM は入れない）・どれにも合成の関数がある");
 ok(S.MAX_VOICES>=4&&S.MAX_VOICES<=8,"同時に鳴らす効果音に上限がある（"+S.MAX_VOICES+"）");
 ok(S.PADS.every(p=>p.kind==="a"||p.kind==="s")&&S.PADS.some(p=>p.kind==="s"&&p.auto)&&S.PADS.some(p=>p.kind==="a"&&p.auto),"効果音は「気配」と「不意打ち」に分かれ、どちらにも★の音がある");
-ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===13&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは13個・重複なし・e.code で指定");
+ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===12&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは12個・重複なし・e.code で指定");
 ok(d.querySelectorAll(".pad").length===8,"画面にパッドが8個");
-ok(d.querySelectorAll(".bgm").length===5,"画面に BGM が5つ");
+ok(d.querySelectorAll(".bgm").length===4,"画面に BGM が4つ");
 ok(d.querySelector("h1").textContent==="廃校徘徊"&&d.title==="廃校徘徊 サンプラー","題は「廃校徘徊」");
 ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWERASDF","パッドのキーの文字が正しい");
 ok(/版 \d{4}-\d{2}-\d{2}[a-z]?/.test(d.getElementById("ver").textContent),"版表示が出ている");
@@ -60,6 +47,8 @@ for(const sr of [48000,44100]){
     ok(bad.length===0,p.id+"@"+sr+"（"+S.NVAR+"通り）"+(bad.length?"  "+bad.join(" / "):""));
   }
 }
+{ const x=S.renderPad("kaere",48000,0), y=S.renderPad("kaere",44100,0);
+  ok(Math.abs(x.length/48000-y.length/44100)<.001&&x.length/48000>1.4&&x.length/48000<2.2,"「帰れ！」の録音は約"+(x.length/48000).toFixed(2)+"秒・どの速さに直しても長さが同じ"); }
 { const a=S.renderPad("bangHard",48000,1), b=S.renderPad("bangHard",48000,1), c=S.renderPad("bangHard",48000,2);
   ok(a.every((v,i)=>v===b[i]),"同じ番号の波形は毎回まったく同じ（乱数の種が固定）");
   ok(a.length!==c.length||a.some((v,i)=>v!==c[i]),"番号がちがえば波形もちがう（くり返しが単調にならない）"); }
@@ -74,7 +63,7 @@ function pitchOf(x,sr,from,to){
   const fm=pitchOf(m,sr,1.4,1.6), fs=pitchOf(sc,sr,.6,.8);
   ok(fm>150&&fm<300,"うめき声（ひくい）は女の低い声の高さ（"+Math.round(fm)+" Hz）");
   ok(fs>800,"悲鳴は高い（"+Math.round(fs)+" Hz）");
-  for(const id of ["kaese","kaere"]){ const x=S.renderPad(id,sr,0), f=pitchOf(x,sr,.6,.72);   // 最後の「せ」「れ」の母音のところ
+  for(const id of ["kaese"]){ const x=S.renderPad(id,sr,0), f=pitchOf(x,sr,.6,.72);   // 最後の「せ」「れ」の母音のところ
     ok(f>170&&f<320,id+"：女の低い声の高さ（"+Math.round(f)+" Hz）");
     ok(x.length/sr>.7&&x.length/sr<1.4,id+"：短くどなる（"+(x.length/sr).toFixed(2)+"秒）"); } }
 { const zc=x=>{let n=0;for(let i=1;i<x.length;i++) if((x[i-1]<0)!==(x[i]<0)) n++; return n/(x.length/48000);};
@@ -97,7 +86,7 @@ function pitchOf(x,sr,from,to){
 
 console.log("【C】BGM（くり返しのつなぎ目）");
 for(const sr of [48000,44100]){
-  for(const b of S.BGMS.filter(b=>!b.file)){
+  for(const b of S.BGMS){
     const x=S.renderBgm(b.id,sr), sec=x.length/sr, pk=S.peakOf(x), bad=[];
     if(!finite(x)) bad.push("NaN/∞");
     if(!(sec>=8&&sec<=30)) bad.push("長さ "+sec.toFixed(1)+"秒");
@@ -127,10 +116,8 @@ d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Space",bubbles:true}));
 ok(S.bgms.filter(b=>b.on).length===2,"スペース（効果音だけ止める）では BGM は止まらない");
 d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Escape",bubbles:true}));
 ok(S.bgms.every(b=>!b.on)&&d.querySelectorAll(".bgm.on").length===0,"Esc で BGM も全部止まる");
-d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"KeyB",bubbles:true}));
-ok(S.bgms[0].on,"キー B で動画の BGM が ON（前の廃校徘徊サンプラーと同じ）");
-d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit5",bubbles:true}));
-ok(S.bgms[4].on,"キー 5 で 5番目の BGM が ON");
+d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit4",bubbles:true}));
+ok(S.bgms[3].on,"キー 4 で 4番目の BGM が ON");
 d.getElementById("stopAllTop").click();
 ok(S.bgms.every(b=>!b.on),"上の「■ 全部止める」でも止まる");
 const vol=d.getElementById("pVol"); vol.value="40"; vol.dispatchEvent(new w.Event("input"));
