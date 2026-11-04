@@ -19,7 +19,7 @@ ok(!/createConvolver|createDelay/.test(src)&&!d.getElementById("mRev"),"エコ�
 ok(!/\bconfirm\(|\balert\(/.test(src),"confirm / alert を使っていない（Classroom のサンドボックスで動かない）");
 
 console.log("【A】パッド・BGM・キー");
-ok(S.PADS.length===16&&new Set(S.PADS.map(p=>p.id)).size===16,"効果音は16個・id の重複なし");
+ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,scream,bangHard,steps,whisper","効果音は6個（うめき声2・悲鳴・ドアをはげしくたたく・足音・ささやき）");
 ok(S.PADS.every(p=>typeof S.SYNTH[p.id]==="function"),"どの効果音にも合成の関数がある");
 ok(S.BGMS.length===5&&S.BGMS.filter(b=>!b.file).every(b=>typeof S.BGM_SYNTH[b.id]==="function"),"BGM は5つ・動画の BGM 以外には合成の関数がある");
 { const raw=Buffer.from(S.BED_WAV,"base64");
@@ -30,11 +30,11 @@ ok(S.BGMS.length===5&&S.BGMS.filter(b=>!b.file).every(b=>typeof S.BGM_SYNTH[b.id
   ok(Math.abs(a-z)<.1,"動画の BGM のつなぎ目に大きな段差がない（"+Math.abs(a-z).toFixed(3)+"）"); }
 ok(S.MAX_VOICES>=4&&S.MAX_VOICES<=8,"同時に鳴らす効果音に上限がある（"+S.MAX_VOICES+"）");
 ok(S.PADS.every(p=>p.kind==="a"||p.kind==="s")&&S.PADS.some(p=>p.kind==="s"&&p.auto)&&S.PADS.some(p=>p.kind==="a"&&p.auto),"効果音は「気配」と「不意打ち」に分かれ、どちらにも★の音がある");
-ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===21&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは21個・重複なし・e.code で指定");
-ok(d.querySelectorAll(".pad").length===16,"画面にパッドが16個");
+ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===11&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは11個・重複なし・e.code で指定");
+ok(d.querySelectorAll(".pad").length===6,"画面にパッドが6個");
 ok(d.querySelectorAll(".bgm").length===5,"画面に BGM が5つ");
 ok(d.querySelector("h1").textContent==="廃校徘徊"&&d.title==="廃校徘徊 サンプラー","題は「廃校徘徊」");
-ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="1234QWERASDFZXCV","パッドのキーの文字が正しい");
+ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEASD","パッドのキーの文字が正しい");
 ok(/版 \d{4}-\d{2}-\d{2}[a-z]?/.test(d.getElementById("ver").textContent),"版表示が出ている");
 
 console.log("【B】効果音の合成（48kHz と 44.1kHz）");
@@ -67,14 +67,22 @@ function pitchOf(x,sr,from,to){
   ok(fm>150&&fm<300,"うめき声（ひくい）は女の低い声の高さ（"+Math.round(fm)+" Hz）");
   ok(fs>800,"悲鳴は高い（"+Math.round(fs)+" Hz）"); }
 { const zc=x=>{let n=0;for(let i=1;i<x.length;i++) if((x[i-1]<0)!==(x[i]<0)) n++; return n/(x.length/48000);};
-  const k=S.renderPad("knock3",48000,0), g=S.renderPad("glass",48000,0);
-  ok(zc(k)<1500,"ドン・ドン・ドンは低い音（ゼロ交差 "+Math.round(zc(k))+"回/秒）");
-  ok(zc(g)>3000,"ガラスは高い音（ゼロ交差 "+Math.round(zc(g))+"回/秒）"); }
+  const k=S.renderPad("bangHard",48000,0), g=S.renderPad("whisper",48000,0);
+  ok(zc(k)<1500,"ドアをたたく音は低い音（ゼロ交差 "+Math.round(zc(k))+"回/秒）");
+  ok(zc(g)>2500,"ささやきは息の音（ゼロ交差 "+Math.round(zc(g))+"回/秒）"); }
 { /* ドアをたたく音は、たたいた数だけ山がある */
   const sr=48000, x=S.renderPad("bangHard",sr,0), win=Math.round(sr*.01), e=[];
   for(let i=0;i+win<x.length;i+=win){ let s=0; for(let k=i;k<i+win;k++) s=Math.max(s,Math.abs(x[k])); e.push(s); }
-  let hits=0, up=false; for(const v of e){ if(!up&&v>.3){ hits++; up=true; } else if(up&&v<.12) up=false; }
-  ok(hits>=10,"ドアをはげしくたたく：10回以上たたいている（"+hits+"回）"); }
+  const on=[]; let up=false; e.forEach((v,i)=>{ if(!up&&v>.3){ on.push(i*.01); up=true; } else if(up&&v<.12) up=false; });
+  ok(on.length===14,"ドアをはげしくたたく：14回たたいている（"+on.length+"回）");
+  const gap=on.slice(1).map((t,i)=>t-on[i]), mn=Math.min(...gap), mx=Math.max(...gap);
+  ok(mx-mn<=.03,"ドアをたたく間隔がそろっている（"+mn.toFixed(2)+"〜"+mx.toFixed(2)+"秒）"); }
+{ /* ささやき「たすけて」：息のかたまりが4つ（た・す・け・て） */
+  const sr=48000, x=S.renderPad("whisper",sr,0), win=Math.round(sr*.02), e=[];
+  for(let i=0;i+win<x.length;i+=win){ let q=0; for(let k=i;k<i+win;k++) q+=x[k]*x[k]; e.push(Math.sqrt(q/win)); }
+  const pk=Math.max(...e); let n=0, up=false, low=0;
+  for(const v of e){ if(!up&&v>pk*.25){ n++; up=true; low=0; } else if(up&&v<pk*.1){ if(++low>=2) up=false; } }
+  ok(n>=4&&n<=6,"ささやき「たすけて」は音のかたまりが4つ前後（"+n+"）"); }
 
 console.log("【C】BGM（くり返しのつなぎ目）");
 for(const sr of [48000,44100]){
@@ -95,13 +103,13 @@ for(const sr of [48000,44100]){
 
 console.log("【D】操作（音の出ない jsdom で落ちないこと）");
 const pads=d.querySelectorAll(".pad");
-pads[6].dispatchEvent(new w.Event("pointerdown",{bubbles:true,cancelable:true}));
-ok(S.sel===6&&pads[6].classList.contains("sel")&&!pads[0].classList.contains("sel"),"パッドを押すとそのパッドだけ選ばれる");
-ok(/きしむ/.test(d.getElementById("pName").textContent),"右の欄に選んだ音の名前が出る");
-d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"KeyV",bubbles:true}));
-ok(S.sel===15,"キー V で 16番目");
-d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit6",bubbles:true}));
-ok(S.bgms[1].on&&d.querySelectorAll(".bgm")[1].classList.contains("on"),"キー 6 で 2番目の BGM が ON");
+pads[3].dispatchEvent(new w.Event("pointerdown",{bubbles:true,cancelable:true}));
+ok(S.sel===3&&pads[3].classList.contains("sel")&&!pads[0].classList.contains("sel"),"パッドを押すとそのパッドだけ選ばれる");
+ok(/はげしくたたく/.test(d.getElementById("pName").textContent),"右の欄に選んだ音の名前が出る");
+d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"KeyD",bubbles:true}));
+ok(S.sel===5,"キー D で 6番目（ささやき）");
+d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit2",bubbles:true}));
+ok(S.bgms[1].on&&d.querySelectorAll(".bgm")[1].classList.contains("on"),"キー 2 で 2番目の BGM が ON");
 d.querySelectorAll(".bgmb")[3].dispatchEvent(new w.Event("pointerdown",{bubbles:true,cancelable:true}));
 ok(S.bgms[3].on&&S.bgms.filter(b=>b.on).length===2,"BGM は重ねて ON にできる");
 d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Space",bubbles:true}));
@@ -110,22 +118,22 @@ d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Escape",bubbles:true}));
 ok(S.bgms.every(b=>!b.on)&&d.querySelectorAll(".bgm.on").length===0,"Esc で BGM も全部止まる");
 d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"KeyB",bubbles:true}));
 ok(S.bgms[0].on,"キー B で動画の BGM が ON（前の廃校徘徊サンプラーと同じ）");
-d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit9",bubbles:true}));
-ok(S.bgms[4].on,"キー 9 で 5番目の BGM が ON");
+d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit5",bubbles:true}));
+ok(S.bgms[4].on,"キー 5 で 5番目の BGM が ON");
 d.getElementById("stopAllTop").click();
 ok(S.bgms.every(b=>!b.on),"上の「■ 全部止める」でも止まる");
 const vol=d.getElementById("pVol"); vol.value="40"; vol.dispatchEvent(new w.Event("input"));
-ok(S.pads[15].vol===40&&d.getElementById("vVol").textContent==="40%","音量のつまみが選んだパッドに効く");
-const was=S.pads[15].auto; d.getElementById("pAuto").click();
-ok(S.pads[15].auto===!was&&pads[15].classList.contains("auto")===!was,"★ で自動おどかしに出し入れできる");
+ok(S.pads[5].vol===40&&d.getElementById("vVol").textContent==="40%","音量のつまみが選んだパッドに効く");
+const was=S.pads[5].auto; d.getElementById("pAuto").click();
+ok(S.pads[5].auto===!was&&pads[5].classList.contains("auto")===!was,"★ で自動おどかしに出し入れできる");
 d.getElementById("autoBtn").click();
 ok(S.autoOn&&/気配 あと \d+ 秒/.test(d.getElementById("autoSt").textContent)&&/不意打ち あと \d+ 秒/.test(d.getElementById("autoSt").textContent),"自動おどかし ON で、気配と不意打ちの次までの秒数が出る");
 { const fb=d.querySelectorAll("#freq button"); fb[2].click();
   ok(S.freqMul===0.6&&fb[2].classList.contains("sel")&&!fb[1].classList.contains("sel"),"「多め」を押すと間隔が短くなる"); }
 d.getElementById("autoBtn").click();
 ok(!S.autoOn,"もう一度押すと OFF");
-{ const s=JSON.parse(w.localStorage.getItem("kyouiku-obake-v2")||"null");
-  ok(s&&s.pads[15].vol===40&&s.freqMul===0.6,"設定はブラウザに保存される"); }
+{ const s=JSON.parse(w.localStorage.getItem("kyouiku-obake-v3")||"null");
+  ok(s&&s.pads[5].vol===40&&s.freqMul===0.6,"設定はブラウザに保存される"); }
 
 setTimeout(()=>{
   ok(errs.length===0,"スクリプトのエラーなし"+(errs.length?"：\n      "+errs.join("\n      "):""));
