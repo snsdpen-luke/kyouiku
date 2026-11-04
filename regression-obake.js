@@ -20,10 +20,19 @@ ok(!/\bconfirm\(|\balert\(/.test(src),"confirm / alert を使っていない（C
 console.log("【A】パッド・BGM・キー");
 ok(S.PADS.length===16&&new Set(S.PADS.map(p=>p.id)).size===16,"効果音は16個・id の重複なし");
 ok(S.PADS.every(p=>typeof S.SYNTH[p.id]==="function"),"どの効果音にも合成の関数がある");
-ok(S.BGMS.length===4&&S.BGMS.every(b=>typeof S.BGM_SYNTH[b.id]==="function"),"BGM は4つ・どれにも合成の関数がある");
-ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===20&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは20個・重複なし・e.code で指定");
+ok(S.BGMS.length===5&&S.BGMS.filter(b=>!b.file).every(b=>typeof S.BGM_SYNTH[b.id]==="function"),"BGM は5つ・動画の BGM 以外には合成の関数がある");
+{ const raw=Buffer.from(S.BED_WAV,"base64");
+  ok(S.BGMS[0].id==="bed"&&S.BGMS[0].file&&raw.slice(0,4).toString()==="RIFF"&&raw.slice(8,12).toString()==="WAVE","1番目の BGM は廃校徘徊の動画の BGM（WAV）");
+  const sr=raw.readUInt32LE(24), ch=raw.readUInt16LE(22), bits=raw.readUInt16LE(34), sec=(raw.length-44)/(sr*ch*bits/8);
+  ok(sec>8&&sec<12,"動画の BGM は約"+sec.toFixed(1)+"秒（"+sr+"Hz）でくり返す");
+  const a=raw.readInt16LE(44)/32768, z=raw.readInt16LE(raw.length-2)/32768;
+  ok(Math.abs(a-z)<.1,"動画の BGM のつなぎ目に大きな段差がない（"+Math.abs(a-z).toFixed(3)+"）"); }
+ok(S.MAX_VOICES>=4&&S.MAX_VOICES<=8,"同時に鳴らす効果音に上限がある（"+S.MAX_VOICES+"）");
+ok(S.PADS.every(p=>p.kind==="a"||p.kind==="s")&&S.PADS.some(p=>p.kind==="s"&&p.auto)&&S.PADS.some(p=>p.kind==="a"&&p.auto),"効果音は「気配」と「不意打ち」に分かれ、どちらにも★の音がある");
+ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===21&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは21個・重複なし・e.code で指定");
 ok(d.querySelectorAll(".pad").length===16,"画面にパッドが16個");
-ok(d.querySelectorAll(".bgm").length===4,"画面に BGM が4つ");
+ok(d.querySelectorAll(".bgm").length===5,"画面に BGM が5つ");
+ok(d.querySelector("h1").textContent==="廃校徘徊"&&d.title==="廃校徘徊 サンプラー","題は「廃校徘徊」");
 ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="1234QWERASDFZXCV","パッドのキーの文字が正しい");
 ok(/版 \d{4}-\d{2}-\d{2}[a-z]?/.test(d.getElementById("ver").textContent),"版表示が出ている");
 
@@ -68,7 +77,7 @@ function pitchOf(x,sr,from,to){
 
 console.log("【C】BGM（くり返しのつなぎ目）");
 for(const sr of [48000,44100]){
-  for(const b of S.BGMS){
+  for(const b of S.BGMS.filter(b=>!b.file)){
     const x=S.renderBgm(b.id,sr), sec=x.length/sr, pk=S.peakOf(x), bad=[];
     if(!finite(x)) bad.push("NaN/∞");
     if(!(sec>=8&&sec<=30)) bad.push("長さ "+sec.toFixed(1)+"秒");
@@ -98,7 +107,10 @@ d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Space",bubbles:true}));
 ok(S.bgms.filter(b=>b.on).length===2,"スペース（効果音だけ止める）では BGM は止まらない");
 d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Escape",bubbles:true}));
 ok(S.bgms.every(b=>!b.on)&&d.querySelectorAll(".bgm.on").length===0,"Esc で BGM も全部止まる");
-d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit5",bubbles:true}));
+d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"KeyB",bubbles:true}));
+ok(S.bgms[0].on,"キー B で動画の BGM が ON（前の廃校徘徊サンプラーと同じ）");
+d.dispatchEvent(new w.KeyboardEvent("keydown",{code:"Digit9",bubbles:true}));
+ok(S.bgms[4].on,"キー 9 で 5番目の BGM が ON");
 d.getElementById("stopAllTop").click();
 ok(S.bgms.every(b=>!b.on),"上の「■ 全部止める」でも止まる");
 const vol=d.getElementById("pVol"); vol.value="40"; vol.dispatchEvent(new w.Event("input"));
@@ -106,11 +118,13 @@ ok(S.pads[15].vol===40&&d.getElementById("vVol").textContent==="40%","音量の�
 const was=S.pads[15].auto; d.getElementById("pAuto").click();
 ok(S.pads[15].auto===!was&&pads[15].classList.contains("auto")===!was,"★ で自動おどかしに出し入れできる");
 d.getElementById("autoBtn").click();
-ok(S.autoOn&&/あと \d+ 秒/.test(d.getElementById("autoSt").textContent),"自動おどかし ON で次までの秒数が出る");
+ok(S.autoOn&&/気配 あと \d+ 秒/.test(d.getElementById("autoSt").textContent)&&/不意打ち あと \d+ 秒/.test(d.getElementById("autoSt").textContent),"自動おどかし ON で、気配と不意打ちの次までの秒数が出る");
+{ const fb=d.querySelectorAll("#freq button"); fb[2].click();
+  ok(S.freqMul===0.6&&fb[2].classList.contains("sel")&&!fb[1].classList.contains("sel"),"「多め」を押すと間隔が短くなる"); }
 d.getElementById("autoBtn").click();
 ok(!S.autoOn,"もう一度押すと OFF");
-{ const s=JSON.parse(w.localStorage.getItem("kyouiku-obake-v1")||"null");
-  ok(s&&s.pads[15].vol===40,"設定はブラウザに保存される"); }
+{ const s=JSON.parse(w.localStorage.getItem("kyouiku-obake-v2")||"null");
+  ok(s&&s.pads[15].vol===40&&s.freqMul===0.6,"設定はブラウザに保存される"); }
 
 setTimeout(()=>{
   ok(errs.length===0,"スクリプトのエラーなし"+(errs.length?"：\n      "+errs.join("\n      "):""));
