@@ -59,7 +59,7 @@ for(const sr of [48000,44100]){
   const c=d.querySelectorAll(".cell")[6];
   ok(!S.pads[6].auto&&c.classList.contains("big"),"クライマックスは自動おどかしに出さず、大きなパッドにする"); }
 { const a=S.renderPad("moanLow",48000,0).length/48000, b=S.renderPad("moanHigh",48000,0).length/48000;
-  ok(Math.abs(a-.5)<.05&&Math.abs(b-.5)<.05,"うめき声は短く（「あー」 "+a.toFixed(2)+"秒・「うー」 "+b.toFixed(2)+"秒）"); }
+  ok(Math.abs(a-1)<.05&&Math.abs(b-1)<.05,"うめき声は短く（「あー」 "+a.toFixed(2)+"秒・「うー」 "+b.toFixed(2)+"秒）"); }
 { const a=S.renderPad("bangHard",48000,1), b=S.renderPad("bangHard",48000,1), c=S.renderPad("bangHard",48000,2);
   ok(a.every((v,i)=>v===b[i]),"同じ番号の波形は毎回まったく同じ（乱数の種が固定）");
   ok(a.length!==c.length||a.some((v,i)=>v!==c[i]),"番号がちがえば波形もちがう（くり返しが単調にならない）"); }
@@ -74,7 +74,7 @@ function pitchOf(x,sr,from,to){
    500Hz より上を弱めてから測る（声の高さそのものは 150〜300Hz なので消えない） */
 const lowpass=(x,sr,fc)=>{ const k=1-Math.exp(-2*Math.PI*fc/sr), y=new Float32Array(x.length); let a=0,b=0;
   for(let i=0;i<x.length;i++){ a+=k*(x[i]-a); b+=k*(a-b); y[i]=b; } return y; };
-{ const sr=48000, m=lowpass(S.renderPad("moanLow",sr,0),sr,500), fm=pitchOf(m,sr,.2,.3);
+{ const sr=48000, m=lowpass(S.renderPad("moanLow",sr,0),sr,500), fm=pitchOf(m,sr,.45,.55);
   ok(fm>150&&fm<300,"うめき声「あー」は女の低い声の高さ（"+Math.round(fm)+" Hz）"); }
 { const zc=x=>{let n=0;for(let i=1;i<x.length;i++) if((x[i-1]<0)!==(x[i]<0)) n++; return n/(x.length/48000);};
   const k=S.renderPad("bangHard",48000,0), g=S.renderPad("mitsukete",48000,0);

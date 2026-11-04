@@ -123,7 +123,7 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 
 <script>
 "use strict";
-const VER = "2026-11-05c";
+const VER = "2026-11-05d";
 const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD","KeyR"];   // パッドの並び（3×2 と、右の縦長のクライマックス）とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
@@ -251,15 +251,15 @@ function knock(x,sr,rnd,at,o){
 }
 const SYNTH = {
   /* 女のうめき声「あー」（低い声） */
-  moanLow(sr,rnd){ const d=.5;
+  moanLow(sr,rnd){ const d=1;
     return voice(sr,rnd,{dur:d, f0:t=>205+35*Math.sin(Math.PI*t/d)-25*t/d,
-      vow:[[0,"a"],[.5,"a"]], breath:.45, vib:[5.5,30], rough:.18, bw:1.3,
-      amp:t=>envAR(t,d,.07,.15)}); },
+      vow:[[0,"a"],[1,"a"]], breath:.45, vib:[5.5,30], rough:.18, bw:1.3,
+      amp:t=>envAR(t,d,.14,.3)}); },
   /* 女のうめき声「うー」（高く上がって落ちる） */
-  moanHigh(sr,rnd){ const d=.5;
+  moanHigh(sr,rnd){ const d=1;
     return voice(sr,rnd,{dur:d, f0:t=>{ const u=t/d; return u<.35 ? 290+150*(u/.35) : 440-200*((u-.35)/.65); },
-      vow:[[0,"u"],[.5,"u"]], breath:.3, vib:[6,50], rough:.12, bw:1.2,
-      amp:t=>envAR(t,d,.05,.16)}); },
+      vow:[[0,"u"],[1,"u"]], breath:.3, vib:[6,50], rough:.12, bw:1.2,
+      amp:t=>envAR(t,d,.1,.32)}); },
   /* ドアをはげしくたたく（ドン！ドン！ドン！…）同じ間隔・同じ強さで14回 */
   bangHard(sr,rnd){ const step=.21, cnt=14, x=arr(sr,step*cnt+.5);
     for(let k=0;k<cnt;k++) knock(x,sr,rnd,k*step+(rnd()-.5)*.006,{s:.9+rnd()*.08});
