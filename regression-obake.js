@@ -19,18 +19,18 @@ ok(!/createConvolver|createDelay/.test(src)&&!d.getElementById("mRev"),"エコ�
 ok(!/\bconfirm\(|\balert\(/.test(src),"confirm / alert を使っていない（Classroom のサンドボックスで動かない）");
 
 console.log("【A】パッド・BGM・キー");
-ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,kaere,wasuremono,mitsukete,bangHard","効果音は6個（うめき声2・帰れ・ささやき「わすれもの」「みつけて」・ドアをはげしくたたく）");
+ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,kaere,wasuremono,mitsukete,bangHard,climax","効果音は7個（うめき声2・帰れ・ささやき「わすれもの」「みつけて」・ドアをはげしくたたく・クライマックス）");
 ok(S.PADS.every(p=>typeof S.SYNTH[p.id]==="function"||S.SAMPLE_WAV[p.id]),"どの効果音にも、合成の関数か録音がある");
 ok(S.SAMPLE_WAV.kaere&&S.SAMPLE_WAV.kaere.length===3&&!S.SYNTH.kaere,"「帰れ！」は動画から切り出した録音3つ（合成ではない）");
 ok(S.BGMS.map(b=>b.id).join()==="drone"&&typeof S.BGM_SYNTH.drone==="function","BGM は「不気味な低音」1つだけ");
 ok(S.MAX_VOICES>=4&&S.MAX_VOICES<=8,"同時に鳴らす効果音に上限がある（"+S.MAX_VOICES+"）");
 ok(S.PADS.every(p=>p.kind==="a"||p.kind==="s")&&S.PADS.some(p=>p.kind==="s"&&p.auto)&&S.PADS.some(p=>p.kind==="a"&&p.auto),"効果音は「気配」と「不意打ち」に分かれ、どちらにも★の音がある");
-ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===7&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは7個・重複なし・e.code で指定");
-ok(d.querySelectorAll(".pad").length===6,"画面にパッドが6個");
-ok(d.querySelectorAll(".cell").length===6&&[...d.querySelectorAll(".cell")].every(c=>c.querySelector(".vol")&&c.querySelector(".pit")&&c.querySelector(".star")),"どのパッドの下にも、音量・高さ・★がある");
+ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===8&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは8個・重複なし・e.code で指定");
+ok(d.querySelectorAll(".pad").length===7,"画面にパッドが7個");
+ok(d.querySelectorAll(".cell").length===7&&[...d.querySelectorAll(".cell")].every(c=>c.querySelector(".vol")&&c.querySelector(".pit")&&c.querySelector(".star")),"どのパッドの下にも、音量・高さ・★がある");
 ok(/止まっている/.test(d.getElementById("bgmState").textContent)&&!d.getElementById("bgmbar").classList.contains("on"),"BGM は最初は止まっていて、そう表示される");
 ok(d.querySelector("h1").textContent==="廃校徘徊"&&d.title==="廃校徘徊 サンプラー","題は「廃校徘徊」");
-ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEASD","パッドのキーの文字が正しい");
+ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEASDR","パッドのキーの文字が正しい");
 ok(/版 \d{4}-\d{2}-\d{2}[a-z]?/.test(d.getElementById("ver").textContent),"版表示が出ている");
 
 console.log("【B】効果音の合成（48kHz と 44.1kHz）");
@@ -42,7 +42,7 @@ for(const sr of [48000,44100]){
       const x=S.renderPad(p.id,sr,v), pk=S.peakOf(x), sec=x.length/sr;
       if(!finite(x)) bad.push("v"+v+" NaN/∞");
       if(!(pk>0.85&&pk<=0.9001)) bad.push("v"+v+" ピーク "+pk.toFixed(3));
-      if(!(sec>=0.3&&sec<=8)) bad.push("v"+v+" 長さ "+sec.toFixed(2)+"秒");
+      if(!(sec>=0.3&&sec<=(p.id==="climax"?20:8))) bad.push("v"+v+" 長さ "+sec.toFixed(2)+"秒");
       if(Math.abs(x[0])>1e-3||Math.abs(x[x.length-1])>1e-3) bad.push("v"+v+" 頭かお尻がゼロでない（プツッと鳴る）");
     }
     ok(bad.length===0,p.id+"@"+sr+"（"+S.NVAR+"通り）"+(bad.length?"  "+bad.join(" / "):""));
@@ -50,6 +50,14 @@ for(const sr of [48000,44100]){
 }
 { const x=S.renderPad("kaere",48000,0), y=S.renderPad("kaere",44100,0);
   ok(Math.abs(x.length/48000-y.length/44100)<.001&&x.length/48000>1.4&&x.length/48000<2.2,"「帰れ！」の録音は約"+(x.length/48000).toFixed(2)+"秒・どの速さに直しても長さが同じ"); }
+{ const x=S.renderPad("climax",48000,0), y=S.renderPad("climax",44100,0), sec=x.length/48000;
+  ok(S.SAMPLE_WAV.climax&&S.SAMPLE_WAV.climax.length===1&&!S.SYNTH.climax,"クライマックスは剛さんの録音1つ（合成ではない）");
+  ok(Math.abs(sec-18.1)<.05&&Math.abs(sec-y.length/44100)<.001,"クライマックスは約"+sec.toFixed(1)+"秒・どの速さに直しても長さが同じ");
+  /* 元の録音では、止めたときの「カチッ」がいちばん大きい音（中身の約2倍）だった。切れていれば、いちばん大きい所は中身にある */
+  let at=0; for(let i=1;i<x.length;i++) if(Math.abs(x[i])>Math.abs(x[at])) at=i;
+  ok(at/48000<sec-1,"クライマックスの最後に、録音を止めた「カチッ」が入っていない（いちばん大きい所は "+(at/48000).toFixed(1)+"秒）");
+  const c=d.querySelectorAll(".cell")[6];
+  ok(!S.pads[6].auto&&c.classList.contains("big"),"クライマックスは自動おどかしに出さず、大きなパッドにする"); }
 { const a=S.renderPad("moanLow",48000,0).length/48000, b=S.renderPad("moanHigh",48000,0).length/48000;
   ok(Math.abs(a-.5)<.05&&Math.abs(b-.5)<.05,"うめき声は短く（ひくい "+a.toFixed(2)+"秒・なげき "+b.toFixed(2)+"秒）"); }
 { const a=S.renderPad("bangHard",48000,1), b=S.renderPad("bangHard",48000,1), c=S.renderPad("bangHard",48000,2);
