@@ -69,6 +69,10 @@ function pitchOf(x,sr,from,to){
   let best=0, bl=lo;
   for(let L=lo;L<=hi;L++){ let s=0,e1=0,e2=0; for(let i=a;i<a+n;i++){ s+=x[i]*x[i+L]; e1+=x[i]*x[i]; e2+=x[i+L]*x[i+L]; }
     const r=s/Math.sqrt(e1*e2+1e-12); if(r>best){ best=r; bl=L; } }
+  /* オクターブまちがいよけ：ざらついた声（rough）は1つおきの波の強さがちがい、2倍の周期のほうが少し似て見える。
+     半分の周期でもほぼ同じくらい似ていれば（85%以上）、そちらが本当の高さ */
+  const rAt=L=>{ let s=0,e1=0,e2=0; for(let i=a;i<a+n;i++){ s+=x[i]*x[i+L]; e1+=x[i]*x[i]; e2+=x[i+L]*x[i+L]; } return s/Math.sqrt(e1*e2+1e-12); };
+  for(let h=Math.round(bl/2);h>=lo&&rAt(h)>=.85*best;h=Math.round(h/2)) bl=h;
   return sr/bl; }
 /* 「あ」は 850Hz あたりの響き（第1フォルマント）が強く、そのまま測るとそれを声の高さとまちがえる。
    500Hz より上を弱めてから測る（声の高さそのものは 150〜300Hz なので消えない） */
