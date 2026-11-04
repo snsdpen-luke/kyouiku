@@ -562,6 +562,7 @@ const saveP=()=>{try{localStorage.setItem(PKEY,JSON.stringify(P1))}catch(e){}};
 
 let mode='drive',W=null,selRun=null,LV=2;
 const BT={on:false,q:[],k:0,res:[]}; // レベル5の10回テスト
+const DONE_OK=7,DONE_AVG=65; // 10回テストで、この回数以上成功し、平均がこの点以上ならシステム完成（学びのレポートが開く）
 // 関所：③にはいつでも入れる（記録がなければ仮の数字で走る）。レベル1・2ははじめから開いている。レベル2・3・4で3回成功すると、次のレベルが開く。先生は URL に ?all を付けると全部開く
 const ALL=/[?&]all\b/.test(location.search);const NEED_MANUAL=0,NEED=[0,0,3,3,3],NEED_L1=NEED[1];
 const ownRuns=()=>runs.filter(r=>r.cond&&!r.demo);
@@ -1115,7 +1116,7 @@ function tickBatch(){tickDrive(1.5);if(!BT.on)return;if(!(m.done||m.crash||TR.ov
 function showBatch(){const R=BT.res,ok=R.filter(x=>x.result==='成功').length,avg=Math.round(R.reduce((a,x)=>a+x.score,0)/R.length);
  const by=ROAD_KEYS.map(k=>{const a=R.filter(x=>x.road===k),o=a.filter(x=>x.result==='成功');const why={};a.forEach(x=>{if(x.result!=='成功')why[x.result]=(why[x.result]||0)+1;});
   return {k,n:a.length,ok:o.length,avg:a.length?Math.round(a.reduce((p,x)=>p+x.score,0)/a.length):0,time:o.length?o.reduce((p,x)=>p+x.time,0)/o.length:null,why};});
- const done=ok>=9&&avg>=70;if(done){try{localStorage.setItem('stairs-complete',JSON.stringify({ok,avg,at:Date.now()}))}catch(e){}}
+ const done=ok>=DONE_OK&&avg>=DONE_AVG;if(done){try{localStorage.setItem('stairs-complete',JSON.stringify({ok,avg,at:Date.now()}))}catch(e){}}
  let h=`<div class="bres"><div class="bdots">`+R.map(x=>`<i class="${x.result==='成功'?'':'ng'}">${ROADS[x.road].name} ${x.result==='成功'?x.score:'✕'}</i>`).join('')+`</div>`+
   `<table><tr><th>路面</th><th>成功</th><th>平均の点数</th><th>成功した回の時間</th><th>失敗の理由</th></tr>`+by.map(b=>`<tr><td>${ROADS[b.k].name}</td><td>${b.ok} / ${b.n}</td><td>${b.avg} 点</td><td>${b.time===null?'—':fmt(b.time,1)+' 秒'}</td><td>${Object.entries(b.why).map(([w,n])=>`${w} ${n}`).join('・')||'—'}</td></tr>`).join('')+`</table>`;
  const hs=[],T=P1.road||{},same=ROAD_KEYS.every(k=>T[k]&&T.dry&&T[k].vf===T.dry.vf&&T[k].vt===T.dry.vt&&T[k].mR===T.dry.mR);
@@ -1124,7 +1125,7 @@ function showBatch(){const R=BT.res,ok=R.filter(x=>x.result==='成功').length,a
  else if(worst&&worst.ok<worst.n)hs.push(`いちばん失敗が多いのは「<b>${ROADS[worst.k].name}</b>」（${worst.n} 回中 ${worst.n-worst.ok} 回）。④でその回を見てみよう。止まるまでに進む距離は、晴れとくらべてどうだった？`);
  else if(worst)hs.push(`全部成功した。平均の点数がいちばん低いのは「<b>${ROADS[worst.k].name}</b>」（${worst.avg} 点）。安全なまま速くするには、どの数字を動かす？`);
  if(same&&!done)hs.push('今は、3つの路面で<b>同じ数字</b>を使っている。路面ごとに変えると、どうなる？');
- if(!done)hs.push('9回以上成功して、平均70点以上なら、自動駐車のシステムの完成。');
+ if(!done)hs.push(`${DONE_OK}回以上成功して、平均${DONE_AVG}点以上なら、自動駐車のシステムの完成。`);
  h+=hs.map(t=>`<div class="hint">● ${t}</div>`).join('')+'</div>';
  showOv(done?'win':'lose',done?'システム完成！':'10回テストの結果',`成功 ${ok} / ${R.length}　平均 ${avg} 点`,h);$('ovSame').hidden=true;
  if(done){tone([523,659,784,1047],0.22,0.08,'triangle');repBtnUI();$('ovX').insertAdjacentHTML('beforeend','<div class="grp" style="justify-content:center;margin-top:6px"><button class="go" id="ovRepB">学びのレポートを書く →</button></div>');$('ovRepB').onclick=()=>{$('ov').hidden=true;openRep();};}}
