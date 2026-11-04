@@ -6,6 +6,7 @@
   馬レース.html        → uma/index.html     （同上。文化祭の QR コードは /uma/ を指す）
   翔陽ミニマート.html   → mart/index.html    （同上。文化祭の QR コードは /mart/ を指す）
   サンプラー.html      → sampler/index.html （同上。こえサンプラー）
+  お化け屋敷サンプラー.html → obake/index.html （同上。文化祭のお化け屋敷の音響）
   メッセージが届くまで.html → network/index.html（同上。TCP/IP 教材。導入スライドの QR は /network/ を指す）
   車輪速センサ1.html  → wheel/index.html   （同上。電子計測制御・車輪速センサ第1時）
   車輪速センサ2.html  → wheel2/index.html  （同上。車輪速センサ第2時）
@@ -74,6 +75,11 @@ else:
 os.makedirs("sampler", exist_ok=True)
 shutil.copyfile(SRC5, "sampler/index.html")
 print("生成: sampler/index.html")
+
+# 1e2) お化け屋敷サンプラー（文化祭のお化け屋敷の音響。効果音16・BGM4）
+os.makedirs("obake", exist_ok=True)
+shutil.copyfile("お化け屋敷サンプラー.html", "obake/index.html")
+print("生成: obake/index.html")
 
 # 1f) メッセージが届くまで（TCP/IP）。コンピュータシステム技術のネットワーク単元
 os.makedirs("network", exist_ok=True)
