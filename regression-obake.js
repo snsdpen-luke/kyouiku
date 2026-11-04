@@ -19,18 +19,18 @@ ok(!/createConvolver|createDelay/.test(src)&&!d.getElementById("mRev"),"エコ�
 ok(!/\bconfirm\(|\balert\(/.test(src),"confirm / alert を使っていない（Classroom のサンドボックスで動かない）");
 
 console.log("【A】パッド・BGM・キー");
-ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,kaere,wasuremono,mitsukete,bangHard,climax1,climax2,climax3,climax4,climax5,climax6","効果音は12個（うめき声2・帰れ・ささやき「わすれもの」「みつけて」・ドアをはげしくたたく・クライマックス①〜⑥）");
+ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,kaere,wasuremono,mitsukete,bangHard,climax1,climax2,climax3,climax4,climax5,climax6,climax7","効果音は13個（うめき声2・帰れ・ささやき「わすれもの」「みつけて」・ドアをはげしくたたく・クライマックスのセリフ7つ）");
 ok(S.PADS.every(p=>typeof S.SYNTH[p.id]==="function"||S.SAMPLE_WAV[p.id]),"どの効果音にも、合成の関数か録音がある");
 ok(S.SAMPLE_WAV.kaere&&S.SAMPLE_WAV.kaere.length===3&&!S.SYNTH.kaere,"「帰れ！」は動画から切り出した録音3つ（合成ではない）");
 ok(S.BGMS.map(b=>b.id).join()==="drone"&&typeof S.BGM_SYNTH.drone==="function","BGM は「不気味な低音」1つだけ");
 ok(S.MAX_VOICES>=4&&S.MAX_VOICES<=8,"同時に鳴らす効果音に上限がある（"+S.MAX_VOICES+"）");
 ok(S.PADS.every(p=>p.kind==="a"||p.kind==="s")&&S.PADS.some(p=>p.kind==="s"&&p.auto)&&S.PADS.some(p=>p.kind==="a"&&p.auto),"効果音は「気配」と「不意打ち」に分かれ、どちらにも★の音がある");
-ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===13&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは13個・重複なし・e.code で指定");
-ok(d.querySelectorAll(".pad").length===12,"画面にパッドが12個");
-ok(d.querySelectorAll(".cell").length===12&&[...d.querySelectorAll(".cell")].every(c=>c.querySelector(".vol")&&c.querySelector(".pit")&&c.querySelector(".star")),"どのパッドの下にも、音量・高さ・★がある");
+ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===14&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは14個・重複なし・e.code で指定");
+ok(d.querySelectorAll(".pad").length===13,"画面にパッドが13個");
+ok(d.querySelectorAll(".cell").length===13&&[...d.querySelectorAll(".cell")].every(c=>c.querySelector(".vol")&&c.querySelector(".pit")&&c.querySelector(".star")),"どのパッドの下にも、音量・高さ・★がある");
 ok(/止まっている/.test(d.getElementById("bgmState").textContent)&&!d.getElementById("bgmbar").classList.contains("on"),"BGM は最初は止まっていて、そう表示される");
 ok(d.querySelector("h1").textContent==="廃校徘徊"&&d.title==="廃校徘徊 サンプラー","題は「廃校徘徊」");
-ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEASD123456","パッドのキーの文字が正しい");
+ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEASD1234567","パッドのキーの文字が正しい");
 ok(/版 \d{4}-\d{2}-\d{2}[a-z]?/.test(d.getElementById("ver").textContent),"版表示が出ている");
 
 console.log("【B】効果音の合成（48kHz と 44.1kHz）");
@@ -50,15 +50,15 @@ for(const sr of [48000,44100]){
 }
 { const x=S.renderPad("kaere",48000,0), y=S.renderPad("kaere",44100,0);
   ok(Math.abs(x.length/48000-y.length/44100)<.001&&x.length/48000>1.4&&x.length/48000<2.2,"「帰れ！」の録音は約"+(x.length/48000).toFixed(2)+"秒・どの速さに直しても長さが同じ"); }
-{ const ids=[1,2,3,4,5,6].map(k=>"climax"+k), xs=ids.map(id=>S.renderPad(id,48000,0)), secs=xs.map(x=>x.length/48000);
-  ok(ids.every(id=>S.SAMPLE_WAV[id]&&S.SAMPLE_WAV[id].length===1&&!S.SYNTH[id]),"クライマックス①〜⑥は剛さんの録音（合成ではない）");
-  const want=[2.77,0.77,1.57,3.53,4.13,3.89];
+{ const ids=[1,2,3,4,5,6,7].map(k=>"climax"+k), xs=ids.map(id=>S.renderPad(id,48000,0)), secs=xs.map(x=>x.length/48000);
+  ok(ids.every(id=>S.SAMPLE_WAV[id]&&S.SAMPLE_WAV[id].length===1&&!S.SYNTH[id]),"クライマックス①〜⑦は剛さんの録音（合成ではない）");
+  const want=[2.77,0.77,1.57,3.53,4.13,3.02,0.85];
   ok(secs.every((v,i)=>Math.abs(v-want[i])<.02)&&ids.every((id,i)=>Math.abs(S.renderPad(id,44100,0).length/44100-secs[i])<.001),
-     "クライマックスはセリフごとに6つ（"+secs.map(v=>v.toFixed(1)).join("・")+"秒）・どの速さに直しても長さが同じ");
+     "クライマックスはセリフごとに7つ（"+secs.map(v=>v.toFixed(1)).join("・")+"秒）・どの速さに直しても長さが同じ");
   const pks=xs.map(S.peakOf);
-  ok(Math.max(...pks)>.88&&Math.max(...pks)<=.9001&&Math.abs(pks[1]/pks[3]-2532/8882)<.01,"6つの大きさのつり合いは録音のまま（②は④の "+Math.round(pks[1]/pks[3]*100)+"%）");
-  /* 元の録音では、止めたときの「カチッ」が中身の約2倍の大きさだった。入っていれば、⑥のピークだけ 0.9 をこえる */
-  ok(pks[5]<.9,"⑥の最後に、録音を止めた「カチッ」が入っていない（⑥のピーク "+pks[5].toFixed(2)+"）");
+  ok(Math.max(...pks)>.88&&Math.max(...pks)<=.9001&&Math.abs(pks[1]/pks[3]-2532/8882)<.01,"7つの大きさのつり合いは録音のまま（②は④の "+Math.round(pks[1]/pks[3]*100)+"%）");
+  /* 元の録音では、止めたときの「カチッ」が中身の約2倍の大きさだった。入っていれば、⑦のピークだけ 0.9 をこえる */
+  ok(pks[6]<.9,"⑦「わたし！」の最後に、録音を止めた「カチッ」が入っていない（⑦のピーク "+pks[6].toFixed(2)+"）");
   const cs=[...d.querySelectorAll(".cell")].slice(6);
   ok(S.pads.slice(6).every(p=>!p.auto&&p.big)&&cs.every(c=>c.classList.contains("big")),"クライマックスは自動おどかしに出さない"); }
 { const a=S.renderPad("moanLow",48000,0).length/48000, b=S.renderPad("moanHigh",48000,0).length/48000;
