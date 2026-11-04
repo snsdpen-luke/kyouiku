@@ -31,38 +31,46 @@ header .ver{font-size:11px;color:var(--sub);white-space:nowrap}
 .freq button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;padding:6px 0;font-size:14px;cursor:pointer}
 .freq button.sel{color:var(--text);border-color:var(--red)}
 
-main{display:flex;gap:16px;padding:14px 16px;height:calc(100% - 60px)}
-.left{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
-.hint{font-size:14px;color:var(--sub);margin-bottom:8px;text-align:center;min-height:20px}
-.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
-  width:min(100%,calc((100vh - 290px)*2));aspect-ratio:2/1}
-.pad{position:relative;border:none;border-radius:14px;cursor:pointer;touch-action:none;
+main{display:flex;gap:16px;padding:12px 16px;height:calc(100% - 60px)}
+.left{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+
+/* BGM：1つだけ。ON / OFF が遠くからでも分かるように、大きな帯にする */
+.bgmbar{display:flex;align-items:center;gap:14px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:8px 12px}
+.bgmbar.on{border-color:var(--red);animation:glow 1.6s infinite alternate}
+@keyframes glow{from{box-shadow:0 0 0 rgba(198,40,40,0)}to{box-shadow:0 0 18px rgba(198,40,40,.75)}}
+.bgmbtn{flex:1;display:flex;align-items:center;gap:12px;border:none;background:none;cursor:pointer;text-align:left;padding:4px}
+.lamp{width:26px;height:26px;border-radius:50%;background:#2a2222;border:2px solid #4a3a3a;flex-shrink:0}
+.bgmbar.on .lamp{background:#ff3030;border-color:#ffb4b4;box-shadow:0 0 14px #ff3030}
+.bgmtx{display:flex;flex-direction:column;line-height:1.25}
+.bgmtx .t1{font-size:13px;color:var(--sub)}
+.bgmtx .t2{font-size:clamp(17px,2.2vw,22px);font-weight:800}
+.bgmstate{font-size:clamp(16px,2vw,20px);font-weight:800;padding:6px 14px;border-radius:10px;border:2px solid #4a3a3a;color:var(--sub);white-space:nowrap}
+.bgmbar.on .bgmstate{color:#fff;background:#8f0b0b;border-color:var(--red)}
+.bgmvol{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);width:220px}
+.bgmvol input{flex:1;accent-color:var(--red);height:28px}
+
+/* 効果音：パッドの下に、その音だけの音量・高さ・★ */
+.pads{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px;min-height:0}
+.cell{min-width:0;display:flex;flex-direction:column;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;min-height:0}
+.pad{flex:1;min-height:70px;position:relative;border:none;border-radius:11px;cursor:pointer;touch-action:none;
   background:linear-gradient(160deg,color-mix(in srgb,var(--c) 85%,#fff 0%),color-mix(in srgb,var(--c) 45%,#000));
   box-shadow:0 4px 0 color-mix(in srgb,var(--c) 30%,#000),inset 0 1px 0 rgba(255,255,255,.15);
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;overflow:hidden;
   transition:transform .05s}
-.pad .nm{font-size:clamp(15px,2.6vw,26px);font-weight:800;white-space:pre-line;text-shadow:0 1px 3px rgba(0,0,0,.8);text-align:center;line-height:1.2}
+.pad .nm{font-size:clamp(15px,2.2vw,24px);font-weight:800;white-space:pre-line;text-shadow:0 1px 3px rgba(0,0,0,.8);text-align:center;line-height:1.2}
 .pad .ky{position:absolute;left:8px;top:6px;font-size:12px;font-weight:700;opacity:.8;background:rgba(0,0,0,.35);border-radius:4px;padding:0 5px}
 .pad .au{position:absolute;right:8px;top:5px;font-size:13px;display:none;color:#ffd54f}
-.pad.auto .au{display:block}
-.pad.sel{outline:3px solid #fff;outline-offset:2px}
+.cell.auto .pad .au{display:block}
 .pad.hit{transform:translateY(3px);filter:brightness(1.8);box-shadow:0 1px 0 color-mix(in srgb,var(--c) 30%,#000)}
-
-.bgmh{align-self:stretch;font-size:13px;color:var(--sub);margin:14px 0 6px;font-weight:600;text-align:center}
-.bgms{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:min(100%,calc((100vh - 290px)*2))}
-.bgm{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:4px}
-.bgmb{border:2px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 4px;font-size:clamp(12px,1.5vw,15px);font-weight:800;cursor:pointer;line-height:1.25;position:relative;white-space:pre-line}
-.bgmb .ky{display:block;font-size:11px;color:var(--sub);font-weight:600}
-.bgm.on .bgmb{border-color:var(--red);background:#5a0d0d;animation:glow 1.6s infinite alternate}
-.bgm.on .bgmb .ky::after{content:"　♪ 鳴っている";color:#ffb4b4}
-@keyframes glow{from{box-shadow:0 0 0 rgba(198,40,40,0)}to{box-shadow:0 0 14px rgba(198,40,40,.7)}}
-.bgm input[type=range]{width:100%;accent-color:var(--red);height:24px;margin:0}
+.ctl{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sub)}
+.ctl span{width:26px;flex-shrink:0}
+.ctl input{flex:1;min-width:0;accent-color:var(--red);height:24px;margin:0}
+.ctl b{width:36px;text-align:right;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.star{border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;font-size:12px;padding:3px 0;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell.auto .star{color:#ffd54f;border-color:#6b5a1e}
 
 aside{width:300px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;overflow-y:auto}
 aside h2{font-size:13px;color:var(--sub);margin:0;font-weight:600}
-.selname{font-size:20px;font-weight:800;white-space:pre-line}
-.kind{font-size:13px;color:var(--sub)}
-canvas{width:100%;height:70px;background:#060507;border-radius:8px;display:block}
 .row{display:flex;align-items:center;gap:8px;font-size:14px}
 .row label{width:56px;color:var(--sub)}
 .row input[type=range]{flex:1;accent-color:var(--red);height:28px}
@@ -74,11 +82,20 @@ canvas{width:100%;height:70px;background:#060507;border-radius:8px;display:block
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000d;color:#fff;padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 
+/* 横幅が足りないときは、右の欄をパッドの下へ回す */
+@media (max-width:1180px){
+  html,body{overflow:auto}
+  main{flex-direction:column;height:auto}
+  .pads{min-height:520px}
+  aside{width:100%}
+}
 @media (max-width:800px),(orientation:portrait){
   html,body{overflow:auto}
   main{flex-direction:column;height:auto}
-  .pads,.bgms{width:100%}
-  .bgms{grid-template-columns:repeat(2,1fr)}
+  .pads{grid-template-columns:repeat(2,1fr);grid-template-rows:none}
+  .pad{min-height:110px}
+  .bgmbar{flex-wrap:wrap}
+  .bgmvol{width:100%}
   aside{width:100%}
   header h1{font-size:24px}
   header .ver,header .sub{display:none}
@@ -94,22 +111,14 @@ canvas{width:100%;height:70px;background:#060507;border-radius:8px;display:block
 </header>
 <main>
   <div class="left">
-    <div class="hint" id="hint">パッドをタップすると効果音が鳴ります。下の BGM はタップで ON / OFF（止めるまでくり返します）</div>
+    <div class="bgmbar" id="bgmbar">
+      <button class="bgmbtn" id="bgmBtn"><span class="lamp"></span><span class="bgmtx"><span class="t1">BGM（キー B）</span><span class="t2">不気味な低音</span></span></button>
+      <span class="bgmstate" id="bgmState"></span>
+      <label class="bgmvol">音量<input type="range" id="bgmVol" min="0" max="100" step="5"><b id="vBgm"></b></label>
+    </div>
     <div class="pads" id="pads"></div>
-    <div class="bgmh">BGM（重ねて鳴らせる・つまみで音量）</div>
-    <div class="bgms" id="bgms"></div>
   </div>
   <aside>
-    <h2>えらんだ効果音</h2>
-    <div class="selname" id="pName"></div>
-    <div class="kind" id="pKind"></div>
-    <canvas id="wave" width="560" height="140"></canvas>
-    <div class="row"><label>音量</label><input type="range" id="pVol" min="0" max="150" step="5"><span class="val" id="vVol"></span></div>
-    <div class="row"><label>高さ</label><input type="range" id="pPitch" min="-12" max="12" step="1"><span class="val" id="vPitch"></span></div>
-    <div class="btns">
-      <button class="btn" id="pPlay">▶ 試聴</button>
-      <button class="btn" id="pAuto">★ 自動おどかしに入れる</button>
-    </div>
     <h2>全体</h2>
     <div class="row"><label>全体</label><input type="range" id="mVol" min="0" max="100" step="5"><span class="val" id="vMVol"></span></div>
     <div class="btns">
@@ -121,10 +130,10 @@ canvas{width:100%;height:70px;background:#060507;border-radius:8px;display:block
     <div class="freq" id="freq"><button data-f="1.6">少なめ</button><button data-f="1">ふつう</button><button data-f="0.6">多め</button></div>
     <div class="autost" id="autoSt"></div>
     <div class="keys">
-      ★の音を、ばらばらの間隔で自動で鳴らします。うめき声などの「気配」と、悲鳴などの「不意打ち」は別々の間隔で鳴ります。左右の向きと高さも毎回少し変わります。<br><br>
+      ★の付いた音を、ばらばらの間隔で自動で鳴らします（★は各パッドの下で付け外し）。うめき声などの「気配」と、悲鳴などの「不意打ち」は別々の間隔で鳴ります。左右の向きと高さも毎回少し変わります。<br><br>
       キーボードでも鳴らせます<br>
-      効果音：<b>Q W E R / A S D F</b>（パッドの並びと同じ）<br>
-      BGM：<b>1 2 3 4</b><br>
+      効果音：<b>Q W E R T / A S D F G</b>（パッドの並びと同じ）<br>
+      BGM の ON / OFF：<b>B</b><br>
       スペース：効果音だけ止める　Esc：全部止める
     </div>
   </aside>
@@ -133,9 +142,9 @@ canvas{width:100%;height:70px;background:#060507;border-radius:8px;display:block
 
 <script>
 "use strict";
-const VER = "2026-11-04i";
-const KEYS = ["KeyQ","KeyW","KeyE","KeyR","KeyA","KeyS","KeyD","KeyF"];   // パッドの並び（4×2）とキーボードの並びをそろえる
-const BGM_KEYS = ["Digit1","Digit2","Digit3","Digit4"];
+const VER = "2026-11-04k";
+const KEYS = ["KeyQ","KeyW","KeyE","KeyR","KeyT","KeyA","KeyS","KeyD","KeyF","KeyG"];   // パッドの並び（5×2）とキーボードの並びをそろえる
+const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
 const NVAR = 3;            // 効果音ごとに3通りの波形を作り、毎回ちがうものを鳴らす（同じ音のくり返しに聞こえないように）
 const keyLabel = c => c.replace("Digit","").replace("Key","");
@@ -151,7 +160,6 @@ function lp(x,sr,fc){ const a=1-Math.exp(-TAU*fc/sr); let y=0; for(let i=0;i<x.l
 function hp(x,sr,fc){ const a=1-Math.exp(-TAU*fc/sr); let y=0; for(let i=0;i<x.length;i++){ y+=a*(x[i]-y); x[i]=x[i]-y; } return x; }
 function noise(n,rnd){ const x=new Float32Array(n); for(let i=0;i<n;i++) x[i]=rnd()*2-1; return x; }
 const saw = p => 2*(p%1)-1;
-const mtof = m => 440*Math.pow(2,(m-69)/12);
 const clamp01 = v => v<0?0:v>1?1:v;
 /* 帯域通過フィルタ（共振）。係数を途中で変えられる */
 const BP = () => ({x1:0,x2:0,y1:0,y2:0,b0:0,b2:0,a1:0,a2:0});
@@ -237,6 +245,42 @@ function shout(sr,rnd,syl,o){
   return hp(x,sr,120);
 }
 
+/* ---- ささやき（息だけの声）----
+   syl: [子音, 母音, 長さ秒]。
+   t・k は舌や上あごで息を止めて破裂させる音、s は歯のすき間の「スー」、ts は破裂してすぐ「スー」。
+   w・m・n・r は息を止めない子音：w は口をすぼめた「う」から開く、m・n は口を閉じた弱い息、r は舌で一瞬はじく */
+function whisperWord(sr,rnd,syl){
+  const CL={t:.05,s:.14,k:.06,ts:.10,w:.08,m:.07,n:.06,r:.03,"":0};      // 子音の長さ（母音の息が始まるまで）
+  let t0=.1; const kf=[], ev=[];
+  for(const [c,v,d] of syl){ const vs=t0+CL[c];
+    if(c==="w"||c==="m"||c==="n") kf.push([t0,"u"]);
+    kf.push([vs,v]); kf.push([vs+(d-CL[c])*.7,v]);
+    ev.push({c,v,s:t0,vs,e:t0+d}); t0+=d+.05; }
+  const dur=t0+.25, last=ev[ev.length-1];
+  const amp=t=>{
+    const c=ev.find(e=>t>=e.s&&t<e.vs);
+    if(c){ const u=(t-c.s)/(c.vs-c.s);
+      return c.c==="w" ? .15+.5*u : (c.c==="m"||c.c==="n") ? .28*clamp01(u*4) : c.c==="r" ? .3 : 0; }
+    const e=ev.find(e=>t>=e.vs&&t<e.e); if(!e) return 0; const u=t-e.vs, L=e.e-e.vs;
+    let a=(e.c==="w"||e.c==="m"||e.c==="n"||e.c==="r" ? 1 : clamp01(u/.03))*(.35+.65*clamp01((L-u)/.12));
+    if(e.v==="u"&&(e.c==="s"||e.c==="ts")) a*=.45;                       // 「す」「つ」の う はほとんど聞こえない
+    if(e===last) a*=clamp01((L-u)/L*1.6);
+    return a; };
+  const x=voice(sr,rnd,{dur, f0:()=>200, vow:kf, unvoiced:true, breath:1, bw:2.2, vib:[0,0], amp});
+  normalize(x,1);
+  const hiss=(at,len,g)=>{ const y=noise(Math.round(sr*len),rnd), f=bpSet(BP(),sr,6200,1.4);
+    for(let k=0;k<y.length;k++) y[k]=bpRun(f,y[k])*Math.pow(Math.sin(Math.PI*k/y.length),.7);
+    mixIn(x,y,sr,at,g); };
+  const burst=(at,fc)=>{ const y=noise(Math.round(sr*.03),rnd), f=bpSet(BP(),sr,fc,1.6);
+    for(let k=0;k<y.length;k++) y[k]=bpRun(f,y[k])*Math.exp(-k/sr*120);
+    mixIn(x,y,sr,at,.75); };
+  for(const e of ev){
+    if(e.c==="s") hiss(e.s,.16,.6);
+    else if(e.c==="t"||e.c==="k") burst(e.vs-.012,e.c==="t"?4300:1900);
+    else if(e.c==="ts"){ burst(e.s+.02,4300); hiss(e.s+.03,.1,.5); } }
+  return x;
+}
+
 /* ---- ドアをたたく1発：低い胴鳴り＋板をたたく音＋枠のガタつき ---- */
 function knock(x,sr,rnd,at,o){
   o=o||{}; const s=o.s==null?1:o.s, bf=(o.body||85)*(.94+rnd()*.12), slapG=o.slap==null?1:o.slap, ratG=o.rattle==null?1:o.rattle;
@@ -290,29 +334,12 @@ const SYNTH = {
     for(let k=0;k<6;k++){ const t=k*.78+(rnd()-.5)*.05, s=.3+k*.14;
       knock(x,sr,rnd,t,{s,body:52,slap:.35,rattle:.1}); knock(x,sr,rnd,t+.09,{s:s*.4,body:75,slap:.5,rattle:0}); }
     return x; },
-  /* ささやき「たすけて…」（息だけの声）。た・け・て は舌や上あごで息を止めて破裂させる音、す は歯のすき間の「スー」 */
-  whisper(sr,rnd){
-    const syl=[["t","a",.30],["s","u",.27],["k","e",.30],["t","e",.80]];
-    const CL={t:.05,s:.14,k:.06};      // 子音の長さ（母音の息が始まるまで）
-    let t0=.1; const kf=[], ev=[];
-    for(const [c,v,d] of syl){ const vs=t0+CL[c]; kf.push([vs,v]); kf.push([vs+(d-CL[c])*.7,v]);
-      ev.push({c,v,s:t0,vs,e:t0+d}); t0+=d+.05; }
-    const dur=t0+.25, last=ev[ev.length-1];
-    const amp=t=>{ const e=ev.find(e=>t>=e.vs&&t<e.e); if(!e) return 0; const u=t-e.vs, L=e.e-e.vs;
-      let a=clamp01(u/.03)*(.35+.65*clamp01((L-u)/.12));
-      if(e.v==="u") a*=.45;                       // 「す」の う はほとんど聞こえない
-      if(e===last) a*=clamp01((L-u)/L*1.6);
-      return a; };
-    const x=voice(sr,rnd,{dur, f0:()=>200, vow:kf, unvoiced:true, breath:1, bw:2.2, vib:[0,0], amp});
-    normalize(x,1);
-    for(const e of ev){
-      if(e.c==="s"){ const y=noise(Math.round(sr*.16),rnd), f=bpSet(BP(),sr,6200,1.4);
-        for(let k=0;k<y.length;k++) y[k]=bpRun(f,y[k])*Math.pow(Math.sin(Math.PI*k/y.length),.7);
-        mixIn(x,y,sr,e.s,.6); }
-      else { const y=noise(Math.round(sr*.03),rnd), f=bpSet(BP(),sr,e.c==="t"?4300:1900,1.6);
-        for(let k=0;k<y.length;k++) y[k]=bpRun(f,y[k])*Math.exp(-k/sr*120);
-        mixIn(x,y,sr,e.vs-.012,.75); } }
-    return x; },
+  /* ささやき「たすけて…」 */
+  whisper(sr,rnd){ return whisperWord(sr,rnd,[["t","a",.30],["s","u",.27],["k","e",.30],["t","e",.80]]); },
+  /* ささやき「わすれもの…」 */
+  wasuremono(sr,rnd){ return whisperWord(sr,rnd,[["w","a",.30],["s","u",.25],["r","e",.26],["m","o",.28],["n","o",.80]]); },
+  /* ささやき「みつけた…」 */
+  mitsuketa(sr,rnd){ return whisperWord(sr,rnd,[["m","i",.28],["ts","u",.25],["k","e",.28],["t","a",.80]]); },
 };
 
 const PADS = [
@@ -320,10 +347,12 @@ const PADS = [
   {id:"moanHigh",name:"うめき声\n（なげき）",  c:"#6a1414", kind:"a", auto:true},
   {id:"scream",  name:"悲鳴",                 c:"#6a1414", kind:"s", auto:true},
   {id:"kaese",   name:"「返せ！！」",           c:"#6a1414", kind:"s", auto:true},
+  {id:"wasuremono",name:"ささやき\n「わすれもの」", c:"#202a44", kind:"a", auto:true},
   {id:"bangHard",name:"ドアを\nはげしくたたく", c:"#4a321e", kind:"a", auto:true},
   {id:"steps",   name:"近づく足音",            c:"#202a44", kind:"a", auto:true},
   {id:"whisper", name:"ささやき\n「たすけて」", c:"#202a44", kind:"a", auto:true},
   {id:"kaere",   name:"「帰れ！」",             c:"#6a1414", kind:"s", auto:true},
+  {id:"mitsuketa",name:"ささやき\n「みつけた」", c:"#202a44", kind:"a", auto:true},
 ];
 /* ============ 録音した声（合成ではない）============
    「帰れ！」は、剛さんが用意した動画（grok_video_2026-11-04-19-14-27.mp4）の声を使う。
@@ -353,15 +382,10 @@ function renderPad(id,sr,variant){
 }
 
 /* ============ BGM（すき間なくくり返せる長さで作る）============ */
-/* 鳴り終わりの余韻を頭に足し戻す（音符の並んだ曲・心臓の音） */
-function foldAdd(x,sr,L){ const n=Math.round(L*sr), y=x.slice(0,n); for(let i=n;i<x.length;i++) y[(i-n)%n]+=x[i]; return y; }
-/* 終わりと頭を T 秒かけて重ねる（ずっと続く音）。power=true は雑音向け（音量が凹まない） */
-function foldFade(x,sr,L,T,power){ const n=Math.round(L*sr), m=Math.round(T*sr), y=x.slice(0,n);
-  for(let i=0;i<m;i++){ const a=i/m, wa=power?Math.sin(a*Math.PI/2):a, wb=power?Math.cos(a*Math.PI/2):1-a; y[i]=x[i]*wa+x[n+i]*wb; }
+/* 終わりと頭を T 秒かけて重ねる（ずっと続く音） */
+function foldFade(x,sr,L,T){ const n=Math.round(L*sr), m=Math.round(T*sr), y=x.slice(0,n);
+  for(let i=0;i<m;i++){ const a=i/m; y[i]=x[i]*a+x[n+i]*(1-a); }
   return y; }
-function tine(x,sr,at,f,g){ const i0=Math.round(at*sr), n=Math.min(x.length-i0,Math.round(sr*2.6));
-  for(let k=0;k<n;k++){ const t=k/sr;
-    x[i0+k]+=g*(Math.sin(TAU*f*t)*Math.exp(-t*1.8)+.15*Math.sin(TAU*f*3*t)*Math.exp(-t*6)+.08*Math.sin(TAU*f*5.4*t)*Math.exp(-t*12))*Math.min(1,t/.002); } }
 
 const BGM_SYNTH = {
   /* 不気味な低音：うなる低い音＋ときどき増える不協和音＋遠くの高い音 */
@@ -376,47 +400,17 @@ const BGM_SYNTH = {
       const gl=Math.pow(Math.max(0,Math.sin(TAU*t/12-1)),3)*(.6+.4*Math.sin(TAU*t/2));
       x[i]=.5*Math.sin(TAU*f1*t)+.4*Math.sin(TAU*f2*t)+.25*Math.sin(TAU*f3*t)*(.4+.6*l1)
           +.5*tri[i]*l2*l2+(.06*Math.sin(TAU*f5*t)+.05*Math.sin(TAU*f6*t))*gl+nz[i]*.3*(.5+.5*l1); }
-    return normalize(foldFade(x,sr,L,T,false),.7); },
-  /* こわれたオルゴール：短調の曲（オリジナル）。音程が少しずつ狂う */
-  musicbox(sr,rnd){ const beat=.55, L=beat*24, x=arr(sr,L+3);
-    const mel=[[69,1],[72,1],[76,1], [74,2],[72,.5],[71,.5], [72,1],[69,1],[64,1], [68,3],
-               [69,1],[72,1],[76,1], [77,2],[76,.5],[74,.5], [72,1],[71,1],[68,1], [69,3]];
-    const bass=[57,50,57,52,57,53,52,57];
-    let b=0;
-    for(const [m,len] of mel){ const t=b*beat, wow=1+.008*Math.sin(TAU*t/(L/2));
-      tine(x,sr,t,mtof(m)*wow*Math.pow(2,(rnd()-.5)*.02),.5+rnd()*.2); b+=len; }
-    bass.forEach((m,k)=>{ const t=k*3*beat; tine(x,sr,t,mtof(m)*Math.pow(2,(rnd()-.5)*.015),.35);
-      tine(x,sr,t+beat,mtof(m+7)*.999,.12); tine(x,sr,t+2*beat,mtof(m+12)*1.002,.1); });
-    return normalize(foldAdd(x,sr,L),.7); },
-  /* 心臓の音（ドクン、ドクン） */
-  heart(sr){ const beat=60/72, L=beat*10, x=arr(sr,L+1);
-    const thump=(at,f,g,dec)=>{ const i0=Math.round(at*sr), n=Math.round(sr*.35); let ph=0;
-      for(let k=0;k<n&&i0+k<x.length;k++){ const t=k/sr; ph+=TAU*f*(1+.6*Math.exp(-t*30))/sr;
-        x[i0+k]+=g*Math.sin(ph)*Math.exp(-t*dec)*Math.min(1,t/.004); } };
-    for(let k=0;k<10;k++){ thump(k*beat,50,1,16); thump(k*beat+.28,62,.65,22); }
-    return normalize(lp(foldAdd(x,sr,L),sr,300),.7); },
-  /* すきま風「ヒュウゥゥ…」：雑音を、ゆっくり動く鋭い共振に通す */
-  wind(sr,rnd){ const L=20, T=3, x=arr(sr,L+T), n=noise(x.length,rnd);
-    const f1=BP(), f2=BP(), bed=normalize(lp(lp(noise(x.length,rnd),sr,300),sr,300),1);
-    for(let i=0;i<x.length;i++){ const t=i/sr;
-      if(i%32===0){ bpSet(f1,sr,520+260*Math.sin(TAU*t/10)+120*Math.sin(TAU*t/4+1),9);
-        bpSet(f2,sr,950+320*Math.sin(TAU*t/20+2)+150*Math.sin(TAU*t/5),12); }
-      const gust=clamp01(.45+.35*Math.sin(TAU*t/10)+.25*Math.sin(TAU*t/4+2));
-      x[i]=(bpRun(f1,n[i])*1.2+bpRun(f2,n[i])*.8*(1-gust*.5))*gust+bed[i]*.12; }
-    return normalize(foldFade(x,sr,L,T,true),.7); },
+    return normalize(foldFade(x,sr,L,T),.7); },
 };
 const BGMS = [
   {id:"drone",   name:"不気味な低音",       vol:70},
-  {id:"musicbox",name:"こわれたオルゴール", vol:60},
-  {id:"heart",   name:"心臓の音",           vol:80},
-  {id:"wind",    name:"すきま風",           vol:60},
 ];
 function renderBgm(id,sr){ if(!BGM_SYNTH[id]) return null; const idx=BGMS.findIndex(b=>b.id===id); return BGM_SYNTH[id](sr,mulberry32(777+idx*7919)); }
 
 /* ============ 状態 ============ */
 const pads = PADS.map((p,i)=>({i,id:p.id,name:p.name,c:p.c,kind:p.kind,auto:p.auto,vol:100,pitch:0,bufs:[],last:-1}));
 const bgms = BGMS.map((b,i)=>({i,id:b.id,name:b.name,vol:b.vol,on:false,ab:null,src:null,g:null}));
-let sel=0, masterVol=85, autoOn=false, freqMul=1, autoNext={a:0,s:0};
+let masterVol=85, autoOn=false, freqMul=1, autoNext={a:0,s:0};
 const $ = id => document.getElementById(id);
 
 /* ============ 音を鳴らす ============ */
@@ -508,7 +502,7 @@ function autoTick(){
 function setAuto(on){ autoOn=on; if(on){ ensureCtx(); keepAwake(); scheduleAuto("a"); scheduleAuto("s"); } renderAuto(); }
 
 /* ============ 保存（ブラウザの中だけ）============ */
-const LS_KEY="kyouiku-obake-v4";
+const LS_KEY="kyouiku-obake-v6";
 function saveSettings(){
   try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,freqMul,
     pads:pads.map(p=>({vol:p.vol,pitch:p.pitch,auto:p.auto})), bgms:bgms.map(b=>({id:b.id,vol:b.vol}))})); }catch(e){}
@@ -524,50 +518,46 @@ function loadSettings(){
 }
 
 /* ============ 画面 ============ */
-const padEls=[], bgmEls=[];
+const padEls=[], cellEls=[];
+const fmtPitch = v => (v>0?"+":"")+v;
 function buildPads(){
   const box=$("pads");
   pads.forEach((p,i)=>{
-    const b=document.createElement("button"); b.className="pad"; b.style.setProperty("--c",p.c);
-    b.innerHTML='<span class="ky">'+keyLabel(KEYS[i])+'</span><span class="au">★</span><span class="nm"></span>';
+    const c=document.createElement("div"); c.className="cell";
+    c.innerHTML='<button class="pad"><span class="ky">'+keyLabel(KEYS[i])+'</span><span class="au">★</span><span class="nm"></span></button>'
+      +'<label class="ctl"><span>音量</span><input type="range" class="vol" min="0" max="150" step="5"><b class="vv"></b></label>'
+      +'<label class="ctl"><span>高さ</span><input type="range" class="pit" min="-12" max="12" step="1"><b class="pv"></b></label>'
+      +'<button class="star"></button>';
+    const b=c.querySelector(".pad"); b.style.setProperty("--c",p.c);
     b.addEventListener("pointerdown",e=>{ e.preventDefault(); hitPad(i); });
     b.addEventListener("contextmenu",e=>e.preventDefault());
-    box.appendChild(b); padEls.push(b);
+    c.querySelector(".vol").addEventListener("input",e=>{ p.vol=+e.target.value; renderPads(); saveSettings(); });
+    c.querySelector(".pit").addEventListener("input",e=>{ p.pitch=+e.target.value; renderPads(); saveSettings(); });
+    c.querySelector(".pit").addEventListener("change",()=>playPad(i));   // 高さを変えたら、手をはなしたときに1回鳴らして聞かせる
+    c.querySelector(".star").addEventListener("click",()=>{ p.auto=!p.auto; renderPads(); renderAuto(); saveSettings(); });
+    box.appendChild(c); padEls.push(b); cellEls.push(c);
   });
-  const bb=$("bgms");
-  bgms.forEach((g,i)=>{
-    const d=document.createElement("div"); d.className="bgm";
-    d.innerHTML='<button class="bgmb"><span class="nm"></span><span class="ky">キー '+keyLabel(BGM_KEYS[i])+'</span></button><input type="range" min="0" max="100" step="5" aria-label="音量">';
-    d.querySelector(".nm").textContent=g.name;
-    d.querySelector(".bgmb").addEventListener("pointerdown",e=>{ e.preventDefault(); keepAwake(); toggleBgm(i); });
-    const r=d.querySelector("input"); r.value=g.vol;
-    r.addEventListener("input",()=>{ g.vol=+r.value; if(g.g&&ctx) g.g.gain.setTargetAtTime(g.vol/100,ctx.currentTime,.1); saveSettings(); });
-    bb.appendChild(d); bgmEls.push(d);
-  });
+  $("bgmBtn").addEventListener("pointerdown",e=>{ e.preventDefault(); keepAwake(); toggleBgm(0); });
+  $("bgmVol").addEventListener("input",e=>{ const g=bgms[0]; g.vol=+e.target.value; if(g.g&&ctx) g.g.gain.setTargetAtTime(g.vol/100,ctx.currentTime,.1); renderBgms(); saveSettings(); });
 }
-function hitPad(i){ keepAwake(); selectPad(i); playPad(i); }
-function selectPad(i){ if(sel!==i){ sel=i; renderPads(); renderPanel(); } }
+function hitPad(i){ keepAwake(); playPad(i); }
 function flash(i){ const el=padEls[i]; if(!el) return; el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit");
   clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("hit"),130); }
 function renderPads(){
-  pads.forEach((p,i)=>{ const el=padEls[i];
-    el.querySelector(".nm").textContent=p.name;
-    el.classList.toggle("auto",p.auto); el.classList.toggle("sel",i===sel); });
+  pads.forEach((p,i)=>{ const c=cellEls[i];
+    c.querySelector(".nm").textContent=p.name;
+    c.querySelector(".vol").value=p.vol; c.querySelector(".vv").textContent=p.vol+"%";
+    c.querySelector(".pit").value=p.pitch; c.querySelector(".pv").textContent=fmtPitch(p.pitch);
+    c.querySelector(".star").textContent=p.auto?"★ 自動おどかしに入っている":"☆ 自動おどかしに入れる";
+    c.classList.toggle("auto",p.auto); });
 }
-function renderBgms(){ bgms.forEach((b,i)=>bgmEls[i].classList.toggle("on",b.on)); }
-const waveCache={};
+function renderBgms(){ const b=bgms[0];
+  $("bgmbar").classList.toggle("on",b.on);
+  $("bgmState").textContent=b.on?"♪ 鳴っている":"止まっている";
+  $("bgmVol").value=b.vol; $("vBgm").textContent=b.vol+"%"; }
 function renderPanel(){
-  const p=pads[sel];
-  $("pName").textContent=p.name.replace(/\n/g,"");
-  const x=waveCache[p.id]||(waveCache[p.id]=renderPad(p.id,22050,0));
-  $("pKind").textContent="キー "+keyLabel(KEYS[sel])+"　長さ 約"+(x.length/22050).toFixed(1)+"秒";
-  $("pVol").value=p.vol; $("vVol").textContent=p.vol+"%";
-  $("pPitch").value=p.pitch; $("vPitch").textContent=(p.pitch>0?"+":"")+p.pitch;
-  $("pAuto").classList.toggle("on",p.auto);
-  $("pAuto").textContent=p.auto?"★ 自動おどかしに入っている":"☆ 自動おどかしに入れる";
   $("mVol").value=masterVol; $("vMVol").textContent=masterVol+"%";
   document.querySelectorAll("#freq button").forEach(b=>b.classList.toggle("sel",+b.dataset.f===freqMul));
-  drawWave(x,p.c);
 }
 function renderAuto(){
   $("autoBtn").classList.toggle("on",autoOn);
@@ -576,28 +566,13 @@ function renderAuto(){
   const left=k=>Math.max(0,Math.ceil((autoNext[k]-Date.now())/1000));
   st.classList.toggle("on",autoOn);
   st.textContent = !autoOn ? "★の音（気配 "+na+"個・不意打ち "+ns+"個）を自動で鳴らします"
-    : na+ns===0 ? "★の付いた音がありません。効果音をえらんで「自動おどかしに入れる」を押してください"
+    : na+ns===0 ? "★の付いた音がありません。パッドの下の「自動おどかしに入れる」を押してください"
     : [na?"気配 あと "+left("a")+" 秒":"", ns?"不意打ち あと "+left("s")+" 秒":""].filter(Boolean).join("　");
-}
-function drawWave(x,c){
-  const cv=$("wave"), g=cv.getContext&&cv.getContext("2d"); if(!g) return;
-  const W=cv.width, H=cv.height;
-  g.fillStyle="#060507"; g.fillRect(0,0,W,H);
-  g.strokeStyle="#3a2f36"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
-  g.fillStyle="#e57373"; const step=x.length/W;
-  for(let k=0;k<W;k++){ let mn=0,mx=0; const a=Math.floor(k*step), b=Math.max(a+1,Math.floor((k+1)*step));
-    for(let j=a;j<b&&j<x.length;j++){ if(x[j]<mn) mn=x[j]; if(x[j]>mx) mx=x[j]; }
-    g.fillRect(k,H/2-mx*H/2,1,Math.max(1,(mx-mn)*H/2)); }
 }
 let toastT=0;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3500); }
 
 function bindPanel(){
-  $("pVol").oninput=e=>{ pads[sel].vol=+e.target.value; renderPanel(); saveSettings(); };
-  $("pPitch").oninput=e=>{ pads[sel].pitch=+e.target.value; renderPanel(); saveSettings(); };
-  $("pPitch").onchange=()=>playPad(sel);
-  $("pPlay").onclick=()=>playPad(sel);
-  $("pAuto").onclick=()=>{ pads[sel].auto=!pads[sel].auto; renderPads(); renderPanel(); renderAuto(); saveSettings(); };
   $("mVol").oninput=e=>{ masterVol=+e.target.value; if(master) master.gain.value=masterVol/100; renderPanel(); saveSettings(); };
   document.querySelectorAll("#freq button").forEach(b=>b.onclick=()=>{ freqMul=+b.dataset.f;
     if(autoOn){ scheduleAuto("a"); scheduleAuto("s"); } renderPanel(); renderAuto(); saveSettings(); });
@@ -622,7 +597,7 @@ setInterval(autoTick,500);
 
 /* 検証用の窓口（regression-obake.js が叩く） */
 window.OBAKE = { VER, KEYS, BGM_KEYS, NVAR, MAX_VOICES, SAMPLE_WAV, PADS, BGMS, SYNTH, BGM_SYNTH, pads, bgms, renderPad, renderBgm, peakOf,
-  hitPad, toggleBgm, stopAll, setAuto, get sel(){ return sel; }, get autoOn(){ return autoOn; }, get freqMul(){ return freqMul; } };
+  hitPad, toggleBgm, stopAll, setAuto, get autoOn(){ return autoOn; }, get freqMul(){ return freqMul; } };
 </script>
 </body>
 </html>
