@@ -76,7 +76,7 @@ os.makedirs("sampler", exist_ok=True)
 shutil.copyfile(SRC5, "sampler/index.html")
 print("生成: sampler/index.html")
 
-# 1e2) お化け屋敷サンプラー（文化祭のお化け屋敷の音響。効果音16・BGM4）
+# 1e2) お化け屋敷サンプラー（文化祭のお化け屋敷の音響。効果音6・BGM1）
 os.makedirs("obake", exist_ok=True)
 shutil.copyfile("お化け屋敷サンプラー.html", "obake/index.html")
 print("生成: obake/index.html")

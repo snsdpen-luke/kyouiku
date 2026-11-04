@@ -54,7 +54,7 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 .autost.on{color:#ffd54f}
 
 /* 効果音：パッドの下に、その音だけの音量・高さ・★ */
-.pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;padding:0 10px 10px}
+.pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;padding:0 10px 10px}
 .cell{min-width:0;min-height:0;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
 .pad{flex:1;min-height:0;position:relative;border:none;border-radius:10px;cursor:pointer;touch-action:none;
   background:linear-gradient(160deg,color-mix(in srgb,var(--c) 85%,#fff 0%),color-mix(in srgb,var(--c) 45%,#000));
@@ -75,9 +75,9 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000d;color:#fff;padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 
-/* 縦長（タブレットを縦に持つ）：パッドを2列×5段に */
+/* 縦長（タブレットを縦に持つ）：パッドを2列×3段に */
 @media (orientation:portrait){
-  .pads{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr))}
+  .pads{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr))}
   header .keys{display:none}
 }
 /* スマホのような小さい画面だけは、1画面に入りきらないのでスクロールさせる */
@@ -93,7 +93,7 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 <header>
   <h1>廃校徘徊</h1>
   <span class="ver" id="ver"></span>
-  <span class="keys">キー：効果音 Q〜T / A〜G　BGM B　効果音を止める Space　全部止める Esc</span>
+  <span class="keys">キー：効果音 Q W E / A S D　BGM B　効果音を止める Space　全部止める Esc</span>
   <button class="stopbig" id="stopAllTop">■ 全部止める</button>
 </header>
 <div class="bar">
@@ -117,8 +117,8 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 
 <script>
 "use strict";
-const VER = "2026-11-04l";
-const KEYS = ["KeyQ","KeyW","KeyE","KeyR","KeyT","KeyA","KeyS","KeyD","KeyF","KeyG"];   // パッドの並び（5×2）とキーボードの並びをそろえる
+const VER = "2026-11-05a";
+const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD"];   // パッドの並び（3×2）とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
 const NVAR = 3;            // 効果音ごとに3通りの波形を作り、毎回ちがうものを鳴らす（同じ音のくり返しに聞こえないように）
@@ -192,34 +192,6 @@ function voice(sr,rnd,o){
 }
 const envAR = (t,dur,a,r) => clamp01(t/a)*clamp01((dur-t)/r);
 
-/* ---- 女の低い声でどなる（「返せ！！」「帰れ！」）----
-   syl: [子音, 母音, 長さ秒]。子音 k は息を止めて破裂、s は「スー」、r は舌で一瞬はじく（声が一瞬弱まる）、"" は子音なし。
-   どなり声は、のどを締めて息を強く出すので、ざらついて割れぎみになる。最後の音を強く長く出し、高さが落ちて終わる */
-function shout(sr,rnd,syl,o){
-  const CL={k:.06,s:.12,r:.03,"":0};
-  let t0=.04; const kf=[], ev=[];
-  for(const [c,v,d] of syl){ const vs=t0+CL[c]; kf.push([vs,v]); kf.push([vs+(d-CL[c])*.75,v]);
-    ev.push({c,v,s:t0,vs,e:t0+d}); t0+=d; }
-  const dur=t0+.12, last=ev[ev.length-1], hi=o.hi, lo=o.lo;
-  const f0=t=>{ const u=t/dur; return u<.12 ? lo+(hi-lo)*u/.12 : u<.7 ? hi*(1-.06*(u-.12)/.58) : hi*.94-(hi*.94-lo*.8)*Math.pow((u-.7)/.3,1.4); };
-  const amp=t=>{ const e=ev.find(e=>t>=e.s&&t<e.e+(e===last?.12:0)); if(!e||t<e.vs) return 0;
-    const u=t-e.vs; let a=clamp01(u/.02);
-    if(e.c==="r"&&u<.035) a*=.25;                           // 舌ではじく一瞬
-    if(e===last) a*=1.15*clamp01((e.e+.12-t)/.35); else a*=.85;
-    return a; };
-  const x=voice(sr,rnd,{dur, f0, vow:kf, breath:.4, vib:[0,0], rough:.12, jitter:.025, bw:1.5, fmul:.97, amp});
-  normalize(x,1);
-  for(let i=0;i<x.length;i++) x[i]=Math.tanh(2.8*x[i])/Math.tanh(2.8);   // どなって割れぎみの声
-  for(const e of ev){
-    if(e.c==="s"){ const y=noise(Math.round(sr*e.vs-sr*e.s),rnd), f=bpSet(BP(),sr,5800,1.3);
-      for(let k=0;k<y.length;k++) y[k]=bpRun(f,y[k])*Math.pow(Math.sin(Math.PI*k/y.length),.6);
-      mixIn(x,y,sr,e.s,.55); }
-    else if(e.c==="k"){ const y=noise(Math.round(sr*.035),rnd), f=bpSet(BP(),sr,1800,1.4);
-      for(let k=0;k<y.length;k++) y[k]=bpRun(f,y[k])*Math.exp(-k/sr*90);
-      mixIn(x,y,sr,e.vs-.015,.8); } }
-  return hp(x,sr,120);
-}
-
 /* ---- ささやき（息だけの声）----
    syl: [子音, 母音, 長さ秒]。
    t・k は舌や上あごで息を止めて破裂させる音、s は歯のすき間の「スー」、ts は破裂してすぐ「スー」。
@@ -273,61 +245,32 @@ function knock(x,sr,rnd,at,o){
 }
 const SYNTH = {
   /* 女のうめき声（低い）「うぅぅおぉぁぁ…」 */
-  moanLow(sr,rnd){ const d=1.7;
+  moanLow(sr,rnd){ const d=.5;
     return voice(sr,rnd,{dur:d, f0:t=>205+35*Math.sin(Math.PI*t/d)-25*t/d,
-      vow:[[0,"u"],[.6,"o"],[1.2,"a"],[1.7,"o"]], breath:.45, vib:[5.5,30], rough:.18, bw:1.3,
-      amp:t=>envAR(t,d,.25,.5)*(1+.18*Math.sin(TAU*3.3*t))}); },
+      vow:[[0,"u"],[.18,"o"],[.35,"a"],[.5,"o"]], breath:.45, vib:[5.5,30], rough:.18, bw:1.3,
+      amp:t=>envAR(t,d,.07,.15)}); },
   /* 女のうめき声（なげき）「あぁぁぁ…」高く上がって落ちる */
-  moanHigh(sr,rnd){ const d=2.3;
+  moanHigh(sr,rnd){ const d=.5;
     return voice(sr,rnd,{dur:d, f0:t=>{ const u=t/d; return u<.35 ? 290+150*(u/.35) : 440-200*((u-.35)/.65); },
-      vow:[[0,"o"],[.3,"a"],[1.6,"a"],[2.3,"u"]], breath:.3, vib:[6,50], rough:.12, bw:1.2,
-      amp:t=>envAR(t,d,.2,.7)*(1+.12*Math.sin(TAU*4.1*t))}); },
-  /* 悲鳴「きゃあああ」。本物の悲鳴は、高さが規則正しくゆれず（ビブラートではなく）不規則にふらつき、
-     声がざらつき（速い音量のゆらぎ）、息がたくさん混じり、のどを締めた硬い音になる。終わりは息に変わって落ちる */
-  scream(sr,rnd){ const d=2.1, n=Math.round(sr*d)+1;
-    const wan=normalize(lp(lp(noise(n,rnd),sr,5),sr,5),1);      // 高さの不規則なふらつき
-    const flu=normalize(lp(lp(noise(n,rnd),sr,70),sr,70),1);    // ざらつき（毎秒数十回の音量のゆらぎ）
-    const at=t=>Math.min(n-1,Math.round(t*sr));
-    const f0=t=>{ const f = t<.09 ? 620+580*Math.pow(t/.09,.7)
-                         : t<1.45 ? 1200-110*(t-.09)/1.36
-                         : 1090-520*Math.pow((t-1.45)/.65,1.6);
-      return f*(1+.04*wan[at(t)]); };
-    const x=voice(sr,rnd,{dur:d, f0, vow:[[0,"i"],[.08,"a"],[1.5,"a"],[2.1,"o"]], breath:.5, vib:[0,0],
-      rough:.22, jitter:.025, fmul:1.15, bw:1.8,
-      amp:t=>envAR(t,d,.03,.7)*(1+.4*flu[at(t)])});
-    normalize(x,1);
-    for(let i=0;i<x.length;i++) x[i]=Math.tanh(2.4*x[i])/Math.tanh(2.4);   // のどを締めた、割れぎみの硬い音
-    return hp(x,sr,300); },
-  /* 「返せ！！」女の低い声でどなる。か・え・せ の「え」と「せ」を強く */
-  kaese(sr,rnd){ return shout(sr,rnd,[["k","a",.17],["","e",.17],["s","e",.5]],{lo:200,hi:265}); },
+      vow:[[0,"o"],[.07,"a"],[.35,"a"],[.5,"u"]], breath:.3, vib:[6,50], rough:.12, bw:1.2,
+      amp:t=>envAR(t,d,.05,.16)}); },
   /* ドアをはげしくたたく（ドン！ドン！ドン！…）同じ間隔・同じ強さで14回 */
   bangHard(sr,rnd){ const step=.21, cnt=14, x=arr(sr,step*cnt+.5);
     for(let k=0;k<cnt;k++) knock(x,sr,rnd,k*step+(rnd()-.5)*.006,{s:.9+rnd()*.08});
     return x; },
-  /* 近づく足音（だんだん大きく） */
-  steps(sr,rnd){ const x=arr(sr,5.0);
-    for(let k=0;k<6;k++){ const t=k*.78+(rnd()-.5)*.05, s=.3+k*.14;
-      knock(x,sr,rnd,t,{s,body:52,slap:.35,rattle:.1}); knock(x,sr,rnd,t+.09,{s:s*.4,body:75,slap:.5,rattle:0}); }
-    return x; },
-  /* ささやき「たすけて…」 */
-  whisper(sr,rnd){ return whisperWord(sr,rnd,[["t","a",.30],["s","u",.27],["k","e",.30],["t","e",.80]]); },
   /* ささやき「わすれもの…」 */
   wasuremono(sr,rnd){ return whisperWord(sr,rnd,[["w","a",.30],["s","u",.25],["r","e",.26],["m","o",.28],["n","o",.80]]); },
-  /* ささやき「みつけた…」 */
-  mitsuketa(sr,rnd){ return whisperWord(sr,rnd,[["m","i",.28],["ts","u",.25],["k","e",.28],["t","a",.80]]); },
+  /* ささやき「みつけて…」 */
+  mitsukete(sr,rnd){ return whisperWord(sr,rnd,[["m","i",.28],["ts","u",.25],["k","e",.28],["t","e",.80]]); },
 };
 
-const PADS = [
-  {id:"moanLow", name:"うめき声\n（ひくい）",  c:"#6a1414", kind:"a", auto:true},
-  {id:"moanHigh",name:"うめき声\n（なげき）",  c:"#6a1414", kind:"a", auto:true},
-  {id:"scream",  name:"悲鳴",                 c:"#6a1414", kind:"s", auto:true},
-  {id:"kaese",   name:"「返せ！！」",           c:"#6a1414", kind:"s", auto:true},
-  {id:"wasuremono",name:"ささやき\n「わすれもの」", c:"#202a44", kind:"a", auto:true},
-  {id:"bangHard",name:"ドアを\nはげしくたたく", c:"#4a321e", kind:"a", auto:true},
-  {id:"steps",   name:"近づく足音",            c:"#202a44", kind:"a", auto:true},
-  {id:"whisper", name:"ささやき\n「たすけて」", c:"#202a44", kind:"a", auto:true},
-  {id:"kaere",   name:"「帰れ！」",             c:"#6a1414", kind:"s", auto:true},
-  {id:"mitsuketa",name:"ささやき\n「みつけた」", c:"#202a44", kind:"a", auto:true},
+const PADS = [   // seed：乱数の種。消したパッドがあっても、残った音が前と同じ波形になるように固定
+  {id:"moanLow", name:"うめき声\n（ひくい）",  c:"#6a1414", kind:"a", auto:true, seed:0},
+  {id:"moanHigh",name:"うめき声\n（なげき）",  c:"#6a1414", kind:"a", auto:true, seed:1},
+  {id:"kaere",   name:"「帰れ！」",             c:"#6a1414", kind:"s", auto:true, seed:8},
+  {id:"wasuremono",name:"ささやき\n「わすれもの」", c:"#202a44", kind:"a", auto:true, seed:4},
+  {id:"mitsukete",name:"ささやき\n「みつけて」", c:"#202a44", kind:"a", auto:true, seed:9},
+  {id:"bangHard",name:"ドアを\nはげしくたたく", c:"#4a321e", kind:"a", auto:true, seed:5},
 ];
 /* ============ 録音した声（合成ではない）============
    「帰れ！」は、剛さんが用意した動画（grok_video_2026-11-04-19-14-27.mp4）の声を使う。
@@ -351,7 +294,7 @@ function wavAt(b64,sr){
   return x;
 }
 function renderPad(id,sr,variant){
-  const idx=PADS.findIndex(p=>p.id===id), takes=SAMPLE_WAV[id];
+  const idx=PADS.find(p=>p.id===id).seed, takes=SAMPLE_WAV[id];
   const x=takes ? wavAt(takes[(variant||0)%takes.length],sr) : SYNTH[id](sr,mulberry32(1234+idx*7919+(variant||0)*104729));
   return normalize(fadeEdges(x,sr,.001,.02),.9);
 }
@@ -477,7 +420,7 @@ function autoTick(){
 function setAuto(on){ autoOn=on; if(on){ ensureCtx(); keepAwake(); scheduleAuto("a"); scheduleAuto("s"); } renderAuto(); }
 
 /* ============ 保存（ブラウザの中だけ）============ */
-const LS_KEY="kyouiku-obake-v6";
+const LS_KEY="kyouiku-obake-v7";
 function saveSettings(){
   try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,freqMul,
     pads:pads.map(p=>({vol:p.vol,pitch:p.pitch,auto:p.auto})), bgms:bgms.map(b=>({id:b.id,vol:b.vol}))})); }catch(e){}
