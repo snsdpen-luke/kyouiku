@@ -127,7 +127,7 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 
 <script>
 "use strict";
-const VER = "2026-11-05e";
+const VER = "2026-11-05f";
 const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD","Digit1","Digit2","Digit3","Digit4","Digit5","Digit6"];   // ふつうの効果音（3×2）と、右のクライマックス①〜⑥とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
@@ -281,14 +281,14 @@ const PADS = [   // seed：乱数の種。消したパッドがあっても、�
   {id:"wasuremono",name:"ささやき\n「わすれもの」", c:"#202a44", kind:"a", auto:true, seed:4},
   {id:"mitsukete",name:"ささやき\n「みつけて」", c:"#202a44", kind:"a", auto:true, seed:9},
   {id:"bangHard",name:"ドアを\nはげしくたたく", c:"#4a321e", kind:"a", auto:true, seed:5},
-  /* ミッションのラストで流すセリフ（剛さんの録音を、セリフの間の無音で6つに分けた）。自動おどかしには出さない（★なし）。
+  /* ミッションのラストで流すセリフ（剛さんの録音を、セリフの間の無音で6つに分けた）。名前はセリフそのもの（剛さんが聞いて書き起こした）。自動おどかしには出さない（★なし）。
      ほかの音が重なっても途中で切らない。key は数字キー 1〜6 */
-  {id:"climax1", name:"クライマックス\n①", c:"#5a1450", kind:"s", auto:false, seed:10, big:true},
-  {id:"climax2", name:"クライマックス\n②", c:"#5a1450", kind:"s", auto:false, seed:11, big:true},
-  {id:"climax3", name:"クライマックス\n③", c:"#5a1450", kind:"s", auto:false, seed:12, big:true},
-  {id:"climax4", name:"クライマックス\n④", c:"#5a1450", kind:"s", auto:false, seed:13, big:true},
-  {id:"climax5", name:"クライマックス\n⑤", c:"#5a1450", kind:"s", auto:false, seed:14, big:true},
-  {id:"climax6", name:"クライマックス\n⑥", c:"#5a1450", kind:"s", auto:false, seed:15, big:true},
+  {id:"climax1", name:"「ねえ、わすれもの\nみつかった？」", c:"#5a1450", kind:"s", auto:false, seed:10, big:true},
+  {id:"climax2", name:"「まだ？」", c:"#5a1450", kind:"s", auto:false, seed:11, big:true},
+  {id:"climax3", name:"「みつから\nないの？」", c:"#5a1450", kind:"s", auto:false, seed:12, big:true},
+  {id:"climax4", name:"「ねえ、早く\nみつけて」", c:"#5a1450", kind:"s", auto:false, seed:13, big:true},
+  {id:"climax5", name:"「まだなの？\nねえ早く」", c:"#5a1450", kind:"s", auto:false, seed:14, big:true},
+  {id:"climax6", name:"「早くしないと」", c:"#5a1450", kind:"s", auto:false, seed:15, big:true},
 ];
 /* ============ 録音した声（合成ではない）============
    「帰れ！」は、剛さんが用意した動画（grok_video_2026-11-04-19-14-27.mp4）の声を使う。
