@@ -112,7 +112,6 @@ canvas{width:100%;height:70px;background:#060507;border-radius:8px;display:block
     </div>
     <h2>全体</h2>
     <div class="row"><label>全体</label><input type="range" id="mVol" min="0" max="100" step="5"><span class="val" id="vMVol"></span></div>
-    <div class="row"><label>ひびき</label><input type="range" id="mRev" min="0" max="100" step="5"><span class="val" id="vMRev"></span></div>
     <div class="btns">
       <button class="btn" id="stopSfx">■ 効果音だけ止める</button>
       <button class="btn" id="stopAll">■ 全部止める（BGMも）</button>
@@ -134,7 +133,7 @@ canvas{width:100%;height:70px;background:#060507;border-radius:8px;display:block
 
 <script>
 "use strict";
-const VER = "2026-11-04b";
+const VER = "2026-11-04c";
 const KEYS = ["Digit1","Digit2","Digit3","Digit4","KeyQ","KeyW","KeyE","KeyR",
               "KeyA","KeyS","KeyD","KeyF","KeyZ","KeyX","KeyC","KeyV"];
 const BGM_KEYS = ["Digit5","Digit6","Digit7","Digit8","Digit9"];
@@ -452,11 +451,11 @@ function renderBgm(id,sr){ if(!BGM_SYNTH[id]) return null; const idx=BGMS.findIn
 /* ============ 状態 ============ */
 const pads = PADS.map((p,i)=>({i,id:p.id,name:p.name,c:p.c,kind:p.kind,auto:p.auto,vol:100,pitch:0,bufs:[],last:-1}));
 const bgms = BGMS.map((b,i)=>({i,id:b.id,name:b.name,file:!!b.file,vol:b.vol,on:false,ab:null,src:null,g:null}));
-let sel=0, masterVol=85, reverb=35, autoOn=false, freqMul=1, autoNext={a:0,s:0};
+let sel=0, masterVol=85, autoOn=false, freqMul=1, autoNext={a:0,s:0};
 const $ = id => document.getElementById(id);
 
 /* ============ 音を鳴らす ============ */
-let ctx=null, master=null, bus=null, wet=null;
+let ctx=null, master=null, bus=null;
 const active=new Set();
 function ensureCtx(){
   if(ctx){ if(ctx.state==="suspended") ctx.resume(); return ctx; }
@@ -471,18 +470,12 @@ function ensureCtx(){
   for(let i=0;i<N;i++){ const v=i/(N-1)*2-1; curve[i]=Math.abs(v)<.8 ? v : Math.sign(v)*(.8+.2*Math.tanh((Math.abs(v)-.8)/.2)); }
   shaper.curve=curve; shaper.oversample="2x";
   master.connect(comp); comp.connect(shaper); shaper.connect(ctx.destination);
-  bus=ctx.createGain(); bus.connect(master);       // 直接の音
-  const conv=ctx.createConvolver(); conv.buffer=makeIR(ctx); bus.connect(conv);
-  wet=ctx.createGain(); wet.gain.value=reverb/100*1.2; conv.connect(wet); wet.connect(master);  // ひびき（広い廊下のような残響）
+  bus=ctx.createGain(); bus.connect(master);       // 効果音と BGM はここに集まる（エコー・残響はかけない）
   decodeBed();
   for(const b of bgms) if(b.on) startBgm(b);
   setTimeout(prerender,200);
   return ctx;
 }
-function makeIR(c){ const sr=c.sampleRate, n=Math.round(sr*2.8), ir=c.createBuffer(2,n,sr), rnd=mulberry32(99);
-  for(let ch=0;ch<2;ch++){ const d=ir.getChannelData(ch); let y=0;
-    for(let i=0;i<n;i++){ const t=i/sr; y+=.5*((rnd()*2-1)-y); d[i]=y*Math.exp(-t*2.4)*Math.min(1,t/.01); } }
-  return ir; }
 function toBuffer(x,sr){ const ab=ctx.createBuffer(1,x.length,sr); ab.copyToChannel(x,0); return ab; }
 function padBuffer(p,v){ return p.bufs[v] || (p.bufs[v]=toBuffer(renderPad(p.id,ctx.sampleRate,v),ctx.sampleRate)); }
 function bgmBuffer(b){ if(b.file) return b.ab; return b.ab || (b.ab=toBuffer(renderBgm(b.id,ctx.sampleRate),ctx.sampleRate)); }
@@ -561,13 +554,12 @@ function setAuto(on){ autoOn=on; if(on){ ensureCtx(); keepAwake(); scheduleAuto(
 /* ============ 保存（ブラウザの中だけ）============ */
 const LS_KEY="kyouiku-obake-v2";
 function saveSettings(){
-  try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,reverb,freqMul,
+  try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,freqMul,
     pads:pads.map(p=>({vol:p.vol,pitch:p.pitch,auto:p.auto})), bgms:bgms.map(b=>({id:b.id,vol:b.vol}))})); }catch(e){}
 }
 function loadSettings(){
   try{ const s=JSON.parse(localStorage.getItem(LS_KEY)||"null"); if(!s) return;
     if(typeof s.masterVol==="number") masterVol=s.masterVol;
-    if(typeof s.reverb==="number") reverb=s.reverb;
     if(typeof s.freqMul==="number") freqMul=s.freqMul;
     (s.pads||[]).forEach((q,i)=>{ const p=pads[i]; if(!p||!q) return;
       if(typeof q.vol==="number") p.vol=q.vol; if(typeof q.pitch==="number") p.pitch=q.pitch; if(typeof q.auto==="boolean") p.auto=q.auto; });
@@ -618,7 +610,6 @@ function renderPanel(){
   $("pAuto").classList.toggle("on",p.auto);
   $("pAuto").textContent=p.auto?"★ 自動おどかしに入っている":"☆ 自動おどかしに入れる";
   $("mVol").value=masterVol; $("vMVol").textContent=masterVol+"%";
-  $("mRev").value=reverb; $("vMRev").textContent=reverb+"%";
   document.querySelectorAll("#freq button").forEach(b=>b.classList.toggle("sel",+b.dataset.f===freqMul));
   drawWave(x,p.c);
 }
@@ -652,7 +643,6 @@ function bindPanel(){
   $("pPlay").onclick=()=>playPad(sel);
   $("pAuto").onclick=()=>{ pads[sel].auto=!pads[sel].auto; renderPads(); renderPanel(); renderAuto(); saveSettings(); };
   $("mVol").oninput=e=>{ masterVol=+e.target.value; if(master) master.gain.value=masterVol/100; renderPanel(); saveSettings(); };
-  $("mRev").oninput=e=>{ reverb=+e.target.value; if(wet) wet.gain.value=reverb/100*1.2; renderPanel(); saveSettings(); };
   document.querySelectorAll("#freq button").forEach(b=>b.onclick=()=>{ freqMul=+b.dataset.f;
     if(autoOn){ scheduleAuto("a"); scheduleAuto("s"); } renderPanel(); renderAuto(); saveSettings(); });
   $("autoBtn").onclick=()=>setAuto(!autoOn);

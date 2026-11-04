@@ -15,6 +15,7 @@ let fail=0;
 const ok=(cond,msg)=>{ if(!cond){fail++;console.log("  ✗ "+msg);} else console.log("  ✓ "+msg); };
 const S=w.OBAKE;
 ok(!!S,"window.OBAKE（検証用の窓口）がある");
+ok(!/createConvolver|createDelay/.test(src)&&!d.getElementById("mRev"),"エコー・残響をかけていない（剛さんの指定）");
 ok(!/\bconfirm\(|\balert\(/.test(src),"confirm / alert を使っていない（Classroom のサンドボックスで動かない）");
 
 console.log("【A】パッド・BGM・キー");
