@@ -32,7 +32,10 @@ ok(S.BGMS.length===5&&S.BGMS.filter(b=>!b.file).every(b=>typeof S.BGM_SYNTH[b.id
   const n=(raw.length-44)>>1, x=new Float64Array(n); for(let i=0;i<n;i++) x[i]=raw.readInt16LE(44+2*i)/32768;
   const lv=f=>{ let re=0,im=0; for(let i=0;i<n;i++){ const w=.5-.5*Math.cos(2*Math.PI*i/n); re+=x[i]*w*Math.cos(2*Math.PI*f*i/sr); im+=x[i]*w*Math.sin(2*Math.PI*f*i/sr); } return 20*Math.log10(Math.hypot(re,im)/n*4+1e-12); };
   const bz=lv(1894.95), nb=(lv(1880)+lv(1910))/2;
-  ok(bz<nb+6,"動画の BGM にブザー音（1895Hz）が残っていない（"+bz.toFixed(0)+" dB、横の周波数 "+nb.toFixed(0)+" dB）"); }
+  ok(bz<nb+6,"動画の BGM にブザー音（1895Hz）が残っていない（"+bz.toFixed(0)+" dB、横の周波数 "+nb.toFixed(0)+" dB）");
+  /* ブザー音（129.8Hz の「ブー」）が消えている：いちばん強かった 2倍音 258.4Hz が、横の周波数と変わらない */
+  const b2=lv(258.4), n2=(lv(238)+lv(279))/2;
+  ok(b2<n2+6,"動画の BGM にブザー音（129.8Hz とその倍音）が残っていない（258Hz "+b2.toFixed(0)+" dB、横 "+n2.toFixed(0)+" dB）"); }
 ok(S.MAX_VOICES>=4&&S.MAX_VOICES<=8,"同時に鳴らす効果音に上限がある（"+S.MAX_VOICES+"）");
 ok(S.PADS.every(p=>p.kind==="a"||p.kind==="s")&&S.PADS.some(p=>p.kind==="s"&&p.auto)&&S.PADS.some(p=>p.kind==="a"&&p.auto),"効果音は「気配」と「不意打ち」に分かれ、どちらにも★の音がある");
 ok(new Set([...S.KEYS,...S.BGM_KEYS]).size===13&&[...S.KEYS,...S.BGM_KEYS].every(k=>/^(Digit|Key)/.test(k)),"キーは13個・重複なし・e.code で指定");
