@@ -13,136 +13,111 @@
   --text:#e6e2da; --sub:#8c8380; --red:#c21414; --accent:#e57373;
 }
 *{box-sizing:border-box}
+/* タブレット1画面に収める：画面の高さ（100dvh）を、上の帯・操作の帯・パッドで分け合う。はみ出さないので、スクロールしない */
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
   font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Meiryo",sans-serif;
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;overflow:hidden}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh}
 button{font:inherit;color:inherit}
-header{display:flex;align-items:center;gap:12px;padding:8px 16px;height:60px;border-bottom:1px solid var(--line);background:var(--panel)}
-header h1{font-size:30px;margin:0;white-space:nowrap;letter-spacing:.08em;font-weight:400;
+header{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:4px 10px;height:46px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:24px;margin:0;white-space:nowrap;letter-spacing:.08em;font-weight:400;
   font-family:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;color:var(--red);text-shadow:0 0 18px rgba(143,11,11,.55),2px 3px 0 #000}
-header .sub{font-size:13px;color:var(--sub);white-space:nowrap;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
 header .ver{font-size:11px;color:var(--sub);white-space:nowrap}
-.stopbig{margin-left:auto;border:2px solid var(--red);background:#3a0d0d;border-radius:10px;padding:7px 16px;font-size:16px;font-weight:800;cursor:pointer;white-space:nowrap}
+header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.stopbig{margin-left:auto;flex-shrink:0;border:2px solid var(--red);background:#3a0d0d;border-radius:9px;padding:5px 14px;font-size:15px;font-weight:800;cursor:pointer;white-space:nowrap}
 .stopbig:active{filter:brightness(1.4)}
-.btn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 12px;font-size:15px;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;white-space:nowrap}
 .btn:active{filter:brightness(1.3)}
 .btn.on{border-color:var(--red);background:#8f0b0b;box-shadow:0 0 14px rgba(194,20,20,.45)}
-.freq{display:flex;gap:6px}
-.freq button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;padding:6px 0;font-size:14px;cursor:pointer}
-.freq button.sel{color:var(--text);border-color:var(--red)}
 
-main{display:flex;gap:16px;padding:12px 16px;height:calc(100% - 60px)}
-.left{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
-
-/* BGM：1つだけ。ON / OFF が遠くからでも分かるように、大きな帯にする */
-.bgmbar{display:flex;align-items:center;gap:14px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:8px 12px}
+/* 操作の帯：BGM・全体の音量・自動おどかし・効果音を止める を1段（せまい画面では2段）に */
+.bar{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 10px}
+.grp{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px 8px;min-height:46px}
+.bgmbar{border-width:2px}
 .bgmbar.on{border-color:var(--red);animation:glow 1.6s infinite alternate}
-@keyframes glow{from{box-shadow:0 0 0 rgba(198,40,40,0)}to{box-shadow:0 0 18px rgba(198,40,40,.75)}}
-.bgmbtn{flex:1;display:flex;align-items:center;gap:12px;border:none;background:none;cursor:pointer;text-align:left;padding:4px}
-.lamp{width:26px;height:26px;border-radius:50%;background:#2a2222;border:2px solid #4a3a3a;flex-shrink:0}
-.bgmbar.on .lamp{background:#ff3030;border-color:#ffb4b4;box-shadow:0 0 14px #ff3030}
-.bgmtx{display:flex;flex-direction:column;line-height:1.25}
-.bgmtx .t1{font-size:13px;color:var(--sub)}
-.bgmtx .t2{font-size:clamp(17px,2.2vw,22px);font-weight:800}
-.bgmstate{font-size:clamp(16px,2vw,20px);font-weight:800;padding:6px 14px;border-radius:10px;border:2px solid #4a3a3a;color:var(--sub);white-space:nowrap}
+@keyframes glow{from{box-shadow:0 0 0 rgba(198,40,40,0)}to{box-shadow:0 0 16px rgba(198,40,40,.75)}}
+.bgmbtn{display:flex;align-items:center;gap:8px;border:none;background:none;cursor:pointer;text-align:left;padding:2px}
+.lamp{width:22px;height:22px;border-radius:50%;background:#2a2222;border:2px solid #4a3a3a;flex-shrink:0}
+.bgmbar.on .lamp{background:#ff3030;border-color:#ffb4b4;box-shadow:0 0 12px #ff3030}
+.bgmtx{display:flex;flex-direction:column;line-height:1.15}
+.bgmtx .t1{font-size:11px;color:var(--sub)}
+.bgmtx .t2{font-size:16px;font-weight:800;white-space:nowrap}
+.bgmstate{font-size:15px;font-weight:800;padding:4px 10px;border-radius:8px;border:2px solid #4a3a3a;color:var(--sub);white-space:nowrap}
 .bgmbar.on .bgmstate{color:#fff;background:#8f0b0b;border-color:var(--red)}
-.bgmvol{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);width:220px}
-.bgmvol input{flex:1;accent-color:var(--red);height:28px}
+.sl{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);white-space:nowrap}
+.sl input{width:110px;accent-color:var(--red);height:26px;margin:0}
+.sl b{width:36px;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.freq{display:flex;gap:4px}
+.freq button{border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer}
+.freq button.sel{color:var(--text);border-color:var(--red)}
+.autost{font-size:12px;color:var(--sub);white-space:nowrap}
+.autost.on{color:#ffd54f}
 
 /* 効果音：パッドの下に、その音だけの音量・高さ・★ */
-.pads{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px;min-height:0}
-.cell{min-width:0;display:flex;flex-direction:column;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;min-height:0}
-.pad{flex:1;min-height:70px;position:relative;border:none;border-radius:11px;cursor:pointer;touch-action:none;
+.pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:8px;padding:0 10px 10px}
+.cell{min-width:0;min-height:0;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
+.pad{flex:1;min-height:0;position:relative;border:none;border-radius:10px;cursor:pointer;touch-action:none;
   background:linear-gradient(160deg,color-mix(in srgb,var(--c) 85%,#fff 0%),color-mix(in srgb,var(--c) 45%,#000));
-  box-shadow:0 4px 0 color-mix(in srgb,var(--c) 30%,#000),inset 0 1px 0 rgba(255,255,255,.15);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;overflow:hidden;
+  box-shadow:0 3px 0 color-mix(in srgb,var(--c) 30%,#000),inset 0 1px 0 rgba(255,255,255,.15);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;overflow:hidden;
   transition:transform .05s}
-.pad .nm{font-size:clamp(15px,2.2vw,24px);font-weight:800;white-space:pre-line;text-shadow:0 1px 3px rgba(0,0,0,.8);text-align:center;line-height:1.2}
-.pad .ky{position:absolute;left:8px;top:6px;font-size:12px;font-weight:700;opacity:.8;background:rgba(0,0,0,.35);border-radius:4px;padding:0 5px}
-.pad .au{position:absolute;right:8px;top:5px;font-size:13px;display:none;color:#ffd54f}
+.pad .nm{font-size:clamp(14px,2vw,22px);font-weight:800;white-space:pre-line;text-shadow:0 1px 3px rgba(0,0,0,.8);text-align:center;line-height:1.2}
+.pad .ky{position:absolute;left:6px;top:4px;font-size:11px;font-weight:700;opacity:.8;background:rgba(0,0,0,.35);border-radius:4px;padding:0 4px}
+.pad .au{position:absolute;right:6px;top:3px;font-size:12px;display:none;color:#ffd54f}
 .cell.auto .pad .au{display:block}
 .pad.hit{transform:translateY(3px);filter:brightness(1.8);box-shadow:0 1px 0 color-mix(in srgb,var(--c) 30%,#000)}
-.ctl{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--sub)}
-.ctl span{width:26px;flex-shrink:0}
-.ctl input{flex:1;min-width:0;accent-color:var(--red);height:24px;margin:0}
-.ctl b{width:36px;text-align:right;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
-.star{border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;font-size:12px;padding:3px 0;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--sub);height:24px}
+.ctl span{width:24px;flex-shrink:0}
+.ctl input{flex:1;min-width:0;accent-color:var(--red);height:22px;margin:0}
+.ctl b{width:32px;text-align:right;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.star{flex-shrink:0;border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;font-size:11px;padding:2px 5px;cursor:pointer;white-space:nowrap}
 .cell.auto .star{color:#ffd54f;border-color:#6b5a1e}
-
-aside{width:300px;flex-shrink:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;overflow-y:auto}
-aside h2{font-size:13px;color:var(--sub);margin:0;font-weight:600}
-.row{display:flex;align-items:center;gap:8px;font-size:14px}
-.row label{width:56px;color:var(--sub)}
-.row input[type=range]{flex:1;accent-color:var(--red);height:28px}
-.row .val{width:52px;text-align:right;font-variant-numeric:tabular-nums}
-.btns{display:flex;flex-wrap:wrap;gap:8px}
-.autost{font-size:13px;color:var(--sub);min-height:18px}
-.autost.on{color:#ffd54f}
-.keys{font-size:12px;color:var(--sub);line-height:1.6}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000d;color:#fff;padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 
-/* 横幅が足りないときは、右の欄をパッドの下へ回す */
-@media (max-width:1180px){
-  html,body{overflow:auto}
-  main{flex-direction:column;height:auto}
-  .pads{min-height:520px}
-  aside{width:100%}
+/* 縦長（タブレットを縦に持つ）：パッドを2列×5段に */
+@media (orientation:portrait){
+  .pads{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr))}
+  header .keys{display:none}
 }
-@media (max-width:800px),(orientation:portrait){
+/* スマホのような小さい画面だけは、1画面に入りきらないのでスクロールさせる */
+@media (max-height:560px),(max-width:560px){
   html,body{overflow:auto}
-  main{flex-direction:column;height:auto}
-  .pads{grid-template-columns:repeat(2,1fr);grid-template-rows:none}
-  .pad{min-height:110px}
-  .bgmbar{flex-wrap:wrap}
-  .bgmvol{width:100%}
-  aside{width:100%}
-  header h1{font-size:24px}
-  header .ver,header .sub{display:none}
+  body{height:auto}
+  .pads{grid-template-rows:none}
+  .pad{min-height:90px}
 }
 </style>
 </head>
 <body>
 <header>
   <h1>廃校徘徊</h1>
-  <span class="sub">お化け屋敷サンプラー</span>
   <span class="ver" id="ver"></span>
+  <span class="keys">キー：効果音 Q〜T / A〜G　BGM B　効果音を止める Space　全部止める Esc</span>
   <button class="stopbig" id="stopAllTop">■ 全部止める</button>
 </header>
-<main>
-  <div class="left">
-    <div class="bgmbar" id="bgmbar">
-      <button class="bgmbtn" id="bgmBtn"><span class="lamp"></span><span class="bgmtx"><span class="t1">BGM（キー B）</span><span class="t2">不気味な低音</span></span></button>
-      <span class="bgmstate" id="bgmState"></span>
-      <label class="bgmvol">音量<input type="range" id="bgmVol" min="0" max="100" step="5"><b id="vBgm"></b></label>
-    </div>
-    <div class="pads" id="pads"></div>
+<div class="bar">
+  <div class="grp bgmbar" id="bgmbar">
+    <button class="bgmbtn" id="bgmBtn"><span class="lamp"></span><span class="bgmtx"><span class="t1">BGM（キー B）</span><span class="t2">不気味な低音</span></span></button>
+    <span class="bgmstate" id="bgmState"></span>
+    <label class="sl">音量<input type="range" id="bgmVol" min="0" max="100" step="5"><b id="vBgm"></b></label>
   </div>
-  <aside>
-    <h2>全体</h2>
-    <div class="row"><label>全体</label><input type="range" id="mVol" min="0" max="100" step="5"><span class="val" id="vMVol"></span></div>
-    <div class="btns">
-      <button class="btn" id="stopSfx">■ 効果音だけ止める</button>
-      <button class="btn" id="stopAll">■ 全部止める（BGMも）</button>
-    </div>
-    <h2>自動おどかし（おまかせ）</h2>
-    <div class="btns"><button class="btn" id="autoBtn">自動おどかし：OFF</button></div>
+  <div class="grp">
+    <label class="sl">全体<input type="range" id="mVol" min="0" max="100" step="5"><b id="vMVol"></b></label>
+    <button class="btn" id="stopSfx">■ 効果音だけ止める</button>
+  </div>
+  <div class="grp">
+    <button class="btn" id="autoBtn">自動おどかし：OFF</button>
     <div class="freq" id="freq"><button data-f="1.6">少なめ</button><button data-f="1">ふつう</button><button data-f="0.6">多め</button></div>
-    <div class="autost" id="autoSt"></div>
-    <div class="keys">
-      ★の付いた音を、ばらばらの間隔で自動で鳴らします（★は各パッドの下で付け外し）。うめき声などの「気配」と、悲鳴などの「不意打ち」は別々の間隔で鳴ります。左右の向きと高さも毎回少し変わります。<br><br>
-      キーボードでも鳴らせます<br>
-      効果音：<b>Q W E R T / A S D F G</b>（パッドの並びと同じ）<br>
-      BGM の ON / OFF：<b>B</b><br>
-      スペース：効果音だけ止める　Esc：全部止める
-    </div>
-  </aside>
-</main>
+    <span class="autost" id="autoSt"></span>
+  </div>
+</div>
+<div class="pads" id="pads"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-const VER = "2026-11-04k";
+const VER = "2026-11-04l";
 const KEYS = ["KeyQ","KeyW","KeyE","KeyR","KeyT","KeyA","KeyS","KeyD","KeyF","KeyG"];   // パッドの並び（5×2）とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
@@ -298,15 +273,15 @@ function knock(x,sr,rnd,at,o){
 }
 const SYNTH = {
   /* 女のうめき声（低い）「うぅぅおぉぁぁ…」 */
-  moanLow(sr,rnd){ const d=3.4;
+  moanLow(sr,rnd){ const d=1.7;
     return voice(sr,rnd,{dur:d, f0:t=>205+35*Math.sin(Math.PI*t/d)-25*t/d,
-      vow:[[0,"u"],[1.2,"o"],[2.4,"a"],[3.4,"o"]], breath:.45, vib:[5.5,30], rough:.18, bw:1.3,
-      amp:t=>envAR(t,d,.5,1.0)*(1+.18*Math.sin(TAU*3.3*t))}); },
+      vow:[[0,"u"],[.6,"o"],[1.2,"a"],[1.7,"o"]], breath:.45, vib:[5.5,30], rough:.18, bw:1.3,
+      amp:t=>envAR(t,d,.25,.5)*(1+.18*Math.sin(TAU*3.3*t))}); },
   /* 女のうめき声（なげき）「あぁぁぁ…」高く上がって落ちる */
-  moanHigh(sr,rnd){ const d=4.6;
+  moanHigh(sr,rnd){ const d=2.3;
     return voice(sr,rnd,{dur:d, f0:t=>{ const u=t/d; return u<.35 ? 290+150*(u/.35) : 440-200*((u-.35)/.65); },
-      vow:[[0,"o"],[.6,"a"],[3.2,"a"],[4.6,"u"]], breath:.3, vib:[6,50], rough:.12, bw:1.2,
-      amp:t=>envAR(t,d,.4,1.4)*(1+.12*Math.sin(TAU*4.1*t))}); },
+      vow:[[0,"o"],[.3,"a"],[1.6,"a"],[2.3,"u"]], breath:.3, vib:[6,50], rough:.12, bw:1.2,
+      amp:t=>envAR(t,d,.2,.7)*(1+.12*Math.sin(TAU*4.1*t))}); },
   /* 悲鳴「きゃあああ」。本物の悲鳴は、高さが規則正しくゆれず（ビブラートではなく）不規則にふらつき、
      声がざらつき（速い音量のゆらぎ）、息がたくさん混じり、のどを締めた硬い音になる。終わりは息に変わって落ちる */
   scream(sr,rnd){ const d=2.1, n=Math.round(sr*d)+1;
@@ -525,9 +500,9 @@ function buildPads(){
   pads.forEach((p,i)=>{
     const c=document.createElement("div"); c.className="cell";
     c.innerHTML='<button class="pad"><span class="ky">'+keyLabel(KEYS[i])+'</span><span class="au">★</span><span class="nm"></span></button>'
-      +'<label class="ctl"><span>音量</span><input type="range" class="vol" min="0" max="150" step="5"><b class="vv"></b></label>'
-      +'<label class="ctl"><span>高さ</span><input type="range" class="pit" min="-12" max="12" step="1"><b class="pv"></b></label>'
-      +'<button class="star"></button>';
+      +'<div class="ctl"><span>音量</span><input type="range" class="vol" min="0" max="150" step="5" aria-label="音量"><b class="vv"></b></div>'
+      +'<div class="ctl"><span>高さ</span><input type="range" class="pit" min="-12" max="12" step="1" aria-label="高さ"><b class="pv"></b>'
+      +'<button class="star" title="自動おどかしで鳴らすかどうか"></button></div>';
     const b=c.querySelector(".pad"); b.style.setProperty("--c",p.c);
     b.addEventListener("pointerdown",e=>{ e.preventDefault(); hitPad(i); });
     b.addEventListener("contextmenu",e=>e.preventDefault());
@@ -548,7 +523,7 @@ function renderPads(){
     c.querySelector(".nm").textContent=p.name;
     c.querySelector(".vol").value=p.vol; c.querySelector(".vv").textContent=p.vol+"%";
     c.querySelector(".pit").value=p.pitch; c.querySelector(".pv").textContent=fmtPitch(p.pitch);
-    c.querySelector(".star").textContent=p.auto?"★ 自動おどかしに入っている":"☆ 自動おどかしに入れる";
+    c.querySelector(".star").textContent=p.auto?"★自動":"☆自動";
     c.classList.toggle("auto",p.auto); });
 }
 function renderBgms(){ const b=bgms[0];
@@ -565,8 +540,8 @@ function renderAuto(){
   const st=$("autoSt"), na=pads.filter(p=>p.auto&&p.kind==="a").length, ns=pads.filter(p=>p.auto&&p.kind==="s").length;
   const left=k=>Math.max(0,Math.ceil((autoNext[k]-Date.now())/1000));
   st.classList.toggle("on",autoOn);
-  st.textContent = !autoOn ? "★の音（気配 "+na+"個・不意打ち "+ns+"個）を自動で鳴らします"
-    : na+ns===0 ? "★の付いた音がありません。パッドの下の「自動おどかしに入れる」を押してください"
+  st.textContent = !autoOn ? "★の音（気配 "+na+"・不意打ち "+ns+"）をばらばらに鳴らす"
+    : na+ns===0 ? "★の付いた音がありません（パッドの下の ☆自動 を押す）"
     : [na?"気配 あと "+left("a")+" 秒":"", ns?"不意打ち あと "+left("s")+" 秒":""].filter(Boolean).join("　");
 }
 let toastT=0;
@@ -578,7 +553,6 @@ function bindPanel(){
     if(autoOn){ scheduleAuto("a"); scheduleAuto("s"); } renderPanel(); renderAuto(); saveSettings(); });
   $("autoBtn").onclick=()=>setAuto(!autoOn);
   $("stopSfx").onclick=stopSfx;
-  $("stopAll").onclick=stopAll;
   $("stopAllTop").onclick=stopAll;
   document.addEventListener("keydown",e=>{
     if(e.repeat) return;

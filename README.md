@@ -91,15 +91,15 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `ラダー工房.html` | 引き継ぎ前の現行版。授業で使ってきたもの。無傷で温存 |
 | `regression.js` | ラダー工房のリグレッション（jsdom・85項目） |
 | `regression-fukusen.js` | 複線図れんしゅうのリグレッション（jsdom） |
-| `regression-ginou.js` | 技能試験 筆記トレーニングのリグレッション（jsdom・68項目。図示の正解の刻印が令和8年度の公表の解答と同じかも見る） |
+| `regression-ginou.js` | 技能試験 筆記トレーニングのリグレッション（jsdom・69項目。図示の正解の刻印が令和8年度の公表の解答と同じかも見る） |
 | `HANDOFF-技能筆記練習.md` | **技能試験 筆記トレーニングの引き継ぎ書。問題の足し方・採点のしくみ・根拠** |
 | `fukusen-sheet.gs` | 複線図れんしゅうの記録を先生の Google スプレッドシートにためる Apps Script（使い方はファイルの先頭） |
 | `parking3-report.gs` | 自動運転への階段の「学びのレポート」を先生の Google スプレッドシートに1人1行ためる Apps Script（使い方はファイルの先頭） |
 | `regression-shinro.js` | 進路シミュレーションのリグレッション（jsdom・121項目） |
-| `regression-uma.js` | 翔陽ダービーのリグレッション（jsdom・73項目。速度・衝突・難易度の計算） |
-| `regression-mart.js` | 翔陽ミニマートのリグレッション（jsdom・73項目。拾う置く・客・建設・保存・自動操縦で全部建つまでの時間） |
-| `regression-obake.js` | お化け屋敷サンプラーのリグレッション（jsdom・73項目。効果音の合成・声の高さ・BGM のつなぎ目・録音・操作） |
-| `regression-sampler.js` | こえサンプラーのリグレッション（jsdom・73項目。音の合成・録音した声の加工・操作） |
+| `regression-uma.js` | 翔陽ダービーのリグレッション（jsdom・69項目。速度・衝突・難易度の計算） |
+| `regression-mart.js` | 翔陽ミニマートのリグレッション（jsdom・69項目。拾う置く・客・建設・保存・自動操縦で全部建つまでの時間） |
+| `regression-obake.js` | お化け屋敷サンプラーのリグレッション（jsdom・69項目。効果音の合成・声の高さ・BGM のつなぎ目・録音・操作） |
+| `regression-sampler.js` | こえサンプラーのリグレッション（jsdom・69項目。音の合成・録音した声の加工・操作） |
 | `build.py` | 本体8つから配布物を作る |
 | `HANDOFF.md` | **ラダー工房の引き継ぎ書。仕様・設計判断・禁止事項の正典。作業前に必ず読む** |
 | `HANDOFF-複線図練習.md` | **複線図れんしゅうの引き継ぎ書。問題データの足し方もここ** |
@@ -113,12 +113,12 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 git clone https://github.com/snsdpen-luke/kyouiku.git
 cd kyouiku
 npm install jsdom          # 検証に使う。これだけ
-node regression.js ラダー工房v2.html              # 68項目すべて合格すればOK
-node regression-shinro.js 進路シミュレーション.html       # 73項目すべて合格すればOK
-node regression-uma.js 馬レース.html                   # 73項目すべて合格すればOK
-node regression-mart.js 翔陽ミニマート.html              # 73項目すべて合格すればOK
-node regression-sampler.js サンプラー.html             # 73項目すべて合格すればOK
-node regression-obake.js お化け屋敷サンプラー.html      # 73項目すべて合格すればOK
+node regression.js ラダー工房v2.html              # 69項目すべて合格すればOK
+node regression-shinro.js 進路シミュレーション.html       # 69項目すべて合格すればOK
+node regression-uma.js 馬レース.html                   # 69項目すべて合格すればOK
+node regression-mart.js 翔陽ミニマート.html              # 69項目すべて合格すればOK
+node regression-sampler.js サンプラー.html             # 69項目すべて合格すればOK
+node regression-obake.js お化け屋敷サンプラー.html      # 69項目すべて合格すればOK
 node regression-fukusen.js 複線図練習.html          # 「すべて合格」と出ればOK
 ```
 

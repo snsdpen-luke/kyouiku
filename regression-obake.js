@@ -50,6 +50,8 @@ for(const sr of [48000,44100]){
 }
 { const x=S.renderPad("kaere",48000,0), y=S.renderPad("kaere",44100,0);
   ok(Math.abs(x.length/48000-y.length/44100)<.001&&x.length/48000>1.4&&x.length/48000<2.2,"「帰れ！」の録音は約"+(x.length/48000).toFixed(2)+"秒・どの速さに直しても長さが同じ"); }
+{ const a=S.renderPad("moanLow",48000,0).length/48000, b=S.renderPad("moanHigh",48000,0).length/48000;
+  ok(Math.abs(a-1.7)<.05&&Math.abs(b-2.3)<.05,"うめき声は短く（ひくい "+a.toFixed(1)+"秒・なげき "+b.toFixed(1)+"秒。前の半分）"); }
 { const a=S.renderPad("bangHard",48000,1), b=S.renderPad("bangHard",48000,1), c=S.renderPad("bangHard",48000,2);
   ok(a.every((v,i)=>v===b[i]),"同じ番号の波形は毎回まったく同じ（乱数の種が固定）");
   ok(a.length!==c.length||a.some((v,i)=>v!==c[i]),"番号がちがえば波形もちがう（くり返しが単調にならない）"); }
@@ -61,7 +63,7 @@ function pitchOf(x,sr,from,to){
     const r=s/Math.sqrt(e1*e2+1e-12); if(r>best){ best=r; bl=L; } }
   return sr/bl; }
 { const sr=48000, m=S.renderPad("moanLow",sr,0), sc=S.renderPad("scream",sr,0);
-  const fm=pitchOf(m,sr,1.4,1.6), fs=pitchOf(sc,sr,.6,.8);
+  const fm=pitchOf(m,sr,.7,.9), fs=pitchOf(sc,sr,.6,.8);
   ok(fm>150&&fm<300,"うめき声（ひくい）は女の低い声の高さ（"+Math.round(fm)+" Hz）");
   ok(fs>800,"悲鳴は高い（"+Math.round(fs)+" Hz）");
   for(const id of ["kaese"]){ const x=S.renderPad(id,sr,0), f=pitchOf(x,sr,.6,.72);   // 最後の「せ」「れ」の母音のところ
