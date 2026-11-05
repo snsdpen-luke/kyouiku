@@ -58,8 +58,6 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(12,minmax(0,1fr));gap:8px;padding:0 10px 10px}
 .cell{min-width:0;min-height:0;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
 .pad{flex:1;min-height:0;position:relative;border:none;border-radius:10px;cursor:pointer;touch-action:none;
-  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 85%,#fff 0%),color-mix(in srgb,var(--c) 45%,#000));
-  box-shadow:0 3px 0 color-mix(in srgb,var(--c) 30%,#000),inset 0 1px 0 rgba(255,255,255,.15);
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;overflow:hidden;
   transition:transform .05s}
 .pad .nm{font-size:clamp(14px,2vw,22px);font-weight:800;white-space:pre-line;text-shadow:0 1px 3px rgba(0,0,0,.8);text-align:center;line-height:1.2}
@@ -82,82 +80,49 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000d;color:#fff;padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 
-/* ============ 見た目：古い校舎の夜。黒地にざらつき・走査線・四隅の暗がり、赤い光 ============ */
-html,body{background:#060404}
-body{position:relative;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(120,10,10,.22),transparent 70%),
-    radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.85) 100%),
-    #070505}
-/* ざらつき（SVG の雑音）と走査線を画面全体に重ねる。押す操作のじゃまをしない */
-body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50}
-body::before{opacity:.10;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-body::after{background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.18) 2px 3px)}
-
-header{background:linear-gradient(to bottom,#120a0a,#0a0606);border-bottom:1px solid #3a1010;box-shadow:0 1px 0 #000,0 6px 18px rgba(0,0,0,.6)}
-header h1{font-size:28px;color:#e01818;letter-spacing:.14em;
-  text-shadow:0 0 6px rgba(255,40,40,.65),0 0 22px rgba(200,0,0,.55),2px 3px 0 #000;animation:flick 7s infinite}
+/* ============ 見た目：グラデーションを使わない、黒と赤の平たい色だけ ============ */
+html,body{background:#0a0808}
+header{background:#120c0c;border-bottom:1px solid #3a1414}
+header h1{font-size:28px;color:#e01818;letter-spacing:.14em;text-shadow:2px 2px 0 #000;animation:flick 7s infinite}
 /* 題字が、切れかけた蛍光灯のように、ときどきまたたく */
 @keyframes flick{0%,91%,100%{opacity:1}92%{opacity:.35}93%{opacity:1}95%{opacity:.6}96%{opacity:1}}
 header .sub{font-size:10px;letter-spacing:.35em;color:#8a3a3a;white-space:nowrap;font-weight:700}
 header .ver{color:#5e4a48}
 header .keys{color:#6e5e5c}
-.stopbig{border:2px solid #ff3b3b;color:#fff;letter-spacing:.06em;
-  background:repeating-linear-gradient(-45deg,#5a0b0b 0 10px,#3a0606 10px 20px);
-  box-shadow:0 0 14px rgba(255,30,30,.35),inset 0 0 10px rgba(0,0,0,.6);text-shadow:0 1px 2px #000}
-
-.grp{background:linear-gradient(to bottom,rgba(28,18,18,.92),rgba(14,9,9,.92));border:1px solid #2e1c1c;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 4px 12px rgba(0,0,0,.5)}
-.btn{background:#1a1111;border-color:#3a2424}
+.stopbig{border:2px solid #e01818;background:#7a0a0a;color:#fff;letter-spacing:.06em}
+.grp{background:#140e0e;border:1px solid #2e1c1c}
+.btn{background:#1c1313;border-color:#3a2424}
 .bgmtx .t1{letter-spacing:.08em}
-.bgmtx .t2{font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:800;font-size:18px;letter-spacing:.06em}
-.lamp{background:radial-gradient(circle at 35% 35%,#4a2a2a,#1a0e0e)}
-.bgmbar.on .lamp{background:radial-gradient(circle at 35% 35%,#fff,#ff3030 45%,#900 100%);animation:rec 1s infinite alternate}
-@keyframes rec{from{box-shadow:0 0 4px #ff3030}to{box-shadow:0 0 16px #ff3030,0 0 30px rgba(255,48,48,.4)}}
+.bgmtx .t2{font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:800;font-size:18px}
+.bgmbar.on{animation:none;box-shadow:none}
+.lamp{background:#2a1a1a;border-color:#4a3030}
+.bgmbar.on .lamp{background:#ff2a2a;border-color:#ffb4b4;box-shadow:none;animation:rec 1s infinite alternate}
+@keyframes rec{from{opacity:1}to{opacity:.35}}
 
-/* パッドを入れる枠：暗い鉄板 */
-.cell{background:linear-gradient(to bottom,rgba(24,16,16,.9),rgba(10,7,7,.9));border:1px solid #2a1a1a;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 6px 16px rgba(0,0,0,.55)}
-/* パッド：暗い面の下から、その音の色がにじみ出る */
-.pad{border-radius:9px;border:1px solid color-mix(in srgb,var(--c) 70%,#000);
-  background:
-    radial-gradient(ellipse 120% 90% at 50% 115%,color-mix(in srgb,var(--c) 95%,#ff0000 5%),transparent 70%),
-    linear-gradient(to bottom,#1a1212,#0b0808);
-  box-shadow:inset 0 0 26px color-mix(in srgb,var(--c) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.07),0 2px 0 #000;
-  transition:transform .06s,box-shadow .2s}
-.pad::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-  background:linear-gradient(to bottom,rgba(255,255,255,.06),transparent 40%)}
-/* セリフは太い明朝。にじみを弱くして、黒い影でくっきりさせる（筆文字は読みにくかったのでやめた） */
+/* パッドを入れる枠と、パッド：その音の色を暗くした1色でぬる */
+.cell{background:#120c0c;border:1px solid #2a1a1a}
+.pad{border-radius:8px;border:none;background:color-mix(in srgb,var(--c) 75%,#000);box-shadow:none;transition:transform .06s}
+/* セリフは太い明朝・1行。入りきらない長さは fitNames が字を小さくして収める（palt：かぎかっこや句読点を詰める） */
 .pad .nm{font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:800;
-  font-size:clamp(16px,2.3vw,26px);letter-spacing:.02em;color:#fff;
-  text-shadow:0 1px 2px #000,0 2px 6px #000,0 0 14px color-mix(in srgb,var(--c) 70%,#f00)}
-.pad .ky{left:7px;top:6px;font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#d8c8c4;
-  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:0 5px}
-/* 押した瞬間：赤く光り、少しぶれる */
-.pad.hit{transform:translateY(2px) scale(.985);filter:brightness(1.6) saturate(1.3);
-  box-shadow:inset 0 0 40px color-mix(in srgb,var(--c) 90%,#f00),0 0 26px color-mix(in srgb,var(--c) 80%,#f00);animation:shake .13s}
+  white-space:nowrap;font-feature-settings:"palt";letter-spacing:0;color:#fff;text-shadow:0 1px 2px #000;line-height:1.2}
+.pad .ky{left:7px;top:6px;font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#e8dcd8;background:#0008;border-radius:4px;padding:0 5px}
+/* 押した瞬間：明るくなり、少しぶれる */
+.pad.hit{transform:translateY(2px) scale(.985);filter:brightness(1.7);box-shadow:none;animation:shake .13s}
 @keyframes shake{0%{translate:0 0}25%{translate:-2px 1px}50%{translate:2px -1px}75%{translate:-1px 0}100%{translate:0 0}}
 
-/* クライマックス：紫の光がゆっくり脈打つ。右上に CLIMAX の札 */
+/* クライマックス：紫の色だけで見分ける */
 .cell.big{border-color:#4a1a3e}
-.cell.big .pad{border-color:#8a2a70;
-  box-shadow:inset 0 0 30px rgba(200,40,150,.35),0 0 0 1px #000,0 0 14px rgba(190,40,140,.25);animation:pulse 3.2s ease-in-out infinite}
-@keyframes pulse{50%{box-shadow:inset 0 0 40px rgba(220,50,160,.5),0 0 0 1px #000,0 0 22px rgba(210,50,150,.45)}}
-.cell.big .pad.hit{animation:shake .13s}
-.cell.big .pad::before{content:"CLIMAX";position:absolute;right:7px;top:6px;font-size:9px;letter-spacing:.2em;color:#e9a6d6;
-  font-family:ui-monospace,Menlo,Consolas,monospace;border:1px solid rgba(233,166,214,.4);border-radius:3px;padding:0 4px;opacity:.85}
-.cell.big .pad .nm{font-size:clamp(13px,1.5vw,22px);letter-spacing:0;margin-top:8px;text-shadow:0 1px 2px #000,0 2px 6px #000,0 0 14px rgba(230,60,170,.7)}
+.cell.big .pad{box-shadow:none}
 
 /* つまみの周り */
-.ctl .rs,.ctl .st{background:#140d0d;border-color:#3a2626;color:#e8dcd8}
+.ctl .rs,.ctl .st{background:#1a1111;border-color:#3a2626;color:#e8dcd8}
 .ctl .st{color:#ff8a8a}
-input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right,#8a0e0e,#e02020 var(--f),#241818 var(--f));border-color:#3e2828;box-shadow:inset 0 1px 3px #000}
-input[type=range]::-moz-range-track{background:linear-gradient(to right,#8a0e0e,#e02020 var(--f),#241818 var(--f));border-color:#3e2828}
-input[type=range]::-webkit-slider-thumb{background:radial-gradient(circle at 35% 30%,#fff,#d8cccc 60%,#9a8a8a);border-color:#e02020;box-shadow:0 0 8px rgba(255,40,40,.55),0 1px 4px #000}
-input[type=range]::-moz-range-thumb{background:radial-gradient(circle at 35% 30%,#fff,#d8cccc 60%,#9a8a8a);border-color:#e02020}
-/* 動きを減らす設定の人には、またたき・脈打ち・ぶれを出さない */
-@media (prefers-reduced-motion:reduce){header h1,.cell.big .pad,.pad.hit,.bgmbar.on .lamp,.bgmbar.on{animation:none}}
+input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right,#d01c1c var(--f),#2a1c1c var(--f));border-color:#3e2828}
+input[type=range]::-moz-range-track{background:linear-gradient(to right,#d01c1c var(--f),#2a1c1c var(--f));border-color:#3e2828}
+input[type=range]::-webkit-slider-thumb{background:#eee4e2;border-color:#d01c1c;box-shadow:0 1px 3px #000}
+input[type=range]::-moz-range-thumb{background:#eee4e2;border-color:#d01c1c}
+/* 動きを減らす設定の人には、またたき・点滅・ぶれを出さない */
+@media (prefers-reduced-motion:reduce){header h1,.pad.hit,.bgmbar.on .lamp{animation:none}}
 
 /* 縦長（タブレットを縦に持つ）：ふつうの効果音を2列×3段、その下にクライマックスを3列×2段 */
 @media (orientation:portrait){
@@ -165,8 +130,6 @@ input[type=range]::-moz-range-thumb{background:radial-gradient(circle at 35% 30%
   .cell{grid-column:var(--pc);grid-row:var(--pr)}
   header .keys{display:none}
   header .sub{display:none}
-  .cell.big .pad .nm{font-size:clamp(13px,2.4vw,22px)}
-  .cell.big .pad::before{display:none}   /* 縦長はパッドが低く、札がセリフに重なるので出さない */
 }
 /* スマホのような小さい画面だけは、1画面に入りきらないのでスクロールさせる */
 @media (max-height:560px),(max-width:560px){
@@ -201,7 +164,7 @@ input[type=range]::-moz-range-thumb{background:radial-gradient(circle at 35% 30%
 
 <script>
 "use strict";
-const VER = "2026-11-05j";
+const VER = "2026-11-05k";
 const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD","Digit1","Digit2","Digit3","Digit4","Digit5","Digit6","Digit7"];   // ふつうの効果音（3×2）と、右のクライマックス①〜⑦とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
@@ -349,19 +312,19 @@ const SYNTH = {
 };
 
 const PADS = [   // seed：乱数の種。消したパッドがあっても、残った音が前と同じ波形になるように固定
-  {id:"moanLow", name:"うめき声\n「あー」",  c:"#6a1414", seed:0},
-  {id:"moanHigh",name:"うめき声\n「うー」",  c:"#6a1414", seed:1},
+  {id:"moanLow", name:"うめき声「あー」",  c:"#6a1414", seed:0},
+  {id:"moanHigh",name:"うめき声「うー」",  c:"#6a1414", seed:1},
   {id:"kaere",   name:"「帰れ！」",             c:"#6a1414", seed:8},
-  {id:"wasuremono",name:"ささやき\n「わすれもの」", c:"#202a44", seed:4},
-  {id:"mitsukete",name:"ささやき\n「みつけて」", c:"#202a44", seed:9},
-  {id:"bangHard",name:"ドアを\nはげしくたたく", c:"#4a321e", seed:5},
+  {id:"wasuremono",name:"ささやき「わすれもの」", c:"#202a44", seed:4},
+  {id:"mitsukete",name:"ささやき「みつけて」", c:"#202a44", seed:9},
+  {id:"bangHard",name:"ドアをはげしくたたく", c:"#4a321e", seed:5},
   /* ミッションのラストで流すセリフ（剛さんの録音を、セリフの間の無音で6つに分けた）。名前はセリフそのもの（剛さんが聞いて書き起こした）。自動おどかしには出さない（★なし）。
      ほかの音が重なっても途中で切らない。key は数字キー 1〜7 */
-  {id:"climax1", name:"「ねえ、わすれもの\nみつかった？」", c:"#5a1450", seed:10, big:true},
+  {id:"climax1", name:"「ねえ、わすれものみつかった？」", c:"#5a1450", seed:10, big:true},
   {id:"climax2", name:"「まだ？」", c:"#5a1450", seed:11, big:true},
-  {id:"climax3", name:"「みつから\nないの？」", c:"#5a1450", seed:12, big:true},
-  {id:"climax4", name:"「ねえ、早く\nみつけて」", c:"#5a1450", seed:13, big:true},
-  {id:"climax5", name:"「まだなの？\nねえ早く」", c:"#5a1450", seed:14, big:true},
+  {id:"climax3", name:"「みつからないの？」", c:"#5a1450", seed:12, big:true},
+  {id:"climax4", name:"「ねえ、早くみつけて」", c:"#5a1450", seed:13, big:true},
+  {id:"climax5", name:"「まだなの？ねえ早く」", c:"#5a1450", seed:14, big:true},
   {id:"climax6", name:"「早くしないと」", c:"#5a1450", seed:15, big:true},
   {id:"climax7", name:"「わたし！」", c:"#5a1450", seed:16, big:true},
 ];
@@ -572,6 +535,16 @@ function flash(i){ const el=padEls[i]; if(!el) return; el.classList.remove("hit"
   clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("hit"),130); }
 /* つまみの値と、溝の赤くぬる長さ（--f）をそろえる */
 function setRange(el,v){ el.value=v; el.style.setProperty("--f",((v-el.min)/(el.max-el.min)*100)+"%"); }
+/* セリフを1行に収める：大きさの上限から始めて、パッドの幅に入るまで縮める */
+function fitNames(){
+  for(const el of padEls){ const n=el.querySelector(".nm"), big=el.parentNode.classList.contains("big");
+    const room=el.clientWidth-16, hroom=el.clientHeight-20;
+    let fs=Math.min(big?24:28, hroom/1.2); n.style.fontSize=fs+"px";
+    if(n.scrollWidth>room) n.style.fontSize=Math.max(9,fs*room/n.scrollWidth)+"px"; }
+}
+let fitT=0;
+addEventListener("resize",()=>{ clearTimeout(fitT); fitT=setTimeout(fitNames,60); });
+try{ document.fonts.ready.then(fitNames); document.fonts.addEventListener("loadingdone",fitNames); }catch(e){}
 function renderPads(){
   pads.forEach((p,i)=>{ const c=cellEls[i];
     c.querySelector(".nm").textContent=p.name;
@@ -604,7 +577,7 @@ function bindPanel(){
 }
 
 $("ver").textContent="版 "+VER;
-loadSettings(); buildPads(); bindPanel(); renderPads(); renderBgms(); renderPanel();
+loadSettings(); buildPads(); bindPanel(); renderPads(); renderBgms(); renderPanel(); fitNames();
 
 /* 検証用の窓口（regression-obake.js が叩く） */
 window.OBAKE = { VER, KEYS, BGM_KEYS, NVAR, MAX_VOICES, SAMPLE_WAV, PADS, BGMS, SYNTH, BGM_SYNTH, pads, bgms, renderPad, renderBgm, peakOf,

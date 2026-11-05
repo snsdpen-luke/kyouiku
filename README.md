@@ -98,7 +98,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `regression-shinro.js` | 進路シミュレーションのリグレッション（jsdom・121項目） |
 | `regression-uma.js` | 翔陽ダービーのリグレッション（jsdom・69項目。速度・衝突・難易度の計算） |
 | `regression-mart.js` | 翔陽ミニマートのリグレッション（jsdom・69項目。拾う置く・客・建設・保存・自動操縦で全部建つまでの時間） |
-| `regression-obake.js` | お化け屋敷サンプラーのリグレッション（jsdom・81項目。効果音の合成・声の高さ・BGM のつなぎ目・録音・操作） |
+| `regression-obake.js` | お化け屋敷サンプラーのリグレッション（jsdom・82項目。効果音の合成・声の高さ・BGM のつなぎ目・録音・操作） |
 | `regression-sampler.js` | こえサンプラーのリグレッション（jsdom・69項目。音の合成・録音した声の加工・操作） |
 | `build.py` | 本体8つから配布物を作る |
 | `HANDOFF.md` | **ラダー工房の引き継ぎ書。仕様・設計判断・禁止事項の正典。作業前に必ず読む** |
@@ -118,7 +118,7 @@ node regression-shinro.js 進路シミュレーション.html       # 69項目�
 node regression-uma.js 馬レース.html                   # 69項目すべて合格すればOK
 node regression-mart.js 翔陽ミニマート.html              # 69項目すべて合格すればOK
 node regression-sampler.js サンプラー.html             # 69項目すべて合格すればOK
-node regression-obake.js お化け屋敷サンプラー.html      # 81項目すべて合格すればOK
+node regression-obake.js お化け屋敷サンプラー.html      # 82項目すべて合格すればOK
 node regression-fukusen.js 複線図練習.html          # 「すべて合格」と出ればOK
 ```
 

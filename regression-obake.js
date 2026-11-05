@@ -30,6 +30,7 @@ ok(d.querySelectorAll(".pad").length===13,"画面にパッドが13個");
 ok(d.querySelectorAll(".cell").length===13&&[...d.querySelectorAll(".cell")].every(c=>c.querySelector(".vol")&&c.querySelector(".pit")&&c.querySelectorAll(".st").length===4&&c.querySelectorAll(".rs").length===2),"どのパッドの下にも、音量と高さのつまみ・－＋ボタン・元にもどすボタンがある");
 ok(/止まっている/.test(d.getElementById("bgmState").textContent)&&!d.getElementById("bgmbar").classList.contains("on"),"BGM は最初は止まっていて、そう表示される");
 ok(d.querySelector("h1").textContent==="廃校徘徊"&&d.title==="廃校徘徊 サンプラー","題は「廃校徘徊」");
+ok(S.PADS.every(p=>!p.name.includes("\n")),"パッドの名前は1行（改行を入れない。長いものは字を小さくして収める）");
 ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEASD1234567","パッドのキーの文字が正しい");
 ok(/版 \d{4}-\d{2}-\d{2}[a-z]?/.test(d.getElementById("ver").textContent),"版表示が出ている");
 
