@@ -30,7 +30,7 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 .btn:active{filter:brightness(1.3)}
 .btn.on{border-color:var(--red);background:#8f0b0b;box-shadow:0 0 14px rgba(194,20,20,.45)}
 
-/* 操作の帯：BGM・全体の音量・自動おどかし・効果音を止める を1段（せまい画面では2段）に */
+/* 操作の帯：BGM・全体の音量・効果音を止める を1段（せまい画面では2段）に */
 .bar{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 10px}
 .grp{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px 8px;min-height:46px}
 .bgmbar{border-width:2px}
@@ -45,15 +45,16 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
 .bgmstate{font-size:15px;font-weight:800;padding:4px 10px;border-radius:8px;border:2px solid #4a3a3a;color:var(--sub);white-space:nowrap}
 .bgmbar.on .bgmstate{color:#fff;background:#8f0b0b;border-color:var(--red)}
 .sl{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);white-space:nowrap}
-.sl input{width:110px;accent-color:var(--red);height:26px;margin:0}
+.sl input{width:150px}
 .sl b{width:36px;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
-.freq{display:flex;gap:4px}
-.freq button{border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer}
-.freq button.sel{color:var(--text);border-color:var(--red)}
-.autost{font-size:12px;color:var(--sub);white-space:nowrap}
-.autost.on{color:#ffd54f}
+/* つまみ：指でつかみやすいように、太い溝と大きな丸。左から今の値までを赤くぬる（--f は render で入れる） */
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:30px;margin:0;cursor:pointer;touch-action:none;--f:50%}
+input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:linear-gradient(to right,#c62828 var(--f),#3a2c2c var(--f));border:1px solid #5a4444}
+input[type=range]::-moz-range-track{height:10px;border-radius:5px;background:linear-gradient(to right,#c62828 var(--f),#3a2c2c var(--f));border:1px solid #5a4444}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;margin-top:-9px;border-radius:50%;background:#f2e6e6;border:3px solid #c62828;box-shadow:0 1px 4px #000a}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#f2e6e6;border:3px solid #c62828;box-shadow:0 1px 4px #000a}
 
-/* 効果音：パッドの下に、その音だけの音量・高さ・★ */
+/* 効果音：パッドの下に、その音だけの音量・高さ（－ つまみ ＋。左の数字を押すと元にもどる） */
 .pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(12,minmax(0,1fr));gap:8px;padding:0 10px 10px}
 .cell{min-width:0;min-height:0;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
 .pad{flex:1;min-height:0;position:relative;border:none;border-radius:10px;cursor:pointer;touch-action:none;
@@ -63,24 +64,21 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
   transition:transform .05s}
 .pad .nm{font-size:clamp(14px,2vw,22px);font-weight:800;white-space:pre-line;text-shadow:0 1px 3px rgba(0,0,0,.8);text-align:center;line-height:1.2}
 .pad .ky{position:absolute;left:6px;top:4px;font-size:11px;font-weight:700;opacity:.8;background:rgba(0,0,0,.35);border-radius:4px;padding:0 4px}
-.pad .au{position:absolute;right:6px;top:3px;font-size:12px;display:none;color:#ffd54f}
-.cell.auto .pad .au{display:block}
 .pad.hit{transform:translateY(3px);filter:brightness(1.8);box-shadow:0 1px 0 color-mix(in srgb,var(--c) 30%,#000)}
-.ctl{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--sub);height:24px}
-.ctl span{width:24px;flex-shrink:0}
-.ctl input{flex:1;min-width:0;accent-color:var(--red);height:22px;margin:0}
-.ctl b{width:32px;text-align:right;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
-.star{flex-shrink:0;border:1px solid var(--line);background:var(--panel2);color:var(--sub);border-radius:6px;font-size:11px;padding:2px 5px;cursor:pointer;white-space:nowrap}
-.cell.auto .star{color:#ffd54f;border-color:#6b5a1e}
+.ctl{display:flex;align-items:center;gap:3px;height:32px;flex-shrink:0}
+.ctl .rs{width:40px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;line-height:1.1;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:1px 0;cursor:pointer}
+.ctl .rs i{font-style:normal;font-size:10px;color:var(--sub)}
+.ctl .rs b{font-size:12px;color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.ctl .st{width:30px;height:30px;flex-shrink:0;border:1px solid var(--line);background:var(--panel2);border-radius:6px;font-size:18px;font-weight:800;line-height:1;padding:0;cursor:pointer}
+.ctl .st:active,.ctl .rs:active{filter:brightness(1.5)}
+.ctl input{flex:1;min-width:0}
 /* 置き場所は buildPads で決める（--lc/--lr：横長、--pc/--pr：縦長）。
    横長：ふつうの効果音が左に 3×2（1つで6段分）、クライマックス①〜⑥が右に 2×3（1つで3段分）、⑦「わたし！」はその下に横いっぱい
    縦長：ふつうの効果音が上に 2×3、クライマックス①〜⑥が下に 3×2、⑦はいちばん下に横いっぱい */
 .cell{grid-column:var(--lc);grid-row:var(--lr)}
-/* クライマックス：★は出さない */
 .cell.big{border-color:#a0507f}
 .cell.big .pad{box-shadow:0 3px 0 color-mix(in srgb,var(--c) 30%,#000),0 0 18px rgba(200,80,160,.35),inset 0 1px 0 rgba(255,255,255,.15)}
 .cell.big .pad .nm{font-size:clamp(14px,1.8vw,20px)}
-.cell.big .star{visibility:hidden}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000d;color:#fff;padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 
@@ -116,18 +114,13 @@ header .keys{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;
     <label class="sl">全体<input type="range" id="mVol" min="0" max="100" step="5"><b id="vMVol"></b></label>
     <button class="btn" id="stopSfx">■ 効果音だけ止める</button>
   </div>
-  <div class="grp">
-    <button class="btn" id="autoBtn">自動おどかし：OFF</button>
-    <div class="freq" id="freq"><button data-f="1.6">少なめ</button><button data-f="1">ふつう</button><button data-f="0.6">多め</button></div>
-    <span class="autost" id="autoSt"></span>
-  </div>
 </div>
 <div class="pads" id="pads"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 "use strict";
-const VER = "2026-11-05g";
+const VER = "2026-11-05h";
 const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD","Digit1","Digit2","Digit3","Digit4","Digit5","Digit6","Digit7"];   // ふつうの効果音（3×2）と、右のクライマックス①〜⑦とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
@@ -275,21 +268,21 @@ const SYNTH = {
 };
 
 const PADS = [   // seed：乱数の種。消したパッドがあっても、残った音が前と同じ波形になるように固定
-  {id:"moanLow", name:"うめき声\n「あー」",  c:"#6a1414", kind:"a", auto:true, seed:0},
-  {id:"moanHigh",name:"うめき声\n「うー」",  c:"#6a1414", kind:"a", auto:true, seed:1},
-  {id:"kaere",   name:"「帰れ！」",             c:"#6a1414", kind:"s", auto:true, seed:8},
-  {id:"wasuremono",name:"ささやき\n「わすれもの」", c:"#202a44", kind:"a", auto:true, seed:4},
-  {id:"mitsukete",name:"ささやき\n「みつけて」", c:"#202a44", kind:"a", auto:true, seed:9},
-  {id:"bangHard",name:"ドアを\nはげしくたたく", c:"#4a321e", kind:"a", auto:true, seed:5},
+  {id:"moanLow", name:"うめき声\n「あー」",  c:"#6a1414", seed:0},
+  {id:"moanHigh",name:"うめき声\n「うー」",  c:"#6a1414", seed:1},
+  {id:"kaere",   name:"「帰れ！」",             c:"#6a1414", seed:8},
+  {id:"wasuremono",name:"ささやき\n「わすれもの」", c:"#202a44", seed:4},
+  {id:"mitsukete",name:"ささやき\n「みつけて」", c:"#202a44", seed:9},
+  {id:"bangHard",name:"ドアを\nはげしくたたく", c:"#4a321e", seed:5},
   /* ミッションのラストで流すセリフ（剛さんの録音を、セリフの間の無音で6つに分けた）。名前はセリフそのもの（剛さんが聞いて書き起こした）。自動おどかしには出さない（★なし）。
-     ほかの音が重なっても途中で切らない。key は数字キー 1〜6 */
-  {id:"climax1", name:"「ねえ、わすれもの\nみつかった？」", c:"#5a1450", kind:"s", auto:false, seed:10, big:true},
-  {id:"climax2", name:"「まだ？」", c:"#5a1450", kind:"s", auto:false, seed:11, big:true},
-  {id:"climax3", name:"「みつから\nないの？」", c:"#5a1450", kind:"s", auto:false, seed:12, big:true},
-  {id:"climax4", name:"「ねえ、早く\nみつけて」", c:"#5a1450", kind:"s", auto:false, seed:13, big:true},
-  {id:"climax5", name:"「まだなの？\nねえ早く」", c:"#5a1450", kind:"s", auto:false, seed:14, big:true},
-  {id:"climax6", name:"「早くしないと」", c:"#5a1450", kind:"s", auto:false, seed:15, big:true},
-  {id:"climax7", name:"「わたし！」", c:"#5a1450", kind:"s", auto:false, seed:16, big:true},
+     ほかの音が重なっても途中で切らない。key は数字キー 1〜7 */
+  {id:"climax1", name:"「ねえ、わすれもの\nみつかった？」", c:"#5a1450", seed:10, big:true},
+  {id:"climax2", name:"「まだ？」", c:"#5a1450", seed:11, big:true},
+  {id:"climax3", name:"「みつから\nないの？」", c:"#5a1450", seed:12, big:true},
+  {id:"climax4", name:"「ねえ、早く\nみつけて」", c:"#5a1450", seed:13, big:true},
+  {id:"climax5", name:"「まだなの？\nねえ早く」", c:"#5a1450", seed:14, big:true},
+  {id:"climax6", name:"「早くしないと」", c:"#5a1450", seed:15, big:true},
+  {id:"climax7", name:"「わたし！」", c:"#5a1450", seed:16, big:true},
 ];
 /* ============ 録音した声（合成ではない）============
    「帰れ！」は、剛さんが用意した動画（grok_video_2026-11-04-19-14-27.mp4）の声を使う。
@@ -359,9 +352,9 @@ const BGMS = [
 function renderBgm(id,sr){ if(!BGM_SYNTH[id]) return null; const idx=BGMS.findIndex(b=>b.id===id); return BGM_SYNTH[id](sr,mulberry32(777+idx*7919)); }
 
 /* ============ 状態 ============ */
-const pads = PADS.map((p,i)=>({i,id:p.id,name:p.name,c:p.c,kind:p.kind,auto:p.auto,big:!!p.big,vol:100,pitch:0,bufs:[],last:-1}));
+const pads = PADS.map((p,i)=>({i,id:p.id,name:p.name,c:p.c,big:!!p.big,vol:100,pitch:0,bufs:[],last:-1}));
 const bgms = BGMS.map((b,i)=>({i,id:b.id,name:b.name,vol:b.vol,on:false,ab:null,src:null,g:null}));
-let masterVol=85, autoOn=false, freqMul=1, autoNext={a:0,s:0};
+let masterVol=85;
 const $ = id => document.getElementById(id);
 
 /* ============ 音を鳴らす ============ */
@@ -399,18 +392,17 @@ function prerender(){
 function fadeOut(v,sec){ const t=ctx.currentTime;
   try{ v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value,t); v.g.gain.linearRampToValueAtTime(0,t+sec); v.src.stop(t+sec+.02); }catch(e){}
   active.delete(v); }
-/* o.pan：左右（-1〜1）、o.rate：高さを少し変える（自動おどかしで使う） */
-function playPad(i,o){
-  o=o||{}; flash(i); const c=ensureCtx(); if(!c) return;
+function playPad(i){
+  flash(i); const c=ensureCtx(); if(!c) return;
   const p=pads[i]; let v=Math.floor(Math.random()*NVAR); if(v===p.last) v=(v+1)%NVAR; p.last=v;
   for(const a of [...active]) if(a.i===i) fadeOut(a,.08);                   // 同じパッドは重ねず、前の音と入れかえる
   while(active.size>=MAX_VOICES){                                          // 上限をこえたら、いちばん古い音から止める（クライマックスは切らない）
     const old=[...active].find(a=>!pads[a.i].big) || active.values().next().value; fadeOut(old,.08); }
   const src=c.createBufferSource(), g=c.createGain();
   src.buffer=padBuffer(p,v);
-  src.playbackRate.value=Math.pow(2,p.pitch/12)*(p.big?1:(o.rate||(1+(Math.random()-.5)*.03)));
+  src.playbackRate.value=Math.pow(2,p.pitch/12)*(p.big?1:1+(Math.random()-.5)*.03);
   g.gain.value=p.vol/100; src.connect(g);
-  if(o.pan&&c.createStereoPanner){ const pn=c.createStereoPanner(); pn.pan.value=o.pan; g.connect(pn); pn.connect(bus); } else g.connect(bus);
+  g.connect(bus);
   src.start();
   const a={i,src,g}; active.add(a); src.onended=()=>active.delete(a);
 }
@@ -440,32 +432,17 @@ let wakeLock=null;
 function keepAwake(){ try{ if(navigator.wakeLock&&!wakeLock) navigator.wakeLock.request("screen").then(l=>{ wakeLock=l; l.addEventListener("release",()=>{ wakeLock=null; }); }).catch(()=>{}); }catch(e){} }
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&ctx) keepAwake(); });
 
-/* ============ 自動おどかし：★の付いた音から、ばらばらの間隔で1つ鳴らす ============
-   気配（a：うめき声・ドア・足音など）は 8〜16秒おき、不意打ち（s：悲鳴・バタンなど）は 18〜35秒おき。少なめ・多めで間隔を伸び縮みさせる */
-const AUTO_RANGE = {a:[8,16], s:[18,35]};
-function scheduleAuto(k){ const [lo,hi]=AUTO_RANGE[k]; autoNext[k]=Date.now()+(lo+Math.random()*(hi-lo))*freqMul*1000; }
-function autoTick(){
-  if(!autoOn){ renderAuto(); return; }
-  for(const k of ["a","s"]) if(Date.now()>=autoNext[k]){
-    const c=pads.filter(p=>p.auto&&p.kind===k);
-    if(c.length) playPad(c[Math.floor(Math.random()*c.length)].i,{pan:Math.random()*1.6-.8, rate:.94+Math.random()*.12});
-    scheduleAuto(k); }
-  renderAuto();
-}
-function setAuto(on){ autoOn=on; if(on){ ensureCtx(); keepAwake(); scheduleAuto("a"); scheduleAuto("s"); } renderAuto(); }
-
 /* ============ 保存（ブラウザの中だけ）============ */
 const LS_KEY="kyouiku-obake-v7";
 function saveSettings(){
-  try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,freqMul,
-    pads:pads.map(p=>({vol:p.vol,pitch:p.pitch,auto:p.auto})), bgms:bgms.map(b=>({id:b.id,vol:b.vol}))})); }catch(e){}
+  try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,
+    pads:pads.map(p=>({vol:p.vol,pitch:p.pitch})), bgms:bgms.map(b=>({id:b.id,vol:b.vol}))})); }catch(e){}
 }
 function loadSettings(){
   try{ const s=JSON.parse(localStorage.getItem(LS_KEY)||"null"); if(!s) return;
     if(typeof s.masterVol==="number") masterVol=s.masterVol;
-    if(typeof s.freqMul==="number") freqMul=s.freqMul;
     (s.pads||[]).forEach((q,i)=>{ const p=pads[i]; if(!p||!q) return;
-      if(typeof q.vol==="number") p.vol=q.vol; if(typeof q.pitch==="number") p.pitch=q.pitch; if(typeof q.auto==="boolean") p.auto=q.auto; });
+      if(typeof q.vol==="number") p.vol=q.vol; if(typeof q.pitch==="number") p.pitch=q.pitch; });
     (s.bgms||[]).forEach(q=>{ const b=bgms.find(x=>q&&x.id===q.id); if(b&&typeof q.vol==="number") b.vol=q.vol; });
   }catch(e){}
 }
@@ -484,17 +461,26 @@ function buildPads(){
                 c.style.setProperty("--pc",(j%3*2+1)+" / span 2"); c.style.setProperty("--pr",(Math.floor(j/3)+4)+" / span 1"); }
     else      { c.style.setProperty("--lc","4 / span 2"); c.style.setProperty("--lr","10 / span 3");
                 c.style.setProperty("--pc","1 / span 6"); c.style.setProperty("--pr","6 / span 1"); }
-    c.innerHTML='<button class="pad"><span class="ky">'+keyLabel(KEYS[i])+'</span><span class="au">★</span><span class="nm"></span></button>'
-      +'<div class="ctl"><span>音量</span><input type="range" class="vol" min="0" max="150" step="5" aria-label="音量"><b class="vv"></b></div>'
-      +'<div class="ctl"><span>高さ</span><input type="range" class="pit" min="-12" max="12" step="1" aria-label="高さ"><b class="pv"></b>'
-      +'<button class="star" title="自動おどかしで鳴らすかどうか"></button></div>';
+    c.innerHTML='<button class="pad"><span class="ky">'+keyLabel(KEYS[i])+'</span><span class="nm"></span></button>'
+      +'<div class="ctl"><button class="rs vr" title="押すと 100% にもどる"><i>音量</i><b class="vv"></b></button>'
+      +'<button class="st vm" aria-label="音量を下げる">－</button><input type="range" class="vol" min="0" max="150" step="5" aria-label="音量"><button class="st vp" aria-label="音量を上げる">＋</button></div>'
+      +'<div class="ctl"><button class="rs pr" title="押すと 0 にもどる"><i>高さ</i><b class="pv"></b></button>'
+      +'<button class="st pm" aria-label="高さを下げる">－</button><input type="range" class="pit" min="-12" max="12" step="1" aria-label="高さ"><button class="st pp" aria-label="高さを上げる">＋</button></div>';
     const b=c.querySelector(".pad"); b.style.setProperty("--c",p.c);
     b.addEventListener("pointerdown",e=>{ e.preventDefault(); hitPad(i); });
     b.addEventListener("contextmenu",e=>e.preventDefault());
     c.querySelector(".vol").addEventListener("input",e=>{ p.vol=+e.target.value; renderPads(); saveSettings(); });
     c.querySelector(".pit").addEventListener("input",e=>{ p.pitch=+e.target.value; renderPads(); saveSettings(); });
     c.querySelector(".pit").addEventListener("change",()=>playPad(i));   // 高さを変えたら、手をはなしたときに1回鳴らして聞かせる
-    c.querySelector(".star").addEventListener("click",()=>{ p.auto=!p.auto; renderPads(); renderAuto(); saveSettings(); });
+    // －・＋ は1目もり（音量 5%・高さ 1）ずつ。左の数字は元にもどす。高さは変えたら1回鳴らす
+    const setVol=v=>{ p.vol=Math.max(0,Math.min(150,v)); renderPads(); saveSettings(); };
+    const setPit=v=>{ p.pitch=Math.max(-12,Math.min(12,v)); renderPads(); saveSettings(); playPad(i); };
+    c.querySelector(".vm").addEventListener("click",()=>setVol(p.vol-5));
+    c.querySelector(".vp").addEventListener("click",()=>setVol(p.vol+5));
+    c.querySelector(".vr").addEventListener("click",()=>setVol(100));
+    c.querySelector(".pm").addEventListener("click",()=>setPit(p.pitch-1));
+    c.querySelector(".pp").addEventListener("click",()=>setPit(p.pitch+1));
+    c.querySelector(".pr").addEventListener("click",()=>setPit(0));
     box.appendChild(c); padEls.push(b); cellEls.push(c);
   });
   $("bgmBtn").addEventListener("pointerdown",e=>{ e.preventDefault(); keepAwake(); toggleBgm(0); });
@@ -503,40 +489,26 @@ function buildPads(){
 function hitPad(i){ keepAwake(); playPad(i); }
 function flash(i){ const el=padEls[i]; if(!el) return; el.classList.remove("hit"); void el.offsetWidth; el.classList.add("hit");
   clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("hit"),130); }
+/* つまみの値と、溝の赤くぬる長さ（--f）をそろえる */
+function setRange(el,v){ el.value=v; el.style.setProperty("--f",((v-el.min)/(el.max-el.min)*100)+"%"); }
 function renderPads(){
   pads.forEach((p,i)=>{ const c=cellEls[i];
     c.querySelector(".nm").textContent=p.name;
-    c.querySelector(".vol").value=p.vol; c.querySelector(".vv").textContent=p.vol+"%";
-    c.querySelector(".pit").value=p.pitch; c.querySelector(".pv").textContent=fmtPitch(p.pitch);
-    c.querySelector(".star").textContent=p.auto?"★自動":"☆自動";
-    c.classList.toggle("auto",p.auto); });
+    setRange(c.querySelector(".vol"),p.vol); c.querySelector(".vv").textContent=p.vol+"%";
+    setRange(c.querySelector(".pit"),p.pitch); c.querySelector(".pv").textContent=fmtPitch(p.pitch); });
 }
 function renderBgms(){ const b=bgms[0];
   $("bgmbar").classList.toggle("on",b.on);
   $("bgmState").textContent=b.on?"♪ 鳴っている":"止まっている";
-  $("bgmVol").value=b.vol; $("vBgm").textContent=b.vol+"%"; }
+  setRange($("bgmVol"),b.vol); $("vBgm").textContent=b.vol+"%"; }
 function renderPanel(){
-  $("mVol").value=masterVol; $("vMVol").textContent=masterVol+"%";
-  document.querySelectorAll("#freq button").forEach(b=>b.classList.toggle("sel",+b.dataset.f===freqMul));
-}
-function renderAuto(){
-  $("autoBtn").classList.toggle("on",autoOn);
-  $("autoBtn").textContent="自動おどかし："+(autoOn?"ON":"OFF");
-  const st=$("autoSt"), na=pads.filter(p=>p.auto&&p.kind==="a").length, ns=pads.filter(p=>p.auto&&p.kind==="s").length;
-  const left=k=>Math.max(0,Math.ceil((autoNext[k]-Date.now())/1000));
-  st.classList.toggle("on",autoOn);
-  st.textContent = !autoOn ? "★の音（気配 "+na+"・不意打ち "+ns+"）をばらばらに鳴らす"
-    : na+ns===0 ? "★の付いた音がありません（パッドの下の ☆自動 を押す）"
-    : [na?"気配 あと "+left("a")+" 秒":"", ns?"不意打ち あと "+left("s")+" 秒":""].filter(Boolean).join("　");
+  setRange($("mVol"),masterVol); $("vMVol").textContent=masterVol+"%";
 }
 let toastT=0;
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3500); }
 
 function bindPanel(){
   $("mVol").oninput=e=>{ masterVol=+e.target.value; if(master) master.gain.value=masterVol/100; renderPanel(); saveSettings(); };
-  document.querySelectorAll("#freq button").forEach(b=>b.onclick=()=>{ freqMul=+b.dataset.f;
-    if(autoOn){ scheduleAuto("a"); scheduleAuto("s"); } renderPanel(); renderAuto(); saveSettings(); });
-  $("autoBtn").onclick=()=>setAuto(!autoOn);
   $("stopSfx").onclick=stopSfx;
   $("stopAllTop").onclick=stopAll;
   document.addEventListener("keydown",e=>{
@@ -551,12 +523,11 @@ function bindPanel(){
 }
 
 $("ver").textContent="版 "+VER;
-loadSettings(); buildPads(); bindPanel(); renderPads(); renderBgms(); renderPanel(); renderAuto();
-setInterval(autoTick,500);
+loadSettings(); buildPads(); bindPanel(); renderPads(); renderBgms(); renderPanel();
 
 /* 検証用の窓口（regression-obake.js が叩く） */
 window.OBAKE = { VER, KEYS, BGM_KEYS, NVAR, MAX_VOICES, SAMPLE_WAV, PADS, BGMS, SYNTH, BGM_SYNTH, pads, bgms, renderPad, renderBgm, peakOf,
-  hitPad, toggleBgm, stopAll, setAuto, get autoOn(){ return autoOn; }, get freqMul(){ return freqMul; } };
+  hitPad, toggleBgm, stopAll };
 </script>
 </body>
 </html>
