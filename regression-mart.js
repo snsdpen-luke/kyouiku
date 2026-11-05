@@ -29,7 +29,7 @@ console.log("【A】定義");
   ok(C[0].price===0&&C[1].price===0&&C.slice(2).every((c,i,a)=>c.price>0&&(i===0||c.price>a[i-1].price)),"最初の2つは無料、以降は値段が上がっていく");
   ok(C.every(c=>c.name&&c.short&&c.desc),"全区画に名前・略称・説明がある");
   const names=C.map(c=>c.name).join(" ");
-  ok(["機械","電気","建築","家庭科","農業園芸","農業食品製造","商業","普通科"].every(n=>names.includes(n)),"翔陽高校の 8コース全部が入っている");
+  ok(["機械","電気電子","建築","家庭","農業園芸造園","農業食品製造","商業","普通"].every(n=>names.includes(n)),"翔陽高校の系列が全部入っている（チラシと同じ名前）");
   ok(C.filter(c=>c.kind==="machine").every(c=>M.PRODUCTS[c.in]&&M.PRODUCTS[c.out]&&M.PRODUCT_ORDER.includes(c.out)),"加工の in/out は品物として定義され、out は棚に並ぶ");
   ok(M.PRODUCT_ORDER.every(p=>M.PRODUCTS[p]&&M.PRODUCTS[p].price>0)&&M.PRODUCTS.mat.price===0,"売り物は値段がある。ざいりょうは売らない（0円）");
   ok(M.PRODUCT_ORDER.length===M.SHELF_SLOTS.length,"棚の数と売り物の数が同じ");

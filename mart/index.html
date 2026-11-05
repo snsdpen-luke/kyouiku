@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2f6b2c">
-<title>翔陽ミニマート 〜8系列で文化祭〜</title>
+<title>翔陽ミニマート 〜翔陽高校の系列を全部そろえよう〜</title>
 <style>
   /* 翔陽ミニマート — 文化祭の来校者に QR で配るスマホのタイクーン（My Mini Mart 風）。
      単一HTML・ビルド不要・通信なし。絵は全部コードで描く（画像ファイルなし）。 */
@@ -24,7 +24,7 @@
 <div id="stage"><canvas id="cv"></canvas></div>
 <script>
 "use strict";
-const VER = "2026-11-02b";
+const VER = "2026-11-05a";
 
 
 /* =====================================================================
@@ -45,7 +45,7 @@ const MACHINE_IN_CAP = 8;               // 加工機の投入口に入る数
 const MACHINE_OUT_CAP = 12;             // 加工機の出口に溜まる数
 const MACHINE_TIME = 2.0;               // 1個 加工するのにかかる秒
 const CUST_MAX = 8;                     // 同時にいるお客の上限
-const SPAWN_SLOW = 5.5, SPAWN_FAST = 3.0; // お客が来る間隔（秒）。普通科を建てると FAST
+const SPAWN_SLOW = 5.5, SPAWN_FAST = 3.0; // お客が来る間隔（秒）。普通を建てると FAST
 const PAY_TIME = 0.9;                   // レジで1人を会計する秒
 const CUST_PATIENCE = 7;                // 棚が空のとき待ってくれる秒。過ぎると帰る
 const BUILD_MIN_RATE = 25;              // 建設にお金を流し込む速さ（円/秒）の下限。実際は max(これ, 値段/3)
@@ -80,15 +80,15 @@ const PRODUCT_ORDER = ["veg", "jam", "bento", "house", "robot", "lamp"];   // �
 /* 系列。この順に建てる（1つ前が建つと次が建てられる）。
    kind: source 畑／shop 売店／machine 加工（in → out）／hq 本部／upgrade 設備 */
 const COURSES = [
-  { id: "agri", name: "農業園芸",     short: "農業園芸", rect: [80, 1080, 300, 240],  price: 0,    kind: "source",  item: "veg",
+  { id: "agri", name: "農業園芸造園", short: "農業園芸造園", rect: [80, 1080, 300, 240],  price: 0,    kind: "source",  item: "veg",
     desc: "畑でやさいを育てる。近づくと収穫" },
   { id: "shop", name: "商業系列",         short: "商業",     rect: [430, 760, 400, 320],  price: 0,    kind: "shop",
     desc: "売店。棚に置けばお客が買う。レジに立つと会計" },
   { id: "food", name: "農業食品製造", short: "食品製造", rect: [80, 760, 300, 240],   price: 60,   kind: "machine", in: "veg", out: "jam",
     desc: "やさい → ジャム" },
-  { id: "home", name: "家庭科系列",       short: "家庭科",   rect: [860, 760, 300, 240],  price: 150,  kind: "machine", in: "veg", out: "bento",
+  { id: "home", name: "家庭",       short: "家庭",   rect: [860, 760, 300, 240],  price: 150,  kind: "machine", in: "veg", out: "bento",
     desc: "やさい → お弁当" },
-  { id: "gen",  name: "普通科",             short: "普通科",   rect: [860, 1080, 300, 240], price: 300,  kind: "hq",
+  { id: "gen",  name: "普通",             short: "普通",   rect: [860, 1080, 300, 240], price: 300,  kind: "hq",
     desc: "文化祭 実行委員本部。呼び込みでお客が増える。手伝いの生徒が1人来る" },
   { id: "arch", name: "建築",         short: "建築",     rect: [860, 440, 300, 240],  price: 500,  kind: "machine", in: "mat", out: "house",
     yard: [860, 220, 300, 180], desc: "資材置き場つき。ざいりょう → ミニハウス" },
@@ -538,7 +538,7 @@ function upgradeAvailable(g, id) {
 function buyUpgrade(g, id) {
   const u = UPGRADES[id];
   if (g.upgrades[u.key] >= u.max) return { ok: false, msg: "もう最大まで強化した", color: "#ff9999" };
-  if (id === "hire-staff" && !g.helper) return { ok: false, msg: "普通科を先に建てよう", color: "#ff9999" };
+  if (id === "hire-staff" && !g.helper) return { ok: false, msg: "普通を先に建てよう", color: "#ff9999" };
   const cost = upgradeCost(g, id);
   if (g.money < cost) return { ok: false, msg: "お金が足りない（¥" + cost + "）", color: "#ff9999" };
   g.money -= cost; g.upgrades[u.key]++;
@@ -953,7 +953,7 @@ function drawHUD() {
     ctx.fillStyle = "#f9e04b"; rr(W - 190, 36, 170 * clamp((g.money + g.build.paid) / c.price, 0, 1), 6, 3); ctx.fill();
   } else {
     ctx.fillStyle = "rgba(0,0,0,.45)"; rr(W - 200, 12, 190, 36, 18); ctx.fill();
-    text("8系列 全部そろった！", W - 105, 30, 12, "#fff176");
+    text("系列が全部そろった！", W - 105, 30, 12, "#fff176");
   }
   // 建った系列
   let n = 0; for (const c of COURSES) if (g.unlocked[c.id]) n++;
@@ -1001,7 +1001,7 @@ function drawManage() {
   const rows = [
     up("upgrade-shelf", "棚を拡張", "棚の最大在庫 +2"),
     up("upgrade-marketing", "宣伝を強化", "客足と売上がアップ"),
-    up("hire-staff", "店員を雇う", g.helper ? "手伝いの生徒が速くなる" : "普通科を建てると雇える"),
+    up("hire-staff", "店員を雇う", g.helper ? "手伝いの生徒が速くなる" : "普通を建てると雇える"),
     ["lottery", "おみくじを引く　¥" + LOTTERY.price, "大当たり5%（¥300〜500）・当たり15%（¥60〜100）", true],
     ["staff-gacha", "店員ガチャを回す　¥" + GACHA_PRICE, "SSR 3% / SR 12% / R 30% / N 55%", true]
   ];
@@ -1057,10 +1057,10 @@ function drawTitle() {
   if (g) drawWorld(); else { ctx.fillStyle = "#7ccb5a"; ctx.fillRect(0, 0, W, H); }
   drawOverlayBG();
   textStroke("翔陽ミニマート", W / 2, H * 0.22, 40, "#fff176", "center", "rgba(0,0,0,.6)");
-  textStroke("〜 8系列で文化祭 〜", W / 2, H * 0.22 + 44, 18, "#fff");
-  text("歩いて 拾って 棚に置く。売れたお金で", W / 2, H * 0.40, 14, "#e8f5e0");
-  text("機械・電気・建築・家庭科・農業園芸・", W / 2, H * 0.40 + 24, 14, "#e8f5e0");
-  text("農業食品製造・商業・普通科 を建てていく", W / 2, H * 0.40 + 48, 14, "#e8f5e0");
+  textStroke("翔陽高校の系列を全部そろえよう", W / 2, H * 0.22 + 44, 17, "#fff");
+  text("歩いて 拾って 棚に置く。系列の商品を売って", W / 2, H * 0.40, 14, "#e8f5e0");
+  text("機械・電気電子・建築・家庭・農業園芸造園・", W / 2, H * 0.40 + 24, 14, "#e8f5e0");
+  text("農業食品製造・商業・普通 をそろえていく", W / 2, H * 0.40 + 48, 14, "#e8f5e0");
   let y = H * 0.56;
   if (hasSave) { button("continue", "つづきから", W / 2 - 120, y, 240, 54); y += 70; button("new", "はじめから", W / 2 - 120, y, 240, 54, "#fff"); }
   else button("new", "はじめる", W / 2 - 120, y, 240, 54);
@@ -1085,20 +1085,20 @@ function drawHowto() {
   ];
   let y = 150;
   for (const [h, b] of lines) { text(h, 24, y, 15, "#fff176", "left"); text(b, 24, y + 22, 13, "#fff", "left", 500); y += 62; }
-  text("目標：8つの系列全部を建てる。10〜20分", W / 2, y + 10, 13, "#e8f5e0");
+  text("目標：系列を全部そろえる。10〜20分", W / 2, y + 10, 13, "#e8f5e0");
   button("start", "スタート", W / 2 - 120, H - 110, 240, 54);
 }
 function drawComplete() {
   buttons.length = 0;
   drawWorld(); drawOverlayBG();
   textStroke("完成！", W / 2, 130, 44, "#fff176");
-  textStroke("翔陽高校 8系列 全部そろった", W / 2, 180, 18, "#fff");
+  textStroke("翔陽高校の系列が全部そろった", W / 2, 180, 18, "#fff");
   const m = Math.floor(g.completeAt / 60), s = Math.floor(g.completeAt % 60);
   const rows = [["かかった時間", m + "分" + (s < 10 ? "0" : "") + s + "秒"], ["売った数", g.sold + "個"], ["売上", "¥" + g.revenue.toLocaleString("ja-JP")], ["お客", g.served + "人"]];
   let y = 240; for (const [k, v] of rows) { text(k, W / 2 - 20, y, 15, "#e8f5e0", "right"); text(v, W / 2 + 10, y, 17, "#fff", "left"); y += 34; }
   text("スクショして 友だちに見せよう", W / 2, y + 20, 13, "#fff176");
-  text("機械 ／ 電気 ／ 建築 ／ 家庭科 ／ 農業園芸", W / 2, y + 60, 12, "#e8f5e0");
-  text("農業食品製造 ／ 商業 ／ 普通科", W / 2, y + 80, 12, "#e8f5e0");
+  text("機械 ／ 電気電子 ／ 建築 ／ 家庭 ／ 農業園芸造園", W / 2, y + 60, 12, "#e8f5e0");
+  text("農業食品製造 ／ 商業 ／ 普通", W / 2, y + 80, 12, "#e8f5e0");
   button("continue-play", "つづけて遊ぶ", W / 2 - 120, H - 110, 240, 54);
 }
 
