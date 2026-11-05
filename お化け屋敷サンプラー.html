@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="color-scheme" content="dark">
 <title>廃校徘徊 サンプラー</title>
-<link href="https://fonts.googleapis.com/css2?family=Yuji+Boku&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Yuji+Boku&family=Shippori+Mincho+B1:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
   color-scheme:dark;
@@ -111,7 +111,7 @@ header .keys{color:#6e5e5c}
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 4px 12px rgba(0,0,0,.5)}
 .btn{background:#1a1111;border-color:#3a2424}
 .bgmtx .t1{letter-spacing:.08em}
-.bgmtx .t2{font-family:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:400;font-size:18px;letter-spacing:.06em}
+.bgmtx .t2{font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:800;font-size:18px;letter-spacing:.06em}
 .lamp{background:radial-gradient(circle at 35% 35%,#4a2a2a,#1a0e0e)}
 .bgmbar.on .lamp{background:radial-gradient(circle at 35% 35%,#fff,#ff3030 45%,#900 100%);animation:rec 1s infinite alternate}
 @keyframes rec{from{box-shadow:0 0 4px #ff3030}to{box-shadow:0 0 16px #ff3030,0 0 30px rgba(255,48,48,.4)}}
@@ -128,9 +128,10 @@ header .keys{color:#6e5e5c}
   transition:transform .06s,box-shadow .2s}
 .pad::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
   background:linear-gradient(to bottom,rgba(255,255,255,.06),transparent 40%)}
-.pad .nm{font-family:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:400;
-  font-size:clamp(16px,2.3vw,26px);letter-spacing:.04em;color:#f3ece6;
-  text-shadow:0 0 10px color-mix(in srgb,var(--c) 80%,#f00),0 2px 3px #000}
+/* セリフは太い明朝。にじみを弱くして、黒い影でくっきりさせる（筆文字は読みにくかったのでやめた） */
+.pad .nm{font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:800;
+  font-size:clamp(16px,2.3vw,26px);letter-spacing:.02em;color:#fff;
+  text-shadow:0 1px 2px #000,0 2px 6px #000,0 0 14px color-mix(in srgb,var(--c) 70%,#f00)}
 .pad .ky{left:7px;top:6px;font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#d8c8c4;
   background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:0 5px}
 /* 押した瞬間：赤く光り、少しぶれる */
@@ -146,7 +147,7 @@ header .keys{color:#6e5e5c}
 .cell.big .pad.hit{animation:shake .13s}
 .cell.big .pad::before{content:"CLIMAX";position:absolute;right:7px;top:6px;font-size:9px;letter-spacing:.2em;color:#e9a6d6;
   font-family:ui-monospace,Menlo,Consolas,monospace;border:1px solid rgba(233,166,214,.4);border-radius:3px;padding:0 4px;opacity:.85}
-.cell.big .pad .nm{font-size:clamp(13px,1.5vw,22px);letter-spacing:0;margin-top:8px;text-shadow:0 0 12px rgba(230,60,170,.8),0 2px 3px #000}
+.cell.big .pad .nm{font-size:clamp(13px,1.5vw,22px);letter-spacing:0;margin-top:8px;text-shadow:0 1px 2px #000,0 2px 6px #000,0 0 14px rgba(230,60,170,.7)}
 
 /* つまみの周り */
 .ctl .rs,.ctl .st{background:#140d0d;border-color:#3a2626;color:#e8dcd8}
@@ -200,7 +201,7 @@ input[type=range]::-moz-range-thumb{background:radial-gradient(circle at 35% 30%
 
 <script>
 "use strict";
-const VER = "2026-11-05i";
+const VER = "2026-11-05j";
 const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD","Digit1","Digit2","Digit3","Digit4","Digit5","Digit6","Digit7"];   // ふつうの効果音（3×2）と、右のクライマックス①〜⑦とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
