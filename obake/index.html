@@ -82,11 +82,90 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000d;color:#fff;padding:10px 18px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 
+/* ============ 見た目：古い校舎の夜。黒地にざらつき・走査線・四隅の暗がり、赤い光 ============ */
+html,body{background:#060404}
+body{position:relative;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(120,10,10,.22),transparent 70%),
+    radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.85) 100%),
+    #070505}
+/* ざらつき（SVG の雑音）と走査線を画面全体に重ねる。押す操作のじゃまをしない */
+body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50}
+body::before{opacity:.10;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::after{background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.18) 2px 3px)}
+
+header{background:linear-gradient(to bottom,#120a0a,#0a0606);border-bottom:1px solid #3a1010;box-shadow:0 1px 0 #000,0 6px 18px rgba(0,0,0,.6)}
+header h1{font-size:28px;color:#e01818;letter-spacing:.14em;
+  text-shadow:0 0 6px rgba(255,40,40,.65),0 0 22px rgba(200,0,0,.55),2px 3px 0 #000;animation:flick 7s infinite}
+/* 題字が、切れかけた蛍光灯のように、ときどきまたたく */
+@keyframes flick{0%,91%,100%{opacity:1}92%{opacity:.35}93%{opacity:1}95%{opacity:.6}96%{opacity:1}}
+header .sub{font-size:10px;letter-spacing:.35em;color:#8a3a3a;white-space:nowrap;font-weight:700}
+header .ver{color:#5e4a48}
+header .keys{color:#6e5e5c}
+.stopbig{border:2px solid #ff3b3b;color:#fff;letter-spacing:.06em;
+  background:repeating-linear-gradient(-45deg,#5a0b0b 0 10px,#3a0606 10px 20px);
+  box-shadow:0 0 14px rgba(255,30,30,.35),inset 0 0 10px rgba(0,0,0,.6);text-shadow:0 1px 2px #000}
+
+.grp{background:linear-gradient(to bottom,rgba(28,18,18,.92),rgba(14,9,9,.92));border:1px solid #2e1c1c;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 4px 12px rgba(0,0,0,.5)}
+.btn{background:#1a1111;border-color:#3a2424}
+.bgmtx .t1{letter-spacing:.08em}
+.bgmtx .t2{font-family:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:400;font-size:18px;letter-spacing:.06em}
+.lamp{background:radial-gradient(circle at 35% 35%,#4a2a2a,#1a0e0e)}
+.bgmbar.on .lamp{background:radial-gradient(circle at 35% 35%,#fff,#ff3030 45%,#900 100%);animation:rec 1s infinite alternate}
+@keyframes rec{from{box-shadow:0 0 4px #ff3030}to{box-shadow:0 0 16px #ff3030,0 0 30px rgba(255,48,48,.4)}}
+
+/* パッドを入れる枠：暗い鉄板 */
+.cell{background:linear-gradient(to bottom,rgba(24,16,16,.9),rgba(10,7,7,.9));border:1px solid #2a1a1a;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 6px 16px rgba(0,0,0,.55)}
+/* パッド：暗い面の下から、その音の色がにじみ出る */
+.pad{border-radius:9px;border:1px solid color-mix(in srgb,var(--c) 70%,#000);
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 115%,color-mix(in srgb,var(--c) 95%,#ff0000 5%),transparent 70%),
+    linear-gradient(to bottom,#1a1212,#0b0808);
+  box-shadow:inset 0 0 26px color-mix(in srgb,var(--c) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.07),0 2px 0 #000;
+  transition:transform .06s,box-shadow .2s}
+.pad::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(to bottom,rgba(255,255,255,.06),transparent 40%)}
+.pad .nm{font-family:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:400;
+  font-size:clamp(16px,2.3vw,26px);letter-spacing:.04em;color:#f3ece6;
+  text-shadow:0 0 10px color-mix(in srgb,var(--c) 80%,#f00),0 2px 3px #000}
+.pad .ky{left:7px;top:6px;font-size:11px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#d8c8c4;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:0 5px}
+/* 押した瞬間：赤く光り、少しぶれる */
+.pad.hit{transform:translateY(2px) scale(.985);filter:brightness(1.6) saturate(1.3);
+  box-shadow:inset 0 0 40px color-mix(in srgb,var(--c) 90%,#f00),0 0 26px color-mix(in srgb,var(--c) 80%,#f00);animation:shake .13s}
+@keyframes shake{0%{translate:0 0}25%{translate:-2px 1px}50%{translate:2px -1px}75%{translate:-1px 0}100%{translate:0 0}}
+
+/* クライマックス：紫の光がゆっくり脈打つ。右上に CLIMAX の札 */
+.cell.big{border-color:#4a1a3e}
+.cell.big .pad{border-color:#8a2a70;
+  box-shadow:inset 0 0 30px rgba(200,40,150,.35),0 0 0 1px #000,0 0 14px rgba(190,40,140,.25);animation:pulse 3.2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:inset 0 0 40px rgba(220,50,160,.5),0 0 0 1px #000,0 0 22px rgba(210,50,150,.45)}}
+.cell.big .pad.hit{animation:shake .13s}
+.cell.big .pad::before{content:"CLIMAX";position:absolute;right:7px;top:6px;font-size:9px;letter-spacing:.2em;color:#e9a6d6;
+  font-family:ui-monospace,Menlo,Consolas,monospace;border:1px solid rgba(233,166,214,.4);border-radius:3px;padding:0 4px;opacity:.85}
+.cell.big .pad .nm{font-size:clamp(13px,1.5vw,22px);letter-spacing:0;margin-top:8px;text-shadow:0 0 12px rgba(230,60,170,.8),0 2px 3px #000}
+
+/* つまみの周り */
+.ctl .rs,.ctl .st{background:#140d0d;border-color:#3a2626;color:#e8dcd8}
+.ctl .st{color:#ff8a8a}
+input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(to right,#8a0e0e,#e02020 var(--f),#241818 var(--f));border-color:#3e2828;box-shadow:inset 0 1px 3px #000}
+input[type=range]::-moz-range-track{background:linear-gradient(to right,#8a0e0e,#e02020 var(--f),#241818 var(--f));border-color:#3e2828}
+input[type=range]::-webkit-slider-thumb{background:radial-gradient(circle at 35% 30%,#fff,#d8cccc 60%,#9a8a8a);border-color:#e02020;box-shadow:0 0 8px rgba(255,40,40,.55),0 1px 4px #000}
+input[type=range]::-moz-range-thumb{background:radial-gradient(circle at 35% 30%,#fff,#d8cccc 60%,#9a8a8a);border-color:#e02020}
+/* 動きを減らす設定の人には、またたき・脈打ち・ぶれを出さない */
+@media (prefers-reduced-motion:reduce){header h1,.cell.big .pad,.pad.hit,.bgmbar.on .lamp,.bgmbar.on{animation:none}}
+
 /* 縦長（タブレットを縦に持つ）：ふつうの効果音を2列×3段、その下にクライマックスを3列×2段 */
 @media (orientation:portrait){
   .pads{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr))}
   .cell{grid-column:var(--pc);grid-row:var(--pr)}
   header .keys{display:none}
+  header .sub{display:none}
+  .cell.big .pad .nm{font-size:clamp(13px,2.4vw,22px)}
+  .cell.big .pad::before{display:none}   /* 縦長はパッドが低く、札がセリフに重なるので出さない */
 }
 /* スマホのような小さい画面だけは、1画面に入りきらないのでスクロールさせる */
 @media (max-height:560px),(max-width:560px){
@@ -100,6 +179,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 <body>
 <header>
   <h1>廃校徘徊</h1>
+  <span class="sub">SOUND SAMPLER</span>
   <span class="ver" id="ver"></span>
   <span class="keys">キー：効果音 Q W E / A S D　クライマックス 1〜7　BGM B　効果音を止める Space　全部止める Esc</span>
   <button class="stopbig" id="stopAllTop">■ 全部止める</button>
@@ -120,7 +200,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
 <script>
 "use strict";
-const VER = "2026-11-05h";
+const VER = "2026-11-05i";
 const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD","Digit1","Digit2","Digit3","Digit4","Digit5","Digit6","Digit7"];   // ふつうの効果音（3×2）と、右のクライマックス①〜⑦とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
