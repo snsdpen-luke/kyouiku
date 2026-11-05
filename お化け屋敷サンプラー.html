@@ -55,7 +55,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
 input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#f2e6e6;border:3px solid #c62828;box-shadow:0 1px 4px #000a}
 
 /* 効果音：パッドの下に、その音だけの音量・高さ（－ つまみ ＋。左の数字を押すと元にもどる） */
-.pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(12,minmax(0,1fr));gap:8px;padding:0 10px 10px}
+.pads{flex:1;min-height:0;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-template-rows:repeat(12,minmax(0,1fr));gap:8px;padding:0 10px 10px}
 .cell{min-width:0;min-height:0;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
 .pad{flex:1;min-height:0;position:relative;border:none;border-radius:10px;cursor:pointer;touch-action:none;
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;overflow:hidden;
@@ -71,8 +71,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .ctl .st:active,.ctl .rs:active{filter:brightness(1.5)}
 .ctl input{flex:1;min-width:0}
 /* 置き場所は buildPads で決める（--lc/--lr：横長、--pc/--pr：縦長）。
-   横長：ふつうの効果音が左に 3×2（1つで6段分）、クライマックス①〜⑥が右に 2×3（1つで3段分）、⑦「わたし！」はその下に横いっぱい
-   縦長：ふつうの効果音が上に 2×3、クライマックス①〜⑥が下に 3×2、⑦はいちばん下に横いっぱい */
+   横長（10列×12段）：ふつうの効果音が左に 上3つ・下2つ（1つで6段分）、クライマックス①〜⑥が右に 2×3（1つで3段分）、その下に⑦「わたし！」と⑧「帰れ！」
+   縦長（6列×6段）：ふつうの効果音が上に 2列（5つ目は横いっぱい）、クライマックス①〜⑥が下に 3×2、いちばん下に⑦と⑧ */
 .cell{grid-column:var(--lc);grid-row:var(--lr)}
 .cell.big{border-color:#a0507f}
 .cell.big .pad{box-shadow:0 3px 0 color-mix(in srgb,var(--c) 30%,#000),0 0 18px rgba(200,80,160,.35),inset 0 1px 0 rgba(255,255,255,.15)}
@@ -145,7 +145,7 @@ input[type=range]::-moz-range-thumb{background:#eee4e2;border-color:#d01c1c}
   <h1>廃校徘徊</h1>
   <span class="sub">SOUND SAMPLER</span>
   <span class="ver" id="ver"></span>
-  <span class="keys">キー：効果音 Q W E / A S D　クライマックス 1〜7　BGM B　効果音を止める Space　全部止める Esc</span>
+  <span class="keys">キー：効果音 Q W E / A S　クライマックス 1〜8　BGM B　効果音を止める Space　全部止める Esc</span>
   <button class="stopbig" id="stopAllTop">■ 全部止める</button>
 </header>
 <div class="bar">
@@ -164,8 +164,8 @@ input[type=range]::-moz-range-thumb{background:#eee4e2;border-color:#d01c1c}
 
 <script>
 "use strict";
-const VER = "2026-11-05k";
-const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","KeyD","Digit1","Digit2","Digit3","Digit4","Digit5","Digit6","Digit7"];   // ふつうの効果音（3×2）と、右のクライマックス①〜⑦とキーボードの並びをそろえる
+const VER = "2026-11-05l";
+const KEYS = ["KeyQ","KeyW","KeyE","KeyA","KeyS","Digit1","Digit2","Digit3","Digit4","Digit5","Digit6","Digit7","Digit8"];   // ふつうの効果音（上に3つ・下に2つ）と、右のクライマックス①〜⑧とキーボードの並びをそろえる
 const BGM_KEYS = ["KeyB"];
 const MAX_VOICES = 6;      // 同時に鳴らす効果音の上限。重ねすぎるとスマホの処理が追いつかず、音がとぎれたり「ビー」と鳴ったりする
 const NVAR = 3;            // 効果音ごとに3通りの波形を作り、毎回ちがうものを鳴らす（同じ音のくり返しに聞こえないように）
@@ -314,7 +314,6 @@ const SYNTH = {
 const PADS = [   // seed：乱数の種。消したパッドがあっても、残った音が前と同じ波形になるように固定
   {id:"moanLow", name:"うめき声「あー」",  c:"#6a1414", seed:0},
   {id:"moanHigh",name:"うめき声「うー」",  c:"#6a1414", seed:1},
-  {id:"kaere",   name:"「帰れ！」",             c:"#6a1414", seed:8},
   {id:"wasuremono",name:"ささやき「わすれもの」", c:"#202a44", seed:4},
   {id:"mitsukete",name:"ささやき「みつけて」", c:"#202a44", seed:9},
   {id:"bangHard",name:"ドアをはげしくたたく", c:"#4a321e", seed:5},
@@ -327,6 +326,8 @@ const PADS = [   // seed：乱数の種。消したパッドがあっても、�
   {id:"climax5", name:"「まだなの？ねえ早く」", c:"#5a1450", seed:14, big:true},
   {id:"climax6", name:"「早くしないと」", c:"#5a1450", seed:15, big:true},
   {id:"climax7", name:"「わたし！」", c:"#5a1450", seed:16, big:true},
+  /* 「帰れ！」は剛さんの動画から切り出した録音。クライマックスのいちばん最後に鳴らす（⑧・数字キー 8） */
+  {id:"kaere",   name:"「帰れ！」", c:"#5a1450", seed:8, big:true},
 ];
 /* ============ 録音した声（合成ではない）============
    「帰れ！」は、剛さんが用意した動画（grok_video_2026-11-04-19-14-27.mp4）の声を使う。
@@ -477,15 +478,18 @@ function keepAwake(){ try{ if(navigator.wakeLock&&!wakeLock) navigator.wakeLock.
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&ctx) keepAwake(); });
 
 /* ============ 保存（ブラウザの中だけ）============ */
-const LS_KEY="kyouiku-obake-v7";
+const LS_KEY="kyouiku-obake-v8";
+const LS_OLD="kyouiku-obake-v7", OLD_ORDER=["moanLow","moanHigh","kaere","wasuremono","mitsukete","bangHard","climax1","climax2","climax3","climax4","climax5","climax6","climax7"];   // v7 はパッドの順番で覚えていた
 function saveSettings(){
   try{ localStorage.setItem(LS_KEY,JSON.stringify({masterVol,
-    pads:pads.map(p=>({vol:p.vol,pitch:p.pitch})), bgms:bgms.map(b=>({id:b.id,vol:b.vol}))})); }catch(e){}
+    pads:pads.map(p=>({id:p.id,vol:p.vol,pitch:p.pitch})), bgms:bgms.map(b=>({id:b.id,vol:b.vol}))})); }catch(e){}
 }
 function loadSettings(){
-  try{ const s=JSON.parse(localStorage.getItem(LS_KEY)||"null"); if(!s) return;
+  try{ let s=JSON.parse(localStorage.getItem(LS_KEY)||"null");
+    if(!s){ s=JSON.parse(localStorage.getItem(LS_OLD)||"null"); if(s&&s.pads) s.pads.forEach((q,i)=>{ if(q) q.id=OLD_ORDER[i]; }); }
+    if(!s) return;
     if(typeof s.masterVol==="number") masterVol=s.masterVol;
-    (s.pads||[]).forEach((q,i)=>{ const p=pads[i]; if(!p||!q) return;
+    (s.pads||[]).forEach(q=>{ const p=pads.find(x=>q&&x.id===q.id); if(!p) return;
       if(typeof q.vol==="number") p.vol=q.vol; if(typeof q.pitch==="number") p.pitch=q.pitch; });
     (s.bgms||[]).forEach(q=>{ const b=bgms.find(x=>q&&x.id===q.id); if(b&&typeof q.vol==="number") b.vol=q.vol; });
   }catch(e){}
@@ -499,12 +503,12 @@ function buildPads(){
   pads.forEach((p,i)=>{
     const c=document.createElement("div"); c.className="cell"+(p.big?" big":"");
     const j=pads.slice(0,i).filter(q=>q.big===p.big).length;   // 同じ組の中で何番目か
-    if(!p.big){ c.style.setProperty("--lc",(j%3+1)+" / span 1"); c.style.setProperty("--lr",(Math.floor(j/3)*6+1)+" / span 6");
-                c.style.setProperty("--pc",(j%2*3+1)+" / span 3"); c.style.setProperty("--pr",(Math.floor(j/2)+1)+" / span 1"); }
-    else if(j<6){ c.style.setProperty("--lc",(j%2+4)+" / span 1"); c.style.setProperty("--lr",(Math.floor(j/2)*3+1)+" / span 3");
+    if(!p.big){ c.style.setProperty("--lc",j<3?(j*2+1)+" / span 2":((j-3)*3+1)+" / span 3"); c.style.setProperty("--lr",(j<3?1:7)+" / span 6");
+                c.style.setProperty("--pc",j<4?(j%2*3+1)+" / span 3":"1 / span 6"); c.style.setProperty("--pr",(Math.floor(j/2)+1)+" / span 1"); }
+    else if(j<6){ c.style.setProperty("--lc",(j%2*2+7)+" / span 2"); c.style.setProperty("--lr",(Math.floor(j/2)*3+1)+" / span 3");
                 c.style.setProperty("--pc",(j%3*2+1)+" / span 2"); c.style.setProperty("--pr",(Math.floor(j/3)+4)+" / span 1"); }
-    else      { c.style.setProperty("--lc","4 / span 2"); c.style.setProperty("--lr","10 / span 3");
-                c.style.setProperty("--pc","1 / span 6"); c.style.setProperty("--pr","6 / span 1"); }
+    else      { c.style.setProperty("--lc",(j===6?7:9)+" / span 2"); c.style.setProperty("--lr","10 / span 3");
+                c.style.setProperty("--pc",(j===6?1:4)+" / span 3"); c.style.setProperty("--pr","6 / span 1"); }
     c.innerHTML='<button class="pad"><span class="ky">'+keyLabel(KEYS[i])+'</span><span class="nm"></span></button>'
       +'<div class="ctl"><button class="rs vr" title="押すと 100% にもどる"><i>音量</i><b class="vv"></b></button>'
       +'<button class="st vm" aria-label="音量を下げる">－</button><input type="range" class="vol" min="0" max="150" step="5" aria-label="音量"><button class="st vp" aria-label="音量を上げる">＋</button></div>'

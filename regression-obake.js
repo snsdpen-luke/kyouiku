@@ -19,7 +19,7 @@ ok(!/createConvolver|createDelay/.test(src)&&!d.getElementById("mRev"),"エコ�
 ok(!/\bconfirm\(|\balert\(/.test(src),"confirm / alert を使っていない（Classroom のサンドボックスで動かない）");
 
 console.log("【A】パッド・BGM・キー");
-ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,kaere,wasuremono,mitsukete,bangHard,climax1,climax2,climax3,climax4,climax5,climax6,climax7","効果音は13個（うめき声2・帰れ・ささやき「わすれもの」「みつけて」・ドアをはげしくたたく・クライマックスのセリフ7つ）");
+ok(S.PADS.map(p=>p.id).join()==="moanLow,moanHigh,wasuremono,mitsukete,bangHard,climax1,climax2,climax3,climax4,climax5,climax6,climax7,kaere","効果音は13個（うめき声2・帰れ・ささやき「わすれもの」「みつけて」・ドアをはげしくたたく・クライマックスのセリフ7つ）");
 ok(S.PADS.every(p=>typeof S.SYNTH[p.id]==="function"||S.SAMPLE_WAV[p.id]),"どの効果音にも、合成の関数か録音がある");
 ok(S.SAMPLE_WAV.kaere&&S.SAMPLE_WAV.kaere.length===3&&!S.SYNTH.kaere,"「帰れ！」は動画から切り出した録音3つ（合成ではない）");
 ok(S.BGMS.map(b=>b.id).join()==="drone"&&typeof S.BGM_SYNTH.drone==="function","BGM は「不気味な低音」1つだけ");
@@ -31,7 +31,7 @@ ok(d.querySelectorAll(".cell").length===13&&[...d.querySelectorAll(".cell")].eve
 ok(/止まっている/.test(d.getElementById("bgmState").textContent)&&!d.getElementById("bgmbar").classList.contains("on"),"BGM は最初は止まっていて、そう表示される");
 ok(d.querySelector("h1").textContent==="廃校徘徊"&&d.title==="廃校徘徊 サンプラー","題は「廃校徘徊」");
 ok(S.PADS.every(p=>!p.name.includes("\n")),"パッドの名前は1行（改行を入れない。長いものは字を小さくして収める）");
-ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEASD1234567","パッドのキーの文字が正しい");
+ok([...d.querySelectorAll(".pad .ky")].map(e=>e.textContent).join("")==="QWEAS12345678","パッドのキーの文字が正しい");
 ok(/版 \d{4}-\d{2}-\d{2}[a-z]?/.test(d.getElementById("ver").textContent),"版表示が出ている");
 
 console.log("【B】効果音の合成（48kHz と 44.1kHz）");
@@ -60,8 +60,9 @@ for(const sr of [48000,44100]){
   ok(Math.max(...pks)>.88&&Math.max(...pks)<=.9001&&Math.abs(pks[1]/pks[3]-2532/8882)<.01,"7つの大きさのつり合いは録音のまま（②は④の "+Math.round(pks[1]/pks[3]*100)+"%）");
   /* 元の録音では、止めたときの「カチッ」が中身の約2倍の大きさだった。入っていれば、⑦のピークだけ 0.9 をこえる */
   ok(pks[6]<.9,"⑦「わたし！」の最後に、録音を止めた「カチッ」が入っていない（⑦のピーク "+pks[6].toFixed(2)+"）");
-  const cs=[...d.querySelectorAll(".cell")].slice(6);
-  ok(S.pads.slice(6).every(p=>p.big)&&cs.every(c=>c.classList.contains("big")),"クライマックスは大きいパッドとして並ぶ"); }
+  const cs=[...d.querySelectorAll(".cell")].slice(5);
+  ok(S.pads.slice(5).every(p=>p.big)&&S.pads.slice(0,5).every(p=>!p.big)&&cs.every(c=>c.classList.contains("big")),"クライマックスは大きいパッドとして並ぶ（①〜⑦と「帰れ！」）");
+  ok(S.pads[12].id==="kaere"&&S.KEYS[12]==="Digit8","「帰れ！」はクライマックスのいちばん最後（⑧・数字キー 8）"); }
 { const a=S.renderPad("moanLow",48000,0).length/48000, b=S.renderPad("moanHigh",48000,0).length/48000;
   ok(Math.abs(a-1)<.05&&Math.abs(b-1)<.05,"うめき声は短く（「あー」 "+a.toFixed(2)+"秒・「うー」 "+b.toFixed(2)+"秒）"); }
 { const a=S.renderPad("bangHard",48000,1), b=S.renderPad("bangHard",48000,1), c=S.renderPad("bangHard",48000,2);
@@ -152,8 +153,8 @@ d.getElementById("stopAllTop").click();
 ok(!S.bgms[0].on,"上の「■ 全部止める」でも止まる");
 { const r=d.getElementById("bgmVol"); r.value="45"; r.dispatchEvent(new w.Event("input"));
   ok(S.bgms[0].vol===45&&d.getElementById("vBgm").textContent==="45%","BGM の音量のつまみが効く"); }
-{ const s=JSON.parse(w.localStorage.getItem("kyouiku-obake-v7")||"null");
-  ok(s&&s.pads[4].vol===40&&s.pads[4].pitch===-3&&s.bgms[0].vol===45,"設定はブラウザに保存される"); }
+{ const s=JSON.parse(w.localStorage.getItem("kyouiku-obake-v8")||"null"), q=s&&s.pads.find(x=>x.id===S.pads[4].id);
+  ok(q&&q.vol===40&&q.pitch===-3&&s.bgms[0].vol===45,"設定はブラウザに、パッドの id ごとに保存される"); }
 
 setTimeout(()=>{
   ok(errs.length===0,"スクリプトのエラーなし"+(errs.length?"：\n      "+errs.join("\n      "):""));
