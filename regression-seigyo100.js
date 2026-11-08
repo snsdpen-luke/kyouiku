@@ -63,7 +63,7 @@ console.log('■ 正解の位置');
 {
   const totals = [0, 0, 0, 0, 0]; let sameAll = true, first = null;
   for (let t = 0; t < 30; t++) {
-    const w = open(); w.document.getElementById('no').value = '1'; click(w, '#go');
+    const w = open(); w.document.getElementById('no').value = '3101'; click(w, '#go');
     const pos = [];
     w.eval('Q').forEach((q, i) => { const a = w.eval(`order(${i})`); pos.push(a.indexOf(0)); });
     const c = [0, 0, 0, 0, 0]; pos.forEach(p => { c[p]++; totals[p]++; });
@@ -81,7 +81,15 @@ console.log('■ 最初から最後まで解く');
   const w = open(); const d = w.document;
   ok('最初は出席番号の画面', !!d.getElementById('no'));
   ok('出席番号が空だと始まらない', (click(w, '#go'), !!d.getElementById('no')));
-  d.getElementById('no').value = '12'; click(w, '#go');
+  ok('入力は4けたまで', d.getElementById('no').maxLength === 4);
+  for (const bad of ['12', '310', 'abcd', '31a1']) {
+    d.getElementById('no').value = bad; click(w, '#go');
+    ok('「' + bad + '」では始まらず、お知らせが出る', !!d.getElementById('no') && !d.getElementById('noErr').hidden);
+  }
+  d.getElementById('no').value = '\uFF13\uFF11\uFF10\uFF12'; click(w, '#go');
+  ok('全角の4けたも半角にして受け付ける', w.eval('st').no === '3102');
+  w.eval('st.i=-1;render()');
+  d.getElementById('no').value = '3101'; click(w, '#go');
   ok('始めると1問目', d.getElementById('count').textContent === '1 / 100');
   ok('選択肢のボタンが5つ', d.querySelectorAll('.opt').length === 5);
   ok('答える前は「次へ」がない', !d.getElementById('next'));
@@ -109,7 +117,7 @@ console.log('■ 最初から最後まで解く');
   ok('バーの合計が総得点と同じ', barSum === 80, barSum);
   ok('まちがえた問題の番号が20個', d.querySelectorAll('.miss button').length === 20);
   ok('全問解いたら「続きをとく」は出ない', !d.getElementById('cont'));
-  ok('出席番号が結果に出る', d.querySelector('.q').textContent.includes('12'));
+  ok('出席番号が結果に出る', d.querySelector('.q').textContent.includes('3101'));
   d.querySelector('.miss button').click();
   ok('番号を押すとその問題へ', d.getElementById('count').textContent === '1 / 100' && !!d.querySelector('.fb.ng'));
   click(w, '#toRes');
@@ -121,14 +129,14 @@ console.log('■ 最初から最後まで解く');
   click(w, '#reset');
   ok('やり直しの1回目では消えない', !!d.querySelector('.res-total'));
   click(w, '#reset');
-  ok('2回目で消えて出席番号の画面へ', !!d.getElementById('no') && d.getElementById('no').value === '12');
+  ok('2回目で消えて出席番号の画面へ', !!d.getElementById('no') && d.getElementById('no').value === '3101');
   ok('やり直すと答えが空', Object.keys(w.eval('st').ans).length === 0);
 }
 
 console.log('■ 途中で結果を見る');
 {
   const w = open(); const d = w.document;
-  d.getElementById('no').value = '3'; click(w, '#go');
+  d.getElementById('no').value = '3103'; click(w, '#go');
   for (let i = 0; i < 3; i++) { d.querySelector('.opt[data-k="0"]').click(); click(w, '#next'); }
   click(w, '#toRes');
   ok('途中でも採点が出る', d.querySelector('.res-total').textContent === '3');
@@ -144,7 +152,7 @@ console.log('■ localStorage が使えないとき');
     beforeParse(w) { Object.defineProperty(w, 'localStorage', { get() { throw new Error('blocked'); } }); },
   });
   const d = dom.window.document;
-  d.getElementById('no').value = '1'; d.getElementById('go').click();
+  d.getElementById('no').value = '3104'; d.getElementById('go').click();
   ok('保存できなくても解ける', d.getElementById('count').textContent === '1 / 100' && d.querySelectorAll('.opt').length === 5);
 }
 

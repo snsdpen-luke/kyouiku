@@ -73,7 +73,8 @@ h1{font-family:var(--f-head);font-size:20px;margin:0;font-weight:900}
 .miss{display:flex;gap:5px;flex-wrap:wrap}
 .miss button{font:inherit;font-size:14px;min-width:42px;min-height:34px;border-radius:8px;border:1.5px solid var(--ng);background:var(--ng-soft);color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums}
 .start label{font-size:15px;color:var(--sub)}
-.start input{font:inherit;font-size:22px;width:120px;padding:6px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.start .err{font-size:15px;color:var(--ng);font-weight:700;margin-top:4px}
+.start input{font:inherit;font-size:22px;width:130px;padding:6px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
 table.plan{border-collapse:collapse;font-size:16px}
 table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 @media (max-width:760px){.qwrap{flex-direction:column}.gloss{width:auto;align-self:stretch;min-height:0}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:14px}}
@@ -93,7 +94,7 @@ table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 </div>
 
 <script>
-const VER='2026-11-09a';
+const VER='2026-11-09b';
 // 問題データ。1行1問：[分野, 種類, 難しさ, 用語, 問題文, [正解, 誤り4つ], 解説]
 // 分野 A〜E（CH）／種類 m 意味・u 使いどころ・b 大事な場面（KIND）／難しさ 1〜3。
 // 正解は必ず先頭に書く。画面に出す順番は positions()・order() が解く人ごとに決める。
@@ -377,10 +378,12 @@ function start(){
   $('card').innerHTML=`<div class="q">これまでに学んだ制御の用語を、5択で確かめます</div>
    <table class="plan">${Object.keys(CH).map(g=>`<tr><td>${esc(CH[g])}</td><td>${Q.filter(q=>q.g===g).length}問</td></tr>`).join('')}</table>
    <p style="margin:0">用語の意味・使いどころ・大事な場面を問います。答えるとすぐに正解と解説が出ます。途中でやめても、この端末に続きが残ります。</p>
-   <div class="start"><label for="no">出席番号</label><br><input id="no" inputmode="numeric" value="${esc(st.no)}" placeholder="例 12"></div>
+   <div class="start"><label for="no">出席番号（4けた）</label><br><input id="no" inputmode="numeric" maxlength="4" autocomplete="off" value="${esc(st.no)}" placeholder="3101"><div class="err" id="noErr" hidden>出席番号は4けたの数字で入れてください。</div></div>
    <div class="row"><button class="btn" id="go">はじめる</button></div>`;
   const no=$('no');
-  $('go').onclick=()=>{if(!no.value.trim()){no.focus();no.placeholder='番号を入れます';return}st.no=no.value.trim();st.i=0;positions();save();render()};
+  $('go').onclick=()=>{const v=no.value.normalize('NFKC').trim();
+    if(!/^[0-9]{4}$/.test(v)){$('noErr').hidden=false;no.focus();return}
+    st.no=v;st.i=0;positions();save();render()};
 }
 function result(){
   const all=idxOf(()=>true),n=doneCount(),sc=a=>a.filter(correct).length,total=sc(all);
