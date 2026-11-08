@@ -38,9 +38,9 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
 .title-wrap .tag{font-family:var(--f-num);color:var(--copper);letter-spacing:.1em}
 .title-wrap p{font-size:22px;margin:0;color:var(--sub)}
 .msg{font-size:26px;font-weight:700;line-height:1.5;margin:0;text-wrap:balance}
-.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.three{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .three .box{background:var(--panel);border-radius:8px;padding:16px;min-width:0}
-.three h3{margin:0 0 6px;font-size:23px}
+.three h3{margin:0 0 6px;font-size:21px}
 .three p{margin:0;font-size:16px;line-height:1.55}
 .five{display:grid;grid-template-columns:1fr auto;gap:0 18px;font-size:19px;align-items:baseline}
 .five div{padding:7px 0;border-bottom:1px solid var(--line)}
@@ -88,12 +88,13 @@ nav button:disabled{opacity:.4;cursor:default}
   </div>
 </section>
 
-<section class="slide" data-note="目的：言葉の意味を覚えるだけでなく、どこで使い、いつ大事なのかまで言えるようにします。同じ言葉が別の角度で何度か出ます。分野は順番に回ってきます。">
+<section class="slide" data-note="目的：言葉の意味を覚えるだけでなく、意味から言葉を言え、どこで使い、いつ大事なのかまで言えるようにします。選択肢はどれも似ているので、よく読んでください。同じ言葉が別の角度で何度か出ます。分野は順番に回ってきます。">
   <header><span class="no">01</span><h2>何のためにやるのか</h2></header>
   <div class="body"><div class="main">
-    <p class="msg">言葉を、3つの角度で確かめます。</p>
+    <p class="msg">言葉を、4つの角度で確かめます。</p>
     <div class="three">
       <div class="box"><h3>意味</h3><p>ABS とは何か。</p></div>
+      <div class="box"><h3>用語</h3><p>この説明の名前は何か。</p></div>
       <div class="box"><h3>使いどころ</h3><p>どのセンサを使うか。</p></div>
       <div class="box"><h3>大事な場面</h3><p>どんなときに働くか。</p></div>
     </div>
@@ -118,11 +119,11 @@ nav button:disabled{opacity:.4;cursor:default}
     <div class="steps">えらぶ → 解説を読む → 次へ</div>
     <div class="mock" aria-label="クイズの画面の見本">
       <div class="mq">オートライトは、どのセンサを使って動きますか。</div>
-      <div class="mo"><b>ア</b>雨滴センサ</div>
-      <div class="mo"><b>イ</b>着座センサ</div>
+      <div class="mo"><b>ア</b>日射センサ</div>
+      <div class="mo"><b>イ</b>雨滴センサ</div>
       <div class="mo ans"><b>ウ</b>照度センサ</div>
-      <div class="mo"><b>エ</b>車輪速センサ</div>
-      <div class="mo"><b>オ</b>超音波センサ</div>
+      <div class="mo"><b>エ</b>温度センサ</div>
+      <div class="mo"><b>オ</b>カメラ</div>
       <div class="mf"><b>正解です。</b>照度センサでまわりの明るさを測り、暗くなるとヘッドライトをつけます。</div>
       <div class="mb">次へ</div>
     </div>

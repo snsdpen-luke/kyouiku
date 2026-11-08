@@ -13,7 +13,7 @@ function open(store) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', url: 'https://example.test/seigyo100/',
     beforeParse(w) {
-      if (store) w.localStorage.setItem('seigyo100-v2', store);
+      if (store) w.localStorage.setItem('seigyo100-v3', store);
       // 実環境（Classroom のサンドボックス）では confirm が常に false を返す
       w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
     },
@@ -35,8 +35,8 @@ console.log('■ 問題データ');
   ok('問題文の重複がない', dup.length === 0, dup);
   // 正解の文がそのまま別の問題の正解になっていないか（同じことを2回聞いていないか）
   const dupA = Q.map(q => q.o[0]).filter((s, i, a) => a.indexOf(s) !== i);
-  const allowDup = ['カメラ', 'ABS', '雨滴センサ', '照度センサ']; // センサ名や機能名だけの短い答えは別の問いで重なってよい
-  ok('正解の文の重複がない', dupA.filter(s => !allowDup.includes(s)).length === 0, dupA);
+  // センサ名や機能名だけの短い答えは、別の問いで重なってよい
+  ok('正解の文の重複がない', dupA.filter(s => s.length > 14).length === 0, dupA);
   ok('どの問題の用語にも説明がある', Q.every(q => GLOSS[q.w]), Q.filter(q => !GLOSS[q.w]).map(q => q.w));
   const banned = /PLC|ラダー|シーケンス|フィードバック|PID|インターロック|自己保持|掃除機|接点|積分|微分|偏差|ゲイン/;
   const hit = Q.filter(q => banned.test([q.w, q.q, q.e, ...q.o].join(' '))).map(q => q.id + ':' + q.w);
@@ -49,16 +49,17 @@ console.log('■ 問題データ');
   const byG = cnt(q => q.g), byT = cnt(q => q.t), byD = cnt(q => q.d);
   console.log('    分野', JSON.stringify(byG), '種類', JSON.stringify(byT), '難しさ', JSON.stringify(byD));
   ok('分野は20問ずつ', Object.keys(CH).every(g => byG[g] === 20));
-  ok('種類が偏らない（どれも30問以上）', Object.keys(KIND).every(t => byT[t] >= 30));
-  ok('難しさが偏らない（どれも20問以上）', [1, 2, 3].every(d => byD[d] >= 20), JSON.stringify(byD));
-  ok('どの分野にも3種類が6問以上', Object.keys(CH).every(g => Object.keys(KIND).every(t => Q.filter(q => q.g === g && q.t === t).length >= 6)));
-  ok('どの分野にも3段階が4問以上', Object.keys(CH).every(g => [1, 2, 3].every(d => Q.filter(q => q.g === g && q.d === d).length >= 4)));
+  ok('4種類が25問ずつ（意味から用語を当てる問題を含む）', Object.keys(KIND).length === 4 && Object.keys(KIND).every(t => byT[t] === 25), JSON.stringify(byT));
+  ok('難しさ：やさしい問題が少なく、難しい問題が多い', byD[1] <= 20 && byD[3] >= 25, JSON.stringify(byD));
+  ok('どの分野にも4種類が5問ずつ', Object.keys(CH).every(g => Object.keys(KIND).every(t => Q.filter(q => q.g === g && q.t === t).length === 5)));
+  ok('どの分野にも3段階がある', Object.keys(CH).every(g => [1, 2, 3].every(d => Q.filter(q => q.g === g && q.d === d).length >= 2)));
   ok('同じ分野が続かない', Q.every((q, i) => i === 0 || Q[i - 1].g !== q.g));
   // 長さで正解が分かってしまわないか
   const longest = Q.filter(q => q.o[0].length > Math.max(...q.o.slice(1).map(s => s.length)));
   console.log('    正解が単独でいちばん長い問題', longest.length);
   ok('正解だけが長い問題が多すぎない（35問まで）', longest.length <= 35, longest.length);
-  const far = Q.filter(q => q.o[0].length > 1.5 * Math.max(...q.o.slice(1).map(s => s.length)));
+  // 用語を当てる問題（r）は用語名の長さが元からばらばらなので、文で答える問題だけを見る
+  const far = Q.filter(q => q.t !== 'r' && q.o[0].length > 1.5 * Math.max(...q.o.slice(1).map(s => s.length)));
   ok('正解だけが極端に長い問題がない', far.length === 0, far.map(q => q.id));
 }
 
@@ -125,7 +126,7 @@ console.log('■ 最初から最後まで解く');
   ok('番号を押すとその問題へ', d.getElementById('count').textContent === '1 / 100' && !!d.querySelector('.fb.ng'));
   click(w, '#toRes');
   // 開き直しても残る
-  const saved = w.localStorage.getItem('seigyo100-v2');
+  const saved = w.localStorage.getItem('seigyo100-v3');
   const w2 = open(saved);
   ok('開き直しても結果が残る', w2.document.querySelector('.res-total')?.textContent === '80');
   // やり直しは2回押し（confirm が false でも動く）
