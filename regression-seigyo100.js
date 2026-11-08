@@ -13,7 +13,7 @@ function open(store) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', url: 'https://example.test/seigyo100/',
     beforeParse(w) {
-      if (store) w.localStorage.setItem('seigyo100-v1', store);
+      if (store) w.localStorage.setItem('seigyo100-v2', store);
       // 実環境（Classroom のサンドボックス）では confirm が常に false を返す
       w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
     },
@@ -38,6 +38,9 @@ console.log('■ 問題データ');
   const allowDup = ['カメラ', 'ABS', '雨滴センサ', '照度センサ']; // センサ名や機能名だけの短い答えは別の問いで重なってよい
   ok('正解の文の重複がない', dupA.filter(s => !allowDup.includes(s)).length === 0, dupA);
   ok('どの問題の用語にも説明がある', Q.every(q => GLOSS[q.w]), Q.filter(q => !GLOSS[q.w]).map(q => q.w));
+  const banned = /PLC|ラダー|シーケンス|フィードバック|PID|インターロック|自己保持|掃除機|接点|積分|微分|偏差|ゲイン/;
+  const hit = Q.filter(q => banned.test([q.w, q.q, q.e, ...q.o].join(' '))).map(q => q.id + ':' + q.w);
+  ok('PLC・フィードバック制御の問題がない', hit.length === 0, hit);
   ok('使われていない用語の説明がない', Object.keys(GLOSS).every(k => Q.some(q => q.w === k)), Object.keys(GLOSS).filter(k => !Q.some(q => q.w === k)));
   ok('解説が短い（70文字まで）', Q.every(q => q.e.length <= 70), Q.filter(q => q.e.length > 70).map(q => q.id + ':' + q.e.length));
   ok('解説が です・ます で終わる', Q.every(q => /(す|した|ます)。$/.test(q.e) || /[。）]$/.test(q.e)));
@@ -122,7 +125,7 @@ console.log('■ 最初から最後まで解く');
   ok('番号を押すとその問題へ', d.getElementById('count').textContent === '1 / 100' && !!d.querySelector('.fb.ng'));
   click(w, '#toRes');
   // 開き直しても残る
-  const saved = w.localStorage.getItem('seigyo100-v1');
+  const saved = w.localStorage.getItem('seigyo100-v2');
   const w2 = open(saved);
   ok('開き直しても結果が残る', w2.document.querySelector('.res-total')?.textContent === '80');
   // やり直しは2回押し（confirm が false でも動く）
