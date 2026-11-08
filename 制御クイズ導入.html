@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>制御クイズ100 導入</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* レイアウト: 自動駐車のスライドと同じ 4:3 固定ステージ（1024x768）。左が本体、右が用語欄。手順や注意は口頭で（N キーで先生用メモ） */
+:root{
+  --bg:#e9edf1; --paper:#fbfcfd; --ink:#18212b; --sub:#5a6672; --line:#cfd6dd;
+  --copper:#b8642a; --copper-soft:#f3e2d4; --steel:#3d5a73; --panel:#f1f4f7; --good:#2c8a4f; --good-soft:#e1f3ea;
+  --f-disp:"Dela Gothic One","Hiragino Sans",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body)}
+#vp{position:relative;width:100%;height:100%;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1024px;height:768px;background:var(--paper);border-radius:6px;display:flex;flex-direction:column;overflow:hidden;transform:translate(-50%,-50%)}
+.slide{display:none;flex:1;flex-direction:column;min-height:0}
+.slide.on{display:flex}
+.slide>header{display:flex;align-items:baseline;gap:14px;padding:22px 28px 10px}
+.slide>header .no{font-family:var(--f-num);color:var(--copper);font-size:18px}
+.slide>header h2{margin:0;font-family:var(--f-disp);font-weight:400;font-size:30px}
+.body{flex:1;min-height:0;display:flex;gap:16px;padding:6px 28px 14px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;gap:16px}
+.gloss{width:220px;flex:none;background:var(--panel);border-radius:6px;padding:14px 16px;font-size:14px;line-height:1.6}
+.gloss h3{margin:0 0 8px;font-size:12px;letter-spacing:.15em;color:var(--sub)}
+.gloss dt{font-weight:700;color:var(--copper);margin-top:10px}
+.gloss dt:first-of-type{margin-top:0}
+.gloss dd{margin:2px 0 0}
+.title-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 60px;gap:18px}
+.title-wrap h1{font-family:var(--f-disp);font-weight:400;font-size:64px;line-height:1.25;margin:0}
+.title-wrap .tag{font-family:var(--f-num);color:var(--copper);letter-spacing:.1em}
+.title-wrap p{font-size:22px;margin:0;color:var(--sub)}
+.msg{font-size:26px;font-weight:700;line-height:1.5;margin:0;text-wrap:balance}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.three .box{background:var(--panel);border-radius:8px;padding:16px;min-width:0}
+.three h3{margin:0 0 6px;font-size:23px}
+.three p{margin:0;font-size:16px;line-height:1.55}
+.five{display:grid;grid-template-columns:1fr auto;gap:0 18px;font-size:19px;align-items:baseline}
+.five div{padding:7px 0;border-bottom:1px solid var(--line)}
+.five .n{font-family:var(--f-num);color:var(--copper);text-align:right}
+/* 遊び方：クイズの画面の見本が、選ぶ → 正解と解説 → 次へ と動く */
+.mock{flex:1;background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:7px;font-size:15px;min-height:0}
+.mock .mq{font-size:18px;font-weight:700;margin-bottom:3px}
+.mock .mo{border:2px solid var(--line);border-radius:8px;padding:6px 11px;display:flex;gap:8px}
+.mock .mo b{color:var(--sub)}
+.mock .mf{border-radius:8px;background:var(--good-soft);padding:7px 11px;opacity:0}
+.mock .mb{align-self:flex-end;background:#2a5fc4;color:#fff;font-weight:700;border-radius:8px;padding:6px 18px;opacity:0;margin-top:auto}
+@media (prefers-reduced-motion:no-preference){
+  .slide.on .mo.ans{animation:pickit 7s infinite}
+  .slide.on .mf,.slide.on .mb{animation:showit 7s infinite}
+}
+@media (prefers-reduced-motion:reduce){
+  .mock .mo.ans{border-color:var(--good);background:var(--good-soft)}
+  .mock .mf,.mock .mb{opacity:1}
+}
+@keyframes pickit{0%,25%{border-color:var(--line);background:#fff}32%,92%{border-color:var(--good);background:var(--good-soft)}100%{border-color:var(--line);background:#fff}}
+@keyframes showit{0%,32%{opacity:0}40%,92%{opacity:1}100%{opacity:0}}
+.steps{display:flex;font-size:21px;font-weight:700;color:var(--copper);align-items:center;justify-content:center;gap:12px}
+/* URL */
+.url{display:flex;gap:28px;align-items:center;flex:1;min-height:0}
+.url .code{width:380px;height:380px;flex:none;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px}
+.url .code svg{width:100%;height:100%;display:block}
+.url .addr{font-family:var(--f-num);font-size:21px;line-height:1.5;word-break:break-all;margin:0}
+nav{display:flex;align-items:center;justify-content:space-between;padding:8px 18px;border-top:1px solid var(--line);font-size:14px;color:var(--sub)}
+nav button{font:inherit;font-weight:700;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 16px;cursor:pointer}
+nav button:disabled{opacity:.4;cursor:default}
+.dots{display:flex;gap:7px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--copper)}
+#note{position:absolute;left:16px;right:16px;bottom:58px;background:#18212bf2;color:#fff;border-radius:8px;padding:14px 18px;font-size:17px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="vp"><div id="stage">
+
+<section class="slide on" data-note="これまでの授業で出てきた言葉の確かめです。テストではありません。まちがえても、解説を読めば大丈夫です。">
+  <div class="title-wrap">
+    <div class="tag">電子計測制御 ／ ふりかえり</div>
+    <h1>制御クイズ<br>100問</h1>
+    <p>車の制御から身のまわりの制御まで、言葉を自分のものにしよう</p>
+  </div>
+</section>
+
+<section class="slide" data-note="目的：言葉の意味を覚えるだけでなく、どこで使い、いつ大事なのかまで言えるようにします。同じ言葉が別の角度で何度か出ます。分野は順番に回ってきます。">
+  <header><span class="no">01</span><h2>何のためにやるのか</h2></header>
+  <div class="body"><div class="main">
+    <p class="msg">言葉を、3つの角度で確かめます。</p>
+    <div class="three">
+      <div class="box"><h3>意味</h3><p>ABS とは何か。</p></div>
+      <div class="box"><h3>使いどころ</h3><p>どのセンサを使うか。</p></div>
+      <div class="box"><h3>大事な場面</h3><p>どんなときに働くか。</p></div>
+    </div>
+    <div class="five">
+      <div>自動駐車・自動運転</div><div class="n">20問</div>
+      <div>車の制御</div><div class="n">20問</div>
+      <div>センサと計測</div><div class="n">20問</div>
+      <div>制御の基本</div><div class="n">20問</div>
+      <div>ラダーと身のまわり</div><div class="n">20問</div>
+    </div>
+  </div>
+  <aside class="gloss"><h3>用語</h3><dl>
+    <dt>制御</dt><dd>目的どおりに動くように、機械を調整することです。</dd>
+    <dt>計測</dt><dd>センサで、まわりや自分の状態を測ることです。</dd>
+    <dt>ABS</dt><dd>急ブレーキでタイヤが止まってすべるのを防ぐしくみです。</dd>
+  </dl></aside></div>
+</section>
+
+<section class="slide" data-note="5つの中から1つタップします。すぐに正解と解説が出るので、必ず読んでから次へ。右の用語欄にも説明が出ます。途中でやめても続きができます。最後に結果の画面を見せてもらいます。">
+  <header><span class="no">02</span><h2>遊び方</h2></header>
+  <div class="body"><div class="main">
+    <div class="steps">えらぶ → 解説を読む → 次へ</div>
+    <div class="mock" aria-label="クイズの画面の見本">
+      <div class="mq">オートライトは、どのセンサを使って動きますか。</div>
+      <div class="mo"><b>ア</b>雨滴センサ</div>
+      <div class="mo"><b>イ</b>着座センサ</div>
+      <div class="mo ans"><b>ウ</b>照度センサ</div>
+      <div class="mo"><b>エ</b>車輪速センサ</div>
+      <div class="mo"><b>オ</b>超音波センサ</div>
+      <div class="mf"><b>正解です。</b>照度センサでまわりの明るさを測り、暗くなるとヘッドライトをつけます。</div>
+      <div class="mb">次へ</div>
+    </div>
+  </div>
+  <aside class="gloss"><h3>用語</h3><dl>
+    <dt>照度センサ</dt><dd>まわりの明るさを測るセンサです。</dd>
+  </dl></aside></div>
+</section>
+
+<section class="slide" data-note="Chromebook のカメラで読むか、Classroom のリンクから開きます。出席番号を入れてはじめます。">
+  <header><span class="no">03</span><h2>はじめよう</h2></header>
+  <div class="body"><div class="main">
+    <div class="url">
+      <div class="code" role="img" aria-label="クイズのURLのQRコード"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#18212b" d="M2 2.5h7m1 0h4m1 0h2m2 0h2m3 0h1m3 0h7M2 3.5h1m5 0h1m1 0h3m2 0h2m1 0h1m1 0h5m1 0h1m1 0h1m5 0h1M2 4.5h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h4m3 0h2m2 0h1m1 0h1m1 0h3m1 0h1M2 5.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h3m1 0h5m1 0h1m1 0h1m1 0h3m1 0h1M2 6.5h1m1 0h3m1 0h1m1 0h6m1 0h3m3 0h2m3 0h1m1 0h3m1 0h1M2 7.5h1m5 0h1m2 0h2m2 0h4m2 0h1m3 0h1m2 0h1m5 0h1M2 8.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M11 9.5h2m2 0h1m1 0h2m5 0h1m1 0h1M2 10.5h1m2 0h6m2 0h2m3 0h2m5 0h1m1 0h1m2 0h1m1 0h3M3 11.5h5m1 0h1m1 0h1m3 0h3m1 0h4m1 0h2m4 0h3M2 12.5h1m1 0h3m1 0h1m1 0h1m3 0h2m1 0h1m5 0h1m1 0h3m2 0h5M4 13.5h2m5 0h1m1 0h3m1 0h1m2 0h1m1 0h1m2 0h1m1 0h3m2 0h2M2 14.5h4m2 0h4m1 0h1m1 0h1m3 0h1m1 0h1m2 0h2m2 0h2m3 0h1M3 15.5h1m3 0h1m1 0h3m3 0h2m2 0h7m5 0h1M2 16.5h1m1 0h1m2 0h4m4 0h3m2 0h3m5 0h1m1 0h2M4 17.5h2m5 0h1m2 0h1m1 0h1m1 0h1m3 0h1m1 0h2m1 0h1m1 0h4m1 0h1M3 18.5h1m1 0h4m1 0h1m1 0h2m1 0h3m4 0h1m2 0h6M2 19.5h1m3 0h2m2 0h1m1 0h1m4 0h3m1 0h2m1 0h1m2 0h2m1 0h1m1 0h3M4 20.5h3m1 0h1m2 0h1m1 0h2m2 0h5m1 0h3m1 0h3m1 0h2m1 0h1M2 21.5h5m3 0h1m2 0h1m1 0h3m4 0h1m2 0h2m3 0h3M3 22.5h1m3 0h2m3 0h3m1 0h3m1 0h1m3 0h1m1 0h1m4 0h1m1 0h2M2 23.5h1m2 0h1m3 0h4m3 0h1m6 0h1m1 0h1m3 0h4M2 24.5h1m1 0h1m3 0h1m3 0h1m2 0h1m3 0h1m1 0h5m2 0h1m1 0h1m1 0h3M2 25.5h1m1 0h3m3 0h1m2 0h2m1 0h2m1 0h4m2 0h4m3 0h2M2 26.5h3m3 0h1m1 0h1m1 0h3m3 0h1m3 0h1m3 0h6m1 0h2M10 27.5h1m2 0h2m2 0h4m4 0h2m3 0h1m1 0h2M2 28.5h7m1 0h1m1 0h2m2 0h2m1 0h1m1 0h6m1 0h1m1 0h1m1 0h1M2 29.5h1m5 0h1m1 0h1m1 0h1m2 0h1m3 0h2m3 0h3m3 0h4M2 30.5h1m1 0h3m1 0h1m1 0h3m2 0h1m1 0h3m2 0h1m2 0h6m2 0h1M2 31.5h1m1 0h3m1 0h1m1 0h2m3 0h1m2 0h1m1 0h1m2 0h3m1 0h1m1 0h1m1 0h1m1 0h2M2 32.5h1m1 0h3m1 0h1m3 0h1m1 0h2m1 0h1m1 0h3m1 0h1m3 0h1m1 0h2m1 0h3M2 33.5h1m5 0h1m5 0h1m1 0h1m3 0h1m7 0h7M2 34.5h7m1 0h3m1 0h1m1 0h2m1 0h1m2 0h1m2 0h2m2 0h2"/></svg></div>
+      <div>
+        <p class="msg" style="margin-bottom:18px">読み取って、出席番号を入れます。</p>
+        <p class="addr">https://snsdpen-luke.github.io/<br>kyouiku/seigyo100/</p>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div id="note" hidden></div>
+<nav><button id="prev">← 前へ</button><div class="dots" id="dots"></div><span><span id="pg" style="font-family:var(--f-num)"></span> <button id="next">次へ →</button></span></nav>
+</div></div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const vp=$('vp'),stage=$('stage'),slides=[...document.querySelectorAll('.slide')];
+const fit=()=>{const s=Math.min(vp.clientWidth/1024,vp.clientHeight/768);stage.style.transform='translate(-50%,-50%) scale('+s+')'};
+addEventListener('resize',fit);fit();
+let cur=0;
+$('dots').innerHTML=slides.map(()=>'<i></i>').join('');
+const dots=[...$('dots').children];
+function go(i){cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('on',k===cur));
+  dots.forEach((d,k)=>d.classList.toggle('on',k===cur));
+  $('pg').textContent=(cur+1)+' / '+slides.length;
+  $('prev').disabled=cur===0;$('next').disabled=cur===slides.length-1;
+  $('note').textContent=slides[cur].dataset.note}
+$('prev').onclick=()=>go(cur-1);$('next').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  if(e.key==='n'||e.key==='N')$('note').hidden=!$('note').hidden});
+go(0);
+})();
+</script>
+</body>
+</html>
