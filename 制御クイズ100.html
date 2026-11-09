@@ -72,9 +72,6 @@ h1{font-family:var(--f-head);font-size:20px;margin:0;font-weight:900}
 .parts b{font-size:19px;font-variant-numeric:tabular-nums}
 .miss{display:flex;gap:5px;flex-wrap:wrap}
 .miss button{font:inherit;font-size:14px;min-width:42px;min-height:34px;border-radius:8px;border:1.5px solid var(--ng);background:var(--ng-soft);color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums}
-.start label{font-size:15px;color:var(--sub)}
-.start .err{font-size:15px;color:var(--ng);font-weight:700;margin-top:4px}
-.start input{font:inherit;font-size:22px;width:130px;padding:6px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
 table.plan{border-collapse:collapse;font-size:16px}
 table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 @media (max-width:760px){.qwrap{flex-direction:column}.gloss{width:auto;align-self:stretch;min-height:0}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:14px}}
@@ -94,7 +91,7 @@ table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 </div>
 
 <script>
-const VER='2026-11-09g';
+const VER='2026-11-09h';
 // 問題データ。1行1問：[分野, 種類, 難しさ, 用語, 問題文, [正解, 誤り4つ], 解説]
 // 分野 A〜E（CH）／種類 m 用語→意味・r 意味→用語・u 使いどころ・b 大事な場面（KIND）／難しさ 1〜3。
 // 誤りの選択肢は、似た機能・となりの概念など、明らかに違うと分からないものにする（2026-11-09 剛さん）。正解は必ず先頭に書く。画面に出す順番は positions()・order() が解く人ごとに決める。
@@ -237,7 +234,7 @@ const RAW=[
 ['E','m',2,'しきい値','「しきい値」の説明はどれですか。',['信号をパルスとして数えるかどうかを決める線','信号が ON になっている時間の長さ','パルスが1回出る間にタイヤが進む距離','センサが出せる信号の強さの最大の値','電源がなくても読める信号の大きさ'],'信号がこの線に届かないと数えられません。パッシブ型が低速で読めない理由です。'],
 ['E','m',3,'TTC（衝突余裕時間）','TTC（衝突余裕時間）の説明はどれですか。',['このまま走ると、ぶつかるまでの秒数。距離 ÷ 相対速度','前の車が通った場所を通るまでの秒数。距離 ÷ 自分の速さ','電波が出てから返るまでの秒数。距離 × 2 ÷ 光の速さ','ブレーキが効き始めるまでの秒数。距離 ÷ 自分の速さ','止まるまでにかかる秒数。速さ ÷ 減速の強さ'],'自動ブレーキの判断に使います。距離 ÷ 自分の速さは車間時間です。'],
 ['E','m',3,'FMCW','車のレーダーで使う FMCW 方式の説明はどれですか。',['周波数を変えながら電波を出し続け、返りとの周波数の差から距離を出す','短い電波を一瞬だけ出し、返るまでの時間を直接測って距離を出す','周波数を変えずに電波を出し続け、ドップラー効果だけで距離を出す','周波数を変えながら超音波を出し、返りの音の大きさから距離を出す','2つのアンテナで同時に受け、受けた時刻の差から距離を出す'],'周波数の差（ビート周波数）から往復時間を求めます。遠いほど差が大きくなります。'],
-['E','r',1,'パルス','「1回だけ短く出る電気の信号で、数えると回数が分かるもの」を何といいますか。',['パルス','しきい値','分解能','トリガー','チャープ'],'車輪速センサでは、歯が通るたびにパルスが1回出ます。'],
+['E','r',1,'パルス','「1回だけ短く出る電気の信号で、数えると回数が分かるもの」を何といいますか。',['パルス','しきい値','分解能','センサロータ','チャープ'],'車輪速センサでは、歯が通るたびにパルスが1回出ます。'],
 ['E','r',2,'飛行時間（TOF）','「音や電波が出てから返ってくるまでの時間」を何といいますか。',['飛行時間（TOF）','車間時間','残響','TTC（衝突余裕時間）','ビート周波数'],'往復時間と同じ意味です。片道の距離は、速さ × 時間 ÷ 2 で出します。'],
 ['E','r',2,'ドップラー効果','「音や電波を出す物と受け取る物が近づくと高く、離れると低く受け取られること」を何といいますか。',['ドップラー効果','減衰','指向性','残響','反射'],'救急車のサイレンが通りすぎると低くなるのがこれです。レーダーは速さを測るのに使います。'],
 ['E','r',2,'センサフュージョン','「レーダーやカメラなど、ちがう種類のセンサの結果を合わせて1つの判断を出すこと」を何といいますか。',['センサフュージョン','送受一体','FMCW','視野角（FOV）','長距離レーダー'],'苦手を補い合います。送受一体は、1枚の板で音を出して聞くしくみです。'],
@@ -245,7 +242,7 @@ const RAW=[
 ['E','u',1,'車輪速センサ','ABS が、ロックしかけたタイヤを見つけるために使うセンサはどれですか。',['車輪速センサ','加速度センサ','ヨーレートセンサ','ブレーキペダルセンサ','クランク角センサ'],'4つのタイヤの回転を比べて、止まりかけているタイヤを見つけます。'],
 ['E','u',1,'ミリ波レーダー','雨や夜でも、遠くの前の車までの距離と速さを測るのに向いているものはどれですか。',['ミリ波レーダー','超音波センサ','カメラ','照度センサ','車輪速センサ'],'電波なので天気や暗さの影響が小さく、遠くまで届きます。超音波は近距離用です。'],
 ['E','u',2,'センサロータ','車輪速センサの「センサロータ」の役割はどれですか。',['タイヤと一緒に回り、歯が通るたびにパルスを作る','回転を止めるときに、ブレーキで押さえる面になる','磁石の力で、タイヤの回転を助ける','タイヤの空気の圧力を測って、電波で送る','コイルに電気を流して、センサを動かす'],'歯がセンサの前を通るたびにパルスが1回出ます。'],
-['E','u',2,'トリガー（Trig）','Arduino の超音波センサで、Trig ピンの信号の役割はどれですか。',['「今、音を出せ」と合図する','音を出してから返るまでの間 ON になる','返ってきた音の強さをそのまま伝える','超音波の周波数を切りかえる','測った距離を数字で伝える'],'10µs の信号で超音波が出ます。返るまでの間 ON になるのは Echo です。'],
+['E','u',2,'着座センサ','助手席に人がいるかを見て、エアバッグをふくらませるか決める車で使うセンサはどれですか。',['着座センサ','バックルスイッチ','ドアスイッチ','加速度センサ','キー検知アンテナ'],'締めたかどうかを見るのがバックルスイッチ、衝撃を測るのが加速度センサです。'],
 ['E','u',3,'アクティブ型','アクティブ型の車輪速センサが、パッシブ型より向いているのはどれですか。',['止まる直前のとても遅い回転まで読むこと','電源を使わないで回転を読むこと','磁石とコイルだけの簡単な作りで読むこと','速い回転ほど信号を大きくして読むこと','磁石がないタイヤでも回転を読むこと'],'ホール素子は磁石が止まっていても感じられます。電源が要らないのはパッシブ型です。'],
 ['E','b',1,'ロック','急ブレーキでタイヤがロックすると、どうなりますか。',['ハンドルを切っても曲がれず、地面をすべる','タイヤは回り続けるが、車が止まらなくなる','エンジンが止まり、ブレーキも効かなくなる','車輪速センサのパルスが増え続ける','アクセルを踏むと、急に前へ飛び出す'],'回らないタイヤでは曲がれません。だから ABS でタイヤを回し続けます。'],
 ['E','b',2,'センサフュージョン','センサフュージョンが大事になるのは、どのようなときですか。',['カメラは物の種類が分かり、レーダーは距離に強いなど、得意が分かれているとき','1つのセンサの分解能を上げて、同じ物をより細かく測りたいとき','同じ種類のセンサを4つ並べて、タイヤごとに回転を測りたいとき','レーダーの視野角を広げて、斜めうしろまで見えるようにしたいとき','超音波センサの残響を短くして、より近くまで測りたいとき'],'ちがう種類のセンサの結果を合わせ、苦手を補って1つの判断を出します。'],
@@ -308,7 +305,7 @@ const GLOSS={
 'FMCW':'周波数を変えながら電波を出し続け、返りとの周波数の差から距離を出す方式です。',
 'ミリ波レーダー':'波の長さが数ミリの電波で、物までの距離と速さを測る装置です。',
 'センサロータ':'タイヤと一緒に回る、歯のついた輪です。',
-'トリガー（Trig）':'「今、音を出せ」という合図の信号です。',
+'着座センサ':'座席に人が座っているかを見るセンサです。',
 'アクティブ型':'ホール素子などを使った車輪速センサです。電源が要りますが、止まる直前まで読めます。',
 'ロック':'急ブレーキでタイヤの回転が止まり、回らないまま地面をすべる状態です。',
 '音速と気温':'音速は気温が高いほど速くなります。音速 ≒ 331.5 ＋ 0.6 × 気温（m/s）。',
@@ -384,7 +381,7 @@ const Q=(()=>{
   return seq})();
 const LET='アイウエオ';
 const KEY='seigyo100-v3'; // 問題を入れかえたので前の記録は引きつがない
-const blank=()=>({no:'',i:-1,ans:{},ord:{},pos:null});
+const blank=()=>({i:-1,ans:{},ord:{},pos:null});
 let st=blank();
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)st=Object.assign(st,s)}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
@@ -441,17 +438,13 @@ function start(){
   $('card').innerHTML=`<div class="q">後期中間考査の出題範囲です。車の制御とセンサの用語を、5択で確かめます</div>
    <table class="plan">${Object.keys(CH).map(g=>`<tr><td>${esc(CH[g])}</td><td>${Q.filter(q=>q.g===g).length}問</td></tr>`).join('')}</table>
    <p style="margin:0">用語の意味、意味から用語、使いどころ、大事な場面を問います。答えるとすぐに正解と解説が出ます。途中でやめても、この端末に続きが残ります。</p>
-   <div class="start"><label for="no">出席番号（4けた）</label><br><input id="no" inputmode="numeric" maxlength="4" autocomplete="off" value="${esc(st.no)}" placeholder="3101"><div class="err" id="noErr" hidden>出席番号は4けたの数字で入れてください。</div></div>
    <div class="row"><button class="btn" id="go">はじめる</button></div>`;
-  const no=$('no');
-  $('go').onclick=()=>{const v=no.value.normalize('NFKC').trim();
-    if(!/^[0-9]{4}$/.test(v)){$('noErr').hidden=false;no.focus();return}
-    st.no=v;st.i=0;positions();save();render()};
+  $('go').onclick=()=>{st.i=0;positions();save();render()};
 }
 function result(){
   const all=idxOf(()=>true),n=doneCount(),sc=a=>a.filter(correct).length,total=sc(all);
   const miss=all.filter(i=>answered(i)&&!correct(i)),first=all.find(i=>!answered(i));
-  $('card').innerHTML=`<div class="q">出席番号 ${esc(st.no)} の結果</div>
+  $('card').innerHTML=`<div class="q">結果</div>
    <div><span class="res-total">${total}</span><span style="font-size:20px"> / ${Q.length} 問 正解</span>${n<Q.length?`<span class="hint">　（解いたのは ${n} 問）</span>`:''}</div>
    <div class="bars">${Object.keys(CH).map(g=>{const a=idxOf(q=>q.g===g),r=sc(a);
      return `<div class="bar"><span>${esc(CH[g])}</span><div class="track"><div class="fill" style="width:${r/a.length*100}%"></div></div><span class="num">${r}/${a.length}</span></div>`}).join('')}</div>
@@ -465,7 +458,7 @@ function result(){
   // ブラウザの confirm は Classroom などで使えないので、2回押しで確かめる
   let armed=false;const rs=$('reset');
   rs.onclick=()=>{if(!armed){armed=true;rs.textContent='もう一度押すと記録を消します';return}
-    const no=st.no;st=blank();st.no=no;save();render()};
+    st=blank();save();render()};
 }
 render();
 </script>

@@ -38,7 +38,7 @@ console.log('■ 問題データ');
   // センサ名や機能名だけの短い答えは、別の問いで重なってよい
   ok('正解の文の重複がない', dupA.filter(s => s.length > 14).length === 0, dupA);
   ok('どの問題の用語にも説明がある', Q.every(q => GLOSS[q.w]), Q.filter(q => !GLOSS[q.w]).map(q => q.w));
-  const banned = /PLC|ラダー|シーケンス|フィードバック|PID|インターロック|自己保持|掃除機|接点|積分|微分|偏差|ゲイン|クリープ|すえ切り/;
+  const banned = /PLC|ラダー|シーケンス|フィードバック|PID|インターロック|自己保持|掃除機|接点|積分|微分|偏差|ゲイン|クリープ|すえ切り|Arduino|Trig/;
   const hit = Q.filter(q => banned.test([q.w, q.q, q.e, ...q.o].join(' '))).map(q => q.id + ':' + q.w);
   ok('PLC・フィードバック制御・制御でない用語の問題がない', hit.length === 0 && !Q.some(q => q.w === '切り返し'), hit);
   ok('使われていない用語の説明がない', Object.keys(GLOSS).every(k => Q.some(q => q.w === k)), Object.keys(GLOSS).filter(k => !Q.some(q => q.w === k)));
@@ -67,7 +67,7 @@ console.log('■ 正解の位置');
 {
   const totals = [0, 0, 0, 0, 0]; let sameAll = true, first = null;
   for (let t = 0; t < 30; t++) {
-    const w = open(); w.document.getElementById('no').value = '3101'; click(w, '#go');
+    const w = open(); click(w, '#go');
     const pos = [];
     w.eval('Q').forEach((q, i) => { const a = w.eval(`order(${i})`); pos.push(a.indexOf(0)); });
     const c = [0, 0, 0, 0, 0]; pos.forEach(p => { c[p]++; totals[p]++; });
@@ -83,17 +83,8 @@ console.log('■ 正解の位置');
 console.log('■ 最初から最後まで解く');
 {
   const w = open(); const d = w.document;
-  ok('最初は出席番号の画面', !!d.getElementById('no'));
-  ok('出席番号が空だと始まらない', (click(w, '#go'), !!d.getElementById('no')));
-  ok('入力は4けたまで', d.getElementById('no').maxLength === 4);
-  for (const bad of ['12', '310', 'abcd', '31a1']) {
-    d.getElementById('no').value = bad; click(w, '#go');
-    ok('「' + bad + '」では始まらず、お知らせが出る', !!d.getElementById('no') && !d.getElementById('noErr').hidden);
-  }
-  d.getElementById('no').value = '\uFF13\uFF11\uFF10\uFF12'; click(w, '#go');
-  ok('全角の4けたも半角にして受け付ける', w.eval('st').no === '3102');
-  w.eval('st.i=-1;render()');
-  d.getElementById('no').value = '3101'; click(w, '#go');
+  ok('出席番号の欄がない', !d.getElementById('no') && !d.querySelector('.card').textContent.includes('出席番号'));
+  click(w, '#go');
   ok('始めると1問目', d.getElementById('count').textContent === '1 / 150');
   ok('選択肢のボタンが5つ', d.querySelectorAll('.opt').length === 5);
   ok('答える前は「次へ」がない', !d.getElementById('next'));
@@ -122,7 +113,6 @@ console.log('■ 最初から最後まで解く');
   ok('まちがえた問題の番号が30個', d.querySelectorAll('.miss button').length === 30);
   ok('先生に見せる案内がない', !d.querySelector('.card').textContent.includes('先生'));
   ok('全問解いたら「続きをとく」は出ない', !d.getElementById('cont'));
-  ok('出席番号が結果に出る', d.querySelector('.q').textContent.includes('3101'));
   d.querySelector('.miss button').click();
   ok('番号を押すとその問題へ', d.getElementById('count').textContent === '1 / 150' && !!d.querySelector('.fb.ng'));
   click(w, '#toRes');
@@ -134,14 +124,14 @@ console.log('■ 最初から最後まで解く');
   click(w, '#reset');
   ok('やり直しの1回目では消えない', !!d.querySelector('.res-total'));
   click(w, '#reset');
-  ok('2回目で消えて出席番号の画面へ', !!d.getElementById('no') && d.getElementById('no').value === '3101');
+  ok('2回目で消えて最初の画面へ', !!d.getElementById('go') && !d.querySelector('.res-total'));
   ok('やり直すと答えが空', Object.keys(w.eval('st').ans).length === 0);
 }
 
 console.log('■ 途中で結果を見る');
 {
   const w = open(); const d = w.document;
-  d.getElementById('no').value = '3103'; click(w, '#go');
+  click(w, '#go');
   for (let i = 0; i < 3; i++) { d.querySelector('.opt[data-k="0"]').click(); click(w, '#next'); }
   click(w, '#toRes');
   ok('途中でも採点が出る', d.querySelector('.res-total').textContent === '3');
@@ -157,7 +147,7 @@ console.log('■ localStorage が使えないとき');
     beforeParse(w) { Object.defineProperty(w, 'localStorage', { get() { throw new Error('blocked'); } }); },
   });
   const d = dom.window.document;
-  d.getElementById('no').value = '3104'; d.getElementById('go').click();
+  d.getElementById('go').click();
   ok('保存できなくても解ける', d.getElementById('count').textContent === '1 / 150' && d.querySelectorAll('.opt').length === 5);
 }
 
