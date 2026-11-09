@@ -19,7 +19,7 @@
   残高はどこにある.html → emoney/index.html （同上。電子マネーのしくみ：IC・コード決済・クレジット・集中と分散）
   キャッシュレス商店.html → shop/index.html （同上。電子マネー単元の経営ゲーム：店ごとに決済を選ぶ）
   決済をえらぶ.html   → emoney2/index.html（同上。電子マネー②：商店のふりかえり・トレードオフ・設計ワーク）
-  ふりかえり演習.html  → review1/index.html（同上。コンピュータシステム技術 5回分の復習演習）
+  ふりかえり演習.html  → review1/index.html（同上。コンピュータシステム技術 6回分の復習演習。仮想通貨・電子マネーを含む）
   制御クイズ100.html   → seigyo100/index.html（同上。電子計測制御の5択150問）
   制御クイズ導入.html   → seigyo100/intro.html（同上。授業冒頭の導入スライド）
 
