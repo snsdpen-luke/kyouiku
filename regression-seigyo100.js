@@ -38,9 +38,9 @@ console.log('■ 問題データ');
   // センサ名や機能名だけの短い答えは、別の問いで重なってよい
   ok('正解の文の重複がない', dupA.filter(s => s.length > 14).length === 0, dupA);
   ok('どの問題の用語にも説明がある', Q.every(q => GLOSS[q.w]), Q.filter(q => !GLOSS[q.w]).map(q => q.w));
-  const banned = /PLC|ラダー|シーケンス|フィードバック|PID|インターロック|自己保持|掃除機|接点|積分|微分|偏差|ゲイン/;
+  const banned = /PLC|ラダー|シーケンス|フィードバック|PID|インターロック|自己保持|掃除機|接点|積分|微分|偏差|ゲイン|クリープ|すえ切り/;
   const hit = Q.filter(q => banned.test([q.w, q.q, q.e, ...q.o].join(' '))).map(q => q.id + ':' + q.w);
-  ok('PLC・フィードバック制御の問題がない', hit.length === 0, hit);
+  ok('PLC・フィードバック制御・制御でない用語の問題がない', hit.length === 0 && !Q.some(q => q.w === '切り返し'), hit);
   ok('使われていない用語の説明がない', Object.keys(GLOSS).every(k => Q.some(q => q.w === k)), Object.keys(GLOSS).filter(k => !Q.some(q => q.w === k)));
   ok('解説が短い（70文字まで）', Q.every(q => q.e.length <= 70), Q.filter(q => q.e.length > 70).map(q => q.id + ':' + q.e.length));
   ok('解説が です・ます で終わる', Q.every(q => /(す|した|ます)。$/.test(q.e) || /[。）]$/.test(q.e)));
