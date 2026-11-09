@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>[hidden]{display:none!important}body{margin:0;font-size:14px}img{max-width:100%}</style>
 <title>ふりかえり演習</title>
@@ -15,12 +16,8 @@
   --f-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",sans-serif;
   --f-head:"Zen Maru Gothic","BIZ UDPGothic","Hiragino Sans",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#141b24; --card:#1d2631; --ink:#e6edf4; --sub:#9aa8b6; --line:#334150;
-  --accent:#7aa5f0; --accent-soft:#233452; --ok:#5cc596; --ok-soft:#1b3a2e; --ng:#f08a74; --ng-soft:#432622; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#141b24; --card:#1d2631; --ink:#e6edf4; --sub:#9aa8b6; --line:#334150;
-  --accent:#7aa5f0; --accent-soft:#233452; --ok:#5cc596; --ok-soft:#1b3a2e; --ng:#f08a74; --ng-soft:#432622; color-scheme:dark}
+/* ライトモード固定（端末がダークモードでも白基調で表示する） */
+:root{color-scheme:light}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;box-sizing:border-box}
@@ -77,8 +74,6 @@ textarea{font:inherit;font-size:17px;width:100%;min-height:130px;padding:12px;bo
 .num{font-variant-numeric:tabular-nums;text-align:right}
 .parts{display:flex;gap:24px;flex-wrap:wrap;font-size:16px}
 .parts b{font-size:22px;font-variant-numeric:tabular-nums}
-.start label{font-size:15px;color:var(--sub)}
-.start input{font:inherit;font-size:22px;width:120px;padding:8px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
 table.plan{border-collapse:collapse;font-size:16px}
 table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
@@ -223,7 +218,7 @@ const Q=[
 const EXTRA=['パケット','ルーター','UDP','波長','速度制限','パスキー','ブロック','プリペイド'];
 const BANK=[...Q.filter(q=>q.t==='term').map(q=>q.a[0]),...EXTRA].sort((a,b)=>a.localeCompare(b,'ja'));
 const LET='アイウエオカ';
-let st={no:'',i:-1,ans:{},tin:{},self:{},text:{},shown:{},ord:{},pick:{}};
+let st={i:-1,ans:{},tin:{},self:{},text:{},shown:{},ord:{},pick:{}};
 const KEY='fukushu-v5';
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)st=Object.assign(st,s)}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
@@ -314,16 +309,14 @@ function start(){
    <tr><td>第2部　選択</td><td>${n(2)}問</td><td>「すべて選ぶ」問題は、1つでも多い・足りないと不正解です</td></tr>
    <tr><td>第3部　記述</td><td>${n(3)}問</td><td>書いてから模範解答を見て、自分で判定します</td></tr></table>
    <p style="margin:0">答えるとすぐに正解と解説が出ます。計算問題はメモを使ってかまいません。</p>
-   <div class="start"><label for="no">出席番号</label><br><input id="no" inputmode="numeric" value="${esc(st.no)}" placeholder="例 12"></div>
    <div class="row"><button class="btn" id="go">はじめる</button></div>`;
-  const no=$('no');
-  $('go').onclick=()=>{if(!no.value.trim()){no.focus();no.placeholder='番号を入れます';return}st.no=no.value.trim();st.i=0;save();render()};
+  $('go').onclick=()=>{st.i=0;save();render()};
 }
 function result(){
   const idx=p=>Q.map((q,i)=>i).filter(i=>partOf(Q[i])===p);
   const sc=a=>a.filter(correct).length;
   const p1=idx(1),p2=idx(2),p3=idx(3);
-  $('card').innerHTML=`<div class="q">出席番号 ${esc(st.no)} の結果</div>
+  $('card').innerHTML=`<div class="q">結果</div>
    <div><span class="res-total">${sc(p1)+sc(p2)}</span><span style="font-size:20px"> / ${p1.length+p2.length} 問 正解（用語＋選択）</span></div>
    <div class="parts"><span>用語 <b>${sc(p1)}</b> / ${p1.length}</span><span>選択 <b>${sc(p2)}</b> / ${p2.length}</span></div>
    <div class="bars">${Object.keys(CH).map(s=>{const a=Q.map((q,i)=>i).filter(i=>Q[i].s===s&&Q[i].t!=='w');const r=sc(a);

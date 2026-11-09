@@ -51,6 +51,7 @@ console.log('■ 問題データ');
   ok('問題文の重複がない', dup.length === 0, dup);
   ok('家の中用の住所（10.x）を外の住所として使っていない', !Q.some(q => /10\.20\.30\.40/.test(q.q + (q.o || []).join())));
   ok('confirm / alert を使っていない', !/\bconfirm\(|\balert\(/.test(html.replace(/w\.confirm|w\.alert/g, '')));
+  ok('ダークモードの色の切りかえがない（ライト固定）', !/prefers-color-scheme:\s*dark|data-theme="dark"/.test(html) && html.includes('content="light"'));
   ok('外への通信がない', !/fetch\(|XMLHttpRequest|sendBeacon/.test(html));
 }
 
@@ -61,15 +62,14 @@ console.log('■ 開始画面');
   ok('「6回の授業」と出る', t.includes('これまでの6回の授業'), t.slice(0, 40));
   const { BANK } = vars(w);
   ok('用語の数が一覧の数と合う', t.includes(BANK.length + '個の用語'));
+  ok('出席番号の欄がない', !$(w, '#no') && !t.includes('出席番号'));
   click(w, '#go');
-  ok('出席番号が空なら始まらない', vars(w).st.i === -1);
-  $(w, '#no').value = '7'; click(w, '#go');
-  ok('番号を入れると1問目へ', vars(w).st.i === 0);
+  ok('「はじめる」で1問目へ', vars(w).st.i === 0);
 }
 
 // 全問を解く。good=true なら全部正解、false なら全部まちがえる
 function playAll(good) {
-  const w = open(); $(w, '#no').value = '1'; click(w, '#go');
+  const w = open(); click(w, '#go');
   const { Q, LET } = vars(w);
   for (let i = 0; i < Q.length; i++) {
     const q = Q[i]; const st = w.eval('st');
@@ -110,6 +110,7 @@ console.log('■ 全部正解で解く');
   if (w) {
     const t = $(w, '#card').textContent;
     ok('結果が 94 / 94', t.includes('94 / 94 問 正解'), t.slice(0, 60));
+    ok('結果に出席番号が出ない', !t.includes('出席番号'));
     ok('結果に6つの章のバーがある', w.document.querySelectorAll('.bar').length === 6);
     ok('サトシ・ナカモト事件ファイルのバーが 18/18', [...w.document.querySelectorAll('.bar')].some(b => b.textContent.includes('サトシ') && b.textContent.includes('18/18')));
     ok('記述は6問とも「できた」', (t.match(/できた/g) || []).length >= 6);
@@ -124,12 +125,12 @@ console.log('■ 全部まちがえて解く');
 }
 console.log('■ 保存と再開');
 {
-  const w1 = open(); $(w1, '#no').value = '3'; click(w1, '#go');
+  const w1 = open(); click(w1, '#go');
   const q0 = vars(w1).Q[0];
   [...w1.document.querySelectorAll('.bank .opt')].find(b => b.dataset.w === q0.a[0]).click(); click(w1, '#next');
   const saved = w1.localStorage.getItem('fukushu-v5');
   const w2 = open(saved);
-  ok('開き直すと続きから（2問目）', vars(w2).st.i === 1 && vars(w2).st.no === '3');
+  ok('開き直すと続きから（2問目）', vars(w2).st.i === 1);
   const w3 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/review1/', beforeParse(w) {
     Object.defineProperty(w, 'localStorage', { get() { throw new Error('blocked'); } }); } }).window;
   ok('localStorage が使えなくても開始画面が出る', $(w3, '#go') !== null);
