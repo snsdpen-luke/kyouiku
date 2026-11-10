@@ -9,11 +9,13 @@ function ok(name, cond, extra) {
   if (cond) { pass++; console.log('  ok  ' + name); }
   else { fail++; console.log('  NG  ' + name + (extra ? '  → ' + extra : '')); }
 }
-function open(store) {
+function open(store, mode = 'drill', test) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', url: 'https://example.test/seigyo100/',
     beforeParse(w) {
       if (store) w.localStorage.setItem('seigyo100-v3', store);
+      if (mode) w.localStorage.setItem('seigyo100-mode', mode);
+      if (test) w.localStorage.setItem('seigyo100-test-v1', test);
       // 実環境（Classroom のサンドボックス）では confirm が常に false を返す
       w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
     },
@@ -147,8 +149,137 @@ console.log('■ localStorage が使えないとき');
     beforeParse(w) { Object.defineProperty(w, 'localStorage', { get() { throw new Error('blocked'); } }); },
   });
   const d = dom.window.document;
+  ok('保存できなくても最初はメニュー', !!d.getElementById('mDrill') && !!d.getElementById('mTest'));
+  d.getElementById('mDrill').click();
   d.getElementById('go').click();
   ok('保存できなくても解ける', d.getElementById('count').textContent === '1 / 150' && d.querySelectorAll('.opt').length === 5);
+}
+
+console.log('■ メニュー');
+{
+  const w = open(null, null); const d = w.document;
+  ok('初めて開くとメニュー', !!d.getElementById('mDrill') && !!d.getElementById('mTest') && d.getElementById('menuBtn').hidden);
+  click(w, '#mDrill');
+  ok('練習を選ぶと練習の最初の画面', !!d.getElementById('go') && !d.getElementById('no') && !d.getElementById('menuBtn').hidden);
+  click(w, '#tomenu'); click(w, '#mTest');
+  ok('小テストを選ぶと出席番号の欄', !!d.getElementById('no'));
+  ok('選んだほうを覚える', w.localStorage.getItem('seigyo100-mode') === 'test');
+  w.close();
+}
+
+console.log('■ 小テスト：組み立て');
+{
+  for (let t = 0; t < 20; t++) {
+    const w = open(null, 'test'); const d = w.document;
+    d.getElementById('no').value = '２１０５'; click(w, '#go');
+    const ts = w.eval('ts'), Q = w.eval('Q'), QID = Object.fromEntries(Q.map(q => [q.id, q]));
+    const bad = [];
+    if (ts.no !== '2105') bad.push('全角の出席番号 ' + ts.no);
+    if (ts.stages.length !== 6) bad.push('ステージ数');
+    const total = ts.stages.reduce((a, S) => a + S.qs.length, 0);
+    if (total !== 50) bad.push('合計 ' + total);
+    ts.stages.forEach((S, s) => {
+      const qs = S.qs.map(id => QID[id]), ans = qs.map(q => q.o[0]);
+      if (new Set(ans).size !== ans.length) bad.push(s + ':正解が重なる');
+      if (!ans.every(a => S.bank.includes(a))) bad.push(s + ':正解が語群にない');
+      if (S.bank.length !== S.qs.length + 4 || new Set(S.bank).size !== S.bank.length) bad.push(s + ':語群の数');
+      // 誤りの語は、どれかの問題で「誤り」として作られた言葉だけ（別の問題の正解になりうる言葉を入れない）
+      const extra = S.bank.filter(b => !ans.includes(b));
+      if (!extra.every(b => qs.some(q => q.o.slice(1).includes(b)))) bad.push(s + ':語群の出どころ');
+      if (s < 5 && !(S.qs.length === 8 && qs.every(q => q.g === S.g && q.t === 'r'))) bad.push(s + ':分野ステージ');
+      if (s === 5 && !(S.qs.length === 10 && qs.every(q => q.t !== 'r'))) bad.push('ボス');
+    });
+    if (ts.stages[0].sec !== 240 || ts.stages[5].sec !== 300) bad.push('制限時間');
+    if (bad.length) { ok('20回組み立てて崩れない', false, bad.join(' ')); break; }
+    if (t === 19) ok('20回組み立てて崩れない（6ステージ・50問・語群は正解＋4語・正解の重なりなし）', true);
+    w.close();
+  }
+}
+
+console.log('■ 小テスト：通しで受ける');
+{
+  const w = open(null, 'test'); const d = w.document;
+  click(w, '#go');
+  ok('出席番号が4けたでないと始まらない', d.getElementById('nomsg').textContent.includes('4けた') && !w.eval('ts.stages'));
+  d.getElementById('no').value = '2105'; click(w, '#go');
+  ok('始めるとSTAGE 1 の説明（時間はまだ動かない）', d.querySelector('.big').textContent === 'STAGE 1' && w.eval('ts.phase') === 'intro');
+  click(w, '#play');
+  ok('スタートで制限時間 4:00', d.getElementById('tm').textContent === '4:00' && w.eval('ts.phase') === 'play');
+  ok('問題中はメニューボタンを出さない', d.getElementById('menuBtn').hidden);
+  ok('語群が12語', d.querySelectorAll('.bank .opt').length === 12);
+  const QID = w.eval('QID');
+  const right = (s, k) => QID[w.eval('ts').stages[s].qs[k]].o[0];
+  const pick = word => [...d.querySelectorAll('.bank .opt')].find(b => b.dataset.w === word).click();
+  pick(right(0, 0));
+  ok('選ぶと次の問題へ進む', w.eval('ts.i') === 1 && d.querySelector('.dots button.fill')?.dataset.j === '0');
+  pick(right(0, 0));
+  ok('ほかの問題で使った語を選ぶと、こちらへ移る', w.eval('ts.ans[0][1]') === right(0, 0) && w.eval('ts.ans[0][0]') == null);
+  d.querySelector('.dots button[data-j="0"]').click();
+  ok('番号を押すとその問題へ', w.eval('ts.i') === 0);
+  pick(right(0, 0));
+  d.querySelector('.dots button[data-j="0"]').click();
+  ok('同じ語をもう一度押すと空欄にもどる', (pick(right(0, 0)), w.eval('ts.ans[0][0]') == null));
+  d.querySelector('.dots button[data-j="0"]').click(); pick(right(0, 0));
+  // ステージ1：8問中6問正解（2問は空欄）で終える
+  for (let k = 1; k < 6; k++) { d.querySelector(`.dots button[data-j="${k}"]`).click(); pick(right(0, k)); }
+  click(w, '#fin');
+  ok('空欄があると1回目の「終える」では終わらない', w.eval('ts.phase') === 'play' && d.getElementById('fin').textContent.includes('まだ2問'));
+  click(w, '#fin');
+  ok('2回目で採点：6/8・★★', d.querySelector('.res-total').textContent === '6' && d.querySelectorAll('.stars .off')[0]?.textContent === '★' && d.querySelector('.big').textContent === 'STAGE CLEAR!');
+  ok('答え合わせに未回答と正解が出る', d.querySelector('.card').textContent.includes('未回答') && d.querySelectorAll('.rv').length === 8);
+  click(w, '#nextS');
+  ok('次はSTAGE 2', d.querySelector('.big').textContent === 'STAGE 2');
+  // ステージ2：全問正解
+  click(w, '#play');
+  for (let k = 0; k < 8; k++) { d.querySelector(`.dots button[data-j="${k}"]`).click(); pick(right(1, k)); }
+  ok('全部答えるとボタンが「採点する」', d.getElementById('fin').textContent === '採点する');
+  click(w, '#fin');
+  ok('全問正解で PERFECT!', d.querySelector('.big').textContent === 'PERFECT!' && d.querySelector('.stars .off').textContent === '');
+  click(w, '#nextS');
+  // ステージ3：時間切れ（3問正解したところで締め切りを過ぎる）
+  click(w, '#play');
+  for (let k = 0; k < 3; k++) pick(right(2, k));
+  const saved = w.localStorage.getItem('seigyo100-test-v1');
+  const late = JSON.parse(saved); late.dl = Date.now() - 1;
+  const w2 = open(null, 'test', JSON.stringify(late)); const d2 = w2.document;
+  ok('開き直して締め切りを過ぎていたら、そこまでで採点（TIME UP）', d2.querySelector('.warn')?.textContent.includes('TIME UP') && d2.querySelector('.res-total').textContent === '3');
+  ok('3/8 は ★なし・もう一歩', d2.querySelector('.big').textContent.startsWith('もう一歩') && d2.querySelectorAll('.stars .off')[0].textContent === '★★★');
+  // 開き直しても時間は戻らない
+  const mid = JSON.parse(saved); mid.dl = Date.now() + 61000;
+  const w3 = open(null, 'test', JSON.stringify(mid));
+  ok('開き直しても残り時間は締め切りから計算（1:01）', w3.document.getElementById('tm').textContent === '1:01' && !w3.document.getElementById('tbar').classList.contains('hot'));
+  w3.close();
+  // w2 で続ける：ステージ4・5 は答えずに終える、ボスは全問正解
+  const W = w2, D = d2; const right2 = (s, k) => W.eval('QID')[W.eval('ts').stages[s].qs[k]].o[0];
+  const pick2 = word => [...D.querySelectorAll('.bank .opt')].find(b => b.dataset.w === word).click();
+  click(W, '#nextS');
+  for (const s of [3, 4]) { click(W, '#play'); click(W, '#fin'); click(W, '#fin'); click(W, '#nextS'); }
+  ok('最後はボスステージ（5分・10問・語群14語）', D.querySelector('.big').textContent === 'BOSS STAGE');
+  click(W, '#play');
+  ok('ボスの制限時間 5:00', D.getElementById('tm').textContent === '5:00' && D.querySelectorAll('.bank .opt').length === 14);
+  for (let k = 0; k < 10; k++) { D.querySelector(`.dots button[data-j="${k}"]`).click(); pick2(right2(5, k)); }
+  click(W, '#fin');
+  ok('ボスを全問正解', D.querySelector('.res-total').textContent === '10');
+  click(W, '#nextS');
+  // 6 + 8 + 3 + 0 + 0 + 10 = 27
+  ok('最終結果：27 / 50 点', D.querySelector('.cert .score').textContent === '27' && D.querySelector('.cert').textContent.includes('/ 50 点'));
+  ok('結果に出席番号・回数・ランク', D.querySelector('.cert').textContent.includes('2105') && D.querySelector('.cert').textContent.includes('1回目') && D.querySelector('.cert .rank').textContent === 'ランク C');
+  ok('ステージごとのバーが6本で、合計が点数と同じ', D.querySelectorAll('.cert .bar').length === 6 && [...D.querySelectorAll('.cert .num')].reduce((a, e) => a + parseInt(e.textContent, 10), 0) === 27);
+  ok('時間切れのステージに印', D.querySelectorAll('.cert .num')[2].textContent.includes('⏱'));
+  const w4 = open(null, 'test', W.localStorage.getItem('seigyo100-test-v1'));
+  ok('開き直しても結果が残る', w4.document.querySelector('.cert .score')?.textContent === '27');
+  w4.close();
+  click(W, '#tomenu');
+  ok('メニューに小テストの点が出る', D.getElementById('mTest').textContent.includes('27 / 50 点'));
+  click(W, '#mTest');
+  click(W, '#retry');
+  ok('受け直しは1回目では消えない', !!D.querySelector('.cert'));
+  click(W, '#retry');
+  ok('2回目で最初の画面へ（出席番号は残る）', D.getElementById('no')?.value === '2105');
+  click(W, '#go');
+  ok('受け直すと「2回目」', W.eval('ts.tries') === 2);
+  ok('練習の記録は小テストで変わらない', W.eval('Object.keys(st.ans).length') === 0);
+  w.close(); W.close();
 }
 
 console.log(`\n合格 ${pass}　不合格 ${fail}`);
