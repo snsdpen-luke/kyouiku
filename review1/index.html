@@ -77,7 +77,25 @@ textarea{font:inherit;font-size:17px;width:100%;min-height:130px;padding:12px;bo
 table.plan{border-collapse:collapse;font-size:16px}
 table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
-@media (max-width:760px){.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:18px}}
+.mbtn{font:inherit;text-align:left;padding:20px 22px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:8px}
+.mbtn:hover{border-color:var(--accent)}
+.mbtn .t{font-family:var(--f-head);font-size:24px;font-weight:900;color:var(--accent)}
+.mbtn .d{font-size:16px;line-height:1.6}
+.mbtn .s{font-size:14px;color:var(--sub)}
+.menu{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.nobox label{font-size:15px;color:var(--sub)}
+.nobox input{font:inherit;font-size:28px;width:160px;padding:8px 14px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);letter-spacing:.15em;font-variant-numeric:tabular-nums}
+.warn{color:var(--ng);font-size:15px;font-weight:700}
+.jump{display:flex;gap:6px;flex-wrap:wrap}
+.jump .opt{min-height:0;padding:4px 12px;font-size:15px}
+.sent{font-family:var(--f-head);font-size:30px;font-weight:900;color:var(--ok)}
+.rv{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:4px;font-size:15px}
+.rv .h{display:flex;gap:10px;align-items:baseline;font-weight:700}
+.rv .mark{flex:none;width:28px;font-size:18px}
+.rv .mark.o{color:var(--ok)} .rv .mark.x{color:var(--ng)}
+.rv .e{color:var(--sub)}
+.hbtn{font:inherit;font-size:14px;font-weight:700;padding:4px 12px;border-radius:8px;border:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+@media (max-width:760px){.menu{grid-template-columns:1fr}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:18px}}
 @media (prefers-reduced-motion:no-preference){.fill,.prog div{transition:width .5s ease}}
 </style>
 
@@ -85,9 +103,10 @@ ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
 <body>
 <div class="app">
   <header>
-    <h1>ふりかえり演習</h1>
+    <h1 id="ttl">ふりかえり演習</h1>
     <div class="chips" id="chips"></div>
     <div class="count" id="count"></div>
+    <button class="hbtn" id="menuBtn" hidden>メニュー</button>
   </header>
   <div class="prog"><div id="bar" style="width:0"></div></div>
   <section class="card" id="card"></section>
@@ -249,6 +268,10 @@ function nav(canNext){return `<div class="row"><button class="btn ghost" id="bac
 function bindNav(){$('back').onclick=()=>{st.i--;save();render()};const n=$('next');if(n)n.onclick=()=>{st.i++;save();render()}}
 
 function render(){
+  $('menuBtn').hidden=mode==='menu';
+  if(mode==='menu')return menu();
+  if(mode==='test')return tRender();
+  $('ttl').textContent='ふりかえり演習';
   chrome();
   if(st.i<0)return start();
   if(st.i>=Q.length)return result();
@@ -309,8 +332,8 @@ function start(){
    <tr><td>第2部　選択</td><td>${n(2)}問</td><td>「すべて選ぶ」問題は、1つでも多い・足りないと不正解です</td></tr>
    <tr><td>第3部　記述</td><td>${n(3)}問</td><td>書いてから模範解答を見て、自分で判定します</td></tr></table>
    <p style="margin:0">答えるとすぐに正解と解説が出ます。計算問題はメモを使ってかまいません。</p>
-   <div class="row"><button class="btn" id="go">はじめる</button></div>`;
-  $('go').onclick=()=>{st.i=0;save();render()};
+   <div class="row"><button class="btn ghost" id="tomenu">メニューへ</button><button class="btn" id="go">はじめる</button></div>`;
+  $('go').onclick=()=>{st.i=0;save();render()};$('tomenu').onclick=()=>setMode('menu');
 }
 function result(){
   const idx=p=>Q.map((q,i)=>i).filter(i=>partOf(Q[i])===p);
@@ -325,6 +348,124 @@ function result(){
    <div class="hint">この画面を先生に見せてください。いちばん短いバーの授業を見直しましょう。</div>
    <div class="row"><button class="btn ghost" id="back">最後の問題にもどる</button></div>`;
   $('back').onclick=()=>{st.i=Q.length-1;save();render()};
+}
+// ===== メニュー =====
+let mode='menu';
+try{const m=localStorage.getItem('fukushu-mode');if(m==='drill'||m==='test')mode=m}catch(e){}
+function setMode(m){mode=m;try{localStorage.setItem('fukushu-mode',m)}catch(e){}render()}
+$('menuBtn').onclick=()=>{if(ts.sending)return;setMode('menu')};
+function menu(){
+  $('ttl').textContent='ふりかえり演習';$('chips').innerHTML='';$('count').textContent='';$('bar').style.width='0';
+  const dn=Q.filter((q,i)=>answered(i)).length;
+  const tst=ts.sent?'提出済み':ts.set&&ts.i>=0?`とちゅう（${ts.set.filter((_,k)=>tAnswered(k)).length} / ${TN} 問）`:'まだ受けていません';
+  $('card').innerHTML=`<div class="q">どちらをやりますか</div>
+   <div class="menu">
+    <button class="mbtn" id="mDrill"><span class="t">ふりかえり演習</span><span class="d">全${Q.length}問（用語・選択・記述）。答えるとすぐに正解と解説が出ます。</span><span class="s">進み具合 ${dn} / ${Q.length} 問</span></button>
+    <button class="mbtn" id="mTest"><span class="t">小テスト</span><span class="d">${TN}問（用語・選択）。最後に出席番号をつけて提出します。答え合わせは提出のあとです。</span><span class="s">${tst}</span></button>
+   </div>`;
+  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');
+}
+
+// ===== 小テスト（30問。提出はダミーで、どこにも送らない） =====
+const TN=30;
+const TPLAN={A:5,B:5,C:4,D:4,E:6,F:6}; // 章ごとの問題数（合計30）
+let ts={no:'',set:null,i:-1,ans:{},ord:{},sent:null,sending:false,warn:false};
+const TKEY='fukushu-test-v1';
+try{const s=JSON.parse(localStorage.getItem(TKEY)||'null');if(s)ts=Object.assign(ts,s,{sending:false,warn:false})}catch(e){}
+function tSave(){try{const {sending,warn,...o}=ts;localStorage.setItem(TKEY,JSON.stringify(o))}catch(e){}}
+const shuffle=a=>{a=a.slice();for(let n=a.length-1;n>0;n--){const r=Math.floor(Math.random()*(n+1));[a[n],a[r]]=[a[r],a[n]]}return a};
+function tMake(){ // 章ごとにくじで選び、章の順に並べる（記述は入れない）
+  return Object.keys(TPLAN).flatMap(s=>shuffle(Q.map((q,i)=>i).filter(i=>Q[i].s===s&&Q[i].t!=='w')).slice(0,TPLAN[s]).sort((a,b)=>a-b))}
+const tAnswered=k=>{const v=ts.ans[k];return Array.isArray(v)?v.length>0:v!=null};
+function tCorrect(k){const q=Q[ts.set[k]],v=ts.ans[k];
+  if(q.t==='term')return v!=null&&isTermOK(q,v);
+  if(q.t==='one')return v===q.a;
+  return Array.isArray(v)&&sameSet(v,q.a)}
+function tOrd(k){const q=Q[ts.set[k]];if(!ts.ord[k]){ts.ord[k]=shuffle(q.o.map((_,j)=>j));tSave()}return ts.ord[k]}
+const fixNo=v=>String(v).normalize('NFKC').replace(/\s/g,'');
+function tChrome(){
+  $('ttl').textContent='小テスト';
+  const on=ts.set&&ts.i>=0&&!ts.sent;
+  $('chips').innerHTML=on?`<span class="chip now">出席番号 ${esc(ts.no)}</span>`:'';
+  $('count').textContent=on&&ts.i<TN?`${ts.i+1} / ${TN}`:'';
+  $('bar').style.width=on?(ts.set.filter((_,k)=>tAnswered(k)).length/TN*100)+'%':ts.sent?'100%':'0';
+}
+function tRender(){
+  tChrome();
+  if(ts.sending)return tSending();
+  if(ts.sent)return tDone();
+  if(!ts.set||ts.i<0)return tStart();
+  if(ts.i>=TN)return tConfirm();
+  tQuestion();
+}
+function tStart(){
+  $('card').innerHTML=`<div class="q">小テスト（${TN}問）</div>
+   <table class="plan"><tr><td>問題</td><td>用語と選択。${Object.keys(CH).length}回の授業から出ます</td></tr>
+   <tr><td>答え方</td><td>答えはあとから変えられます。とばして先へ進むこともできます</td></tr>
+   <tr><td>提出</td><td>最後に「提出する」を押します。答え合わせは提出のあとです</td></tr></table>
+   <div class="nobox"><label for="no">出席番号（4けた）</label><br><input id="no" inputmode="numeric" maxlength="4" autocomplete="off" value="${esc(ts.no)}" placeholder="0000"></div>
+   <div class="warn" id="nomsg"></div>
+   <div class="row"><button class="btn ghost" id="tomenu">メニューへ</button><button class="btn" id="go">はじめる</button></div>`;
+  const no=$('no');
+  const go=()=>{const v=fixNo(no.value);
+    if(!/^\d{4}$/.test(v)){$('nomsg').textContent='出席番号は4けたの数字で入れます（例 2105）。';no.focus();return}
+    ts.no=v;if(!ts.set){ts.set=tMake();ts.ans={};ts.ord={}}ts.i=0;tSave();render()};
+  $('go').onclick=go;no.onkeydown=e=>{if(e.key==='Enter')go()};
+  $('tomenu').onclick=()=>setMode('menu');
+}
+function tHead(q,k){return `<div class="sec"><span class="lbl">第${k+1}問</span><span class="nm">${esc(CH[q.s])}</span>${q.t==='multi'?'<span class="tag">すべて選ぶ</span>':''}</div>`}
+function tQuestion(){
+  const k=ts.i,q=Q[ts.set[k]];let body;
+  if(q.t==='term'){
+    body=`<div class="q">${esc(q.q)}</div><div class="hint">これを何といいますか。下の一覧から選びなさい。</div>
+     <div class="bank">${BANK.map(w=>`<button class="opt ${ts.ans[k]===w?'pick':''}" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div>`;
+  }else{
+    const ord=tOrd(k),multi=q.t==='multi',v=ts.ans[k];
+    const sel=j=>multi?Array.isArray(v)&&v.includes(j):v===j;
+    body=`<div class="q">${esc(q.q)}</div><div class="opts ${q.o.some(o=>o.length>22)?'long':''}">${ord.map((j,pos)=>`<button class="opt ${sel(j)?'pick':''}" data-k="${j}">${multi?`<span class="box">${sel(j)?'✓':''}</span>`:''}<span class="mk">${LET[pos]}</span><span>${esc(q.o[j])}</span></button>`).join('')}</div>`;
+  }
+  $('card').innerHTML=tHead(q,k)+body+`<div class="row"><button class="btn ghost" id="back" ${k===0?'disabled':''}>もどる</button><button class="btn" id="next">${k===TN-1?'見直して提出へ':'次へ'}</button></div>`;
+  document.querySelectorAll('.bank .opt').forEach(b=>b.onclick=()=>{ts.ans[k]=b.dataset.w;tSave();render()});
+  document.querySelectorAll('.opts .opt').forEach(b=>b.onclick=()=>{const j=+b.dataset.k;
+    if(q.t==='multi'){const a=Array.isArray(ts.ans[k])?ts.ans[k]:[];ts.ans[k]=a.includes(j)?a.filter(x=>x!==j):[...a,j]}else ts.ans[k]=j;tSave();render()});
+  $('back').onclick=()=>{ts.i--;tSave();render()};$('next').onclick=()=>{ts.i++;tSave();render()};
+}
+function tConfirm(){
+  const left=ts.set.map((_,k)=>k).filter(k=>!tAnswered(k));
+  $('card').innerHTML=`<div class="q">提出の前に確かめます</div>
+   <table class="plan"><tr><td>出席番号</td><td style="font-size:22px;font-weight:700;letter-spacing:.1em">${esc(ts.no)}</td></tr>
+   <tr><td>答えた問題</td><td>${TN-left.length} / ${TN} 問</td></tr></table>
+   ${left.length?`<div>まだ答えていない問題（押すとその問題へ）</div><div class="jump">${left.map(k=>`<button class="opt" data-k="${k}">第${k+1}問</button>`).join('')}</div>`:'<div>全部の問題に答えました。</div>'}
+   ${ts.warn?`<div class="warn">まだ答えていない問題が${left.length}問あります。このまま提出するときは、もう一度「提出する」を押します。</div>`:''}
+   <div class="hint">提出したあとは、答えを変えられません。</div>
+   <div class="row"><button class="btn ghost" id="back">問題にもどる</button><button class="btn ghost" id="chg">出席番号を直す</button><button class="btn" id="send">提出する</button></div>`;
+  document.querySelectorAll('.jump .opt').forEach(b=>b.onclick=()=>{ts.i=+b.dataset.k;ts.warn=false;tSave();render()});
+  $('back').onclick=()=>{ts.i=TN-1;ts.warn=false;tSave();render()};
+  $('chg').onclick=()=>{ts.i=-1;ts.warn=false;tSave();render()};
+  $('send').onclick=()=>{if(left.length&&!ts.warn){ts.warn=true;render();return}
+    ts.warn=false;ts.sending=true;render();
+    // ダミーの提出：どこにも送らず、送信しているような表示のあと「提出しました」にする
+    setTimeout(()=>{ts.sending=false;const d=new Date();ts.sent=`${d.getMonth()+1}月${d.getDate()}日 ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;tSave();render()},1500)};
+}
+function tSending(){$('card').innerHTML=`<div class="q">送信しています…</div><div class="prog"><div style="width:70%"></div></div><div class="hint">画面を閉じずに待ちます。</div>`}
+function tDone(){
+  const ok=ts.set.filter((_,k)=>tCorrect(k)).length;
+  const letters=(k,a)=>{const ord=tOrd(k);return (Array.isArray(a)?a:[a]).map(j=>LET[ord.indexOf(j)]).sort().join('・')};
+  const yours=(k,q)=>!tAnswered(k)?'未回答':q.t==='term'?ts.ans[k]:letters(k,ts.ans[k]);
+  const right=(k,q)=>q.t==='term'?q.a[0]:letters(k,q.a);
+  const optText=(k,q)=>q.t==='term'?'':tOrd(k).map((j,pos)=>LET[pos]+' '+q.o[j]).join('　');
+  $('card').innerHTML=`<div class="sent">提出しました</div>
+   <div>出席番号 <b>${esc(ts.no)}</b>　受付 ${esc(ts.sent)}</div>
+   <div><span class="res-total">${ok}</span><span style="font-size:20px"> / ${TN} 問 正解</span></div>
+   <div class="bars">${Object.keys(TPLAN).map(s=>{const a=ts.set.map((_,k)=>k).filter(k=>Q[ts.set[k]].s===s);const r=a.filter(tCorrect).length;
+     return `<div class="bar"><span>${esc(CH[s])}</span><div class="track"><div class="fill" style="width:${r/a.length*100}%"></div></div><span class="num">${r}/${a.length}</span></div>`}).join('')}</div>
+   <div class="row"><button class="btn ghost" id="again">新しい小テストを受ける</button><button class="btn" id="tomenu">メニューへ</button></div>
+   <div class="q" style="font-size:18px">答え合わせ</div>
+   ${ts.set.map((qi,k)=>{const q=Q[qi],c=tCorrect(k);return `<div class="rv"><div class="h"><span class="mark ${c?'o':'x'}">${c?'○':'×'}</span><span>第${k+1}問　${esc(q.q)}</span></div>
+     ${q.t==='term'?'':`<div class="hint">${esc(optText(k,q))}</div>`}
+     <div>あなたの答え：${esc(yours(k,q))}　／　正解：${esc(right(k,q))}</div>${q.e?`<div class="e">${esc(q.e)}</div>`:''}</div>`}).join('')}`;
+  $('again').onclick=()=>{ts={no:ts.no,set:null,i:-1,ans:{},ord:{},sent:null,sending:false,warn:false};tSave();render()};
+  $('tomenu').onclick=()=>setMode('menu');
 }
 render();
 </script>

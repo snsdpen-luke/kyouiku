@@ -49,7 +49,7 @@
 | Arduino 教材 2回目 | <https://snsdpen-luke.github.io/kyouiku/arduino/src/arduino-kyozai-2.html> （課題21〜31・ジョイスティック・レポート） |
 | 決済をえらぶ | <https://snsdpen-luke.github.io/kyouiku/emoney2/> |
 | 電子計測制御 後期中間考査 出題範囲 | <https://snsdpen-luke.github.io/kyouiku/seigyo100/> （電子計測制御の5択150問。導入スライドは `seigyo100/intro.html`。N キーで先生用メモ） |
-| ふりかえり演習 | <https://snsdpen-luke.github.io/kyouiku/review1/> （コンピュータシステム技術 6回分の復習。仮想通貨・電子マネーを含む100問） |
+| ふりかえり演習 | <https://snsdpen-luke.github.io/kyouiku/review1/> （コンピュータシステム技術 6回分の復習。メニューから、ふりかえり演習100問と小テスト30問（出席番号4けた・ダミーの提出）を選ぶ） |
 | サトシ・ナカモト事件ファイル | <https://snsdpen-luke.github.io/kyouiku/bitcoin/> （ブロックチェーン・マイニング） |
 | 技能試験 筆記トレーニング | <https://snsdpen-luke.github.io/kyouiku/ginou/> （第二種電気工事士 技能試験の知識を、定期考査と同じ答え方で練習。先生は末尾に #exam で模擬テスト、#q=問題の id でその問題） |
 
@@ -96,7 +96,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `regression.js` | ラダー工房のリグレッション（jsdom・65項目） |
 | `regression-fukusen.js` | 複線図れんしゅうのリグレッション（jsdom） |
 | `regression-seigyo100.js` | 制御クイズ100のリグレッション（jsdom。問題の重複・偏り・正解の位置・最後まで解いて採点） |
-| `regression-review1.js` | ふりかえり演習のリグレッション（jsdom。問題データの点検・全問正解／全問不正解で最後まで解いて採点・保存と再開） |
+| `regression-review1.js` | ふりかえり演習のリグレッション（jsdom。問題データの点検・全問正解／全問不正解で最後まで解いて採点・保存と再開・メニュー・小テストの出席番号／提出／採点） |
 | `regression-ginou.js` | 技能試験 筆記トレーニングのリグレッション（jsdom・63項目。図示の正解の刻印が令和8年度の公表の解答と同じかも見る） |
 | `HANDOFF-技能筆記練習.md` | **技能試験 筆記トレーニングの引き継ぎ書。問題の足し方・採点のしくみ・根拠** |
 | `fukusen-sheet.gs` | 複線図れんしゅうの記録を先生の Google スプレッドシートにためる Apps Script（使い方はファイルの先頭） |

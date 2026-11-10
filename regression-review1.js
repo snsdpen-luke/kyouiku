@@ -9,11 +9,14 @@ function ok(name, cond, extra) {
   if (cond) { pass++; console.log('  ok  ' + name); }
   else { fail++; console.log('  NG  ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); }
 }
-function open(store) {
+// mode：'drill'（ふりかえり演習を開いた状態）・'test'（小テスト）・null（はじめて開く＝メニュー）
+function open(store, mode = 'drill', tstore) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', url: 'https://example.test/review1/',
     beforeParse(w) {
       if (store) w.localStorage.setItem('fukushu-v5', store);
+      if (mode) w.localStorage.setItem('fukushu-mode', mode);
+      if (tstore) w.localStorage.setItem('fukushu-test-v1', tstore);
       // 実環境（Classroom のサンドボックス）では confirm が常に false を返す
       w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
     },
@@ -133,7 +136,118 @@ console.log('■ 保存と再開');
   ok('開き直すと続きから（2問目）', vars(w2).st.i === 1);
   const w3 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/review1/', beforeParse(w) {
     Object.defineProperty(w, 'localStorage', { get() { throw new Error('blocked'); } }); } }).window;
-  ok('localStorage が使えなくても開始画面が出る', $(w3, '#go') !== null);
+  ok('localStorage が使えなくてもメニューが出る', $(w3, '#mDrill') !== null && $(w3, '#mTest') !== null);
+  click(w3, '#mTest');
+  ok('localStorage が使えなくても小テストを始められる', $(w3, '#no') !== null);
+}
+
+console.log('■ メニュー');
+{
+  const w = open(null, null);
+  const t = $(w, '#card').textContent;
+  ok('はじめて開くとメニューが出る', $(w, '#mDrill') && $(w, '#mTest') && $(w, '#menuBtn').hidden);
+  ok('メニューに「小テスト 30問」がある', t.includes('小テスト') && t.includes('30問'));
+  click(w, '#mDrill');
+  ok('ふりかえり演習を選ぶと演習の開始画面', $(w, '#card').textContent.includes('これまでの6回の授業') && !$(w, '#menuBtn').hidden);
+  click(w, '#menuBtn');
+  ok('上の「メニュー」でメニューへもどる', $(w, '#mTest') !== null);
+  click(w, '#mTest');
+  ok('小テストを選ぶと出席番号の欄', $(w, '#no') !== null && $(w, '#ttl').textContent === '小テスト');
+}
+
+console.log('■ 小テスト：出席番号');
+{
+  const w = open(null, 'test');
+  const tries = [['', false], ['12', false], ['12345', false], ['12a4', false], ['２１０５', true]];
+  for (const [v, good] of tries) {
+    const w2 = open(null, 'test'); $(w2, '#no').value = v; click(w2, '#go');
+    const ts = w2.eval('ts');
+    ok(`「${v}」は${good ? '受け付ける' : '受け付けない'}`, good ? ts.i === 0 && ts.no === '2105' : ts.i === -1 && $(w2, '#nomsg').textContent.includes('4けた'));
+  }
+  $(w, '#no').value = '0305'; click(w, '#go');
+  const { set } = w.eval('({set:ts.set})'); const Q = w.eval('Q'); const TPLAN = w.eval('TPLAN');
+  ok('30問が選ばれる', set.length === 30 && new Set(set).size === 30);
+  ok('記述は入らない', set.every(i => Q[i].t !== 'w'));
+  ok('章ごとの数（A5 B5 C4 D4 E6 F6）', Object.keys(TPLAN).every(s => set.filter(i => Q[i].s === s).length === TPLAN[s]));
+  ok('上に出席番号が出る', $(w, '#chips').textContent.includes('0305'));
+  // 2回開くと、別の問題の組になりうる（くじ）
+  const sets = new Set(); for (let n = 0; n < 6; n++) { const x = open(null, 'test'); $(x, '#no').value = '0305'; click(x, '#go'); sets.add(x.eval('ts.set').join(',')); }
+  ok('問題の組は開くたびにくじで変わる', sets.size > 1);
+}
+
+// 小テストを解いて提出する。wrongEvery：その番号おきにわざとまちがえる。skip：答えない問題の位置
+function takeTest(wrongEvery, skip = []) {
+  const w = open(null, 'test'); $(w, '#no').value = '1203'; click(w, '#go');
+  const set = w.eval('ts.set'), Q = w.eval('Q');
+  let want = 0;
+  for (let k = 0; k < 30; k++) {
+    const q = Q[set[k]];
+    if (w.eval('ts.i') !== k) throw new Error('進んでいない: ' + k);
+    if (q.t !== 'term' && w.document.querySelector('.fb')) throw new Error('提出前に正解が出ている: ' + k);
+    if (!skip.includes(k)) {
+      const wrong = wrongEvery && k % wrongEvery === 0;
+      if (q.t === 'term') {
+        const w2 = wrong ? [...w.document.querySelectorAll('.bank .opt')].map(b => b.dataset.w).find(x => x !== q.a[0]) : q.a[0];
+        // 一度ちがう答えを押してから正しい答えに変えられる
+        [...w.document.querySelectorAll('.bank .opt')].find(b => b.dataset.w !== w2).click();
+        [...w.document.querySelectorAll('.bank .opt')].find(b => b.dataset.w === w2).click();
+      } else if (q.t === 'one') {
+        click(w, `.opt[data-k="${(q.a + 1) % q.o.length}"]`);
+        if (!wrong) click(w, `.opt[data-k="${q.a}"]`);
+      } else {
+        (wrong ? [q.a[0]] : q.a).forEach(j => click(w, `.opt[data-k="${j}"]`));
+      }
+      if (!wrong) want++;
+    }
+    click(w, '#next');
+  }
+  return { w, want };
+}
+console.log('■ 小テスト：解いて提出');
+{
+  const { w, want } = takeTest(4);
+  ok('最後に確認画面が出る（出席番号と答えた数）', $(w, '#card').textContent.includes('提出の前に') && $(w, '#card').textContent.includes('1203') && $(w, '#card').textContent.includes('30 / 30 問'));
+  click(w, '#send');
+  ok('「提出する」で送信中の表示', $(w, '#card').textContent.includes('送信しています'));
+  ok('送信中は上の「メニュー」を押しても動かない', (click(w, '#menuBtn'), w.eval('mode')) === 'test');
+  w.eval('ts.sending=false;ts.sent="11月10日 10:00";tSave();render()'); // 1.5秒待つかわり
+  const t = $(w, '#card').textContent;
+  ok('「提出しました」と出席番号が出る', t.includes('提出しました') && t.includes('1203'));
+  ok(`点数が合う（${want} / 30）`, t.includes(`${want} / 30 問 正解`), t.match(/\d+ \/ 30 問 正解/)?.[0]);
+  ok('答え合わせが30問ある', w.document.querySelectorAll('.rv').length === 30);
+  ok('○と×の数が点数と合う', w.document.querySelectorAll('.rv .mark.o').length === want);
+  ok('章ごとのバーが6本', w.document.querySelectorAll('.bar').length === 6);
+  const saved = w.localStorage.getItem('fukushu-test-v1');
+  const w2 = open(null, 'test', saved);
+  ok('開き直しても「提出しました」のまま（答えを変えられない）', $(w2, '#card').textContent.includes('提出しました') && !$(w2, '#send'));
+  click(w2, '#again');
+  ok('「新しい小テストを受ける」で出席番号の画面（番号は残る）', $(w2, '#no') && $(w2, '#no').value === '1203' && w2.eval('ts.set') === null);
+  ok('どこにも送らない（通信の命令がない）', !/fetch\(|XMLHttpRequest|sendBeacon|navigator\.send|<form/.test(html));
+}
+console.log('■ 小テスト：答えていない問題があるとき');
+{
+  const { w } = takeTest(0, [2, 7]);
+  const t = $(w, '#card').textContent;
+  ok('答えた数が 28 / 30', t.includes('28 / 30 問'));
+  ok('答えていない問題が並ぶ', [...w.document.querySelectorAll('.jump .opt')].map(b => b.textContent).join() === '第3問,第8問');
+  click(w, '#send');
+  ok('1回目の「提出する」では提出せず、注意が出る', !w.eval('ts.sending') && !w.eval('ts.sent') && $(w, '.warn').textContent.includes('2問'));
+  click(w, '.jump .opt[data-k="7"]');
+  ok('番号を押すとその問題へ', w.eval('ts.i') === 7);
+  w.eval('ts.i=30;render()'); click(w, '#send'); click(w, '#send');
+  ok('2回目の「提出する」で提出する', w.eval('ts.sending') === true);
+  w.eval('ts.sending=false;ts.sent="x";tSave();render()');
+  ok('未回答は × で「未回答」と出る', $(w, '#card').textContent.includes('未回答') && w.document.querySelectorAll('.rv .mark.o').length === 28);
+}
+console.log('■ 小テスト：途中で開き直す');
+{
+  const w = open(null, 'test'); $(w, '#no').value = '0001'; click(w, '#go');
+  const set = w.eval('ts.set'); const q = w.eval('Q')[set[0]];
+  if (q.t === 'term') [...w.document.querySelectorAll('.bank .opt')][0].click(); else click(w, '.opt[data-k="0"]');
+  click(w, '#next'); click(w, '#next');
+  const w2 = open(null, 'test', w.localStorage.getItem('fukushu-test-v1'));
+  ok('同じ問題の組・同じ位置（第3問）から続く', w2.eval('ts.set').join() === set.join() && w2.eval('ts.i') === 2);
+  ok('答えが残っている', w2.eval('tAnswered(0)'));
 }
 console.log(`\n合格 ${pass} / 不合格 ${fail}`);
 process.exit(fail ? 1 : 0);
