@@ -13,9 +13,9 @@ function open(store, mode = 'drill', test) {
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', url: 'https://example.test/seigyo100/',
     beforeParse(w) {
-      if (store) w.localStorage.setItem('seigyo100-v3', store);
+      if (store) w.localStorage.setItem('seigyo100-v4', store);
       if (mode) w.localStorage.setItem('seigyo100-mode', mode);
-      if (test) w.localStorage.setItem('seigyo100-test-v1', test);
+      if (test) w.localStorage.setItem('seigyo100-test-v2', test);
       // 実環境（Classroom のサンドボックス）では confirm が常に false を返す
       w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
     },
@@ -40,9 +40,10 @@ console.log('■ 問題データ');
   // センサ名や機能名だけの短い答えは、別の問いで重なってよい
   ok('正解の文の重複がない', dupA.filter(s => s.length > 14).length === 0, dupA);
   ok('どの問題の用語にも説明がある', Q.every(q => GLOSS[q.w]), Q.filter(q => !GLOSS[q.w]).map(q => q.w));
-  const banned = /PLC|ラダー|シーケンス|フィードバック|PID|インターロック|自己保持|掃除機|接点|積分|微分|偏差|ゲイン|クリープ|すえ切り|Arduino|Trig/;
+  // フィードバック制御・シーケンス制御・偏差は授業でやったので使う（2026-11-11 剛さん）。Arduino とラダー（PLC）は出さない
+  const banned = /PLC|ラダー|PID|インターロック|自己保持|掃除機|接点|積分|微分|ゲイン|クリープ|すえ切り|Arduino|Trig|pulseIn|HC-SR04/;
   const hit = Q.filter(q => banned.test([q.w, q.q, q.e, ...q.o].join(' '))).map(q => q.id + ':' + q.w);
-  ok('PLC・フィードバック制御・制御でない用語の問題がない', hit.length === 0 && !Q.some(q => q.w === '切り返し'), hit);
+  ok('Arduino・ラダー（PLC）・制御でない用語の問題がない', hit.length === 0 && !Q.some(q => q.w === '切り返し'), hit);
   ok('使われていない用語の説明がない', Object.keys(GLOSS).every(k => Q.some(q => q.w === k)), Object.keys(GLOSS).filter(k => !Q.some(q => q.w === k)));
   ok('解説が短い（70文字まで）', Q.every(q => q.e.length <= 70), Q.filter(q => q.e.length > 70).map(q => q.id + ':' + q.e.length));
   ok('解説が です・ます で終わる', Q.every(q => /(す|した|ます)。$/.test(q.e) || /[。）]$/.test(q.e)));
@@ -119,7 +120,7 @@ console.log('■ 最初から最後まで解く');
   ok('番号を押すとその問題へ', d.getElementById('count').textContent === '1 / 150' && !!d.querySelector('.fb.ng'));
   click(w, '#toRes');
   // 開き直しても残る
-  const saved = w.localStorage.getItem('seigyo100-v3');
+  const saved = w.localStorage.getItem('seigyo100-v4');
   const w2 = open(saved);
   ok('開き直しても結果が残る', w2.document.querySelector('.res-total')?.textContent === '120');
   // やり直しは2回押し（confirm が false でも動く）
@@ -239,7 +240,7 @@ console.log('■ 小テスト：通しで受ける');
   // ステージ3：時間切れ（3問正解したところで締め切りを過ぎる）
   click(w, '#play');
   for (let k = 0; k < 3; k++) pick(right(2, k));
-  const saved = w.localStorage.getItem('seigyo100-test-v1');
+  const saved = w.localStorage.getItem('seigyo100-test-v2');
   const late = JSON.parse(saved); late.dl = Date.now() - 1;
   const w2 = open(null, 'test', JSON.stringify(late)); const d2 = w2.document;
   ok('開き直して締め切りを過ぎていたら、そこまでで採点（TIME UP）', d2.querySelector('.warn')?.textContent.includes('TIME UP') && d2.querySelector('.res-total').textContent === '3');
@@ -271,7 +272,7 @@ console.log('■ 小テスト：通しで受ける');
   ok('ランク・回数・受け直しがない', !D.querySelector('.card').textContent.includes('ランク') && !D.querySelector('.card').textContent.includes('回目') && !D.getElementById('retry'));
   ok('ステージごとのバーが6本で、合計が点数と同じ', D.querySelectorAll('.cert .bar').length === 6 && [...D.querySelectorAll('.cert .num')].reduce((a, e) => a + parseInt(e.textContent, 10), 0) === 27);
   ok('時間切れのステージに印', D.querySelectorAll('.cert .num')[2].textContent.includes('⏱'));
-  const w4 = open(null, 'test', W.localStorage.getItem('seigyo100-test-v1'));
+  const w4 = open(null, 'test', W.localStorage.getItem('seigyo100-test-v2'));
   ok('開き直しても「提出しました」のまま（受け直せない）', w4.document.querySelector('.cert .score')?.textContent === '27' && !w4.document.getElementById('no'));
   w4.close();
   click(W, '#tomenu');
