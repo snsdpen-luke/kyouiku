@@ -197,7 +197,7 @@ console.log('■ 小テスト：組み立て');
 }
 
 console.log('■ 小テスト：通しで受ける');
-{
+(async () => {
   const w = open(null, 'test'); const d = w.document;
   click(w, '#go');
   ok('出席番号が4けたでないと始まらない', d.getElementById('nomsg').textContent.includes('4けた') && !w.eval('ts.stages'));
@@ -260,28 +260,31 @@ console.log('■ 小テスト：通しで受ける');
   for (let k = 0; k < 10; k++) { D.querySelector(`.dots button[data-j="${k}"]`).click(); pick2(right2(5, k)); }
   click(W, '#fin');
   ok('ボスを全問正解', D.querySelector('.res-total').textContent === '10');
+  ok('最後のステージのあとは「提出へ」', D.getElementById('nextS').textContent === '提出へ');
   click(W, '#nextS');
-  // 6 + 8 + 3 + 0 + 0 + 10 = 27
-  ok('最終結果：27 / 50 点', D.querySelector('.cert .score').textContent === '27' && D.querySelector('.cert').textContent.includes('/ 50 点'));
-  ok('結果に出席番号・回数・ランク', D.querySelector('.cert').textContent.includes('2105') && D.querySelector('.cert').textContent.includes('1回目') && D.querySelector('.cert .rank').textContent === 'ランク C');
+  ok('提出の画面に出席番号と点数（6+8+3+0+0+10=27）', !!D.getElementById('send') && D.querySelector('.card').textContent.includes('2105') && D.querySelector('.card').textContent.includes('27 / 50 点'));
+  ok('ランクは出さない', !D.querySelector('.card').textContent.includes('ランク'));
+  click(W, '#send');
+  ok('提出を押すと「送信しています」', D.querySelector('.card').textContent.includes('送信しています'));
+  await new Promise(r => setTimeout(r, 1700));
+  ok('しばらくすると「提出しました」', D.querySelector('.cert .big')?.textContent === '提出しました' && D.querySelector('.cert .score').textContent === '27');
+  ok('ランク・回数・受け直しがない', !D.querySelector('.card').textContent.includes('ランク') && !D.querySelector('.card').textContent.includes('回目') && !D.getElementById('retry'));
   ok('ステージごとのバーが6本で、合計が点数と同じ', D.querySelectorAll('.cert .bar').length === 6 && [...D.querySelectorAll('.cert .num')].reduce((a, e) => a + parseInt(e.textContent, 10), 0) === 27);
   ok('時間切れのステージに印', D.querySelectorAll('.cert .num')[2].textContent.includes('⏱'));
   const w4 = open(null, 'test', W.localStorage.getItem('seigyo100-test-v1'));
-  ok('開き直しても結果が残る', w4.document.querySelector('.cert .score')?.textContent === '27');
+  ok('開き直しても「提出しました」のまま（受け直せない）', w4.document.querySelector('.cert .score')?.textContent === '27' && !w4.document.getElementById('no'));
   w4.close();
   click(W, '#tomenu');
-  ok('メニューに小テストの点が出る', D.getElementById('mTest').textContent.includes('27 / 50 点'));
+  ok('メニューに「提出済み」と点', D.getElementById('mTest').textContent.includes('提出済み（27 / 50 点）'));
   click(W, '#mTest');
-  click(W, '#retry');
-  ok('受け直しは1回目では消えない', !!D.querySelector('.cert'));
-  click(W, '#retry');
-  ok('2回目で最初の画面へ（出席番号は残る）', D.getElementById('no')?.value === '2105');
-  click(W, '#go');
-  ok('受け直すと「2回目」', W.eval('ts.tries') === 2);
+  ok('メニューから入っても提出済みの画面', !!D.querySelector('.cert') && !D.getElementById('go'));
   ok('練習の記録は小テストで変わらない', W.eval('Object.keys(st.ans).length') === 0);
   w.close(); W.close();
-}
 
+  done();
+})();
+function done() {
 console.log(`\n合格 ${pass}　不合格 ${fail}`);
 console.log(fail ? '不合格があります' : 'すべて合格');
 process.exit(fail ? 1 : 0);
+}
