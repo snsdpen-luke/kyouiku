@@ -280,6 +280,25 @@ console.log('■ 小テスト：通しで受ける');
   click(W, '#mTest');
   ok('メニューから入っても提出済みの画面', !!D.querySelector('.cert') && !D.getElementById('go'));
   ok('練習の記録は小テストで変わらない', W.eval('Object.keys(st.ans).length') === 0);
+
+  // 先生用デモ（#demo）：生徒の箱とは別。何度でも受け直せる
+  const studentBox = W.localStorage.getItem('seigyo100-test-v2');
+  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/seigyo100/#demo',
+    beforeParse(x) { x.localStorage.setItem('seigyo100-mode', 'test'); x.localStorage.setItem('seigyo100-test-v2', studentBox); } });
+  const dw = dom.window, dd = dw.document;
+  ok('#demo で開くと、提出済みの生徒でも最初の画面（別の箱）', !!dd.getElementById('no') && !!dd.querySelector('.demo') && dd.getElementById('ttl').textContent.includes('先生用デモ'));
+  dd.getElementById('no').value = '0000'; dd.getElementById('go').click();
+  for (let s = 0; s < 6; s++) { dd.getElementById('dSkip').click(); dd.getElementById('nextS').click(); }
+  ok('デモは「このステージをとばす」で最後まで進める', !!dd.getElementById('send'));
+  dd.getElementById('send').click();
+  await new Promise(r => setTimeout(r, 1700));
+  ok('デモでも提出しました（0点）', dd.querySelector('.cert .score')?.textContent === '0');
+  dd.getElementById('dReset').click();
+  ok('デモは提出後も「最初からやり直す」で受け直せる', !!dd.getElementById('no') && dw.eval('ts.done') === null);
+  ok('デモは生徒の箱を変えない', dw.localStorage.getItem('seigyo100-test-v2') === studentBox && !!dw.localStorage.getItem('seigyo100-test-demo'));
+  const nd = open(null, 'test', studentBox);
+  ok('#demo なしでは、デモの帯もやり直しボタンも出ない', !nd.document.querySelector('.demo') && !nd.document.getElementById('dReset'));
+  nd.close(); dw.close();
   w.close(); W.close();
 
   done();
