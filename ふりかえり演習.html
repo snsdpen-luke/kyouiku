@@ -76,6 +76,7 @@ textarea{font:inherit;font-size:17px;width:100%;min-height:130px;padding:12px;bo
 .parts b{font-size:22px;font-variant-numeric:tabular-nums}
 table.plan{border-collapse:collapse;font-size:16px}
 table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
+table.plan td:first-child{white-space:nowrap}
 ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
 .mbtn{font:inherit;text-align:left;padding:20px 22px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:8px}
 .mbtn:hover{border-color:var(--accent)}
@@ -95,7 +96,55 @@ ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
 .rv .mark.o{color:var(--ok)} .rv .mark.x{color:var(--ng)}
 .rv .e{color:var(--sub)}
 .hbtn{font:inherit;font-size:14px;font-weight:700;padding:4px 12px;border-radius:8px;border:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
-@media (max-width:760px){.menu{grid-template-columns:1fr}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:18px}}
+.menu.three{grid-template-columns:repeat(3,1fr)}
+/* 小テスト第2回：ストーリー・並べ替え・組み合わせ・穴うめ・計算・シミュレーション */
+.chip.sc{font-size:12px;padding:2px 8px}
+.tag.k{background:var(--accent-soft);color:var(--accent)}
+.q2{font-size:18px;font-weight:700;line-height:1.55;white-space:pre-line;text-wrap:pretty}
+.ordl{display:flex;flex-direction:column;gap:6px}
+.ordl .opt{min-height:0;padding:8px 12px;font-size:16px;align-items:center}
+.badge{flex:none;width:30px;height:30px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;font-weight:900;color:var(--sub)}
+.opt.pick .badge{border:none;background:var(--accent);color:var(--card)}
+.mt{display:flex;flex-direction:column;gap:5px}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;font-size:16px;border-bottom:1px solid var(--line);padding-bottom:5px}
+.seg{display:flex;gap:4px}
+.seg .opt{min-height:0;padding:5px 10px;font-size:15px;justify-content:center;white-space:nowrap}
+.fl{display:flex;flex-direction:column;gap:8px;font-size:17px;line-height:2}
+.blank{font:inherit;font-size:16px;font-weight:700;min-width:120px;padding:2px 10px;margin:0 2px;border-radius:8px;border:2px dashed var(--sub);background:var(--card);color:var(--ink);cursor:pointer}
+.blank.fill{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.blank.act{outline:3px solid var(--accent);outline-offset:1px}
+.words{display:flex;gap:6px;flex-wrap:wrap}
+.words .opt{min-height:0;padding:6px 14px;font-size:16px}
+.numin{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700}
+.numin input{font:inherit;font-size:28px;width:200px;padding:6px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+.rule{background:#f6f8fb;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:15px;line-height:1.6}
+.spots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.spot{font:inherit;text-align:left;padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.spot.pick{border-color:var(--accent);background:var(--accent-soft)}
+.spot .nm2{font-weight:900;font-size:16px}
+.leg{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.wall{display:inline-block;width:12px;height:22px;border-radius:2px}
+.wall.wd{background:#b9824b}.wall.cn{background:#8a9099}
+.dev{font-size:12px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--line)}
+.mail{border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:4px;background:#fbfcfe}
+.mail .opt{min-height:0;padding:6px 10px;font-size:15px;border-style:dashed}
+.mail .opt.pick{border-style:solid}
+.mail .btnlike{color:var(--accent);font-weight:700}
+.lock{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.digits{display:flex;gap:3px;flex-wrap:wrap;max-width:560px}
+.digits span{width:24px;height:34px;border-radius:5px;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700}
+.stp{font:inherit;font-size:26px;font-weight:900;width:56px;height:56px;border-radius:12px;border:2px solid var(--accent);background:var(--card);color:var(--accent);cursor:pointer}
+.big{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums}
+.chain{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.blk{font:inherit;text-align:left;padding:8px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.blk b{font-size:16px}
+.blk.bad{background:var(--ng-soft)}
+.blk.pick{border-color:var(--accent);outline:3px solid var(--accent-soft)}
+.blk .hx{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--sub)}
+.blk .rb{font-size:12px;font-weight:700;color:var(--accent);min-height:1.2em}
+.rv .pt{padding-left:38px}
+.rv .pt .o{color:var(--ok);font-weight:700} .rv .pt .x{color:var(--ng);font-weight:700}
+@media (max-width:760px){.menu{grid-template-columns:1fr}.menu.three{grid-template-columns:1fr}.spots,.chain{grid-template-columns:1fr 1fr}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:18px}}
 @media (prefers-reduced-motion:no-preference){.fill,.prog div{transition:width .5s ease}}
 </style>
 
@@ -271,6 +320,7 @@ function render(){
   $('menuBtn').hidden=mode==='menu';
   if(mode==='menu')return menu();
   if(mode==='test')return tRender();
+  if(mode==='test2')return uRender();
   $('ttl').textContent='ふりかえり演習';
   chrome();
   if(st.i<0)return start();
@@ -351,19 +401,22 @@ function result(){
 }
 // ===== メニュー =====
 let mode='menu';
-try{const m=localStorage.getItem('fukushu-mode');if(m==='drill'||m==='test')mode=m}catch(e){}
+try{const m=localStorage.getItem('fukushu-mode');if(m==='drill'||m==='test'||m==='test2')mode=m}catch(e){}
+if(/^#(demo|teacher|sensei)$/i.test(location.hash))mode='test2'; // 先生用デモは第2回を開く
 function setMode(m){mode=m;try{localStorage.setItem('fukushu-mode',m)}catch(e){}render()}
-$('menuBtn').onclick=()=>{if(ts.sending)return;setMode('menu')};
+$('menuBtn').onclick=()=>{if(ts.sending||us.sending)return;setMode('menu')};
 function menu(){
   $('ttl').textContent='ふりかえり演習';$('chips').innerHTML='';$('count').textContent='';$('bar').style.width='0';
   const dn=Q.filter((q,i)=>answered(i)).length;
   const tst=ts.sent?'提出済み':ts.set&&ts.i>=0?`とちゅう（${ts.set.filter((_,k)=>tAnswered(k)).length} / ${TN} 問）`:'まだ受けていません';
-  $('card').innerHTML=`<div class="q">どちらをやりますか</div>
-   <div class="menu">
+  const ust=us.sent?'提出済み':us.i>=0?`とちゅう（${U.filter((_,k)=>uAnswered(k)).length} / ${U.length} 問）`:'まだ受けていません';
+  $('card').innerHTML=`<div class="q">どれをやりますか</div>
+   <div class="menu three">
     <button class="mbtn" id="mDrill"><span class="t">ふりかえり演習</span><span class="d">全${Q.length}問（用語・選択・記述）。答えるとすぐに正解と解説が出ます。</span><span class="s">進み具合 ${dn} / ${Q.length} 問</span></button>
-    <button class="mbtn" id="mTest"><span class="t">小テスト</span><span class="d">${TN}問（用語・選択）。最後に出席番号をつけて提出します。答え合わせは提出のあとです。</span><span class="s">${tst}</span></button>
+    <button class="mbtn" id="mTest"><span class="t">小テスト第1回</span><span class="d">${TN}問（用語・選択）。最後に出席番号をつけて提出します。答え合わせは提出のあとです。</span><span class="s">${tst}</span></button>
+    <button class="mbtn" id="mTest2"><span class="t">小テスト第2回</span><span class="d">${U.length}問。高校生ユウの1日を追いながら、並べかえ・組み合わせ・穴うめ・計算・シミュレーションで答えます。提出は1回だけです。</span><span class="s">${ust}</span></button>
    </div>`;
-  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');
+  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');$('mTest2').onclick=()=>setMode('test2');
 }
 
 // ===== 小テスト（30問。提出はダミーで、どこにも送らない） =====
@@ -384,7 +437,7 @@ function tCorrect(k){const q=Q[ts.set[k]],v=ts.ans[k];
 function tOrd(k){const q=Q[ts.set[k]];if(!ts.ord[k]){ts.ord[k]=shuffle(q.o.map((_,j)=>j));tSave()}return ts.ord[k]}
 const fixNo=v=>String(v).normalize('NFKC').replace(/\s/g,'');
 function tChrome(){
-  $('ttl').textContent='小テスト';
+  $('ttl').textContent='小テスト第1回';
   const on=ts.set&&ts.i>=0&&!ts.sent;
   $('chips').innerHTML=on?`<span class="chip now">出席番号 ${esc(ts.no)}</span>`:'';
   $('count').textContent=on&&ts.i<TN?`${ts.i+1} / ${TN}`:'';
@@ -466,6 +519,230 @@ function tDone(){
      <div>あなたの答え：${esc(yours(k,q))}　／　正解：${esc(right(k,q))}</div>${q.e?`<div class="e">${esc(q.e)}</div>`:''}</div>`}).join('')}`;
   $('again').onclick=()=>{ts={no:ts.no,set:null,i:-1,ans:{},ord:{},sent:null,sending:false,warn:false};tSave();render()};
   $('tomenu').onclick=()=>setMode('menu');
+}
+
+// ===== 小テスト第2回（20問・ストーリー仕立て。提出はダミーで、どこにも送らない） =====
+// t: order 並べかえ / match 組み合わせ / fill 穴うめ / num 数を入れる / spot 場所を選ぶ / tap すべて選ぶ（図） / step けた数を決める
+// 正解はすべて regression-review1.js で独立に計算し直して確かめる
+const KIND={order:'並べかえ',match:'組み合わせ',fill:'穴うめ',num:'計算',spot:'シミュレーション',tap:'見つける',step:'けた数を決める'};
+const kindOf=p=>p.kind||KIND[p.t];
+const U=[
+{t:'match',s:'E',sc:'朝 7:40　駅の改札',q:'ユウの財布とスマホには、いろいろな払い方が入っています。それぞれ、自分のお金（現金や銀行口座）が減るのはいつですか。',
+ cats:['前に（チャージ・購入）','使ったその場で','あとで（翌月など）'],
+ rows:[['Suica（チャージした残高）',0],['デビットカード',1],['クレジットカード',2],['PayPay（チャージした残高）',0],['図書カード',0],['iD（クレジットカードにつないだもの）',2]],
+ e:'Suica・PayPay の残高・図書カードは前払い、デビットカードはその場で口座から引かれ、クレジットカードと、それにつないだ iD は後払いです。'},
+{t:'num',s:'E',sc:'朝 7:40　駅の改札',q:'朝の駅に3,000人が来ます。改札は5台です。1人が通るのに、ICカードなら1.0秒、QRコードなら2.0秒かかります。\n全員がQRコードで通ると、全員がICカードで通るときより、何分長くかかりますか。',unit:'分',a:10,
+ e:'1台あたり 3,000 ÷ 5 ＝ 600人。ICは 600 × 1.0 ＝ 600秒（10分）、QRは 600 × 2.0 ＝ 1,200秒（20分）。差は10分です。改札でICカードが使われ続けている理由の1つです。'},
+{t:'order',s:'E',sc:'朝 7:55　駅のお店',q:'ユウのお母さんが、クレジットカードで弁当（800円）を買いました。起きることを、起きる順にタップしなさい。',
+ items:['お店の端末にカードをかざす','お店の端末が、カード会社に「このカードで使っていい？」と問い合わせる（オーソリ）','カード会社のコンピュータが、いつもとちがう使い方ではないかを調べる（不正検知）','カード会社から「承認」が返ってきて、買い物が終わる','翌月などに、お母さんの銀行口座からまとめて引き落とされる'],
+ e:'承認までは「使っていいか」の確認だけで、お金はまだ動いていません。口座からお金が減るのは、あとの引き落としのときです。'},
+{t:'order',s:'A',sc:'昼 12:30　教室でトーク',q:'ユウは学校のWi-Fiから、友だちに「放課後どこ行く？」と送ります。ユウのスマホからトークのサーバーに届くまでに起きることを、起きる順にタップしなさい。',
+ items:['サーバーの名前（talk.example.com）から、DNSで数字の住所を調べる','メッセージをパケットに分け、宛先や番号を書いたヘッダを付ける','学校のルーターが、送信元を外向きの住所に書き換える（NAT）','ルーターからルーターへ、宛先を見ながら運ばれていく','サーバーが受け取り、「届いた」という返事（ACK）を返す'],
+ e:'住所が分からないとヘッダに宛先が書けないので、DNSが先です。NATは学校（家）のルーターを出るところで行われます。'},
+{t:'fill',s:'A',sc:'昼 12:30　教室でトーク',q:'住所は次のとおりです。ヘッダの空らんをタップして、住所をうめなさい（同じ住所を何回使ってもかまいません）。\nユウのスマホ 192.168.0.12　学校のルーター（外向き）203.0.113.77　トークのサーバー 203.0.113.5　友だち（外向き）198.51.100.40',
+ lines:['① スマホを出たところ　　宛先 {0}　送信元 {1}','② 学校のルーターを出たところ　　宛先 203.0.113.5　送信元 {2}','③ サーバーが友だちへ送り直すところ　　宛先 {3}　送信元 {4}'],
+ words:['192.168.0.12','203.0.113.77','203.0.113.5','198.51.100.40'],a:['203.0.113.5','192.168.0.12','203.0.113.77','198.51.100.40','203.0.113.5'],
+ e:'①はまだ学校の中なので、送信元はスマホの住所。②はルーターがNATで送信元を外向きの住所に書き換えます。③はサーバーが新しく作るパケットなので、送信元はサーバーです。'},
+{t:'match',s:'A',sc:'昼 12:35　トークの機能',q:'トークアプリの機能ごとに、TCPとUDPのどちらが向いていますか。',
+ cats:['TCP','UDP'],rows:[['文字のメッセージ',0],['写真を送る',0],['無料のビデオ通話',1],['オンラインゲームのキャラの位置',1],['友だちにお金を送る（送金）',0]],
+ e:'1つも欠けてはいけないものは、欠けたら再送するTCP。古いデータを待つより次が大事なもの（映像・位置）は、再送しないUDPです。'},
+{t:'num',s:'A',sc:'昼 12:40　写真を送る',q:'ユウが 3,000,000バイトの写真を送ります。パケット1つに 1,500バイトずつ入れます。とちゅうで、パケットの1％が消えてしまいました。\nTCPで送り直されるパケットは何個ですか。',unit:'個',a:20,
+ e:'3,000,000 ÷ 1,500 ＝ 2,000個。その1％は20個です。TCPはACKが返ってこなかったパケットを送り直すので、写真は欠けずに届きます。'},
+{t:'num',s:'B',sc:'昼 12:45　学校のWi-Fi',q:'学校のWi-Fiの回線は 20Mbps です。昼休みに40人が同時に使い、均等に分け合っています。\nユウが 4MB の写真を1枚受け取るのに、何秒かかりますか。',unit:'秒',a:64,
+ e:'1人あたり 20 ÷ 40 ＝ 0.5Mbps。4MB × 8 ＝ 32Mb。32 ÷ 0.5 ＝ 64秒です。1人で使えば1.6秒なのに、分け合うと遅くなります。'},
+{t:'match',s:'B',sc:'夕方 16:50　帰りの電車で動画',q:'帰りの電車で、画質「自動」で動画を見ています。場所ごとの回線の速さから、選ばれるいちばん高い画質を選びなさい。\n（必要な速さ：360p 1Mbps／480p 2Mbps／720p 4Mbps／1080p 8Mbps／4K 25Mbps）',
+ cats:['360p','480p','720p','1080p','4K'],fixed:true,rows:[['駅のホーム（12Mbps）',3],['トンネルの中（1.5Mbps）',0],['となりの駅（5Mbps）',2],['家の近くの坂道（3Mbps）',1],['家に着いてWi-Fi（40Mbps）',4]],
+ e:'回線の速さが「必要な速さ」以上の中で、いちばん高い画質が選ばれます。12Mbps は 8 以上・25 未満なので1080p です。止まるより画質を下げるほうを選びます。'},
+{t:'num',s:'B',sc:'夕方 17:10　ギガが心配',q:'ユウのギガは、残り 3GB で、月末まであと12日です。720p（1時間で約1.0GB）の動画を毎日同じ時間だけ見ます（ほかには使わないとします）。\n1日に何分まで見られますか。',unit:'分',a:15,
+ e:'1日に使えるのは 3 ÷ 12 ＝ 0.25GB。1時間で1.0GBなので、0.25時間＝15分です。'},
+{t:'fill',s:'B',sc:'夕方 17:20　動画が止まった',q:'空らんをタップして、あてはまる言葉をうめなさい。',
+ lines:['動画アプリは、先に数秒ぶんを受け取って {0} にためながら再生する。空になると「ぐるぐる」が出る。','家の光回線は速いのに、古いルーターが遅いので、ルーターが {1} になっている。','一度見たアイコンの画像は、スマホの {2} から出すので、受け取り直さない。','ゲームが「ラグい」ときは {3} を見る。行って帰ってくるまでの時間で、単位は ms。'],
+ words:['バッファ','ボトルネック','キャッシュ','ping','fps','TTL','ACK'],a:['バッファ','ボトルネック','キャッシュ','ping'],
+ e:'全体の速さは、いちばん細いところ（ボトルネック）で決まります。fps は1秒あたりのコマ数、TTL はルーターを通るたびに減る数、ACK は「届いた」の返事です。'},
+{t:'spot',s:'C',sc:'夜 19:30　家のWi-Fi',q:'ユウの部屋はルーターから遠く、電波が弱いです。中継器を1台置きます。下の条件を両方みたす場所を、1つタップしなさい。',
+ rule:'ルーターも中継器も、出す強さは100。木の壁1枚で「半分」1回、コンクリートの壁1枚で「半分」4回（この問題では距離は考えません）。\n条件1：中継器が受ける強さが 25 以上（弱いと中継器が働けない）　条件2：中継器からユウの部屋に届く強さが 25 以上',
+ spots:[['ア','ルーターのすぐ横',[],['wd','cn']],['イ','階段の上の廊下',['wd'],['wd']],['ウ','ユウの部屋のドアの前',['wd','cn'],[]],['エ','物置',['wd','wd'],['cn']]],a:1,
+ e:'ア：受ける100、部屋まで半分5回で約3。イ：受ける50、部屋まで50 → 両方OK。ウ：受ける半分5回で約3、中継器が働けない。エ：受ける25、部屋まで半分4回で約6。中継器は「電波が届いている場所」と「使う部屋」の間に置きます。'},
+{t:'num',s:'C',sc:'夜 19:40　電波の強さ',q:'壁のない広い部屋で、ルーターから1mのところの電波の強さは64でした。\nルーターから4mのところでは、強さはいくつですか。',unit:'',a:4,
+ e:'距離が4倍なので、強さは 4×4＝16分の1。64 ÷ 16 ＝ 4 です（距離が2倍で半分2回＝4分の1、4倍で半分4回＝16分の1）。'},
+{t:'match',s:'C',sc:'夜 19:50　2.4GHz と 5GHz',q:'ユウはルーターの設定画面を見ています。それぞれの特徴は、2.4GHz帯と5GHz帯のどちらですか。',
+ cats:['2.4GHz帯','5GHz帯'],rows:[['遠くまで届きやすい',0],['壁や角を回り込みやすい',0],['速く、たくさん送れる',1],['電子レンジとぶつかりやすい',0],['波長が短い（約6cm）',1]],
+ e:'2.4GHz は波長が約12cmと長く、回り込んで遠くまで届きますが、電子レンジ（2.45GHz）や近所のWi-Fiと混みやすいです。5GHz は波長が約6cmと短く、速いかわりに壁に弱いです。'},
+{t:'tap',s:'D',sc:'夜 21:00　あやしいメール',q:'ユウにメールが届きました。本物のミライIDのメールは、必ず「@mirai-id.example」から届きます。\n偽物（フィッシング）だと見分ける手がかりになる部分を、すべてタップしなさい。',view:'mail',
+ items:['差出人：ミライID サポート ＜support@mirai-1d.example＞','件名：【至急】24時間以内に確認しないと、アカウントが使えなくなります','受信：11月12日 21:03','いつもミライIDをご利用いただき、ありがとうございます。','下のボタンからログインして、パスワードとカード番号を入力してください。','［ログインする］　（リンク先：http://mirai-id-login.example/）','ミライID サポートセンター'],a:[0,1,4,5],
+ e:'差出人は「i」が「1」になった別の住所、リンク先も本物とちがう住所です。急がせること、パスワードやカード番号を入力させることもフィッシングの手口です。日時・あいさつ・署名は偽物でも本物そっくりに書けるので、手がかりになりません。'},
+{t:'match',s:'D',sc:'夜 21:10　本人確認',q:'あやしいメールを見て、ユウは本人確認を見直しました。それぞれ、本人確認の3つの種類のどれですか。',
+ cats:['知っている','持っている','体'],rows:[['スマホのロックの4けたの暗証番号',0],['スマホに届く6けたの番号',1],['顔認証',2],['学生証のカードで開くドア',1],['パターンロック',0],['指紋',2]],
+ e:'暗証番号とパターンロックは「知っている」、スマホに届く番号と学生証カードは「持っている」、顔と指紋は「体」です。二段階認証は、ちがう種類を2つ組み合わせます。'},
+{t:'step',s:'D',sc:'夜 21:20　パスワードの長さ',q:'ユウは、数字だけのパスワード（暗証番号）の長さを考えています。攻撃する側のコンピュータは、1秒に100億回ためせます。\n全部ためすのに1日（約86,400秒）以上かかるようにするには、いちばん短くて何けたにすればよいですか。＋と－で決めなさい。',min:4,max:20,start:8,a:15,
+ e:'10けたで100億通りなので1秒。1けた増えるごとに10倍で、14けたは1万秒（約2.8時間）、15けたで10万秒（約28時間）となり、15けたで初めて1日をこえます。数字だけだと、ここまで長くしないと守れません。'},
+{t:'match',s:'F',sc:'夜 22:30　記録係になってみる',q:'ニュースで見たビットコインのしくみを、記録係になって確かめます。Aさんの残高は30、Bさんの残高は0です。取り引きが上から順に届きました。上から順に、ブロックに入れてよいかを判断しなさい。',
+ cats:['入れる','入れない'],fixed:true,kind:'シミュレーション',rows:[['① Aさん → Bさん　10（Aさんのハンコ）',0],['② Aさん → Cさん　15（Aさんのハンコ）',0],['③ Aさん → Dさん　10（Aさんのハンコ）',1],['④ Bさん → Aさん　8（Bさんのハンコ）',0],['⑤ Aさん → Eさん　5（CさんがAさんのハンコをまねたもの）',1],['⑥ Aさん → Eさん　12（Aさんのハンコ）',0]],
+ e:'Aさんの残高は ①で20、②で5。③は5しかないのに10を送るので入れません。④でAさんは13（Bさんは10−8＝2）。⑤は本人のハンコではありません。⑥で13−12＝1です。'},
+{t:'order',s:'F',sc:'夜 22:40　マイニング',q:'記録係（マイナー）が新しいブロックを作り、記録帳につながるまでを、起きる順にタップしなさい。',
+ items:['届いた取り引きを確かめて、ブロックに入れる','ナンスを変えながら、指紋（ハッシュ値）を何度も計算する','頭に「0」が決まった数だけ並ぶ指紋が見つかる','ほかの参加者が、中身と指紋が正しいかを確かめる','ブロックが記録帳（チェーン）につながり、見つけた人が報酬をもらう'],
+ e:'ナンスを探すのは大変ですが、確かめるのは計算1回で一瞬です。みんなが確かめて正しいブロックだけがつながります。'},
+{t:'tap',s:'F',sc:'夜 22:50　書きかえを見破る',q:'ブロック1〜6がつながっています。悪い人がブロック3の取り引きを書きかえました。ばれないようにつじつまを合わせるには、どのブロックを作り直す（ナンスを探し直す）必要がありますか。すべてタップしなさい。',view:'chain',
+ items:['ブロック1','ブロック2','ブロック3','ブロック4','ブロック5','ブロック6'],a:[2,3,4,5],
+ e:'3は中身が変わったので指紋が変わり、頭の「0」の条件をみたさなくなります（図の 7c19e2…）。4には3の指紋が「前の指紋」として書いてあるので書き直しになり、4の指紋も変わって…と、6まで全部作り直しです。その間にもみんなのチェーンはのびるので、追いつくには全体の半分より多い計算の力がいります。'}
+];
+const SCN=['E','A','B','C','D','F'];
+const SHORT={E:'電子マネー',A:'ネット',B:'速さ',C:'電波',D:'パスワード',F:'ビットコイン'};
+const UDEMO=/^#(demo|teacher|sensei)$/i.test(location.hash);
+const UKEY=UDEMO?'fukushu-test2-demo':'fukushu-test2-v1';
+let us={no:'',i:-1,ans:{},ord:{},sent:null,sending:false,warn:false,act:0};
+try{const s=JSON.parse(localStorage.getItem(UKEY)||'null');if(s)us=Object.assign(us,s,{sending:false,warn:false,act:0})}catch(e){}
+function uSave(){try{const {sending,warn,act,...o}=us;localStorage.setItem(UKEY,JSON.stringify(o))}catch(e){}}
+const uNum=v=>{const s=String(v??'').normalize('NFKC').replace(/[,\s]/g,'');return /^-?\d+(\.\d+)?$/.test(s)?Number(s):NaN};
+// 並べる順（行・語群の順）を、解く人ごとにくじで決める
+function uOrd(k){const p=U[k];if(!us.ord[k]){const n=p.t==='order'?p.items.length:p.t==='match'?p.rows.length:p.t==='fill'?p.words.length:0;
+  us.ord[k]=(p.fixed||!n)?[...Array(n).keys()]:shuffle([...Array(n).keys()]);uSave()}return us.ord[k]}
+function uAnswered(k){const p=U[k],v=us.ans[k];if(v==null)return false;
+  if(p.t==='order')return v.length===p.items.length;
+  if(p.t==='match')return p.rows.every((_,r)=>v[r]!=null);
+  if(p.t==='fill')return p.a.every((_,b)=>v[b]!=null);
+  if(p.t==='num')return String(v).trim()!=='';
+  if(p.t==='tap')return v.length>0;
+  return true}
+function uStarted(k){const v=us.ans[k];return v!=null&&(typeof v!=='object'||Object.keys(v).length>0)}
+// 各部分の正誤（答え合わせの表示にも使う）
+function uParts(k){const p=U[k],v=us.ans[k];
+  if(p.t==='order')return p.items.map((_,n)=>Array.isArray(v)&&v[n]===n);
+  if(p.t==='match')return p.rows.map((r,n)=>v!=null&&v[n]===r[1]);
+  if(p.t==='fill')return p.a.map((w,n)=>v!=null&&v[n]===w);
+  if(p.t==='num')return [uNum(v)===p.a];
+  if(p.t==='tap')return [Array.isArray(v)&&sameSet(v,p.a)];
+  return [v===p.a]}
+const uCorrect=k=>uParts(k).every(Boolean);
+function uChrome(){
+  $('ttl').textContent=UDEMO?'小テスト第2回（先生用デモ）':'小テスト第2回';
+  const on=us.i>=0&&!us.sent;
+  const cur=on&&us.i<U.length?U[us.i].s:null;
+  $('chips').innerHTML=on?`<span class="chip now">出席番号 ${esc(us.no)}</span>`+SCN.map(s=>{const idx=U.map((_,k)=>k).filter(k=>U[k].s===s);
+    return `<span class="chip sc ${s===cur?'now':idx.every(uAnswered)?'done':''}">${SHORT[s]}</span>`}).join(''):'';
+  $('count').textContent=on&&us.i<U.length?`${us.i+1} / ${U.length}`:'';
+  $('bar').style.width=on?(U.filter((_,k)=>uAnswered(k)).length/U.length*100)+'%':us.sent?'100%':'0';
+}
+function uDemo(){return UDEMO?`<div class="demo" style="background:#fff6dc;border:2px dashed #d9a400;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap">先生用デモ：何度でも受け直せます。生徒の記録とは別に保存します。<button class="hbtn" id="uReset">最初からやり直す</button></div>`:''}
+function uDemoBind(){const b=$('uReset');if(b)b.onclick=()=>{us={no:us.no,i:-1,ans:{},ord:{},sent:null,sending:false,warn:false,act:0};uSave();render()}}
+function uRender(){
+  uChrome();
+  if(us.sending)return uSending();
+  if(us.sent)return uDone();
+  if(us.i<0)return uStart();
+  if(us.i>=U.length)return uConfirm();
+  uQuestion();
+}
+function uStart(){
+  const kinds=[...new Set(U.map(kindOf))].join('・');
+  $('card').innerHTML=uDemo()+`<div class="q">小テスト第2回（${U.length}問）　ユウの1日</div>
+   <table class="plan"><tr><td>問題</td><td>高校生ユウの1日（朝の駅 → 教室 → 帰りの電車 → 家 → 夜）を追いながら、${Object.keys(CH).length}回の授業の内容を使って解きます</td></tr>
+   <tr><td>答え方</td><td>${kinds}。どれもタップで答えます。計算はメモを使ってかまいません</td></tr>
+   <tr><td>採点</td><td>1問1点。並べかえ・組み合わせ・穴うめは、全部合って正解です</td></tr>
+   <tr><td>提出</td><td>答えはあとから変えられます。最後に「提出する」を押します。<b>提出は1回だけ</b>で、答え合わせは提出のあとです</td></tr></table>
+   <div class="nobox"><label for="no">出席番号（4けた）</label><br><input id="no" inputmode="numeric" maxlength="4" autocomplete="off" value="${esc(us.no)}" placeholder="0000"></div>
+   <div class="warn" id="nomsg"></div>
+   <div class="row"><button class="btn ghost" id="tomenu">メニューへ</button><button class="btn" id="go">はじめる</button></div>`;
+  const no=$('no');
+  const go=()=>{const v=fixNo(no.value);
+    if(!/^\d{4}$/.test(v)){$('nomsg').textContent='出席番号は4けたの数字で入れます（例 2105）。';no.focus();return}
+    us.no=v;us.i=0;uSave();render()};
+  $('go').onclick=go;no.onkeydown=e=>{if(e.key==='Enter')go()};
+  $('tomenu').onclick=()=>setMode('menu');uDemoBind();
+}
+function uSet(k,v){us.ans[k]=v;uSave();render()}
+function uBody(k){
+  const p=U[k],v=us.ans[k];
+  if(p.t==='order'){const cur=Array.isArray(v)?v:[];
+    return `<div class="hint">1番目から順にタップします。番号を消すときは、もう一度タップします。</div><div class="ordl">${uOrd(k).map(n=>{const pos=cur.indexOf(n);
+      return `<button class="opt ${pos>=0?'pick':''}" data-n="${n}"><span class="badge">${pos>=0?pos+1:''}</span><span>${esc(p.items[n])}</span></button>`}).join('')}</div>`}
+  if(p.t==='match'){const cur=v||{};
+    return `<div class="mt">${uOrd(k).map(r=>`<div class="mrow"><span>${esc(p.rows[r][0])}</span><span class="seg">${p.cats.map((c,j)=>`<button class="opt ${cur[r]===j?'pick':''}" data-r="${r}" data-j="${j}">${esc(c)}</button>`).join('')}</span></div>`).join('')}</div>`}
+  if(p.t==='fill'){const cur=v||{};let b=0;
+    const line=s=>esc(s).replace(/\{(\d)\}/g,(_,d)=>{const n=+d;return `<button class="blank ${cur[n]!=null?'fill':''} ${us.act===n?'act':''}" data-b="${n}">${cur[n]!=null?esc(cur[n]):'（　'+'①②③④⑤⑥'[n]+'　）'}</button>`});
+    return `<div class="fl">${p.lines.map(s=>`<div>${line(s)}</div>`).join('')}</div>
+     <div class="hint">空らん（いま選んでいるのは「${'①②③④⑤⑥'[us.act]}」）をタップしてから、下の言葉をタップします。</div>
+     <div class="words">${uOrd(k).map(n=>`<button class="opt" data-w="${esc(p.words[n])}">${esc(p.words[n])}</button>`).join('')}</div>`}
+  if(p.t==='num')return `<div class="numin"><input id="ni" inputmode="decimal" autocomplete="off" value="${esc(v??'')}" placeholder="数字">${esc(p.unit)}</div><div class="hint">数字だけを入れます（単位は入れません）。</div>`;
+  if(p.t==='spot'){const wall=c=>`<span class="wall ${c}" title="${c==='wd'?'木の壁':'コンクリートの壁'}"></span>`;
+    const leg=(a,b,ws)=>`<div class="leg"><span class="dev">${a}</span>${ws.length?ws.map(wall).join(''):'<span class="hint">壁なし</span>'}<span class="dev">${b}</span></div>`;
+    return `<div class="rule">${esc(p.rule).replace(/\n/g,'<br>')}<br><span class="wall wd"></span> 木の壁　<span class="wall cn"></span> コンクリートの壁</div>
+     <div class="spots">${p.spots.map((s,j)=>`<button class="spot ${v===j?'pick':''}" data-j="${j}"><span class="nm2">${s[0]}　${esc(s[1])}</span>
+       ${leg('ルーター','中継器',s[2])}${leg('中継器','ユウの部屋',s[3])}<span class="hint">${v===j?'ここに置く':'タップして置く'}</span></button>`).join('')}</div>`}
+  if(p.t==='tap'){const cur=Array.isArray(v)?v:[];
+    if(p.view==='mail')return `<div class="mail">${p.items.map((t,j)=>`<button class="opt ${cur.includes(j)?'pick':''} ${j===5?'btnlike':''}" data-j="${j}"><span class="box">${cur.includes(j)?'✓':''}</span><span>${esc(t)}</span></button>`).join('')}</div>`;
+    const hx=['0004c1','0009ae','000f3b','0002d8','0007a5','00016e'];
+    return `<div class="chain">${p.items.map((t,j)=>`<button class="blk ${j===2?'bad':''} ${cur.includes(j)?'pick':''}" data-j="${j}"><b>${esc(t)}</b><span class="hx">前の指紋 ${j?hx[j-1]+'…':'（なし）'}</span><span class="hx">指紋 ${j===2?'7c19e2':hx[j]}…</span>${j===2?'<span style="font-size:12px;color:var(--ng);font-weight:700">取り引きを書きかえた → 指紋が変わった</span>':''}<span class="rb">${cur.includes(j)?'✓ 作り直す':''}</span></button>`).join('')}</div>
+     <div class="hint">指紋は頭の6文字だけ書いています。このチェーンのきまりは「指紋の頭に0が3つ並ぶこと」です。</div>`}
+  if(p.t==='step'){const n=v??p.start;
+    return `<div class="lock"><button class="stp" id="sm">－</button><div><div class="big">${n} けた</div><div class="hint">${v==null?'まだ決めていません（＋か－を押して決めます）':'このけた数で答えます'}</div></div><button class="stp" id="sp">＋</button></div>
+     <div class="digits">${'<span>●</span>'.repeat(n)}</div>`}
+}
+function uQuestion(){
+  const k=us.i,p=U[k];
+  $('card').innerHTML=uDemo()+`<div class="sec"><span class="lbl">第${k+1}問</span><span class="nm">${esc(p.sc)}</span><span class="tag k">${kindOf(p)}</span>${p.t==='tap'?'<span class="tag">すべて選ぶ</span>':''}<span class="hint">${esc(CH[p.s])}</span></div>
+   <div class="q2">${esc(p.q)}</div>${uBody(k)}
+   <div class="row"><button class="btn ghost" id="back" ${k===0?'disabled':''}>もどる</button><button class="btn" id="next">${k===U.length-1?'見直して提出へ':'次へ'}</button></div>`;
+  const v=us.ans[k];
+  if(p.t==='order')document.querySelectorAll('.ordl .opt').forEach(b=>b.onclick=()=>{const n=+b.dataset.n,a=Array.isArray(v)?v:[];uSet(k,a.includes(n)?a.filter(x=>x!==n):[...a,n])});
+  if(p.t==='match')document.querySelectorAll('.seg .opt').forEach(b=>b.onclick=()=>{uSet(k,Object.assign({},v||{},{[b.dataset.r]:+b.dataset.j}))});
+  if(p.t==='fill'){
+    document.querySelectorAll('.blank').forEach(b=>b.onclick=()=>{us.act=+b.dataset.b;render()});
+    document.querySelectorAll('.words .opt').forEach(b=>b.onclick=()=>{const a=Object.assign({},v||{},{[us.act]:b.dataset.w});
+      const nx=p.a.map((_,n)=>n).find(n=>n>us.act&&a[n]==null)??p.a.map((_,n)=>n).find(n=>a[n]==null);if(nx!=null)us.act=nx;uSet(k,a)});
+  }
+  if(p.t==='num'){const ni=$('ni');ni.oninput=()=>{us.ans[k]=ni.value;uSave();uChrome()};ni.onkeydown=e=>{if(e.key==='Enter')$('next').click()}}
+  if(p.t==='spot')document.querySelectorAll('.spot').forEach(b=>b.onclick=()=>uSet(k,+b.dataset.j));
+  if(p.t==='tap')document.querySelectorAll('.mail .opt,.blk').forEach(b=>b.onclick=()=>{const j=+b.dataset.j,a=Array.isArray(v)?v:[];uSet(k,a.includes(j)?a.filter(x=>x!==j):[...a,j])});
+  if(p.t==='step'){const n=v??p.start;$('sm').onclick=()=>uSet(k,Math.max(p.min,n-1));$('sp').onclick=()=>uSet(k,Math.min(p.max,n+1))}
+  const go=d=>{us.i+=d;us.act=0;uSave();render()};
+  $('back').onclick=()=>go(-1);$('next').onclick=()=>go(1);uDemoBind();
+}
+function uConfirm(){
+  const left=U.map((_,k)=>k).filter(k=>!uAnswered(k));
+  $('card').innerHTML=uDemo()+`<div class="q">提出の前に確かめます</div>
+   <table class="plan"><tr><td>出席番号</td><td style="font-size:22px;font-weight:700;letter-spacing:.1em">${esc(us.no)}</td></tr>
+   <tr><td>答えた問題</td><td>${U.length-left.length} / ${U.length} 問</td></tr></table>
+   ${left.length?`<div>まだ答えていない・とちゅうの問題（押すとその問題へ）</div><div class="jump">${left.map(k=>`<button class="opt" data-k="${k}">第${k+1}問${uStarted(k)?'（とちゅう）':''}</button>`).join('')}</div>`:'<div>全部の問題に答えました。</div>'}
+   ${us.warn?`<div class="warn">まだ答えていない問題が${left.length}問あります。このまま提出するときは、もう一度「提出する」を押します。</div>`:''}
+   <div class="hint">提出は1回だけです。提出したあとは、答えを変えられません。</div>
+   <div class="row"><button class="btn ghost" id="back">問題にもどる</button><button class="btn ghost" id="chg">出席番号を直す</button><button class="btn" id="send">提出する</button></div>`;
+  document.querySelectorAll('.jump .opt').forEach(b=>b.onclick=()=>{us.i=+b.dataset.k;us.act=0;us.warn=false;uSave();render()});
+  $('back').onclick=()=>{us.i=U.length-1;us.warn=false;uSave();render()};
+  $('chg').onclick=()=>{us.i=-1;us.warn=false;uSave();render()};
+  $('send').onclick=()=>{if(left.length&&!us.warn){us.warn=true;render();return}
+    us.warn=false;us.sending=true;render();
+    // ダミーの提出：どこにも送らず、送信しているような表示のあと「提出しました」にする
+    setTimeout(()=>{us.sending=false;const d=new Date();us.sent=`${d.getMonth()+1}月${d.getDate()}日 ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;uSave();render()},1500)};
+  uDemoBind();
+}
+function uSending(){$('card').innerHTML=`<div class="q">送信しています…</div><div class="prog"><div style="width:70%"></div></div><div class="hint">画面を閉じずに待ちます。</div>`}
+// 答え合わせ：部分ごとに、あなたの答えと正解を並べる
+function uReview(k){
+  const p=U[k],v=us.ans[k],pt=uParts(k),mk=b=>`<span class="${b?'o':'x'}">${b?'○':'×'}</span>`;
+  const none='未回答';
+  if(p.t==='order'){const cur=Array.isArray(v)?v:[];
+    return `<div class="pt">正しい順：${p.items.map((t,n)=>`${n+1}. ${esc(t)}`).join('<br>')}</div><div class="pt">あなたの順：${cur.length?cur.map(n=>esc(p.items[n].slice(0,14))+'…').join(' → '):none}</div>`}
+  if(p.t==='match')return p.rows.map((r,n)=>`<div class="pt">${mk(pt[n])} ${esc(r[0])}：あなた ${v&&v[n]!=null?esc(p.cats[v[n]]):none} ／ 正解 ${esc(p.cats[r[1]])}</div>`).join('');
+  if(p.t==='fill')return p.a.map((w,n)=>`<div class="pt">${mk(pt[n])} ${'①②③④⑤⑥'[n]}：あなた ${v&&v[n]!=null?esc(v[n]):none} ／ 正解 ${esc(w)}</div>`).join('');
+  if(p.t==='num')return `<div class="pt">あなた ${uAnswered(k)?esc(String(v).trim())+esc(p.unit):none} ／ 正解 ${p.a}${esc(p.unit)}</div>`;
+  if(p.t==='spot')return `<div class="pt">あなた ${v!=null?esc(p.spots[v][0]+' '+p.spots[v][1]):none} ／ 正解 ${esc(p.spots[p.a][0]+' '+p.spots[p.a][1])}</div>`;
+  if(p.t==='tap'){const lab=j=>p.view==='mail'?esc(p.items[j].slice(0,12))+'…':esc(p.items[j]);
+    return `<div class="pt">正解：${p.a.map(lab).join('　')}</div><div class="pt">あなた：${Array.isArray(v)&&v.length?v.slice().sort((a,b)=>a-b).map(lab).join('　'):none}</div>`}
+  return `<div class="pt">あなた ${v!=null?v+'けた':none} ／ 正解 ${p.a}けた</div>`;
+}
+function uDone(){
+  const ok=U.filter((_,k)=>uCorrect(k)).length;
+  $('card').innerHTML=uDemo()+`<div class="sent">提出しました</div>
+   <div>出席番号 <b>${esc(us.no)}</b>　受付 ${esc(us.sent)}</div>
+   <div><span class="res-total">${ok}</span><span style="font-size:20px"> / ${U.length} 問 正解</span></div>
+   <div class="bars">${SCN.map(s=>{const a=U.map((_,k)=>k).filter(k=>U[k].s===s);const r=a.filter(uCorrect).length;
+     return `<div class="bar"><span>${esc(CH[s])}</span><div class="track"><div class="fill" style="width:${r/a.length*100}%"></div></div><span class="num">${r}/${a.length}</span></div>`}).join('')}</div>
+   <div class="row"><button class="btn" id="tomenu">メニューへ</button></div>
+   <div class="q" style="font-size:18px">答え合わせ</div>
+   ${U.map((p,k)=>{const c=uCorrect(k);return `<div class="rv"><div class="h"><span class="mark ${c?'o':'x'}">${c?'○':'×'}</span><span>第${k+1}問（${esc(kindOf(p))}）　${esc(p.q.split('\n')[0])}</span></div>
+     ${uReview(k)}<div class="e pt">${esc(p.e)}</div></div>`}).join('')}`;
+  $('tomenu').onclick=()=>setMode('menu');uDemoBind();
 }
 render();
 </script>
