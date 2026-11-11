@@ -152,7 +152,11 @@ console.log('■ メニュー');
   click(w, '#menuBtn');
   ok('上の「メニュー」でメニューへもどる', $(w, '#mTest') !== null);
   click(w, '#mTest');
-  ok('小テストを選ぶと出席番号の欄', $(w, '#no') !== null && $(w, '#ttl').textContent === '小テスト');
+  ok('小テストを選ぶと出席番号の欄', $(w, '#no') !== null && $(w, '#ttl').textContent === '小テスト第1回');
+  click(w, '#menuBtn');
+  ok('メニューに「小テスト第2回 20問」がある', $(w, '#mTest2') && $(w, '#mTest2').textContent.includes('小テスト第2回') && $(w, '#mTest2').textContent.includes('20問'));
+  click(w, '#mTest2');
+  ok('第2回を選ぶと第2回の出席番号の欄', $(w, '#no') !== null && $(w, '#ttl').textContent === '小テスト第2回');
 }
 
 console.log('■ 小テスト：出席番号');
@@ -249,5 +253,172 @@ console.log('■ 小テスト：途中で開き直す');
   ok('同じ問題の組・同じ位置（第3問）から続く', w2.eval('ts.set').join() === set.join() && w2.eval('ts.i') === 2);
   ok('答えが残っている', w2.eval('tAnswered(0)'));
 }
+// ================= 小テスト第2回 =================
+function open2(store, hash = '') {
+  const dom = new JSDOM(html, {
+    runScripts: 'dangerously', url: 'https://example.test/review1/' + hash,
+    beforeParse(w) {
+      w.localStorage.setItem('fukushu-mode', 'test2');
+      if (store) w.localStorage.setItem('fukushu-test2-v1', store);
+      w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
+    },
+  });
+  return dom.window;
+}
+console.log('■ 第2回：正解を独立に計算し直す');
+{
+  const w = open2(); const U = w.eval('U');
+  const find = (re) => { const k = U.findIndex(p => re.test(p.q)); if (k < 0) throw new Error('問題がない: ' + re); return U[k]; };
+  ok('20問・章ごとに E3 A4 B4 C3 D3 F3', U.length === 20 &&
+    JSON.stringify(['E','A','B','C','D','F'].map(s => U.filter(p => p.s === s).length)) === '[3,4,4,3,3,3]');
+  ok('どの問題にも解説と場面がある', U.every(p => p.e && p.e.length > 20 && p.sc));
+  ok('形式が5種類以上（並べかえ・組み合わせ・穴うめ・計算・シミュレーション）', new Set(U.map(p => p.t)).size >= 6);
+  // 計算
+  ok('改札：QR は IC より 10分長い', find(/改札は5台/).a === (3000 / 5) * (2.0 - 1.0) / 60);
+  ok('パケット：再送は20個', find(/1％が消え/).a === 3000000 / 1500 * 0.01);
+  ok('学校のWi-Fi：64秒', find(/40人が同時/).a === (4 * 8) / (20 / 40));
+  ok('ギガ：1日15分', find(/残り 3GB/).a === 3 / 12 / 1.0 * 60);
+  ok('距離4倍：64 → 4', find(/1mのところの電波/).a === 64 / (4 / 1) ** 2);
+  { let n = 1; while (10 ** n / 1e10 < 86400) n++; ok('数字だけ・1日以上：15けた（14けたは足りない）', find(/1秒に100億回/).a === n && 10 ** 14 / 1e10 < 86400 && 24 * 60 * 60 === 86400); }
+  // 画質：速さ以下で一番高いもの
+  { const need = [1, 2, 4, 8, 25]; const p = find(/画質「自動」/);
+    ok('画質の組み合わせ', p.rows.every(([t, a]) => { const v = +t.match(/（([\d.]+)Mbps）/)[1]; return a === need.map((x, i) => x <= v ? i : -1).filter(i => i >= 0).pop(); })); }
+  // 中継器：半分の回数 → 強さ、両方25以上が1つだけ
+  { const p = find(/中継器を1台/); const h = { wd: 1, cn: 4 };
+    const good = p.spots.map(s => 100 / 2 ** s[2].reduce((a, c) => a + h[c], 0) >= 25 && 100 / 2 ** s[3].reduce((a, c) => a + h[c], 0) >= 25);
+    ok('中継器：条件を両方みたすのは1か所で、それが正解', good.filter(Boolean).length === 1 && good[p.a], good); }
+  // 台帳：上から順に残高とハンコを確かめる
+  { const p = find(/記録係になって確かめ/); const bal = { A: 30, B: 0, C: 0, D: 0, E: 0 }; const res = [];
+    for (const [t] of p.rows) { const m = t.match(/(\S)さん → (\S)さん　(\d+)/); const from = m[1], to = m[2], amt = +m[3];
+      const own = t.includes(`（${from}さんのハンコ）`); const okk = own && bal[from] >= amt; if (okk) { bal[from] -= amt; bal[to] += amt; } res.push(okk ? 0 : 1); }
+    ok('台帳：入れる・入れないが残高の計算と合う（Aさんは最後に1）', p.rows.every((r, i) => r[1] === res[i]) && bal.A === 1, res); }
+  // ブロック：書きかえた3から後ろを全部作り直す
+  { const p = find(/ブロック3の取り引きを書きかえ/); const want = p.items.map((_, i) => i).filter(i => i >= 2);
+    ok('ブロック：作り直すのは3〜6', JSON.stringify(p.a) === JSON.stringify(want)); }
+  // ヘッダ：NAT のモデル
+  { const p = find(/ヘッダの空らん/); const phone = '192.168.0.12', rt = '203.0.113.77', sv = '203.0.113.5', fr = '198.51.100.40';
+    ok('ヘッダ：①宛先サーバー・送信元スマホ ②送信元ルーター ③宛先友だち・送信元サーバー', JSON.stringify(p.a) === JSON.stringify([sv, phone, rt, fr, sv]) && p.a.every(x => p.words.includes(x))); }
+  // 支払い：前払い0・その場1・後払い2
+  { const p = find(/財布とスマホ/); const tbl = { 'Suica': 0, 'デビット': 1, 'クレジットカード': 2, 'PayPay': 0, '図書カード': 0, 'iD': 2 };
+    ok('支払いのタイミング', p.rows.every(([t, a]) => { const key = Object.keys(tbl).find(x => t.startsWith(x)); return key && tbl[key] === a; })); }
+  // 波長
+  { const p = find(/2.4GHz帯と5GHz帯/); const lam24 = 3e8 / 2.4e9, lam5 = 3e8 / 5e9;
+    ok('波長：2.4GHz 約12cm・5GHz 約6cm（短いのは5GHz）', Math.abs(lam24 - 0.125) < 1e-9 && Math.abs(lam5 - 0.06) < 1e-9 && p.rows.find(r => r[0].startsWith('波長'))[1] === 1); }
+  { const p = find(/本人確認の3つ/); ok('本人確認：知っている2・持っている2・体2', [0, 1, 2].every(c => p.rows.filter(r => r[1] === c).length === 2)); }
+  { const p = find(/フィッシング/); ok('メール：本物の住所と差出人・リンク先がちがう', !p.items[0].includes('@mirai-id.example') && !p.items[5].includes('//mirai-id.example') && p.a.includes(0) && p.a.includes(5) && !p.a.includes(2) && !p.a.includes(3) && !p.a.includes(6)); }
+  ok('並べかえは5項目・組み合わせの答えは選択肢の範囲内', U.filter(p => p.t === 'order').every(p => p.items.length === 5) && U.filter(p => p.t === 'match').every(p => p.rows.every(r => r[1] >= 0 && r[1] < p.cats.length)));
+  ok('穴うめの答えはすべて語群にある', U.filter(p => p.t === 'fill').every(p => p.a.every(x => p.words.includes(x)) && p.lines.join('').match(/\{\d\}/g).length === p.a.length));
+}
+
+// 第2回を画面の操作で解く。wrong：まちがえる問題の番号の集合。skip：答えない問題
+function take2(wrong = new Set(), skip = new Set(), hash = '') {
+  const w = open2(null, hash); $(w, '#no').value = '0712'; click(w, '#go');
+  const U = w.eval('U'); const q$ = s => [...w.document.querySelectorAll(s)];
+  for (let k = 0; k < U.length; k++) {
+    const p = U[k], bad = wrong.has(k);
+    if (w.eval('us.i') !== k) throw new Error('進んでいない: ' + k);
+    const txt = $(w, '#card').textContent;
+    if (/正解|まちがい|不正解/.test(txt) || $(w, '.rv')) throw new Error('提出前に正解が出ている: ' + k);
+    if (!skip.has(k)) {
+      if (p.t === 'order') {
+        const seq = bad ? [1, 0, 2, 3, 4] : [0, 1, 2, 3, 4];
+        // 一度まちがえて押し、消してから並べ直せる
+        q$('.ordl .opt').find(b => b.dataset.n === '4').click(); q$('.ordl .opt').find(b => b.dataset.n === '4').click();
+        seq.forEach(n => q$('.ordl .opt').find(b => b.dataset.n === String(n)).click());
+      } else if (p.t === 'match') {
+        p.rows.forEach((r, i) => { const j = bad && i === 0 ? (r[1] + 1) % p.cats.length : r[1];
+          q$('.seg .opt').find(b => b.dataset.r === String(i) && b.dataset.j === String(j)).click(); });
+      } else if (p.t === 'fill') {
+        p.a.forEach((x, n) => { q$('.blank').find(b => b.dataset.b === String(n)).click();
+          const word = bad && n === p.a.length - 1 ? p.words.find(y => y !== x) : x;
+          q$('.words .opt').find(b => b.dataset.w === word).click(); });
+      } else if (p.t === 'num') {
+        const ni = $(w, '#ni'); ni.value = bad ? String(p.a + 1) : (p.a >= 10 ? String(p.a).replace(/\d/g, d => String.fromCharCode(0xFF10 + +d)) : String(p.a)); // 全角でも受け付ける
+        ni.dispatchEvent(new w.Event('input'));
+      } else if (p.t === 'spot') {
+        click(w, `.spot[data-j="${bad ? (p.a + 1) % p.spots.length : p.a}"]`);
+      } else if (p.t === 'tap') {
+        (bad ? p.a.slice(1) : p.a).forEach(j => click(w, `[data-j="${j}"]`));
+      } else if (p.t === 'step') {
+        const target = bad ? p.a - 1 : p.a; let guard = 0;
+        while (w.eval(`us.ans[${k}]`) !== target && guard++ < 40) click(w, (w.eval(`us.ans[${k}]`) ?? p.start) < target ? '#sp' : '#sm');
+      }
+    }
+    click(w, '#next');
+  }
+  return w;
+}
+console.log('■ 第2回：画面の操作で解いて提出');
+{
+  const wrong = new Set([0, 3, 6, 11, 14, 19]); // 組み合わせ・並べかえ・計算・中継器・メール・ブロックをまちがえる
+  let w, err; try { w = take2(wrong); } catch (e) { err = e.message; }
+  ok('最後まで進める（解いている間は正解が出ない）', !err, err);
+  if (w) {
+    const t = $(w, '#card').textContent;
+    ok('確認画面：出席番号と 20 / 20 問', t.includes('提出の前に') && t.includes('0712') && t.includes('20 / 20 問'));
+    click(w, '#send');
+    ok('「提出する」で送信中の表示', $(w, '#card').textContent.includes('送信しています'));
+    ok('送信中は上の「メニュー」を押しても動かない', (click(w, '#menuBtn'), w.eval('mode')) === 'test2');
+    w.eval('us.sending=false;us.sent="11月12日 10:00";uSave();render()');
+    const t2 = $(w, '#card').textContent;
+    ok('「提出しました」と出席番号', t2.includes('提出しました') && t2.includes('0712'));
+    ok(`点数が合う（${20 - wrong.size} / 20）`, t2.includes(`${20 - wrong.size} / 20 問 正解`), t2.match(/\d+ \/ 20 問 正解/)?.[0]);
+    ok('答え合わせが20問・○の数が点数と合う', w.document.querySelectorAll('.rv').length === 20 && w.document.querySelectorAll('.rv .mark.o').length === 20 - wrong.size);
+    ok('まちがえた問題に × が付く', [...wrong].every(k => w.document.querySelectorAll('.rv')[k].querySelector('.mark.x')));
+    ok('章ごとのバーが6本', w.document.querySelectorAll('.bar').length === 6);
+    ok('提出は1回だけ（受け直すボタンがない）', !$(w, '#again') && !$(w, '#uReset'));
+    const w2 = open2(w.localStorage.getItem('fukushu-test2-v1'));
+    ok('開き直しても「提出しました」のまま', $(w2, '#card').textContent.includes('提出しました') && !$(w2, '#send'));
+    click(w2, '#menuBtn');
+    ok('メニューで第2回は「提出済み」', $(w2, '#mTest2').textContent.includes('提出済み'));
+    ok('第2回の提出は第1回の記録に影響しない', $(w2, '#mTest').textContent.includes('まだ受けていません'));
+  }
+}
+console.log('■ 第2回：全問正解・全問不正解');
+{
+  let w = take2(); click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
+  ok('全問正解で 20 / 20', $(w, '#card').textContent.includes('20 / 20 問 正解'));
+  w = take2(new Set([...Array(20).keys()])); click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
+  ok('全問まちがえて 0 / 20', $(w, '#card').textContent.includes('0 / 20 問 正解'));
+}
+console.log('■ 第2回：答えていない問題があるとき');
+{
+  const w = take2(new Set(), new Set([4, 15]));
+  ok('答えた数 18 / 20・未回答が並ぶ', $(w, '#card').textContent.includes('18 / 20 問') && q2(w).join() === '第5問,第16問');
+  click(w, '#send');
+  ok('1回目は提出せず注意', !w.eval('us.sending') && $(w, '.warn').textContent.includes('2問'));
+  click(w, '#send');
+  ok('2回目で提出', w.eval('us.sending') === true);
+  w.eval('us.sending=false;us.sent="x";uSave();render()');
+  ok('未回答は × で「未回答」', $(w, '#card').textContent.includes('未回答') && w.document.querySelectorAll('.rv .mark.o').length === 18);
+}
+function q2(w) { return [...w.document.querySelectorAll('.jump .opt')].map(b => b.textContent); }
+console.log('■ 第2回：とちゅうの問題');
+{
+  const w = open2(); $(w, '#no').value = '0001'; click(w, '#go');
+  const U = w.eval('U');
+  // 第1問（組み合わせ）を1行だけ答えて最後へ
+  [...w.document.querySelectorAll('.seg .opt')][0].click();
+  w.eval('us.i=20;uSave();render()');
+  ok('一部だけの組み合わせは「とちゅう」と出る', q2(w)[0] === '第1問（とちゅう）');
+  ok('数を入れる欄は全角数字・カンマも読める', w.eval('uNum("１,２００")') === 1200 && Number.isNaN(w.eval('uNum("10分")')));
+  const w2 = open2(w.localStorage.getItem('fukushu-test2-v1'));
+  ok('開き直すと続きから（確認画面）', w2.eval('us.i') === 20 && $(w2, '#card').textContent.includes('提出の前に'));
+  ok('並べる順は開き直しても同じ', JSON.stringify(w2.eval('us.ord')) === JSON.stringify(w.eval('us.ord')));
+  const orders = new Set(); for (let n = 0; n < 6; n++) { const x = open2(); $(x, '#no').value = '0001'; click(x, '#go'); orders.add(x.eval('JSON.stringify(uOrd(0))')); }
+  ok('組み合わせの行の順は人ごとにくじで変わる', orders.size > 1);
+  const fx = open2(); $(fx, '#no').value = '0001'; click(fx, '#go'); fx.eval('us.i=8;render()');
+  ok('道順のある問題（画質）は行の順を変えない', fx.eval('JSON.stringify(uOrd(8))') === '[0,1,2,3,4]');
+}
+console.log('■ 第2回：先生用デモ（#demo）');
+{
+  const w = take2(new Set([1]), new Set(), '#demo');
+  ok('#demo で第2回が開き、題に「先生用デモ」', $(w, '#ttl').textContent.includes('先生用デモ'));
+  click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
+  ok('デモは生徒の箱に保存しない', w.localStorage.getItem('fukushu-test2-v1') === null && w.localStorage.getItem('fukushu-test2-demo') !== null);
+  click(w, '#uReset');
+  ok('デモは「最初からやり直す」で受け直せる', $(w, '#no') !== null && !w.eval('us.sent'));
+}
+
 console.log(`\n合格 ${pass} / 不合格 ${fail}`);
 process.exit(fail ? 1 : 0);
