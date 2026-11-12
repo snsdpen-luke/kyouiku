@@ -420,5 +420,48 @@ console.log('■ 第2回：先生用デモ（#demo）');
   ok('デモは「最初からやり直す」で受け直せる', $(w, '#no') !== null && !w.eval('us.sent'));
 }
 
+console.log('■ 第2回：計算問題の電卓とヒント');
+{
+  const w = open2(); $(w, '#no').value = '0001'; click(w, '#go');
+  const U = w.eval('U');
+  const calcQ = U.map((p, k) => k).filter(k => U[k].nums);
+  ok('電卓が付くのは計算5問とけた数1問', calcQ.length === 6 && calcQ.every(k => ['num', 'step'].includes(U[k].t)) && U.filter(p => p.t === 'num').every(p => p.nums));
+  ok('どの計算問題にもヒントがあり、答えの数を書いていない', calcQ.every(k => { const p = U[k]; return p.hint && p.hint.length > 20 && !(p.unit && p.hint.includes(`${p.a}${p.unit}`)) && !new RegExp(`[＝=]\\s*${p.a}(?![\\d.])`).test(p.hint) && !/答えは/.test(p.hint); }), calcQ.map(k => U[k].hint.slice(0, 20)));
+  ok('電卓のボタンの数は問題文に出てくる数', calcQ.every(k => U[k].nums.every(([lab]) => U[k].q.includes(lab.replace(/（.*/, '')))), calcQ.map(k => U[k].nums.map(n => n[0])));
+  const ev = ex => w.eval(`(()=>{try{return calcEval(${JSON.stringify(ex)})}catch(e){return 'エラー'}})()`);
+  ok('電卓：× ÷ を先に計算する（2+3×4=14）', ev('2+3×4') === 14);
+  ok('電卓：かっこ（600×(2-1)÷60=10）', ev('600×(2-1)÷60') === 10);
+  ok('電卓：小数（0.1+0.2=0.3、32÷0.5=64）', ev('0.1+0.2') === 0.3 && ev('32÷0.5') === 64);
+  ok('電卓：0で割る・式がこわれているとエラー', ev('5÷0') === 'エラー' && ev('3×') === 'エラー' && ev('(2+3') === 'エラー');
+  // 画面のボタンだけで各計算問題を解き、「答えの欄に入れる」で答える
+  const keys = { '改札は5台': [['n', 0], '÷', ['n', 1], '×', '(', ['n', 3], '-', ['n', 2], ')', '÷', '6', '0', '='],
+    '1％が消え': [['n', 0], '÷', ['n', 1], '×', ['n', 2], '='],
+    '40人が同時': [['n', 2], '×', '8', '÷', '(', ['n', 0], '÷', ['n', 1], ')', '='],
+    '残り 3GB': [['n', 0], '÷', ['n', 1], '÷', ['n', 2], '×', '6', '0', '='],
+    '1mのところ': [['n', 0], '÷', '(', ['n', 2], '×', ['n', 2], ')', '='] };
+  let allok = true, shown = [];
+  for (const k of calcQ.filter(k => U[k].t === 'num')) {
+    w.eval(`us.i=${k};render()`);
+    const seq = keys[Object.keys(keys).find(x => U[k].q.includes(x))];
+    for (const x of seq) Array.isArray(x) ? click(w, `#calc [data-n="${x[1]}"]`) : click(w, `#calc [data-k="${x}"]`);
+    shown.push($(w, '#cmain').textContent);
+    click(w, '#toAns');
+    if (w.eval(`uNum(us.ans[${k}])`) !== U[k].a || $(w, '#ni').value !== String(U[k].a)) allok = false;
+  }
+  ok('電卓のボタンで5問とも解け、答えの欄に入る', allok, shown);
+  // 結果の続きに計算を足せる・C で消える
+  w.eval(`us.i=${calcQ[0]};render()`);
+  ['1', '2', '÷', '4', '='].forEach(x => click(w, `#calc [data-k="${x}"]`)); ['×', '5', '='].forEach(x => click(w, `#calc [data-k="${x}"]`));
+  ok('答えの続きに計算できる（12÷4=3、×5=15）', $(w, '#cmain').textContent === '15');
+  click(w, '#calc [data-k="C"]');
+  ok('C で 0 にもどる', $(w, '#cmain').textContent === '0');
+  ok('ヒントは押すまで出ない', !$(w, '.hbox') && $(w, '#hintBtn'));
+  click(w, '#hintBtn');
+  ok('「ヒントを見る」でヒントが出て、開き直しても残る', $(w, '.hbox') && open2(w.localStorage.getItem('fukushu-test2-v1')).eval(`us.hint[${calcQ[0]}]`) === 1);
+  w.eval(`us.i=0;render()`);
+  ok('計算以外の問題には電卓もヒントもない', !$(w, '#calc') && !$(w, '#hintBtn'));
+  ok('電卓の画面にも正解は出ない', !/正解/.test((w.eval(`us.i=${calcQ[1]};render()`), $(w, '#card').textContent)));
+}
+
 console.log(`\n合格 ${pass} / 不合格 ${fail}`);
 process.exit(fail ? 1 : 0);
