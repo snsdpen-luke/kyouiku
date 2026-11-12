@@ -98,6 +98,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `regression-fukusen.js` | 複線図れんしゅうのリグレッション（jsdom） |
 | `regression-seigyo100.js` | 制御クイズ100のリグレッション（jsdom。問題の重複・偏り・正解の位置・最後まで解いて採点、小テストの組み立て・制限時間・採点） |
 | `apps-script/わからないアンケート.gs` | わからないところアンケートの受け口（スプレッドシートに付ける Apps Script。手順は `apps-script/README.md`） |
+| `regression-wifi.js` | 電波はどこまで届くかのリグレッション（jsdom。距離による弱まり方を、説明・小テスト・ゲームの式と独立した計算とで突き合わせる・まとめ画面の分母・全ページ） |
 | `regression-review1.js` | ふりかえり演習のリグレッション（jsdom。問題データの点検・全問正解／全問不正解で最後まで解いて採点・保存と再開・メニュー・小テストの出席番号／提出／採点） |
 | `regression-ginou.js` | 技能試験 筆記トレーニングのリグレッション（jsdom・63項目。図示の正解の刻印が令和8年度の公表の解答と同じかも見る） |
 | `HANDOFF-技能筆記練習.md` | **技能試験 筆記トレーニングの引き継ぎ書。問題の足し方・採点のしくみ・根拠** |
@@ -108,7 +109,8 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `regression-mart.js` | 翔陽ミニマートのリグレッション（jsdom・69項目。拾う置く・客・建設・保存・自動操縦で全部建つまでの時間） |
 | `regression-obake.js` | お化け屋敷サンプラーのリグレッション（jsdom・83項目。効果音の合成・声の高さ・BGM のつなぎ目・録音・操作） |
 | `regression-sampler.js` | こえサンプラーのリグレッション（jsdom・69項目。音の合成・録音した声の加工・操作） |
-| `build.py` | 本体8つから配布物を作る |
+| `build.py` | 本体から配布物を作る。本体と配る場所の対応は、ファイルの先頭の表 `PAGES` にまとめてある（新しい教材は1行足す） |
+| `.claude/skills/kyouzai/` | **新しい教材を作るときの手順（Claude Code のスキル）**。ひな形 `template.html`、確認スクリプトのひな形、実ブラウザ確認 `check-browser.mjs`、計算の検証の手引き |
 | `HANDOFF.md` | **ラダー工房の引き継ぎ書。仕様・設計判断・禁止事項の正典。作業前に必ず読む** |
 | `HANDOFF-複線図練習.md` | **複線図れんしゅうの引き継ぎ書。問題データの足し方もここ** |
 | `HANDOFF-進路シミュレーション.md` | **進路シミュレーションの引き継ぎ書。税率の更新手順もここ** |
@@ -131,6 +133,17 @@ node regression-fukusen.js 複線図練習.html          # 「すべて合格」
 ```
 
 本体のHTMLをブラウザで直接開けば動く。サーバーは要らない。
+
+## 新しい教材を作る
+
+Claude Code に「〇〇の教材を作って」と頼むと、`kyouzai` スキル（`.claude/skills/kyouzai/SKILL.md`）の手順で作る。
+ひな形から作り、計算の検証・確認スクリプト・実物の Chrome での確認（Chromebook・4:3・縦のタブレット・スマートフォン）を通してから渡す。
+
+```bash
+npm install                                                      # 初めてのときだけ（jsdom と playwright）
+node regression-<名前>.js <本体>.html                            # 確認スクリプト
+node .claude/skills/kyouzai/check-browser.mjs <本体>.html        # 実ブラウザ（Mac の Chrome を使う）
+```
 
 ## 直したときの手順
 

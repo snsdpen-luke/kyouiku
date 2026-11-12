@@ -1,179 +1,72 @@
 # -*- coding: utf-8 -*-
-"""配布物を作る。本体は次の10。ここから機械的に生成する。
+"""配布物を作る。本体（日本語名の .html）を、配る場所（<フォルダ>/index.html）へ写すだけ。
 
-  ラダー工房v2.html   → index.html         （GitHub Pages で配るもの）
-  進路シミュレーション.html   → shinro/index.html  （同上。URL を /shinro/ で配るため）
-  馬レース.html        → uma/index.html     （同上。文化祭の QR コードは /uma/ を指す）
-  翔陽ミニマート.html   → mart/index.html    （同上。文化祭の QR コードは /mart/ を指す）
-  サンプラー.html      → sampler/index.html （同上。こえサンプラー）
-  お化け屋敷サンプラー.html → obake/index.html （同上。文化祭のお化け屋敷の音響）
-  メッセージが届くまで.html → network/index.html（同上。TCP/IP 教材。導入スライドの QR は /network/ を指す）
-  車輪速センサ1.html  → wheel/index.html   （同上。電子計測制御・車輪速センサ第1時）
-  車輪速センサ2.html  → wheel2/index.html  （同上。車輪速センサ第2時）
-  距離センサ1.html    → dist/index.html    （同上。距離センサ第1時：超音波・駐車センサ）
-  距離センサ2.html    → dist2/index.html   （同上。距離センサ第2時：ミリ波レーダー・ACCへ）
-  車の制御50.html     → car/index.html     （同上。電子計測制御・センサ当て。導入スライドの QR は /car/ を指す）
-  複線図練習.html     → fukusen/index.html （同上。URL を /fukusen/ で配る）
-  速い遅いの正体.html   → speed/index.html  （同上。通信速度・画質・ギガの余談スライド）
-  電波はどこまで届くか.html → wifi/index.html （同上。家の間取りで Wi-Fi の電波を試す）
-  残高はどこにある.html → emoney/index.html （同上。電子マネーのしくみ：IC・コード決済・クレジット・集中と分散）
-  キャッシュレス商店.html → shop/index.html （同上。電子マネー単元の経営ゲーム：店ごとに決済を選ぶ）
-  決済をえらぶ.html   → emoney2/index.html（同上。電子マネー②：商店のふりかえり・トレードオフ・設計ワーク）
-  ふりかえり演習.html  → review1/index.html（同上。コンピュータシステム技術 6回分の復習演習。仮想通貨・電子マネーを含む）
-  小テスト第2回導入.html → review1/intro.html（同上。小テスト第2回の前に映す導入スライド。N キーで先生用メモ）
-  制御クイズ100.html   → seigyo100/index.html（同上。電子計測制御の5択150問）
-  制御クイズ導入.html   → seigyo100/intro.html（同上。授業冒頭の導入スライド）
-
-  python3 build.py                  上の10を作る
+  python3 build.py                  下の表 PAGES の全部を作る
   python3 build.py <出力先.html>    ラダー工房の Artifact 用断片も作る
 
 本体を直したら必ず走らせること。生成物を手で編集してはいけない。
+新しい教材を足すときは、PAGES に1行足す（README の2つの表にも書く）。
 """
 import io, os, sys, shutil
 
-SRC = "ラダー工房v2.html"
-SRC2 = "進路シミュレーション.html"
-SRC3 = "馬レース.html"
-SRC4 = "翔陽ミニマート.html"
-SRC5 = "サンプラー.html"
-SRC6 = "メッセージが届くまで.html"
-SRC7 = "車の制御50.html"
-SRC_WHEEL = "車輪速センサ1.html"
-SRC_WHEEL2 = "車輪速センサ2.html"
-SRC_DIST = "距離センサ1.html"
-SRC_DIST2 = "距離センサ2.html"
-SRC8 = "速い遅いの正体.html"
-SRC9 = "電波はどこまで届くか.html"
-s = io.open(SRC, encoding="utf-8").read()
+# (本体, 配る場所, メモ)。配る場所の URL は https://snsdpen-luke.github.io/kyouiku/<配る場所のフォルダ>/
+PAGES = [
+    ("ラダー工房v2.html",          "index.html",          "ラダー工房（トップ）"),
+    ("進路シミュレーション.html",  "shinro/index.html",   "進路学習（高2）"),
+    ("馬レース.html",              "uma/index.html",      "翔陽ダービー（文化祭の QR は /uma/）"),
+    ("翔陽ミニマート.html",        "mart/index.html",     "翔陽ミニマート（文化祭の QR は /mart/。下の FREE にも写す）"),
+    ("サンプラー.html",            "sampler/index.html",  "こえサンプラー（マイクを使うので https で配る）"),
+    ("お化け屋敷サンプラー.html",  "obake/index.html",    "文化祭のお化け屋敷の音響"),
+    ("メッセージが届くまで.html",  "network/index.html",  "TCP/IP。導入スライドの QR は /network/"),
+    ("車の制御50.html",            "car/index.html",      "センサ当て。導入スライドの QR は /car/"),
+    ("車輪速センサ1.html",         "wheel/index.html",    "車輪速センサ 第1時"),
+    ("車輪速センサ2.html",         "wheel2/index.html",   "車輪速センサ 第2時"),
+    ("距離センサ1.html",           "dist/index.html",     "距離センサ 第1時（超音波）"),
+    ("距離センサ2.html",           "dist2/index.html",    "距離センサ 第2時（ミリ波レーダー）"),
+    ("自動駐車.html",              "parking/index.html",  "自動駐車をつくろう"),
+    ("駐車を学習する車.html",      "parking2/index.html", "駐車を学習する車（試作）"),
+    ("自動運転への階段.html",      "parking3/index.html", "自動運転への階段"),
+    ("複線図練習.html",            "fukusen/index.html",  "第二種電気工事士 技能試験の複線図"),
+    ("速い遅いの正体.html",        "speed/index.html",    "通信速度・画質・ギガ"),
+    ("電波はどこまで届くか.html",  "wifi/index.html",     "Wi-Fi・間取り・ルーターの置き方"),
+    ("残高はどこにある.html",      "emoney/index.html",   "電子マネー①"),
+    ("キャッシュレス商店.html",    "shop/index.html",     "電子マネー単元の経営ゲーム"),
+    ("決済をえらぶ.html",          "emoney2/index.html",  "電子マネー②"),
+    ("ふりかえり演習.html",        "review1/index.html",  "コンピュータシステム技術の復習演習"),
+    ("小テスト第2回導入.html",     "review1/intro.html",  "小テスト第2回の前に映す導入スライド"),
+    ("サトシ・ナカモト事件ファイル.html", "bitcoin/index.html", "ブロックチェーン・マイニング"),
+    ("技能筆記練習.html",          "ginou/index.html",    "技能試験 筆記トレーニング"),
+    ("制御クイズ100.html",         "seigyo100/index.html", "電子計測制御の5択150問"),
+    ("制御クイズ導入.html",        "seigyo100/intro.html", "制御クイズ100 の導入スライド"),
+]
 
-# 1) GitHub Pages 用。中身は本体そのまま。URL を短くするためだけの複製
-shutil.copyfile(SRC, "index.html")
-print("生成: index.html")
-
-# 1b) 進路シミュレーション。フォルダに index.html として置き、URL を短くする
-os.makedirs("shinro", exist_ok=True)
-shutil.copyfile(SRC2, "shinro/index.html")
-print("生成: shinro/index.html")
-
-# 1c) 翔陽ダービー（馬レース）。文化祭の来校者に QR で配る
-os.makedirs("uma", exist_ok=True)
-shutil.copyfile(SRC3, "uma/index.html")
-print("生成: uma/index.html")
-
-# 1d) 翔陽ミニマート。文化祭の来校者に QR で配る（持ち帰って遊ぶ）
-os.makedirs("mart", exist_ok=True)
-shutil.copyfile(SRC4, "mart/index.html")
-print("生成: mart/index.html")
 # 来校者に配る URL は https://kyouiku-free.github.io/mart/（個人名の出ない別の箱）。横に clone してあればそこにも写す。
 # 写したあと、その箱で git commit / push する（作者は kyouiku-free。個人名で記録しない）
 FREE = os.path.join("..", "kyouiku-free.github.io")
+FREE_PAGES = [("翔陽ミニマート.html", "mart/index.html")]
+
+
+def copy(src, dst):
+    d = os.path.dirname(dst)
+    if d:
+        os.makedirs(d, exist_ok=True)
+    shutil.copyfile(src, dst)
+    print("生成: " + dst)
+
+
+for src, dst, _ in PAGES:
+    copy(src, dst)
+
 if os.path.isdir(FREE):
-    os.makedirs(os.path.join(FREE, "mart"), exist_ok=True)
-    shutil.copyfile(SRC4, os.path.join(FREE, "mart", "index.html"))
-    print("生成: ../kyouiku-free.github.io/mart/index.html")
+    for src, dst in FREE_PAGES:
+        copy(src, os.path.join(FREE, dst))
 else:
     print("注意: ../kyouiku-free.github.io が無い。来校者用の URL は更新されない")
 
-# 1e) こえサンプラー。マイクを使うので https の GitHub Pages で配る
-os.makedirs("sampler", exist_ok=True)
-shutil.copyfile(SRC5, "sampler/index.html")
-print("生成: sampler/index.html")
-
-# 1e2) お化け屋敷サンプラー（文化祭のお化け屋敷の音響。効果音13（クライマックス8）・BGM1）
-os.makedirs("obake", exist_ok=True)
-shutil.copyfile("お化け屋敷サンプラー.html", "obake/index.html")
-print("生成: obake/index.html")
-
-# 1f) メッセージが届くまで（TCP/IP）。コンピュータシステム技術のネットワーク単元
-os.makedirs("network", exist_ok=True)
-shutil.copyfile(SRC6, "network/index.html")
-print("生成: network/index.html")
-
-# 1g) 車の制御50（センサ当て）。電子計測制御の自動車で学ぶ制御
-os.makedirs("car", exist_ok=True)
-shutil.copyfile(SRC7, "car/index.html")
-print("生成: car/index.html")
-
-# 車輪速センサ 第1時（スライド形式）
-os.makedirs("wheel", exist_ok=True)
-shutil.copyfile(SRC_WHEEL, "wheel/index.html")
-print("生成: wheel/index.html")
-os.makedirs("wheel2", exist_ok=True)
-shutil.copyfile(SRC_WHEEL2, "wheel2/index.html")
-print("生成: wheel2/index.html")
-os.makedirs("dist", exist_ok=True)
-shutil.copyfile(SRC_DIST, "dist/index.html")
-print("生成: dist/index.html")
-os.makedirs("dist2", exist_ok=True)
-shutil.copyfile(SRC_DIST2, "dist2/index.html")
-print("生成: dist2/index.html")
-# 自動駐車（手動で9ステージ全クリア → 自動制御へ）
-os.makedirs("parking", exist_ok=True)
-shutil.copyfile("自動駐車.html", "parking/index.html")
-print("生成: parking/index.html")
-# 駐車を学習する車（手動の記録を集めて、まねる学習で自動駐車。試作）
-os.makedirs("parking2", exist_ok=True)
-shutil.copyfile("駐車を学習する車.html", "parking2/index.html")
-print("生成: parking2/index.html")
-# 自動運転への階段（手動データ集め→分析→段階ごとに自動制御。段階1：速さとブレーキ）
-os.makedirs("parking3", exist_ok=True)
-shutil.copyfile("自動運転への階段.html", "parking3/index.html")
-print("生成: parking3/index.html")
-
-# 1h) 複線図れんしゅう（第二種電気工事士 技能試験の複線図）
-os.makedirs("fukusen", exist_ok=True)
-shutil.copyfile("複線図練習.html", "fukusen/index.html")
-print("生成: fukusen/index.html")
-# 1i) 速い・遅いの正体（通信速度・画質・ギガ）。余談形式のスライド兼シミュレータ
-os.makedirs("speed", exist_ok=True)
-shutil.copyfile(SRC8, "speed/index.html")
-print("生成: speed/index.html")
-
-# 1j) 電波はどこまで届くか（Wi-Fi・間取り・ルーターの置き方）。導入〜シミュレータ〜小テスト〜まとめ
-os.makedirs("wifi", exist_ok=True)
-shutil.copyfile(SRC9, "wifi/index.html")
-print("生成: wifi/index.html")
-
-# 1k) 残高はどこにある（電子マネー①）。コンピュータシステム技術・電子マネー単元
-os.makedirs("emoney", exist_ok=True)
-shutil.copyfile("残高はどこにある.html", "emoney/index.html")
-print("生成: emoney/index.html")
-
-# 1l) キャッシュレス商店（電子マネー単元のゲーム）。教師モードは店名を5回タップ
-os.makedirs("shop", exist_ok=True)
-shutil.copyfile("キャッシュレス商店.html", "shop/index.html")
-print("生成: shop/index.html")
-
-# 1m) 決済をえらぶ（電子マネー②）。キャッシュレス商店のふりかえり・トレードオフ・設計ワーク。N キーで先生用メモ
-os.makedirs("emoney2", exist_ok=True)
-shutil.copyfile("決済をえらぶ.html", "emoney2/index.html")
-print("生成: emoney2/index.html")
-
-# 1n) ふりかえり演習（TCP/IP・通信速度・電波・パスワード・電子マネーの復習。用語・選択・記述）
-os.makedirs("review1", exist_ok=True)
-shutil.copyfile("ふりかえり演習.html", "review1/index.html")
-shutil.copyfile("小テスト第2回導入.html", "review1/intro.html")
-print("生成: review1/index.html, review1/intro.html")
-
-# 1o) サトシ・ナカモト事件ファイル（ブロックチェーン・マイニングの体験スライド）
-os.makedirs("bitcoin", exist_ok=True)
-shutil.copyfile("サトシ・ナカモト事件ファイル.html", "bitcoin/index.html")
-print("生成: bitcoin/index.html")
-
-# 1p) 技能試験 筆記トレーニング（第二種電気工事士。語群選択・数値・記述（文章）・記述（図示）で定期考査の練習）
-os.makedirs("ginou", exist_ok=True)
-shutil.copyfile("技能筆記練習.html", "ginou/index.html")
-print("生成: ginou/index.html")
-
-# 1q) 制御クイズ100（電子計測制御の5択150問）と、授業冒頭の導入スライド
-os.makedirs("seigyo100", exist_ok=True)
-shutil.copyfile("制御クイズ100.html", "seigyo100/index.html")
-shutil.copyfile("制御クイズ導入.html", "seigyo100/intro.html")
-print("生成: seigyo100/index.html, seigyo100/intro.html")
-
-# 2) Artifact 用。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
+# Artifact 用（ラダー工房）。<!DOCTYPE>/<html>/<head>/<body> は claude.ai 側が付けるので剥がす
 if len(sys.argv) > 1:
     out = sys.argv[1]
+    s = io.open("ラダー工房v2.html", encoding="utf-8").read()
     style = s[s.index("<style>") : s.index("</style>") + len("</style>")]
     body  = s[s.index("<body>") + len("<body>") : s.rindex("</body>")]
     style = style.replace(":root{\n", ":root{\n  color-scheme:light;\n", 1)

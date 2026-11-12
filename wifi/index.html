@@ -134,6 +134,15 @@ function drawFloor(cv,f){ const g=cv.getContext('2d'); if(!g)return; const W=12,
 function roomStats(){ return ROOMS.filter(r=>r.n!=='廊下').map(r=>{const v=rssiAt(r.f,r.x,r.y); return {n:r.n,f:r.f,r:v,m:mbps(v)};}); }
 const halves=(n,label)=>`<div class="halves">${Array.from({length:n+1},(_,k)=>`<div class="hb2"><i style="width:${Math.max(4,200/Math.pow(2,k))}px"></i><span>${k===0?'最初':'半分 '+k+'回目'}${k===n?'　← '+label:''}</span></div>`).join('')}</div>`;
 
+// ゲームのステージ。まとめ画面の分母もここから数える（合格のあるステージ＝用語を持つステージ）
+const LV=[
+  {t:"ステージ1　ルーターを動かす",d:"★",g:"ルーターの場所だけで、😀 を 8 部屋以上にする",setup:()=>{ST.band=1;ST.house='wood';ST.inner='wood';ST.micro=false;ST.reps=[];ST.maxRep=0;ST.router={f:1,x:11,y:7.3};},show:{},ok:rs=>rs.filter(r=>r.m>=20).length>=8,term:["ルーター","電波を出す本体。端に置くと半分が外に逃げます。家の真ん中・高い場所に置きましょう"]},
+  {t:"ステージ2　太鼓と笛",d:"★",g:"電波を切り替えて、全部屋を 😀 にする",setup:()=>{ST.house='wood';ST.inner='wood';ST.micro=false;ST.reps=[];ST.maxRep=0;},show:{band:1},ok:rs=>rs.every(r=>r.m>=20),term:["2.4GHz と 5GHz","太鼓（2.4GHz）は遠くまで届くが遅い。笛（5GHz）は速いが壁に弱い。遠い部屋や別の階は太鼓"]},
+  {t:"ステージ3　電子レンジ",d:"★★",g:"お母さんがレンジを使い始めた。キッチンとリビングを 😀 のまま保つ",setup:()=>{ST.house='wood';ST.inner='wood';ST.micro=true;ST.band=0;ST.reps=[];ST.maxRep=0;ST.router={f:0,x:8.5,y:2};},show:{band:1,micro:1},ok:rs=>ST.micro&&['キッチン','リビング'].every(n=>rs.find(r=>r.n===n).m>=20),term:["干渉","同じ高さの波がぶつかって乱れること。レンジは太鼓（2.4GHz）とぶつかる。笛（5GHz）に逃げるか、離す"]},
+  {t:"ステージ4　鉄筋コンクリートに引っ越し",d:"★★",g:"中継器を1台使って、全部屋を 😀 にする",setup:()=>{ST.house='rc';ST.inner='wood';ST.micro=false;ST.reps=[];ST.maxRep=1;ST.band=1;ST.router={f:0,x:6,y:2.5};},show:{band:1,rep:1},ok:rs=>ST.reps.length>0&&rs.every(r=>r.m>=20),term:["中継器","ルーターの電波を受け取って出し直す機械。ルーターの電波が届く場所に置かないと働かない（赤い印）。階段や廊下が定石"]},
+  {t:"ステージ5　壁もコンクリート",d:"★★★",g:"部屋の壁までコンクリートの家。中継器2台で全部屋を 😀 にする",setup:()=>{ST.house='rc';ST.inner='conc';ST.micro=false;ST.reps=[];ST.maxRep=2;ST.band=0;ST.router={f:0,x:1.2,y:1.2};},show:{band:1,rep:1},ok:rs=>rs.every(r=>r.m>=20),term:["減衰","電波が壁や床で弱くなること。コンクリートは半分4回。壁が厚い家ほど中継器を増やすか、ルーターを真ん中に"]},
+  {t:"ステージ6　自由に試す",d:"自由",g:"家の構造・壁・電波・レンジ・中継器を自由に変えて、いちばん速い家を作る",setup:()=>{ST.maxRep=2;},show:{band:1,house:1,inner:1,micro:1,rep:1,max:1},ok:()=>false,term:null},
+];
 const S=[
 { ch:"", cover:true, title:"電波はどこまで届くか", terms:[],
   sim:()=>`<div class="kicker">コンピュータシステム技術　ネットワーク③</div><h2>電波はどこまで届くか</h2><p>同じ家なのに、部屋によって Wi-Fi の速さが違うのはなぜでしょうか。家の間取りの上でルーターを動かしながら、電波のしくみを自分の手で確かめます。</p><div class="row"><input type="text" id="pname" placeholder="名前（例：2-6 ○○）" value="${P.name}"><button class="pri btn" id="start">はじめる →</button></div><div class="hint" style="color:#8fb8e8">導入 → しくみ → ゲーム → たしかめ（小テスト） → まとめ　の順に進みます。右上の「用語」でいつでも用語の説明が見られます。</div>`,
@@ -210,8 +219,8 @@ const S=[
       g.fillStyle='#1f2a2e'; g.fillRect(10,100,40,30); g.fillStyle='#f2c14e'; g.beginPath(); g.moveTo(50,100); g.lineTo(50,130); g.lineTo(500,230); g.lineTo(500,0); g.closePath(); g.globalAlpha=.18; g.fill(); g.globalAlpha=1;
       for(let k=1;k<=8;k++){ const x=50+k*55; const h=30*k*0.75; const a=Math.min(1,1/(k*k)); g.fillStyle=`rgba(242,193,78,${0.15+0.85*a})`; g.fillRect(x,115-h/2,8,h); g.fillStyle='#64737a'; g.font='11px sans-serif'; g.textAlign='center'; g.fillText(k+'m',x+4,115+h/2+14); if(k===+r.value){ g.strokeStyle='#e0392b'; g.lineWidth=2; g.strokeRect(x-3,115-h/2-3,14,h+6); g.fillStyle='#e0392b'; g.font='bold 12px sans-serif'; g.fillText('明るさ 1/'+(k*k),x+4,115-h/2-10);} } };
     r.addEventListener('input',d); d(); },
-  naru:"電波は四方八方に広がります。<b>2倍離れると、同じ光が4倍の広さに薄く広がる</b>ので、明るさは 1/4（半分が2回）。電波の強さは<b>「半分が何回」</b>で数えると分かりやすいです。",
-  memo:"半分1回＝−3dB。dB は用語欄に置くだけ。実際の家は反射があるので、きれいな逆二乗にはならない。" },
+  naru:"電波は四方八方に広がります。<b>2倍離れると、同じ光が4倍の広さに薄く広がる</b>ので、明るさは 1/4（半分が2回）。電波の強さは<b>「半分が何回」</b>で数えると分かりやすいです。ただし<b>家の中</b>では、家具や人や床にも当たるので、壁がなくても 1/4 よりもっと弱くなります（このあとのゲームでは、2倍離れると約 1/7）。",
+  memo:"半分1回＝−3dB。dB は用語欄に置くだけ。1/4 は何もない広い場所（自由空間・逆二乗）の話。家の中は反射や吸収で、きれいな逆二乗にならない。ゲームは家の中に合わせて、距離の指数を 2.8 にしてある（2倍で −8.4dB、約 1/7）。" },
 
 { ch:"しくみ", eyebrow:"説明③", title:"壁1枚で、半分が何回でしょうか", terms:["atten","half","band"],
   sim:()=>`<div class="chips" id="wm">${Object.entries(WALL).map(([k,w],i)=>`<span class="chip ${i===0?'on':''}" data-k="${k}">${w.n}</span>`).join('')}</div><canvas id="wallc" width="760" height="200"></canvas><div class="hint">上：2.4GHz（太鼓）　下：5GHz（笛）。数字は材質と厚さで大きく変わります。目安です</div>`,
@@ -239,14 +248,6 @@ const S=[
   <div class="clear" id="clear"></div></div>`,
   wire:()=>{ const c0=document.getElementById('f0'),c1=document.getElementById('f1');
     const FAM={'リビング':'👨 お父さん','キッチン':'👩 お母さん','和室':'👴 おじいちゃん','風呂':'👦 弟','玄関':'🐶 ルーク','洗面':'👧 姉','寝室':'👵 おばあちゃん','子ども部屋A':'🧑 自分','子ども部屋B':'👧 妹','書斎':'💻 仕事部屋'};
-    const LV=[
-      {t:"ステージ1　ルーターを動かす",d:"★",g:"ルーターの場所だけで、😀 を 8 部屋以上にする",setup:()=>{ST.band=1;ST.house='wood';ST.inner='wood';ST.micro=false;ST.reps=[];ST.maxRep=0;ST.router={f:1,x:11,y:7.3};},show:{},ok:rs=>rs.filter(r=>r.m>=20).length>=8,term:["ルーター","電波を出す本体。端に置くと半分が外に逃げます。家の真ん中・高い場所に置きましょう"]},
-      {t:"ステージ2　太鼓と笛",d:"★",g:"電波を切り替えて、全部屋を 😀 にする",setup:()=>{ST.house='wood';ST.inner='wood';ST.micro=false;ST.reps=[];ST.maxRep=0;},show:{band:1},ok:rs=>rs.every(r=>r.m>=20),term:["2.4GHz と 5GHz","太鼓（2.4GHz）は遠くまで届くが遅い。笛（5GHz）は速いが壁に弱い。遠い部屋や別の階は太鼓"]},
-      {t:"ステージ3　電子レンジ",d:"★★",g:"お母さんがレンジを使い始めた。キッチンとリビングを 😀 のまま保つ",setup:()=>{ST.house='wood';ST.inner='wood';ST.micro=true;ST.band=0;ST.reps=[];ST.maxRep=0;ST.router={f:0,x:8.5,y:2};},show:{band:1,micro:1},ok:rs=>ST.micro&&['キッチン','リビング'].every(n=>rs.find(r=>r.n===n).m>=20),term:["干渉","同じ高さの波がぶつかって乱れること。レンジは太鼓（2.4GHz）とぶつかる。笛（5GHz）に逃げるか、離す"]},
-      {t:"ステージ4　鉄筋コンクリートに引っ越し",d:"★★",g:"中継器を1台使って、全部屋を 😀 にする",setup:()=>{ST.house='rc';ST.inner='wood';ST.micro=false;ST.reps=[];ST.maxRep=1;ST.band=1;ST.router={f:0,x:6,y:2.5};},show:{band:1,rep:1},ok:rs=>ST.reps.length>0&&rs.every(r=>r.m>=20),term:["中継器","ルーターの電波を受け取って出し直す機械。ルーターの電波が届く場所に置かないと働かない（赤い印）。階段や廊下が定石"]},
-      {t:"ステージ5　壁もコンクリート",d:"★★★",g:"部屋の壁までコンクリートの家。中継器2台で全部屋を 😀 にする",setup:()=>{ST.house='rc';ST.inner='conc';ST.micro=false;ST.reps=[];ST.maxRep=2;ST.band=0;ST.router={f:0,x:1.2,y:1.2};},show:{band:1,rep:1},ok:rs=>rs.every(r=>r.m>=20),term:["減衰","電波が壁や床で弱くなること。コンクリートは半分4回。壁が厚い家ほど中継器を増やすか、ルーターを真ん中に"]},
-      {t:"ステージ6　自由に試す",d:"自由",g:"家の構造・壁・電波・レンジ・中継器を自由に変えて、いちばん速い家を作る",setup:()=>{ST.maxRep=2;},show:{band:1,house:1,inner:1,micro:1,rep:1,max:1},ok:()=>false,term:null},
-    ];
     let lv=0, cleared=false;
     const face=m=>m>=20?'😀':m>=1?'😐':'😫';
     const drawSel=()=>{ document.getElementById('stsel').innerHTML=LV.map((L,k)=>`<button class="st ${k===lv?'sel':''} ${P.stages.includes(k+1)?'done':''}" data-k="${k}">${P.stages.includes(k+1)?'✓ ':''}${k+1}<small>${L.d}</small></button>`).join(''); document.querySelectorAll('#stsel .st').forEach(b=>b.addEventListener('click',()=>{lv=+b.dataset.k;start();})); };
@@ -275,7 +276,7 @@ const S=[
       {q:"電子レンジを使うと Wi-Fi が乱れることがあります。理由として正しいものはどれですか。",o:["レンジの電波と Wi-Fi の 2.4GHz帯が同じ周波数だから","レンジが電気をたくさん使って電圧が下がるから","レンジの熱で電波が溶けるから"],a:0,pts:1,why:"同じ 2.4GHz帯なので干渉します。"},
       {q:"「笛」のような高い電波（5GHz・ミリ波）の特徴として正しいものはどれですか。",o:["壁に弱いが、速い","壁をすり抜けて遠くまで届く","高さと届き方は関係ない"],a:0,pts:1,why:"高い（波が短い）電波は壁で減りますが、多くの情報を乗せられます。"},
       {q:"電波の強さが「半分 10 回」ぶん減りました。何分の1になりましたか。",o:["1/10","1/100","約 1/1000"],a:2,pts:1,why:"2 の 10 乗 ＝ 1024。約 1/1000（−30dB）です。"},
-      {q:"ルーターから 3m の場所と 6m の場所。壁がなければ、6m の強さはおよそ何分の1ですか。",o:["1/2","1/4","1/16"],a:1,pts:1,why:"距離2倍で広がる面積が4倍。半分が2回で 1/4 です。"},
+      {q:"壁も家具もない広い場所で、ルーターから 3m の場所と 6m の場所をくらべます。6m の強さはおよそ何分の1ですか。",o:["1/2","1/4","1/16"],a:1,pts:1,why:"距離2倍で広がる面積が4倍。半分が2回で 1/4 です。家の中では、家具や人に当たるので、これよりもっと弱くなります。"},
       {q:"ルーターと同じ部屋でスマホを使います。速いのはどちらですか。",o:["2.4GHz（太鼓）","5GHz（笛）","同じ"],a:1,pts:1,why:"同じ部屋なら 5GHz。遠い部屋なら 2.4GHz。"},
       {q:"中継器が働かない置き方はどれですか。",o:["ルーターの電波がほとんど届かない部屋に置く","ルーターと届かない部屋の中間に置く","ルーターから見える廊下に置く"],a:0,pts:1,why:"中継器はルーターの電波を受け取って出し直すので、届かない場所では働きません。"},
       {q:"鉄筋コンクリートのマンションで、別の階の部屋に Wi-Fi が届きません。理由と対策を1つずつ、授業の言葉を使って説明してください。",t:1,pts:2,kw:[["コンクリート","床","半分","減"],["中継器","メッシュ","2.4","太鼓","置き","真ん中","中央"]],need:2,model:"コンクリートの床は電波を大きく減らす（半分が6回以上）。対策は、中継器を階段や廊下に置く、ルーターを家の中央・高い場所に置く、遠い部屋は 2.4GHz（太鼓）につなぐ、など。"},
@@ -295,7 +296,7 @@ const S=[
   naru:"今日の数字は<b>「半分が何回」</b>で考えました。距離2倍で2回、木の壁で1回、コンクリートの床で6回以上。足し算で、家のどこに届くかが予想できます。",
   memo:"最初の導入「家で一番弱いのはどこ」に戻って、自分の予想と比べさせて終わる。" },
 { ch:"まとめ", eyebrow:"修了", title:"今日の記録", terms:[],
-  sim:()=>`<div class="cert"><div class="box"><h3>名前</h3><div class="big" style="font-size:1.3rem">${P.name||'（名前なし）'}</div></div><div class="box"><h3>小テスト</h3><div class="big">${P.quiz?P.quiz.score+' / '+P.quiz.max+' 点':'未受験'}</div></div><div class="box"><h3>クリアしたステージ</h3><div class="big" style="font-size:1.3rem">${P.stages.length} / 4</div><div class="hint">${P.stages.map(n=>'ステージ'+n).join('・')||'—'}</div></div><div class="box terms"><h3>覚えた用語</h3>${P.terms.length?P.terms.map(t=>'<b>'+t+'</b>').join(''):'<span class="hint">ゲームのステージをクリアすると増えます</span>'}</div></div><div class="row"><span class="hint">この画面を先生に見せてください。</span><button id="resetp">記録を消して最初から</button></div>`,
+  sim:()=>`<div class="cert"><div class="box"><h3>名前</h3><div class="big" style="font-size:1.3rem">${P.name||'（名前なし）'}</div></div><div class="box"><h3>小テスト</h3><div class="big">${P.quiz?P.quiz.score+' / '+P.quiz.max+' 点':'未受験'}</div></div><div class="box"><h3>クリアしたステージ</h3><div class="big" style="font-size:1.3rem">${P.stages.length} / ${LV.filter(L=>L.term).length}</div><div class="hint">${P.stages.map(n=>'ステージ'+n).join('・')||'—'}</div></div><div class="box terms"><h3>覚えた用語</h3>${P.terms.length?P.terms.map(t=>'<b>'+t+'</b>').join(''):'<span class="hint">ゲームのステージをクリアすると増えます</span>'}</div></div><div class="row"><span class="hint">この画面を先生に見せてください。</span><button id="resetp">記録を消して最初から</button></div>`,
   wire:()=>{ document.getElementById('resetp').addEventListener('click',()=>{Object.assign(P,{name:'',stages:[],terms:[],quiz:null,seen:[]});saveP();i=0;render();}); },
   naru:"今日の数字は<b>「半分が何回」</b>で考えました。距離2倍で2回、木の壁で1回、コンクリートの床で6回以上。足し算で、家のどこに届くかが予想できます。",
   memo:"修了画面。名前・小テストの点・クリアしたステージ・覚えた用語が1画面に出る。端末に残るので次の時間も見られる。" },
