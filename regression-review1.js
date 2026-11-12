@@ -484,5 +484,55 @@ console.log('■ 第2回：計算問題の電卓とヒント');
   ok('電卓の画面にも正解は出ない', !/正解/.test((w.eval(`us.i=${calcQ[1]};render()`), $(w, '#card').textContent)));
 }
 
+console.log('■ わからないところ調べ（先生が映して、挙手の人数を入れる）');
+{
+  const openH = store => new JSDOM(html, {
+    runScripts: 'dangerously', url: 'https://example.test/review1/',
+    beforeParse(w) { if (store) w.localStorage.setItem('fukushu-hands-v1', store);
+      w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); }; },
+  }).window;
+  const w = openH(); const ASK = w.eval('ASK'), CH = w.eval('CH');
+  ok('項目は番号が重ならず、どれも章（A〜F）がある', new Set(ASK.map(a => a.n)).size === ASK.length && ASK.every(a => CH[a.s] && a.t));
+  ok('6回の授業すべてに項目がある', Object.keys(CH).every(s => ASK.some(a => a.s === s)));
+  ok('メニューに「わからないところ調べ」がある', $(w, '#mHands') && $(w, '#mDrill') && $(w, '#mTest') && $(w, '#mTest2'));
+  click(w, '#mHands');
+  ok('一覧に全項目が出て、どれもまだ「－」', w.document.querySelectorAll('.hrow').length === ASK.length && [...w.document.querySelectorAll('.hrow .ct')].every(e => e.textContent === '－'));
+  click(w, '#hfirst');
+  ok('1から順に聞くと、項目1が大きく出る', $(w, '.htitle').textContent === ASK[0].t && $(w, '#hnum').textContent === '－');
+  click(w, '#hp'); click(w, '#hp'); click(w, '#hp'); click(w, '#hm');
+  ok('＋3回・－1回で 2人', $(w, '#hnum').textContent === '2');
+  click(w, '#hnext');
+  const key = k => w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true }));
+  key('1'); key('2');
+  ok('キーボードの数字で 12人', $(w, '#hnum').textContent === '12' && w.eval('hs.cnt[2]') === 12);
+  key('Backspace');
+  ok('Backspace で 1人', w.eval('hs.cnt[2]') === 1);
+  key('ArrowRight'); key('0');
+  ok('→ で次の項目、0 で 0人', w.eval('hs.i') === 2 && w.eval('hs.cnt[3]') === 0);
+  click(w, '#hm');
+  ok('0人から－しても 0人のまま', w.eval('hs.cnt[3]') === 0);
+  click(w, '#hclr');
+  ok('入れ直すで「－」にもどる', $(w, '#hnum').textContent === '－' && w.eval('hs.cnt[3]') === undefined);
+  key('ArrowLeft');
+  ok('← で前の項目にもどり、人数が残っている', w.eval('hs.i') === 1 && $(w, '#hnum').textContent === '1');
+  w.eval(`hGo(ASK.length-1)`);
+  ok('最後の項目では「結果を見る」', $(w, '#hnext').textContent === '結果を見る');
+  key('5'); click(w, '#hnext');
+  const rows = [...w.document.querySelectorAll('.hres .arow')];
+  ok('結果は多い順（5人・2人・1人）で、0人と未入力は出ない',
+    rows.length === 3 && rows.map(r => r.querySelector('.num').textContent).join() === '5人,2人,1人', rows.map(r => r.textContent));
+  const memo = $(w, '#hmemo'); memo.value = 'ACK のところをもう一度'; memo.dispatchEvent(new w.Event('input'));
+  const saved = w.localStorage.getItem('fukushu-hands-v1');
+  const w2 = openH(saved); w2.eval(`setMode('hands')`);
+  ok('開き直しても人数とメモが残る（一覧から始まる）', w2.eval('hs.i') === -1 && w2.eval('hs.cnt[1]') === 2 && w2.eval('hs.memo') === 'ACK のところをもう一度' &&
+    $(w2, '.hrow[data-k="0"] .ct').textContent === '2人');
+  click(w2, '#hwipe');
+  ok('「人数を全部消す」は1回目では消えない', w2.eval('hs.cnt[1]') === 2 && $(w2, '#hwipe').textContent === '本当に全部消す');
+  click(w2, '#hwipe');
+  ok('2回目で全部消える', Object.keys(w2.eval('hs.cnt')).length === 0 && $(w2, '#hwipe').disabled);
+  const w3 = openH('{壊れたデータ'); w3.eval(`setMode('hands')`);
+  ok('保存が壊れていても一覧が出る', w3.document.querySelectorAll('.hrow').length === ASK.length);
+}
+
 console.log(`\n合格 ${pass} / 不合格 ${fail}`);
 process.exit(fail ? 1 : 0);
