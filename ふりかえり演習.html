@@ -159,6 +159,25 @@ ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
 .ck.op{color:var(--accent)} .ck.eq{background:var(--accent);color:var(--card);border-color:var(--accent)}
 .ck.cn{height:auto;padding:4px 8px;font-size:14px;border:2px solid var(--accent);color:var(--accent)}
 .ctape{font-size:12px;color:var(--sub);min-height:1em}
+/* わからないところ調べ（先生が映して挙手の人数を入れる） */
+.hgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.hgrp h3{margin:0 0 4px;font-size:14px;color:var(--accent);font-weight:700}
+.hrow{font:inherit;width:100%;display:grid;grid-template-columns:20px 1fr auto;gap:6px;align-items:center;text-align:left;padding:4px 8px;margin-bottom:3px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font-size:13px;line-height:1.35}
+.hrow:hover{border-color:var(--accent)}
+.hrow .no{font-size:12px;color:var(--sub);text-align:right}
+.hrow .ct{font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
+.hrow .ct.yet{color:var(--sub);font-weight:400}
+.htitle{font-family:var(--f-head);font-size:40px;font-weight:900;line-height:1.35;word-break:auto-phrase}
+.hask{font-size:22px;color:var(--sub)}
+.hcnt{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hcnt .stp{width:72px;height:72px;font-size:34px}
+.hnum{font-size:72px;font-weight:900;min-width:120px;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.hnum.yet{color:var(--line)}
+.hu{font-size:24px;font-weight:700;margin-left:-8px}
+.hres .arow{display:grid;grid-template-columns:30px 1fr 220px 64px;gap:10px;align-items:center;font-size:16px;border-bottom:1px solid var(--line);padding:4px 0}
+.hres .rk{font-weight:900;color:var(--accent);text-align:right}
+.hres .num{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+@media (max-width:760px){.hgrid{grid-template-columns:1fr}.htitle{font-size:28px}.hres .arow{grid-template-columns:26px 1fr 60px}.hres .track{display:none}}
 @media (max-width:760px){.cq{grid-template-columns:1fr}}
 @media (max-width:760px){.menu{grid-template-columns:1fr}.menu.three{grid-template-columns:1fr}.spots,.chain{grid-template-columns:1fr 1fr}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:18px}}
 @media (prefers-reduced-motion:no-preference){.fill,.prog div{transition:width .5s ease}}
@@ -337,6 +356,7 @@ function render(){
   if(mode==='menu')return menu();
   if(mode==='test')return tRender();
   if(mode==='test2')return uRender();
+  if(mode==='hands')return hRender();
   $('ttl').textContent='ふりかえり演習';
   chrome();
   if(st.i<0)return start();
@@ -417,7 +437,7 @@ function result(){
 }
 // ===== メニュー =====
 let mode='menu';
-try{const m=localStorage.getItem('fukushu-mode');if(m==='drill'||m==='test'||m==='test2')mode=m}catch(e){}
+try{const m=localStorage.getItem('fukushu-mode');if(m==='drill'||m==='test'||m==='test2'||m==='hands')mode=m}catch(e){}
 if(/^#(demo|teacher|sensei)$/i.test(location.hash))mode='test2'; // 先生用デモは第2回を開く
 function setMode(m){mode=m;try{localStorage.setItem('fukushu-mode',m)}catch(e){}render()}
 $('menuBtn').onclick=()=>{if(ts.sending||us.sending)return;setMode('menu')};
@@ -427,12 +447,13 @@ function menu(){
   const tst=ts.sent?'提出済み':ts.set&&ts.i>=0?`とちゅう（${ts.set.filter((_,k)=>tAnswered(k)).length} / ${TN} 問）`:'まだ受けていません';
   const ust=us.sent?'提出済み':us.i>=0?`とちゅう（${U.filter((_,k)=>uAnswered(k)).length} / ${U.length} 問）`:'まだ受けていません';
   $('card').innerHTML=`<div class="q">どれをやりますか</div>
-   <div class="menu three">
+   <div class="menu">
     <button class="mbtn" id="mDrill"><span class="t">ふりかえり演習</span><span class="d">全${Q.length}問（用語・選択・記述）。答えるとすぐに正解と解説が出ます。</span><span class="s">進み具合 ${dn} / ${Q.length} 問</span></button>
     <button class="mbtn" id="mTest"><span class="t">小テスト第1回</span><span class="d">${TN}問（用語・選択）。最後に出席番号をつけて提出します。答え合わせは提出のあとです。</span><span class="s">${tst}</span></button>
     <button class="mbtn" id="mTest2"><span class="t">小テスト第2回</span><span class="d">${U.length}問。高校生ユウの1日を追いながら、並べかえ・組み合わせ・穴うめ・計算・シミュレーションで答えます。提出は1回だけです。</span><span class="s">${ust}</span></button>
+    <button class="mbtn" id="mHands"><span class="t">わからないところ調べ</span><span class="d">先生が画面を映して使います。${ASK.length}の項目ごとに、わからない人に手を挙げてもらい、人数を入れます。</span><span class="s">人数を入れた項目 ${ASK.filter(a=>hGot(a.n)).length} / ${ASK.length}</span></button>
    </div>`;
-  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');$('mTest2').onclick=()=>setMode('test2');
+  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');$('mTest2').onclick=()=>setMode('test2');$('mHands').onclick=()=>{hs.i=-1;hWipe=false;setMode('hands')};
 }
 
 // ===== 小テスト（30問。提出はダミーで、どこにも送らない） =====
@@ -824,6 +845,107 @@ function uDone(){
    ${U.map((p,k)=>{const c=uCorrect(k);return `<div class="rv"><div class="h"><span class="mark ${c?'o':'x'}">${c?'○':'×'}</span><span>第${k+1}問（${esc(kindOf(p))}）　${esc(p.q.split('\n')[0])}</span></div>
      ${uReview(k)}${us.hint&&us.hint[k]?'<div class="pt hint">（ヒントを見た）</div>':''}<div class="e pt">${esc(p.e)}</div></div>`}).join('')}`;
   $('tomenu').onclick=()=>setMode('menu');uDemoBind();
+}
+// ===== わからないところ調べ（先生が画面を映し、項目ごとに手を挙げてもらい、人数を入れる） =====
+// どこにも送らない。人数はこの端末にだけ残る。
+// n は項目の番号。番号を変えると、残っている人数とずれるので、足すときは新しい番号を使う
+const ASK=[
+ {n:1,s:'A',t:'パケットに分けて送る（パケットの数・バイトの計算）'},
+ {n:2,s:'A',t:'ヘッダ（宛先・送信元・番号）'},
+ {n:3,s:'A',t:'IPアドレスと DNS'},
+ {n:4,s:'A',t:'ルーターと TTL'},
+ {n:5,s:'A',t:'NAT（家の中の住所と外向きの住所）'},
+ {n:6,s:'A',t:'TCP と UDP・ACK と再送'},
+ {n:7,s:'B',t:'bps とバイトの計算（Mbps・MB・秒）'},
+ {n:8,s:'B',t:'回線を分け合う・ボトルネック'},
+ {n:9,s:'B',t:'画質（解像度・fps）と必要な速さ'},
+ {n:10,s:'B',t:'ギガ（データ量）の計算と節約'},
+ {n:11,s:'B',t:'ping・バッファ・キャッシュ'},
+ {n:12,s:'C',t:'減衰（距離や壁で電波が弱くなる）'},
+ {n:13,s:'C',t:'「半分」をくり返す計算（距離と強さ）'},
+ {n:14,s:'C',t:'2.4GHz帯と5GHz帯のちがい'},
+ {n:15,s:'C',t:'干渉'},
+ {n:16,s:'C',t:'中継器を置く場所'},
+ {n:17,s:'D',t:'組み合わせの数・総当たりの時間の計算'},
+ {n:18,s:'D',t:'辞書攻撃とロック'},
+ {n:19,s:'D',t:'本人確認の3種類・二要素認証'},
+ {n:20,s:'D',t:'フィッシング（偽サイト・偽メール）'},
+ {n:21,s:'D',t:'ハッシュとパスキー'},
+ {n:22,s:'E',t:'前払い・即時払い・後払い（お金が減るとき）'},
+ {n:23,s:'E',t:'ICカード型とサーバ型（残高はどこにある）'},
+ {n:24,s:'E',t:'コード決済の2つの方式'},
+ {n:25,s:'E',t:'クレジットカードの流れ（オーソリ・手数料・不正検知）'},
+ {n:26,s:'E',t:'集中処理と分散処理'},
+ {n:27,s:'F',t:'ブロックチェーン（指紋でつなぐ）'},
+ {n:28,s:'F',t:'マイニングとナンス'},
+ {n:29,s:'F',t:'二重払いと残高のチェック'},
+ {n:30,s:'F',t:'書きかえがばれるしくみ'},
+ {n:31,s:'F',t:'秘密鍵・ビットコインの弱点'},
+];
+const HKEY='fukushu-hands-v1',HMAX=99;
+let hs={i:-1,cnt:{},memo:''},hWipe=false; // i：-1＝一覧、0〜＝その項目、ASK.length＝結果
+try{const o=JSON.parse(localStorage.getItem(HKEY));if(o&&o.cnt&&typeof o.cnt==='object')hs={i:-1,cnt:o.cnt,memo:String(o.memo||'')}}catch(e){}
+function hSave(){try{localStorage.setItem(HKEY,JSON.stringify(hs))}catch(e){}}
+const hGot=n=>Number.isInteger(hs.cnt[n]);
+function hRender(){
+  $('ttl').textContent='わからないところ調べ';$('chips').innerHTML='';
+  const done=ASK.filter(a=>hGot(a.n)).length;
+  $('count').textContent=hs.i>=0&&hs.i<ASK.length?`${hs.i+1} / ${ASK.length}`:'';
+  $('bar').style.width=(done/ASK.length*100)+'%';
+  if(hs.i<0)return hList();
+  if(hs.i>=ASK.length)return hResult();
+  hItem();
+}
+function hGo(i){hs.i=i;hWipe=false;hType="";hSave();render();$('card').scrollTop=0}
+function hList(){
+  const done=ASK.filter(a=>hGot(a.n)).length;
+  $('card').innerHTML=`<div class="q">わからないところ調べ</div>
+   <div class="hint" style="font-size:15px">画面を映して、項目ごとに「わからない人」に手を挙げてもらい、その人数を入れます。項目をタップすると、その項目から始まります。</div>
+   <div class="hgrid">${Object.keys(CH).map(s=>`<div class="hgrp"><h3>${esc(CH[s])}</h3>${ASK.filter(a=>a.s===s).map(a=>`<button class="hrow" data-k="${ASK.indexOf(a)}"><span class="no">${a.n}</span><span class="tx">${esc(a.t)}</span><span class="ct ${hGot(a.n)?'':'yet'}">${hGot(a.n)?hs.cnt[a.n]+'人':'－'}</span></button>`).join('')}</div>`).join('')}</div>
+   <div class="row"><button class="btn ghost" id="tomenu">メニューへ</button><button class="btn ghost" id="hwipe" ${done?'':'disabled'}>${hWipe?'本当に全部消す':'人数を全部消す'}</button><button class="btn ghost" id="hres">結果を見る</button><button class="btn" id="hfirst">1から順に聞く</button></div>`;
+  document.querySelectorAll('.hrow').forEach(b=>b.onclick=()=>hGo(+b.dataset.k));
+  $('hfirst').onclick=()=>hGo(0);$('hres').onclick=()=>hGo(ASK.length);
+  $('hwipe').onclick=()=>{if(!hWipe){hWipe=true;render();return}hs={i:-1,cnt:{},memo:''};hWipe=false;hSave();render()};
+  $('tomenu').onclick=()=>setMode('menu');
+}
+function hSet(v){const a=ASK[hs.i];
+  if(v===null){delete hs.cnt[a.n]}else{hs.cnt[a.n]=Math.max(0,Math.min(HMAX,v))}
+  hSave();const e=$('hnum');if(e){e.textContent=hGot(a.n)?hs.cnt[a.n]:'－';e.classList.toggle('yet',!hGot(a.n))}
+  $('bar').style.width=(ASK.filter(x=>hGot(x.n)).length/ASK.length*100)+'%'}
+function hItem(){const a=ASK[hs.i],last=hs.i===ASK.length-1;
+  $('card').innerHTML=`<div class="sec"><span class="lbl">項目 ${a.n}</span><span class="nm">${esc(CH[a.s])}</span></div>
+   <div class="htitle">${esc(a.t)}</div>
+   <div class="hask">わからない人は、手を挙げてください</div>
+   <div class="hcnt"><button class="stp" id="hm" aria-label="1人へらす">－</button><span class="hnum ${hGot(a.n)?'':'yet'}" id="hnum">${hGot(a.n)?hs.cnt[a.n]:'－'}</span><span class="hu">人</span><button class="stp" id="hp" aria-label="1人ふやす">＋</button><button class="hbtn" id="h0">0人</button><button class="hbtn" id="hclr">入れ直す</button></div>
+   <div class="hint">キーボードでも入れられます：数字で人数、← → で前後の項目、Enter で次へ。</div>
+   <div class="row"><button class="btn ghost" id="hlist">一覧へ</button><button class="btn ghost" id="hprev" ${hs.i===0?'disabled':''}>前の項目</button><button class="btn" id="hnext">${last?'結果を見る':'次の項目'}</button></div>`;
+  $('hm').onclick=()=>{hType='';hSet((hs.cnt[a.n]||0)-1)};$('hp').onclick=()=>{hType='';hSet((hs.cnt[a.n]||0)+1)};
+  $('h0').onclick=()=>{hType='';hSet(0)};$('hclr').onclick=()=>{hType='';hSet(null)};
+  $('hlist').onclick=()=>hGo(-1);$('hprev').onclick=()=>hGo(hs.i-1);$('hnext').onclick=()=>hGo(hs.i+1);
+}
+// キーボード（先生のパソコンで映すとき）：数字で人数、Backspace で1けた消す、← → で前後、Enter で次へ
+let hType='';
+document.addEventListener('keydown',e=>{
+  if(mode!=='hands'||hs.i<0||hs.i>=ASK.length||e.ctrlKey||e.metaKey||e.altKey)return;
+  const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'))return;
+  const a=ASK[hs.i];
+  if(/^[0-9]$/.test(e.key)){hType=(hType+e.key).slice(-2);hSet(+hType);e.preventDefault();return}
+  if(e.key==='Backspace'){hType=hType.slice(0,-1);hSet(hType?+hType:null);e.preventDefault();return}
+  hType='';
+  if(e.key==='ArrowRight'||e.key==='Enter'){if(t&&t.tagName==='BUTTON'&&e.key==='Enter')return;hGo(hs.i+1);e.preventDefault()}
+  else if(e.key==='ArrowLeft'&&hs.i>0){hGo(hs.i-1);e.preventDefault()}
+});
+function hResult(){
+  const got=ASK.filter(a=>hGot(a.n)),rows=got.filter(a=>hs.cnt[a.n]>0).sort((a,b)=>hs.cnt[b.n]-hs.cnt[a.n]||a.n-b.n);
+  const mx=Math.max(1,...rows.map(a=>hs.cnt[a.n]));
+  $('card').innerHTML=`<div class="q">結果：わからない人が多い順</div>
+   <div class="hint" style="font-size:15px">人数を入れた項目 ${got.length} / ${ASK.length}。0人の項目と、まだ入れていない項目は出しません。</div>
+   ${rows.length?`<div class="hres">${rows.map((a,r)=>`<div class="arow"><span class="rk">${r+1}</span><span>${esc(a.t)}<span class="hint">　${a.n}・${esc(CH[a.s])}</span></span><div class="track"><div class="fill" style="width:${hs.cnt[a.n]/mx*100}%"></div></div><span class="num">${hs.cnt[a.n]}人</span></div>`).join('')}</div>`:'<div class="hint">わからない人がいた項目は、まだありません。</div>'}
+   <div><label for="hmemo" style="font-weight:700">その場で出た質問のメモ</label>
+   <textarea id="hmemo" style="min-height:70px">${esc(hs.memo)}</textarea></div>
+   <div class="row"><button class="btn ghost" id="hlist">一覧へ</button><button class="btn" id="tomenu">メニューへ</button></div>`;
+  $('hmemo').oninput=e=>{hs.memo=e.target.value;hSave()};
+  $('hlist').onclick=()=>hGo(-1);$('tomenu').onclick=()=>setMode('menu');
 }
 render();
 </script>
