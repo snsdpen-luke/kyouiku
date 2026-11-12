@@ -154,10 +154,9 @@ console.log('■ メニュー');
   click(w, '#mTest');
   ok('小テストを選ぶと出席番号の欄', $(w, '#no') !== null && $(w, '#ttl').textContent === '小テスト第1回');
   click(w, '#menuBtn');
-  ok('メニューに「小テスト第2回 16問」がある', $(w, '#mTest2') && $(w, '#mTest2').textContent.includes('小テスト第2回') && $(w, '#mTest2').textContent.includes('16問'));
+  ok('メニューに「小テスト第2回 20問」がある', $(w, '#mTest2') && $(w, '#mTest2').textContent.includes('小テスト第2回') && $(w, '#mTest2').textContent.includes('20問'));
   click(w, '#mTest2');
   ok('第2回を選ぶと第2回の出席番号の欄', $(w, '#no') !== null && $(w, '#ttl').textContent === '小テスト第2回');
-  ok('第2回の開始画面とメニューに「目安30分」', $(w, '#card').textContent.includes('目安は30分') && (click(w, '#menuBtn'), $(w, '#mTest2').textContent.includes('目安30分')));
 }
 
 console.log('■ 小テスト：出席番号');
@@ -260,7 +259,7 @@ function open2(store, hash = '') {
     runScripts: 'dangerously', url: 'https://example.test/review1/' + hash,
     beforeParse(w) {
       w.localStorage.setItem('fukushu-mode', 'test2');
-      if (store) w.localStorage.setItem('fukushu-test2-v2', store);
+      if (store) w.localStorage.setItem('fukushu-test2-v1', store);
       w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
     },
   });
@@ -270,15 +269,15 @@ console.log('■ 第2回：正解を独立に計算し直す');
 {
   const w = open2(); const U = w.eval('U');
   const find = (re) => { const k = U.findIndex(p => re.test(p.q)); if (k < 0) throw new Error('問題がない: ' + re); return U[k]; };
-  ok('16問・章ごとに E3 A3 B3 C3 D2 F2', U.length === 16 &&
-    JSON.stringify(['E','A','B','C','D','F'].map(s => U.filter(p => p.s === s).length)) === '[3,3,3,3,2,2]');
+  ok('20問・章ごとに E3 A4 B4 C3 D3 F3', U.length === 20 &&
+    JSON.stringify(['E','A','B','C','D','F'].map(s => U.filter(p => p.s === s).length)) === '[3,4,4,3,3,3]');
   ok('どの問題にも解説と場面がある', U.every(p => p.e && p.e.length > 20 && p.sc));
   ok('形式が5種類以上（並べかえ・組み合わせ・穴うめ・計算・シミュレーション）', new Set(U.map(p => p.t)).size >= 6);
   // 計算
   ok('改札：QR は IC より 10分長い', find(/改札は5台/).a === (3000 / 5) * (2.0 - 1.0) / 60);
-
+  ok('パケット：再送は20個', find(/1％が消え/).a === 3000000 / 1500 * 0.01);
   ok('学校のWi-Fi：64秒', find(/40人が同時/).a === (4 * 8) / (20 / 40));
-
+  ok('ギガ：1日15分', find(/残り 3GB/).a === 3 / 12 / 1.0 * 60);
   ok('距離4倍：64 → 4', find(/1mのところの電波/).a === 64 / (4 / 1) ** 2);
   { let n = 1; while (10 ** n / 1e10 < 86400) n++; ok('数字だけ・1日以上：15けた（14けたは足りない）', find(/1秒に100億回/).a === n && 10 ** 14 / 1e10 < 86400 && 24 * 60 * 60 === 86400); }
   // 画質：速さ以下で一番高いもの
@@ -305,7 +304,7 @@ console.log('■ 第2回：正解を独立に計算し直す');
   // 波長
   { const p = find(/2.4GHz帯と5GHz帯/); const lam24 = 3e8 / 2.4e9, lam5 = 3e8 / 5e9;
     ok('波長：2.4GHz 約12cm・5GHz 約6cm（短いのは5GHz）', Math.abs(lam24 - 0.125) < 1e-9 && Math.abs(lam5 - 0.06) < 1e-9 && p.rows.find(r => r[0].startsWith('波長'))[1] === 1); }
-
+  { const p = find(/本人確認の3つ/); ok('本人確認：知っている2・持っている2・体2', [0, 1, 2].every(c => p.rows.filter(r => r[1] === c).length === 2)); }
   { const p = find(/フィッシング/); ok('メール：本物の住所と差出人・リンク先がちがう', !p.items[0].includes('@mirai-id.example') && !p.items[5].includes('//mirai-id.example') && p.a.includes(0) && p.a.includes(5) && !p.a.includes(2) && !p.a.includes(3) && !p.a.includes(6)); }
   ok('並べかえは5項目・組み合わせの答えは選択肢の範囲内', U.filter(p => p.t === 'order').every(p => p.items.length === 5) && U.filter(p => p.t === 'match').every(p => p.rows.every(r => r[1] >= 0 && r[1] < p.cats.length)));
   ok('穴うめの答えはすべて語群にある', U.filter(p => p.t === 'fill').every(p => p.a.every(x => p.words.includes(x)) && p.lines.join('').match(/\{\d\}/g).length === p.a.length));
@@ -351,24 +350,24 @@ function take2(wrong = new Set(), skip = new Set(), hash = '') {
 }
 console.log('■ 第2回：画面の操作で解いて提出');
 {
-  const wrong = new Set([0, 3, 6, 9, 12, 15]); // 組み合わせ・並べかえ・計算・中継器・メール・ブロックをまちがえる
+  const wrong = new Set([0, 3, 6, 11, 14, 19]); // 組み合わせ・並べかえ・計算・中継器・メール・ブロックをまちがえる
   let w, err; try { w = take2(wrong); } catch (e) { err = e.message; }
   ok('最後まで進める（解いている間は正解が出ない）', !err, err);
   if (w) {
     const t = $(w, '#card').textContent;
-    ok('確認画面：出席番号と 16 / 16 問', t.includes('提出の前に') && t.includes('0712') && t.includes('16 / 16 問'));
+    ok('確認画面：出席番号と 20 / 20 問', t.includes('提出の前に') && t.includes('0712') && t.includes('20 / 20 問'));
     click(w, '#send');
     ok('「提出する」で送信中の表示', $(w, '#card').textContent.includes('送信しています'));
     ok('送信中は上の「メニュー」を押しても動かない', (click(w, '#menuBtn'), w.eval('mode')) === 'test2');
     w.eval('us.sending=false;us.sent="11月12日 10:00";uSave();render()');
     const t2 = $(w, '#card').textContent;
     ok('「提出しました」と出席番号', t2.includes('提出しました') && t2.includes('0712'));
-    ok(`点数が合う（${16 - wrong.size} / 16）`, t2.includes(`${16 - wrong.size} / 16 問 正解`), t2.match(/\d+ \/ 16 問 正解/)?.[0]);
-    ok('答え合わせが16問・○の数が点数と合う', w.document.querySelectorAll('.rv').length === 16 && w.document.querySelectorAll('.rv .mark.o').length === 16 - wrong.size);
+    ok(`点数が合う（${20 - wrong.size} / 20）`, t2.includes(`${20 - wrong.size} / 20 問 正解`), t2.match(/\d+ \/ 20 問 正解/)?.[0]);
+    ok('答え合わせが20問・○の数が点数と合う', w.document.querySelectorAll('.rv').length === 20 && w.document.querySelectorAll('.rv .mark.o').length === 20 - wrong.size);
     ok('まちがえた問題に × が付く', [...wrong].every(k => w.document.querySelectorAll('.rv')[k].querySelector('.mark.x')));
     ok('章ごとのバーが6本', w.document.querySelectorAll('.bar').length === 6);
     ok('提出は1回だけ（受け直すボタンがない）', !$(w, '#again') && !$(w, '#uReset'));
-    const w2 = open2(w.localStorage.getItem('fukushu-test2-v2'));
+    const w2 = open2(w.localStorage.getItem('fukushu-test2-v1'));
     ok('開き直しても「提出しました」のまま', $(w2, '#card').textContent.includes('提出しました') && !$(w2, '#send'));
     click(w2, '#menuBtn');
     ok('メニューで第2回は「提出済み」', $(w2, '#mTest2').textContent.includes('提出済み'));
@@ -378,20 +377,20 @@ console.log('■ 第2回：画面の操作で解いて提出');
 console.log('■ 第2回：全問正解・全問不正解');
 {
   let w = take2(); click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
-  ok('全問正解で 16 / 16', $(w, '#card').textContent.includes('16 / 16 問 正解'));
-  w = take2(new Set([...Array(16).keys()])); click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
-  ok('全問まちがえて 0 / 16', $(w, '#card').textContent.includes('0 / 16 問 正解'));
+  ok('全問正解で 20 / 20', $(w, '#card').textContent.includes('20 / 20 問 正解'));
+  w = take2(new Set([...Array(20).keys()])); click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
+  ok('全問まちがえて 0 / 20', $(w, '#card').textContent.includes('0 / 20 問 正解'));
 }
 console.log('■ 第2回：答えていない問題があるとき');
 {
   const w = take2(new Set(), new Set([4, 15]));
-  ok('答えた数 14 / 16・未回答が並ぶ', $(w, '#card').textContent.includes('14 / 16 問') && q2(w).join() === '第5問,第16問');
+  ok('答えた数 18 / 20・未回答が並ぶ', $(w, '#card').textContent.includes('18 / 20 問') && q2(w).join() === '第5問,第16問');
   click(w, '#send');
   ok('1回目は提出せず注意', !w.eval('us.sending') && $(w, '.warn').textContent.includes('2問'));
   click(w, '#send');
   ok('2回目で提出', w.eval('us.sending') === true);
   w.eval('us.sending=false;us.sent="x";uSave();render()');
-  ok('未回答は × で「未回答」', $(w, '#card').textContent.includes('未回答') && w.document.querySelectorAll('.rv .mark.o').length === 14);
+  ok('未回答は × で「未回答」', $(w, '#card').textContent.includes('未回答') && w.document.querySelectorAll('.rv .mark.o').length === 18);
 }
 function q2(w) { return [...w.document.querySelectorAll('.jump .opt')].map(b => b.textContent); }
 console.log('■ 第2回：とちゅうの問題');
@@ -400,41 +399,41 @@ console.log('■ 第2回：とちゅうの問題');
   const U = w.eval('U');
   // 第1問（組み合わせ）を1行だけ答えて最後へ
   [...w.document.querySelectorAll('.seg .opt')][0].click();
-  w.eval('us.i=16;uSave();render()');
+  w.eval('us.i=20;uSave();render()');
   ok('一部だけの組み合わせは「とちゅう」と出る', q2(w)[0] === '第1問（とちゅう）');
   ok('数を入れる欄は全角数字・カンマも読める', w.eval('uNum("１,２００")') === 1200 && Number.isNaN(w.eval('uNum("10分")')));
-  const w2 = open2(w.localStorage.getItem('fukushu-test2-v2'));
-  ok('開き直すと続きから（確認画面）', w2.eval('us.i') === 16 && $(w2, '#card').textContent.includes('提出の前に'));
+  const w2 = open2(w.localStorage.getItem('fukushu-test2-v1'));
+  ok('開き直すと続きから（確認画面）', w2.eval('us.i') === 20 && $(w2, '#card').textContent.includes('提出の前に'));
   ok('並べる順は開き直しても同じ', JSON.stringify(w2.eval('us.ord')) === JSON.stringify(w.eval('us.ord')));
   const orders = new Set(); for (let n = 0; n < 6; n++) { const x = open2(); $(x, '#no').value = '0001'; click(x, '#go'); orders.add(x.eval('JSON.stringify(uOrd(0))')); }
   ok('組み合わせの行の順は人ごとにくじで変わる', orders.size > 1);
   const fx = open2(); $(fx, '#no').value = '0001'; click(fx, '#go'); fx.eval('us.i=8;render()');
-  ok('道順のある問題（画質）は行の順を変えない', fx.eval('JSON.stringify(uOrd(7))') === '[0,1,2,3,4]');
+  ok('道順のある問題（画質）は行の順を変えない', fx.eval('JSON.stringify(uOrd(8))') === '[0,1,2,3,4]');
 }
 console.log('■ 第2回：先生用デモ（#demo）');
 {
   const w = take2(new Set([1]), new Set(), '#demo');
   ok('#demo で第2回が開き、題に「先生用デモ」', $(w, '#ttl').textContent.includes('先生用デモ'));
   click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
-  ok('デモは生徒の箱に保存しない', w.localStorage.getItem('fukushu-test2-v2') === null && w.localStorage.getItem('fukushu-test2-demo-v2') !== null);
+  ok('デモは生徒の箱に保存しない', w.localStorage.getItem('fukushu-test2-v1') === null && w.localStorage.getItem('fukushu-test2-demo') !== null);
   click(w, '#uReset');
   ok('デモは「最初からやり直す」で受け直せる', $(w, '#no') !== null && !w.eval('us.sent'));
   // 問題へ飛ぶ（出席番号を入れなくてもよい）
-  const j = $(w, '#uJump'); j.value = '9'; j.dispatchEvent(new w.Event('change'));
-  ok('「問題へ飛ぶ」で第10問へ（出席番号なしでも）', w.eval('us.i') === 9 && $(w, '.spot') !== null);
+  const j = $(w, '#uJump'); j.value = '11'; j.dispatchEvent(new w.Event('change'));
+  ok('「問題へ飛ぶ」で第12問へ（出席番号なしでも）', w.eval('us.i') === 11 && $(w, '.spot') !== null);
   ok('正解は押すまで入らない', !$(w, '.spot.pick'));
   click(w, '#uOne');
-  ok('「この問題に正解を入れる」で画面に正解（イ 階段の上の廊下）が入る', $(w, '.spot.pick') && $(w, '.spot.pick').textContent.includes('階段の上の廊下') && w.eval('uCorrect(9)'));
+  ok('「この問題に正解を入れる」で画面に正解（イ 階段の上の廊下）が入る', $(w, '.spot.pick') && $(w, '.spot.pick').textContent.includes('階段の上の廊下') && w.eval('uCorrect(11)'));
   click(w, '#uClr');
-  ok('「この問題の答えを消す」で答える前にもどる', !$(w, '.spot.pick') && !w.eval('uAnswered(9)'));
+  ok('「この問題の答えを消す」で答える前にもどる', !$(w, '.spot.pick') && !w.eval('uAnswered(11)'));
   const all = w.eval('U').map((_, k) => { w.eval(`us.i=${k};render()`); click(w, '#uOne'); return w.eval(`uCorrect(${k})`); });
-  ok('16問どれでも「正解を入れる」と正解の判定になる', all.every(Boolean), all);
+  ok('20問どれでも「正解を入れる」と正解の判定になる', all.every(Boolean), all);
   w.eval('us.i=1;render()');
   ok('計算問題では答えの欄に正解（10）が入っている', $(w, '#ni').value === '10');
   click(w, '#uFill');
-  ok('「全部正解を入れる」で確認画面・16 / 16 問', w.eval('us.i') === 16 && $(w, '#card').textContent.includes('16 / 16 問'));
+  ok('「全部正解を入れる」で確認画面・20 / 20 問', w.eval('us.i') === 20 && $(w, '#card').textContent.includes('20 / 20 問'));
   click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
-  ok('そのまま提出すると 16 / 16 問 正解', $(w, '#card').textContent.includes('16 / 16 問 正解'));
+  ok('そのまま提出すると 20 / 20 問 正解', $(w, '#card').textContent.includes('20 / 20 問 正解'));
   click(w, '#uReset');
   ok('もう一度やり直せる（何度でも）', $(w, '#no') !== null && !w.eval('us.sent') && Object.keys(w.eval('us.ans')).length === 0);
   // 生徒の画面にはデモのボタンが出ない
@@ -447,7 +446,7 @@ console.log('■ 第2回：計算問題の電卓とヒント');
   const w = open2(); $(w, '#no').value = '0001'; click(w, '#go');
   const U = w.eval('U');
   const calcQ = U.map((p, k) => k).filter(k => U[k].nums);
-  ok('電卓が付くのは計算3問とけた数1問', calcQ.length === 4 && calcQ.every(k => ['num', 'step'].includes(U[k].t)) && U.filter(p => p.t === 'num').every(p => p.nums));
+  ok('電卓が付くのは計算5問とけた数1問', calcQ.length === 6 && calcQ.every(k => ['num', 'step'].includes(U[k].t)) && U.filter(p => p.t === 'num').every(p => p.nums));
   ok('どの計算問題にもヒントがあり、答えの数を書いていない', calcQ.every(k => { const p = U[k]; return p.hint && p.hint.length > 20 && !(p.unit && p.hint.includes(`${p.a}${p.unit}`)) && !new RegExp(`[＝=]\\s*${p.a}(?![\\d.])`).test(p.hint) && !/答えは/.test(p.hint); }), calcQ.map(k => U[k].hint.slice(0, 20)));
   ok('電卓のボタンの数は問題文に出てくる数', calcQ.every(k => U[k].nums.every(([lab]) => U[k].q.includes(lab.replace(/（.*/, '')))), calcQ.map(k => U[k].nums.map(n => n[0])));
   const ev = ex => w.eval(`(()=>{try{return calcEval(${JSON.stringify(ex)})}catch(e){return 'エラー'}})()`);
@@ -479,7 +478,7 @@ console.log('■ 第2回：計算問題の電卓とヒント');
   ok('C で 0 にもどる', $(w, '#cmain').textContent === '0');
   ok('ヒントは押すまで出ない', !$(w, '.hbox') && $(w, '#hintBtn'));
   click(w, '#hintBtn');
-  ok('「ヒントを見る」でヒントが出て、開き直しても残る', $(w, '.hbox') && open2(w.localStorage.getItem('fukushu-test2-v2')).eval(`us.hint[${calcQ[0]}]`) === 1);
+  ok('「ヒントを見る」でヒントが出て、開き直しても残る', $(w, '.hbox') && open2(w.localStorage.getItem('fukushu-test2-v1')).eval(`us.hint[${calcQ[0]}]`) === 1);
   w.eval(`us.i=0;render()`);
   ok('計算以外の問題には電卓もヒントもない', !$(w, '#calc') && !$(w, '#hintBtn'));
   ok('電卓の画面にも正解は出ない', !/正解/.test((w.eval(`us.i=${calcQ[1]};render()`), $(w, '#card').textContent)));
