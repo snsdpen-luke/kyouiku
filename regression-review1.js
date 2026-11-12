@@ -491,7 +491,7 @@ console.log('■ わからないところアンケート（無記名・スプレ
   // url：ASK_URL に入れる送り先（'' なら未設定のまま）。reply：fetch の代わり（送った中身を記録する）
   const sent = [];
   const openA = ({ url = '', hash = '', store = null, reply = null } = {}) => {
-    const h = url ? html.replace("const ASK_URL='';", `const ASK_URL=${JSON.stringify(url)};`) : html;
+    const h = html.replace(/const ASK_URL='[^']*';/, `const ASK_URL=${JSON.stringify(url)};`);
     return new JSDOM(h, {
       runScripts: 'dangerously', url: 'https://example.test/review1/' + hash,
       beforeParse(w) {
@@ -502,7 +502,7 @@ console.log('■ わからないところアンケート（無記名・スプレ
     }).window;
   };
   const wait = ms => new Promise(r => setTimeout(r, ms));
-  ok('送り先 ASK_URL は空のまま配る（入れるのは剛さんの URL が決まってから）', /const ASK_URL='';/.test(html));
+  ok('送り先 ASK_URL は空か、Apps Script のウェブアプリの URL', /const ASK_URL='(|https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec)';/.test(html));
   const net = html.match(/fetch\(|XMLHttpRequest|sendBeacon|navigator\.clipboard|window\.open/g) || [];
   ok('外へ送るのはアンケートの fetch 1か所だけ', net.length === 1 && net[0] === 'fetch(' && /fetch\(ASK_URL,/.test(html), net);
 

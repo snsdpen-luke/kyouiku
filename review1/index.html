@@ -837,9 +837,9 @@ function uDone(){
 }
 // ===== わからないところアンケート（無記名。答えは先生のスプレッドシートに直接送る） =====
 // 送り先は Google Apps Script のウェブアプリ（apps-script/わからないアンケート.gs）。
-// ASK_URL が空のあいだは、メニューに出さない（URL の末尾に #ask で、先生が画面だけ確かめられる）。
+// ASK_URL が空のときは、メニューに出さない（URL の末尾に #ask で、先生が画面だけ確かめられる）。
 // このアプリで外へ送るのは、ここだけ。小テストの提出はダミーのまま。
-const ASK_URL='';
+const ASK_URL='https://script.google.com/macros/s/AKfycbx7P0KFL58sHNAzutKu7KKPitkGjigZtGDOA6ru9GnszSy64qZc6waaAPoxx2hS99wz/exec'; // 剛さんの受け口（2026-11-12）
 // n は項目の番号。スプレッドシートの列と対応するので、一度配ったら変えない。足すときは新しい番号を使い、.gs の ITEMS にも足す
 const ASK=[
  {n:1,s:'A',t:'パケットに分けて送る（パケットの数・バイトの計算）'},
