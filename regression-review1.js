@@ -55,7 +55,7 @@ console.log('■ 問題データ');
   ok('家の中用の住所（10.x）を外の住所として使っていない', !Q.some(q => /10\.20\.30\.40/.test(q.q + (q.o || []).join())));
   ok('confirm / alert を使っていない', !/\bconfirm\(|\balert\(/.test(html.replace(/w\.confirm|w\.alert/g, '')));
   ok('ダークモードの色の切りかえがない（ライト固定）', !/prefers-color-scheme:\s*dark|data-theme="dark"/.test(html) && html.includes('content="light"'));
-  ok('外への通信がない', !/fetch\(|XMLHttpRequest|sendBeacon/.test(html));
+  ok('外への通信は、わからないところアンケートの fetch(ASK_URL) だけ', !/XMLHttpRequest|sendBeacon/.test(html) && (html.match(/fetch\(/g) || []).length === 1 && /fetch\(ASK_URL,/.test(html));
 }
 
 console.log('■ 開始画面');
@@ -226,7 +226,8 @@ console.log('■ 小テスト：解いて提出');
   ok('開き直しても「提出しました」のまま（答えを変えられない）', $(w2, '#card').textContent.includes('提出しました') && !$(w2, '#send'));
   click(w2, '#again');
   ok('「新しい小テストを受ける」で出席番号の画面（番号は残る）', $(w2, '#no') && $(w2, '#no').value === '1203' && w2.eval('ts.set') === null);
-  ok('どこにも送らない（通信の命令がない）', !/fetch\(|XMLHttpRequest|sendBeacon|navigator\.send|<form/.test(html));
+  ok('どこにも送らない（通信の命令は、アンケートの aSend の中だけ）', !/XMLHttpRequest|sendBeacon|navigator\.send|<form/.test(html) &&
+    (() => { const i = html.indexOf('fetch('), f = html.lastIndexOf('async function aSend(', i); return f > 0 && html.indexOf('\n}', f) > i && html.indexOf('fetch(', i + 1) < 0; })());
 }
 console.log('■ 小テスト：答えていない問題があるとき');
 {
@@ -484,55 +485,108 @@ console.log('■ 第2回：計算問題の電卓とヒント');
   ok('電卓の画面にも正解は出ない', !/正解/.test((w.eval(`us.i=${calcQ[1]};render()`), $(w, '#card').textContent)));
 }
 
-console.log('■ わからないところ調べ（先生が映して、挙手の人数を入れる）');
+(async () => {
+console.log('■ わからないところアンケート（無記名・スプレッドシートへ送る）');
 {
-  const openH = store => new JSDOM(html, {
-    runScripts: 'dangerously', url: 'https://example.test/review1/',
-    beforeParse(w) { if (store) w.localStorage.setItem('fukushu-hands-v1', store);
-      w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); }; },
-  }).window;
-  const w = openH(); const ASK = w.eval('ASK'), CH = w.eval('CH');
-  ok('項目は番号が重ならず、どれも章（A〜F）がある', new Set(ASK.map(a => a.n)).size === ASK.length && ASK.every(a => CH[a.s] && a.t));
-  ok('6回の授業すべてに項目がある', Object.keys(CH).every(s => ASK.some(a => a.s === s)));
-  ok('メニューに「わからないところ調べ」がある', $(w, '#mHands') && $(w, '#mDrill') && $(w, '#mTest') && $(w, '#mTest2'));
-  click(w, '#mHands');
-  ok('一覧に全項目が出て、どれもまだ「－」', w.document.querySelectorAll('.hrow').length === ASK.length && [...w.document.querySelectorAll('.hrow .ct')].every(e => e.textContent === '－'));
-  click(w, '#hfirst');
-  ok('1から順に聞くと、項目1が大きく出る', $(w, '.htitle').textContent === ASK[0].t && $(w, '#hnum').textContent === '－');
-  click(w, '#hp'); click(w, '#hp'); click(w, '#hp'); click(w, '#hm');
-  ok('＋3回・－1回で 2人', $(w, '#hnum').textContent === '2');
-  click(w, '#hnext');
-  const key = k => w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true }));
-  key('1'); key('2');
-  ok('キーボードの数字で 12人', $(w, '#hnum').textContent === '12' && w.eval('hs.cnt[2]') === 12);
-  key('Backspace');
-  ok('Backspace で 1人', w.eval('hs.cnt[2]') === 1);
-  key('ArrowRight'); key('0');
-  ok('→ で次の項目、0 で 0人', w.eval('hs.i') === 2 && w.eval('hs.cnt[3]') === 0);
-  click(w, '#hm');
-  ok('0人から－しても 0人のまま', w.eval('hs.cnt[3]') === 0);
-  click(w, '#hclr');
-  ok('入れ直すで「－」にもどる', $(w, '#hnum').textContent === '－' && w.eval('hs.cnt[3]') === undefined);
-  key('ArrowLeft');
-  ok('← で前の項目にもどり、人数が残っている', w.eval('hs.i') === 1 && $(w, '#hnum').textContent === '1');
-  w.eval(`hGo(ASK.length-1)`);
-  ok('最後の項目では「結果を見る」', $(w, '#hnext').textContent === '結果を見る');
-  key('5'); click(w, '#hnext');
-  const rows = [...w.document.querySelectorAll('.hres .arow')];
-  ok('結果は多い順（5人・2人・1人）で、0人と未入力は出ない',
-    rows.length === 3 && rows.map(r => r.querySelector('.num').textContent).join() === '5人,2人,1人', rows.map(r => r.textContent));
-  const memo = $(w, '#hmemo'); memo.value = 'ACK のところをもう一度'; memo.dispatchEvent(new w.Event('input'));
-  const saved = w.localStorage.getItem('fukushu-hands-v1');
-  const w2 = openH(saved); w2.eval(`setMode('hands')`);
-  ok('開き直しても人数とメモが残る（一覧から始まる）', w2.eval('hs.i') === -1 && w2.eval('hs.cnt[1]') === 2 && w2.eval('hs.memo') === 'ACK のところをもう一度' &&
-    $(w2, '.hrow[data-k="0"] .ct').textContent === '2人');
-  click(w2, '#hwipe');
-  ok('「人数を全部消す」は1回目では消えない', w2.eval('hs.cnt[1]') === 2 && $(w2, '#hwipe').textContent === '本当に全部消す');
-  click(w2, '#hwipe');
-  ok('2回目で全部消える', Object.keys(w2.eval('hs.cnt')).length === 0 && $(w2, '#hwipe').disabled);
-  const w3 = openH('{壊れたデータ'); w3.eval(`setMode('hands')`);
-  ok('保存が壊れていても一覧が出る', w3.document.querySelectorAll('.hrow').length === ASK.length);
-}
+  // url：ASK_URL に入れる送り先（'' なら未設定のまま）。reply：fetch の代わり（送った中身を記録する）
+  const sent = [];
+  const openA = ({ url = '', hash = '', store = null, reply = null } = {}) => {
+    const h = url ? html.replace("const ASK_URL='';", `const ASK_URL=${JSON.stringify(url)};`) : html;
+    return new JSDOM(h, {
+      runScripts: 'dangerously', url: 'https://example.test/review1/' + hash,
+      beforeParse(w) {
+        if (store) w.localStorage.setItem('fukushu-ask-v1', store);
+        w.confirm = () => false; w.alert = () => { throw new Error('alert は使わない'); };
+        w.fetch = async (u, o) => { sent.push({ u, o }); if (!reply) throw new Error('fetch は呼ばれないはず'); return reply(u, o); };
+      },
+    }).window;
+  };
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  ok('送り先 ASK_URL は空のまま配る（入れるのは剛さんの URL が決まってから）', /const ASK_URL='';/.test(html));
+  const net = html.match(/fetch\(|XMLHttpRequest|sendBeacon|navigator\.clipboard|window\.open/g) || [];
+  ok('外へ送るのはアンケートの fetch 1か所だけ', net.length === 1 && net[0] === 'fetch(' && /fetch\(ASK_URL,/.test(html), net);
 
+  // .gs の項目とアプリの項目が同じ並び
+  const gs = fs.readFileSync(require('path').join(__dirname, 'apps-script/わからないアンケート.gs'), 'utf8');
+  const vm = require('vm'); const box = {}; vm.createContext(box);
+  vm.runInContext(gs + '\nthis.ITEMS=ITEMS;this.makeRow=makeRow;this.safeText=safeText;this.colName=colName;this.doPost=doPost;this.FIRST_ITEM_COL=FIRST_ITEM_COL;', box);
+  const w0 = openA(); const ASK = w0.eval('ASK'), CH = w0.eval('CH');
+  ok('項目は1から順の番号・どれも章（A〜F）がある', ASK.every((a, i) => a.n === i + 1 && CH[a.s] && a.t));
+  ok('6回の授業すべてに項目がある', Object.keys(CH).every(s => ASK.some(a => a.s === s)));
+  ok('アプリの項目と .gs の ITEMS が同じ並び', JSON.stringify(ASK.map(a => a.t)) === JSON.stringify([...box.ITEMS]));
+
+  // 送り先が未設定のとき
+  ok('未設定のあいだ、メニューにアンケートは出ない（3つのまま）', !$(w0, '#mAsk') && $(w0, '#mTest2') && $(w0, '.menu.three'));
+  const wP = openA({ hash: '#ask' });
+  ok('#ask でアンケートの画面が開く（先生の確認用）', wP.eval('mode') === 'ask' && wP.document.querySelectorAll('.agrp .opt').length === ASK.length);
+  click(wP, '#ago');
+  ok('未設定なら「送信する」は押せず、そう書いてある', $(wP, '#asend').disabled && $(wP, '#card').textContent.includes('送り先がまだ設定されていない'));
+
+  // 送り先を入れたとき
+  const URL = 'https://script.google.com/macros/s/TEST/exec';
+  let mode = 'ok';
+  const reply = async () => { if (mode === 'down') throw new TypeError('Failed to fetch');
+    return { json: async () => mode === 'ng' ? { ok: false, error: '項目がちがいます' } : { ok: true } }; };
+  const w = openA({ url: URL, reply });
+  ok('設定すると、メニューにアンケートが出る（4つ）', $(w, '#mAsk') && !$(w, '.menu.three') && $(w, '#mAsk').textContent.includes('まだ送っていません'));
+  click(w, '#mAsk');
+  ok('名前は送らないと書いてある', $(w, '#card').textContent.includes('名前は送りません'));
+  click(w, '.agrp .opt[data-n="14"]'); click(w, '.agrp .opt[data-n="3"]'); click(w, '.agrp .opt[data-n="22"]'); click(w, '.agrp .opt[data-n="22"]');
+  ok('タップで選び、もう一度で外れる（3と14）', JSON.stringify(w.eval('aPicked()')) === '[3,14]' && $(w, '#acnt').textContent === '2項目を選んでいます');
+  const m = $(w, '#amemo'); m.value = 'ACK が\nわからない'; m.dispatchEvent(new w.Event('input'));
+  click(w, '#ago');
+  ok('確かめる画面に、選んだ項目とひとことが出る', $(w, '#card').textContent.includes('IPアドレスと DNS') && $(w, '#card').textContent.includes('ACK が わからない') && !$(w, '#asend').disabled);
+  click(w, '#aback');
+  ok('もどって直すと、選んだものが残っている', w.document.querySelectorAll('.agrp .opt.pick').length === 2);
+  click(w, '#ago');
+  mode = 'down'; sent.length = 0;
+  click(w, '#asend'); await wait(20);
+  ok('つながらないときは「送れませんでした」で、もう一度押せる', $(w, '.warn') && $(w, '.warn').textContent.includes('送れませんでした') && $(w, '#asend').textContent === 'もう一度送る' && w.eval('as.step') === 'check');
+  const rid1 = JSON.parse(sent[0].o.body).rid;
+  mode = 'ok';
+  click(w, '#asend'); await wait(20);
+  const body = JSON.parse(sent[1].o.body);
+  ok('送り直しても回答IDは同じ（二重に数えない）', body.rid === rid1 && /^[0-9a-z]{12,32}$/.test(rid1));
+  ok('送る中身は 回答ID・項目・ひとこと だけ（名前・出席番号なし）', JSON.stringify(Object.keys(body).sort()) === '["items","memo","rid","v"]' &&
+    JSON.stringify(body.items) === '[3,14]' && body.memo === 'ACK が わからない', body);
+  ok('送り先は ASK_URL、POST、ヘッダを付けない', sent[1].u === URL && sent[1].o.method === 'POST' && !sent[1].o.headers);
+  ok('届いたら「送信しました」', $(w, '.sent') && $(w, '.sent').textContent === '送信しました' && w.eval('as.step') === 'sent');
+  const w2 = openA({ url: URL, reply, store: w.localStorage.getItem('fukushu-ask-v1') });
+  ok('開き直すと、メニューは「送信済み」で、もう送れない', $(w2, '#mAsk').textContent.includes('送信済み') && (click(w2, '#mAsk'), !$(w2, '#asend') && $(w2, '.sent')));
+  // 受け口がことわったとき
+  const w3 = openA({ url: URL, reply }); mode = 'ng';
+  click(w3, '#mAsk'); click(w3, '#ago'); click(w3, '#asend'); await wait(20);
+  ok('受け口がことわると、理由つきで「送れませんでした」', $(w3, '.warn').textContent.includes('項目がちがいます') && w3.eval('as.step') === 'check');
+  ok('何も選ばずに送ると「わからないところはない」として送る', $(w3, '#card').textContent.includes('わからないところはない'));
+  const w4 = openA({ url: URL, reply, store: '{壊れた' });
+  ok('保存が壊れていてもメニューが出る', $(w4, '#mAsk') && $(w4, '#mAsk').textContent.includes('まだ送っていません'));
+
+  // .gs：受け取った中身の点検
+  const bad = d => { try { box.makeRow(d); return false; } catch (e) { return true; } };
+  const row = box.makeRow({ rid: 'abcdef0123456789', items: [14, 3, 3], memo: 'ok' });
+  ok('.gs：項目を並べて重複を外し、項目ごとの列に1を入れる', row[2] === '3,14' && row[box.FIRST_ITEM_COL - 1 + 2] === 1 && row[box.FIRST_ITEM_COL - 1 + 13] === 1 &&
+    row.filter(x => x === 1).length === 2 && row.length === 3 + box.ITEMS.length + 1);
+  ok('.gs：何も選ばないと「なし」', box.makeRow({ rid: 'abcdef0123456789', items: [], memo: '' })[2] === 'なし');
+  ok('.gs：おかしな形は捨てる（ID・番号の範囲・小数・文字・項目が多すぎ）',
+    bad({ rid: 'x', items: [] }) && bad({ rid: 'abcdef0123456789', items: [0] }) && bad({ rid: 'abcdef0123456789', items: [32] }) &&
+    bad({ rid: 'abcdef0123456789', items: [1.5] }) && bad({ rid: 'abcdef0123456789', items: ['1'] }) && bad({ rid: 'abcdef0123456789', items: Array(40).fill(1) }) && bad(null));
+  ok('.gs：ひとことは式として読ませず、改行を外し、200字で切る',
+    box.safeText('=IMPORTXML("x")') === "'=IMPORTXML(\"x\")" && box.safeText('a\nb') === 'a b' && box.safeText('あ'.repeat(300)).length === 200);
+  ok('.gs：列の名前（4→D、26→Z、27→AA、35→AI）', ['D', 'Z', 'AA', 'AI'].join() === [4, 26, 27, 35].map(box.colName).join());
+  // doPost：まねのスプレッドシートで、二重に数えないこと
+  const rows = [['受付日時', '回答ID']];
+  box.LockService = { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) };
+  box.ContentService = { MimeType: { JSON: 'json' }, createTextOutput: t => ({ t, setMimeType() { return this; } }) };
+  box.SpreadsheetApp = { getActiveSpreadsheet: () => ({ getSheetByName: () => ({
+    getLastRow: () => rows.length, appendRow: r => rows.push(r),
+    getRange: (r0, c0, n) => ({ createTextFinder: s => ({ matchEntireCell: () => ({ findNext: () => rows.slice(r0 - 1, r0 - 1 + n).some(r => r[c0 - 1] === s) || null }) }) }) }) }) };
+  const post = d => JSON.parse(box.doPost({ postData: { contents: JSON.stringify(d) } }).t);
+  const r1 = post({ rid: 'abcdef0123456789', items: [1], memo: '' }), r2 = post({ rid: 'abcdef0123456789', items: [1], memo: '' }), r3 = post({ rid: 'zzzzzz0123456789', items: [2], memo: '' });
+  ok('.gs：同じ回答IDは1行だけ（2回目は dup）', r1.ok && r2.ok && r2.dup && r3.ok && rows.length === 3, rows.length);
+  const r4 = post({ rid: 'bad', items: [1] });
+  ok('.gs：おかしな形は ok:false で返し、行を足さない', r4.ok === false && rows.length === 3);
+}
+})().catch(e => { fail++; console.log('  NG  アンケートの確認が途中で止まった → ' + e.message); }).then(() => {
 console.log(`\n合格 ${pass} / 不合格 ${fail}`);
 process.exit(fail ? 1 : 0);
+});
