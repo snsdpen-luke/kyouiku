@@ -639,8 +639,29 @@ function uChrome(){
   $('count').textContent=on&&us.i<U.length?`${us.i+1} / ${U.length}`:'';
   $('bar').style.width=on?(U.filter((_,k)=>uAnswered(k)).length/U.length*100)+'%':us.sent?'100%':'0';
 }
-function uDemo(){return UDEMO?`<div class="demo" style="background:#fff6dc;border:2px dashed #d9a400;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap">先生用デモ：何度でも受け直せます。生徒の記録とは別に保存します。<button class="hbtn" id="uReset">最初からやり直す</button></div>`:''}
-function uDemoBind(){const b=$('uReset');if(b)b.onclick=()=>{us={no:us.no,i:-1,ans:{},ord:{},hint:{},sent:null,sending:false,warn:false,act:0};uSave();render()}}
+// 先生用デモ（URL の末尾に #demo）：何度でもやり直せ、好きな問題へ飛べ、正解を入れて確かめられる。生徒の記録とは別の箱に保存する
+function uDemo(){if(!UDEMO)return '';
+  const onQ=!us.sent&&us.i>=0&&us.i<U.length;
+  return `<div class="demo" style="background:#fff6dc;border:2px dashed #d9a400;border-radius:10px;padding:5px 10px;font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap">先生用デモ
+   <button class="hbtn" id="uReset">最初からやり直す</button>
+   ${us.sent?'':`<select id="uJump" aria-label="問題へ飛ぶ" style="font:inherit;font-size:13px;padding:3px 6px;border-radius:8px;border:2px solid var(--accent);color:var(--accent);background:var(--card)"><option value="">問題へ飛ぶ…</option>${U.map((p,k)=>`<option value="${k}" ${k===us.i?'selected':''}>第${k+1}問 ${esc(kindOf(p))}</option>`).join('')}<option value="${U.length}">提出の前の確認</option></select>`}
+   ${onQ?`<button class="hbtn" id="uOne">この問題に正解を入れる</button><button class="hbtn" id="uClr">この問題の答えを消す</button>`:''}
+   ${us.sent?'':`<button class="hbtn" id="uFill">全部正解を入れる</button>`}
+   <span style="font-weight:400;color:#7a5800">生徒の記録とは別に保存</span></div>`}
+// 正解の答え（デモの「正解を入れる」で使う。入れると、問題の画面そのものに正解が表示される）
+function uKey(k){const p=U[k];
+  if(p.t==='order')return p.items.map((_,n)=>n);
+  if(p.t==='match')return Object.fromEntries(p.rows.map((r,n)=>[n,r[1]]));
+  if(p.t==='fill')return Object.fromEntries(p.a.map((w,n)=>[n,w]));
+  if(p.t==='num')return String(p.a);
+  if(p.t==='tap')return p.a.slice();
+  return p.a}
+function uDemoBind(){if(!UDEMO)return;
+  const r=$('uReset');if(r)r.onclick=()=>{us={no:us.no,i:-1,ans:{},ord:{},hint:{},sent:null,sending:false,warn:false,act:0};uSave();render()};
+  const j=$('uJump');if(j)j.onchange=()=>{if(j.value==='')return;if(!us.no)us.no='0000';us.i=+j.value;us.act=0;us.warn=false;uSave();render()};
+  const o=$('uOne');if(o)o.onclick=()=>{us.ans[us.i]=uKey(us.i);uSave();render()};
+  const c=$('uClr');if(c)c.onclick=()=>{delete us.ans[us.i];us.act=0;uSave();render()};
+  const f=$('uFill');if(f)f.onclick=()=>{U.forEach((_,k)=>{us.ans[k]=uKey(k)});if(!us.no)us.no='0000';us.i=U.length;us.warn=false;uSave();render()}}
 function uRender(){
   uChrome();
   if(us.sending)return uSending();

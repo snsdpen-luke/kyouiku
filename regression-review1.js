@@ -317,7 +317,7 @@ function take2(wrong = new Set(), skip = new Set(), hash = '') {
   for (let k = 0; k < U.length; k++) {
     const p = U[k], bad = wrong.has(k);
     if (w.eval('us.i') !== k) throw new Error('進んでいない: ' + k);
-    const txt = $(w, '#card').textContent;
+    const txt = $(w, '#card').textContent.replace($(w, '.demo')?.textContent || '', ''); // 先生用デモのボタンの文字は除く
     if (/正解|まちがい|不正解/.test(txt) || $(w, '.rv')) throw new Error('提出前に正解が出ている: ' + k);
     if (!skip.has(k)) {
       if (p.t === 'order') {
@@ -418,6 +418,27 @@ console.log('■ 第2回：先生用デモ（#demo）');
   ok('デモは生徒の箱に保存しない', w.localStorage.getItem('fukushu-test2-v1') === null && w.localStorage.getItem('fukushu-test2-demo') !== null);
   click(w, '#uReset');
   ok('デモは「最初からやり直す」で受け直せる', $(w, '#no') !== null && !w.eval('us.sent'));
+  // 問題へ飛ぶ（出席番号を入れなくてもよい）
+  const j = $(w, '#uJump'); j.value = '11'; j.dispatchEvent(new w.Event('change'));
+  ok('「問題へ飛ぶ」で第12問へ（出席番号なしでも）', w.eval('us.i') === 11 && $(w, '.spot') !== null);
+  ok('正解は押すまで入らない', !$(w, '.spot.pick'));
+  click(w, '#uOne');
+  ok('「この問題に正解を入れる」で画面に正解（イ 階段の上の廊下）が入る', $(w, '.spot.pick') && $(w, '.spot.pick').textContent.includes('階段の上の廊下') && w.eval('uCorrect(11)'));
+  click(w, '#uClr');
+  ok('「この問題の答えを消す」で答える前にもどる', !$(w, '.spot.pick') && !w.eval('uAnswered(11)'));
+  const all = w.eval('U').map((_, k) => { w.eval(`us.i=${k};render()`); click(w, '#uOne'); return w.eval(`uCorrect(${k})`); });
+  ok('20問どれでも「正解を入れる」と正解の判定になる', all.every(Boolean), all);
+  w.eval('us.i=1;render()');
+  ok('計算問題では答えの欄に正解（10）が入っている', $(w, '#ni').value === '10');
+  click(w, '#uFill');
+  ok('「全部正解を入れる」で確認画面・20 / 20 問', w.eval('us.i') === 20 && $(w, '#card').textContent.includes('20 / 20 問'));
+  click(w, '#send'); w.eval('us.sending=false;us.sent="x";uSave();render()');
+  ok('そのまま提出すると 20 / 20 問 正解', $(w, '#card').textContent.includes('20 / 20 問 正解'));
+  click(w, '#uReset');
+  ok('もう一度やり直せる（何度でも）', $(w, '#no') !== null && !w.eval('us.sent') && Object.keys(w.eval('us.ans')).length === 0);
+  // 生徒の画面にはデモのボタンが出ない
+  const s = open2(); $(s, '#no').value = '0001'; click(s, '#go');
+  ok('生徒の画面にはデモのバーが出ない', !$(s, '.demo') && !$(s, '#uOne') && !$(s, '#uClr') && !$(s, '#uFill') && !$(s, '#uJump'));
 }
 
 console.log('■ 第2回：計算問題の電卓とヒント');
