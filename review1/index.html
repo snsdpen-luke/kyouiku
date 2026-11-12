@@ -144,6 +144,22 @@ ol.list{margin:4px 0 0;padding-left:1.4em;font-size:16px}
 .blk .rb{font-size:12px;font-weight:700;color:var(--accent);min-height:1.2em}
 .rv .pt{padding-left:38px}
 .rv .pt .o{color:var(--ok);font-weight:700} .rv .pt .x{color:var(--ng);font-weight:700}
+/* 電卓とヒント */
+.cq{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start}
+.cl{display:flex;flex-direction:column;gap:12px}
+.hbox{background:#fff6dc;border:1px solid #e9c46a;border-radius:10px;padding:8px 14px;font-size:15px;line-height:1.6}
+.calc{border:1px solid var(--line);border-radius:12px;background:#f6f8fb;padding:10px;display:flex;flex-direction:column;gap:6px}
+.ctitle{font-size:12px;font-weight:700;color:var(--sub)}
+.cdisp{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 10px;text-align:right;min-height:58px}
+.cex{font-size:12px;color:var(--sub);min-height:1.3em;overflow-wrap:anywhere}
+.cmain{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.2}
+.cnums{display:flex;gap:4px;flex-wrap:wrap}
+.ckeys{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.ck{font:inherit;font-size:18px;font-weight:700;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.ck.op{color:var(--accent)} .ck.eq{background:var(--accent);color:var(--card);border-color:var(--accent)}
+.ck.cn{height:auto;padding:4px 8px;font-size:14px;border:2px solid var(--accent);color:var(--accent)}
+.ctape{font-size:12px;color:var(--sub);min-height:1em}
+@media (max-width:760px){.cq{grid-template-columns:1fr}}
 @media (max-width:760px){.menu{grid-template-columns:1fr}.menu.three{grid-template-columns:1fr}.spots,.chain{grid-template-columns:1fr 1fr}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:18px}}
 @media (prefers-reduced-motion:no-preference){.fill,.prog div{transition:width .5s ease}}
 </style>
@@ -531,7 +547,7 @@ const U=[
  cats:['前に（チャージ・購入）','使ったその場で','あとで（翌月など）'],
  rows:[['Suica（チャージした残高）',0],['デビットカード',1],['クレジットカード',2],['PayPay（チャージした残高）',0],['図書カード',0],['iD（クレジットカードにつないだもの）',2]],
  e:'Suica・PayPay の残高・図書カードは前払い、デビットカードはその場で口座から引かれ、クレジットカードと、それにつないだ iD は後払いです。'},
-{t:'num',s:'E',sc:'朝 7:40　駅の改札',q:'朝の駅に3,000人が来ます。改札は5台です。1人が通るのに、ICカードなら1.0秒、QRコードなら2.0秒かかります。\n全員がQRコードで通ると、全員がICカードで通るときより、何分長くかかりますか。',unit:'分',a:10,
+{t:'num',s:'E',sc:'朝 7:40　駅の改札',q:'朝の駅に3,000人が来ます。改札は5台です。1人が通るのに、ICカードなら1.0秒、QRコードなら2.0秒かかります。\n全員がQRコードで通ると、全員がICカードで通るときより、何分長くかかりますか。',unit:'分',a:10,nums:[['3,000',3000],['5',5],['1.0',1],['2.0',2]],hint:'まず、改札1台あたり何人が通るかを考えます。そのあと、ICとQRで1人あたり何秒ちがうかを使い、最後に秒を分にします。',
  e:'1台あたり 3,000 ÷ 5 ＝ 600人。ICは 600 × 1.0 ＝ 600秒（10分）、QRは 600 × 2.0 ＝ 1,200秒（20分）。差は10分です。改札でICカードが使われ続けている理由の1つです。'},
 {t:'order',s:'E',sc:'朝 7:55　駅のお店',q:'ユウのお母さんが、クレジットカードで弁当（800円）を買いました。起きることを、起きる順にタップしなさい。',
  items:['お店の端末にカードをかざす','お店の端末が、カード会社に「このカードで使っていい？」と問い合わせる（オーソリ）','カード会社のコンピュータが、いつもとちがう使い方ではないかを調べる（不正検知）','カード会社から「承認」が返ってきて、買い物が終わる','翌月などに、お母さんの銀行口座からまとめて引き落とされる'],
@@ -546,14 +562,14 @@ const U=[
 {t:'match',s:'A',sc:'昼 12:35　トークの機能',q:'トークアプリの機能ごとに、TCPとUDPのどちらが向いていますか。',
  cats:['TCP','UDP'],rows:[['文字のメッセージ',0],['写真を送る',0],['無料のビデオ通話',1],['オンラインゲームのキャラの位置',1],['友だちにお金を送る（送金）',0]],
  e:'1つも欠けてはいけないものは、欠けたら再送するTCP。古いデータを待つより次が大事なもの（映像・位置）は、再送しないUDPです。'},
-{t:'num',s:'A',sc:'昼 12:40　写真を送る',q:'ユウが 3,000,000バイトの写真を送ります。パケット1つに 1,500バイトずつ入れます。とちゅうで、パケットの1％が消えてしまいました。\nTCPで送り直されるパケットは何個ですか。',unit:'個',a:20,
+{t:'num',s:'A',sc:'昼 12:40　写真を送る',q:'ユウが 3,000,000バイトの写真を送ります。パケット1つに 1,500バイトずつ入れます。とちゅうで、パケットの1％が消えてしまいました。\nTCPで送り直されるパケットは何個ですか。',unit:'個',a:20,nums:[['3,000,000',3000000],['1,500',1500],['1％（0.01）',0.01]],hint:'パケットの数は「全体のバイト数 ÷ 1つに入るバイト数」。1％は「100個に1個」なので、×0.01 です。',
  e:'3,000,000 ÷ 1,500 ＝ 2,000個。その1％は20個です。TCPはACKが返ってこなかったパケットを送り直すので、写真は欠けずに届きます。'},
-{t:'num',s:'B',sc:'昼 12:45　学校のWi-Fi',q:'学校のWi-Fiの回線は 20Mbps です。昼休みに40人が同時に使い、均等に分け合っています。\nユウが 4MB の写真を1枚受け取るのに、何秒かかりますか。',unit:'秒',a:64,
+{t:'num',s:'B',sc:'昼 12:45　学校のWi-Fi',q:'学校のWi-Fiの回線は 20Mbps です。昼休みに40人が同時に使い、均等に分け合っています。\nユウが 4MB の写真を1枚受け取るのに、何秒かかりますか。',unit:'秒',a:64,nums:[['20',20],['40',40],['4',4]],hint:'1人あたりの速さは「回線の速さ ÷ 人数」。MB（バイト）を Mb（ビット）にするには ×8 します。秒数は「ビット数 ÷ 速さ」です。',
  e:'1人あたり 20 ÷ 40 ＝ 0.5Mbps。4MB × 8 ＝ 32Mb。32 ÷ 0.5 ＝ 64秒です。1人で使えば1.6秒なのに、分け合うと遅くなります。'},
 {t:'match',s:'B',sc:'夕方 16:50　帰りの電車で動画',q:'帰りの電車で、画質「自動」で動画を見ています。場所ごとの回線の速さから、選ばれるいちばん高い画質を選びなさい。\n（必要な速さ：360p 1Mbps／480p 2Mbps／720p 4Mbps／1080p 8Mbps／4K 25Mbps）',
  cats:['360p','480p','720p','1080p','4K'],fixed:true,rows:[['駅のホーム（12Mbps）',3],['トンネルの中（1.5Mbps）',0],['となりの駅（5Mbps）',2],['家の近くの坂道（3Mbps）',1],['家に着いてWi-Fi（40Mbps）',4]],
  e:'回線の速さが「必要な速さ」以上の中で、いちばん高い画質が選ばれます。12Mbps は 8 以上・25 未満なので1080p です。止まるより画質を下げるほうを選びます。'},
-{t:'num',s:'B',sc:'夕方 17:10　ギガが心配',q:'ユウのギガは、残り 3GB で、月末まであと12日です。720p（1時間で約1.0GB）の動画を毎日同じ時間だけ見ます（ほかには使わないとします）。\n1日に何分まで見られますか。',unit:'分',a:15,
+{t:'num',s:'B',sc:'夕方 17:10　ギガが心配',q:'ユウのギガは、残り 3GB で、月末まであと12日です。720p（1時間で約1.0GB）の動画を毎日同じ時間だけ見ます（ほかには使わないとします）。\n1日に何分まで見られますか。',unit:'分',a:15,nums:[['3',3],['12',12],['1.0',1]],hint:'1日に使えるギガは「残りのギガ ÷ 日数」。1.0GB で60分見られることを使います。',
  e:'1日に使えるのは 3 ÷ 12 ＝ 0.25GB。1時間で1.0GBなので、0.25時間＝15分です。'},
 {t:'fill',s:'B',sc:'夕方 17:20　動画が止まった',q:'空らんをタップして、あてはまる言葉をうめなさい。',
  lines:['動画アプリは、先に数秒ぶんを受け取って {0} にためながら再生する。空になると「ぐるぐる」が出る。','家の光回線は速いのに、古いルーターが遅いので、ルーターが {1} になっている。','一度見たアイコンの画像は、スマホの {2} から出すので、受け取り直さない。','ゲームが「ラグい」ときは {3} を見る。行って帰ってくるまでの時間で、単位は ms。'],
@@ -563,7 +579,7 @@ const U=[
  rule:'ルーターも中継器も、出す強さは100。木の壁1枚で「半分」1回、コンクリートの壁1枚で「半分」4回（この問題では距離は考えません）。\n条件1：中継器が受ける強さが 25 以上（弱いと中継器が働けない）　条件2：中継器からユウの部屋に届く強さが 25 以上',
  spots:[['ア','ルーターのすぐ横',[],['wd','cn']],['イ','階段の上の廊下',['wd'],['wd']],['ウ','ユウの部屋のドアの前',['wd','cn'],[]],['エ','物置',['wd','wd'],['cn']]],a:1,
  e:'ア：受ける100、部屋まで半分5回で約3。イ：受ける50、部屋まで50 → 両方OK。ウ：受ける半分5回で約3、中継器が働けない。エ：受ける25、部屋まで半分4回で約6。中継器は「電波が届いている場所」と「使う部屋」の間に置きます。'},
-{t:'num',s:'C',sc:'夜 19:40　電波の強さ',q:'壁のない広い部屋で、ルーターから1mのところの電波の強さは64でした。\nルーターから4mのところでは、強さはいくつですか。',unit:'',a:4,
+{t:'num',s:'C',sc:'夜 19:40　電波の強さ',q:'壁のない広い部屋で、ルーターから1mのところの電波の強さは64でした。\nルーターから4mのところでは、強さはいくつですか。',unit:'',a:4,nums:[['64',64],['1',1],['4',4]],hint:'距離が2倍になると、強さは「半分が2回」で4分の1。まず距離が何倍になったかを考え、その数を2回かけた数で割ります。',
  e:'距離が4倍なので、強さは 4×4＝16分の1。64 ÷ 16 ＝ 4 です（距離が2倍で半分2回＝4分の1、4倍で半分4回＝16分の1）。'},
 {t:'match',s:'C',sc:'夜 19:50　2.4GHz と 5GHz',q:'ユウはルーターの設定画面を見ています。それぞれの特徴は、2.4GHz帯と5GHz帯のどちらですか。',
  cats:['2.4GHz帯','5GHz帯'],rows:[['遠くまで届きやすい',0],['壁や角を回り込みやすい',0],['速く、たくさん送れる',1],['電子レンジとぶつかりやすい',0],['波長が短い（約6cm）',1]],
@@ -574,7 +590,7 @@ const U=[
 {t:'match',s:'D',sc:'夜 21:10　本人確認',q:'あやしいメールを見て、ユウは本人確認を見直しました。それぞれ、本人確認の3つの種類のどれですか。',
  cats:['知っている','持っている','体'],rows:[['スマホのロックの4けたの暗証番号',0],['スマホに届く6けたの番号',1],['顔認証',2],['学生証のカードで開くドア',1],['パターンロック',0],['指紋',2]],
  e:'暗証番号とパターンロックは「知っている」、スマホに届く番号と学生証カードは「持っている」、顔と指紋は「体」です。二段階認証は、ちがう種類を2つ組み合わせます。'},
-{t:'step',s:'D',sc:'夜 21:20　パスワードの長さ',q:'ユウは、数字だけのパスワード（暗証番号）の長さを考えています。攻撃する側のコンピュータは、1秒に100億回ためせます。\n全部ためすのに1日（約86,400秒）以上かかるようにするには、いちばん短くて何けたにすればよいですか。＋と－で決めなさい。',min:4,max:20,start:8,a:15,
+{t:'step',s:'D',sc:'夜 21:20　パスワードの長さ',q:'ユウは、数字だけのパスワード（暗証番号）の長さを考えています。攻撃する側のコンピュータは、1秒に100億回ためせます。\n全部ためすのに1日（約86,400秒）以上かかるようにするには、いちばん短くて何けたにすればよいですか。＋と－で決めなさい。',min:4,max:20,start:8,a:15,nums:[['100億',10000000000],['86,400',86400]],hint:'数字10けたは100億通りで、ためすのに1秒。1けた増えるごとに、時間は10倍になります。電卓で 1 から ×10 を続けると、秒数の増え方が分かります。',
  e:'10けたで100億通りなので1秒。1けた増えるごとに10倍で、14けたは1万秒（約2.8時間）、15けたで10万秒（約28時間）となり、15けたで初めて1日をこえます。数字だけだと、ここまで長くしないと守れません。'},
 {t:'match',s:'F',sc:'夜 22:30　記録係になってみる',q:'ニュースで見たビットコインのしくみを、記録係になって確かめます。Aさんの残高は30、Bさんの残高は0です。取り引きが上から順に届きました。上から順に、ブロックに入れてよいかを判断しなさい。',
  cats:['入れる','入れない'],fixed:true,kind:'シミュレーション',rows:[['① Aさん → Bさん　10（Aさんのハンコ）',0],['② Aさん → Cさん　15（Aさんのハンコ）',0],['③ Aさん → Dさん　10（Aさんのハンコ）',1],['④ Bさん → Aさん　8（Bさんのハンコ）',0],['⑤ Aさん → Eさん　5（CさんがAさんのハンコをまねたもの）',1],['⑥ Aさん → Eさん　12（Aさんのハンコ）',0]],
@@ -590,7 +606,7 @@ const SCN=['E','A','B','C','D','F'];
 const SHORT={E:'電子マネー',A:'ネット',B:'速さ',C:'電波',D:'パスワード',F:'ビットコイン'};
 const UDEMO=/^#(demo|teacher|sensei)$/i.test(location.hash);
 const UKEY=UDEMO?'fukushu-test2-demo':'fukushu-test2-v1';
-let us={no:'',i:-1,ans:{},ord:{},sent:null,sending:false,warn:false,act:0};
+let us={no:'',i:-1,ans:{},ord:{},hint:{},sent:null,sending:false,warn:false,act:0};
 try{const s=JSON.parse(localStorage.getItem(UKEY)||'null');if(s)us=Object.assign(us,s,{sending:false,warn:false,act:0})}catch(e){}
 function uSave(){try{const {sending,warn,act,...o}=us;localStorage.setItem(UKEY,JSON.stringify(o))}catch(e){}}
 const uNum=v=>{const s=String(v??'').normalize('NFKC').replace(/[,\s]/g,'');return /^-?\d+(\.\d+)?$/.test(s)?Number(s):NaN};
@@ -624,7 +640,7 @@ function uChrome(){
   $('bar').style.width=on?(U.filter((_,k)=>uAnswered(k)).length/U.length*100)+'%':us.sent?'100%':'0';
 }
 function uDemo(){return UDEMO?`<div class="demo" style="background:#fff6dc;border:2px dashed #d9a400;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap">先生用デモ：何度でも受け直せます。生徒の記録とは別に保存します。<button class="hbtn" id="uReset">最初からやり直す</button></div>`:''}
-function uDemoBind(){const b=$('uReset');if(b)b.onclick=()=>{us={no:us.no,i:-1,ans:{},ord:{},sent:null,sending:false,warn:false,act:0};uSave();render()}}
+function uDemoBind(){const b=$('uReset');if(b)b.onclick=()=>{us={no:us.no,i:-1,ans:{},ord:{},hint:{},sent:null,sending:false,warn:false,act:0};uSave();render()}}
 function uRender(){
   uChrome();
   if(us.sending)return uSending();
@@ -680,8 +696,10 @@ function uBody(k){
 }
 function uQuestion(){
   const k=us.i,p=U[k];
-  $('card').innerHTML=uDemo()+`<div class="sec"><span class="lbl">第${k+1}問</span><span class="nm">${esc(p.sc)}</span><span class="tag k">${kindOf(p)}</span>${p.t==='tap'?'<span class="tag">すべて選ぶ</span>':''}<span class="hint">${esc(CH[p.s])}</span></div>
-   <div class="q2">${esc(p.q)}</div>${uBody(k)}
+  const top=`<div class="sec"><span class="lbl">第${k+1}問</span><span class="nm">${esc(p.sc)}</span><span class="tag k">${kindOf(p)}</span>${p.t==='tap'?'<span class="tag">すべて選ぶ</span>':''}<span class="hint">${esc(CH[p.s])}</span></div>
+   <div class="q2">${esc(p.q)}</div>${uBody(k)}`;
+  const calc=p.nums!=null;
+  $('card').innerHTML=uDemo()+(calc?`<div class="cq"><div class="cl">${top}${uHint(k)}</div><div class="calc" id="calc"></div></div>`:top)+`
    <div class="row"><button class="btn ghost" id="back" ${k===0?'disabled':''}>もどる</button><button class="btn" id="next">${k===U.length-1?'見直して提出へ':'次へ'}</button></div>`;
   const v=us.ans[k];
   if(p.t==='order')document.querySelectorAll('.ordl .opt').forEach(b=>b.onclick=()=>{const n=+b.dataset.n,a=Array.isArray(v)?v:[];uSet(k,a.includes(n)?a.filter(x=>x!==n):[...a,n])});
@@ -695,8 +713,50 @@ function uQuestion(){
   if(p.t==='spot')document.querySelectorAll('.spot').forEach(b=>b.onclick=()=>uSet(k,+b.dataset.j));
   if(p.t==='tap')document.querySelectorAll('.mail .opt,.blk').forEach(b=>b.onclick=()=>{const j=+b.dataset.j,a=Array.isArray(v)?v:[];uSet(k,a.includes(j)?a.filter(x=>x!==j):[...a,j])});
   if(p.t==='step'){const n=v??p.start;$('sm').onclick=()=>uSet(k,Math.max(p.min,n-1));$('sp').onclick=()=>uSet(k,Math.min(p.max,n+1))}
+  if(calc){calRender();bindHint(k)}
   const go=d=>{us.i+=d;us.act=0;uSave();render()};
   $('back').onclick=()=>go(-1);$('next').onclick=()=>go(1);uDemoBind();
+}
+
+// ===== 計算問題の電卓とヒント =====
+// 問題に出てくる数をボタンで入れられる。式は × ÷ を先に計算する（ふつうの電卓と同じ）。eval は使わない
+function uHint(k){const p=U[k];if(!p.hint)return '';
+  return us.hint[k]?`<div class="hbox"><b>ヒント</b>　${esc(p.hint)}</div>`:`<div><button class="hbtn" id="hintBtn">ヒントを見る</button></div>`}
+function bindHint(k){const b=$('hintBtn');if(b)b.onclick=()=>{us.hint[k]=1;uSave();b.parentNode.outerHTML=`<div class="hbox"><b>ヒント</b>　${esc(U[k].hint)}</div>`}}
+let cal={k:-1,ex:'',res:null,tape:[]};
+function calcEval(ex){ // 数・＋－×÷・かっこ
+  const t=ex.match(/\d+(?:\.\d+)?|[+\-×÷()]/g)||[];if(t.join('')!==ex)throw 0;let i=0;
+  const num=()=>{const x=t[i++];if(x==='('){const v=sum();if(t[i++]!==')')throw 0;return v}if(x==='-')return -num();if(x==null||!/^\d/.test(x))throw 0;return Number(x)};
+  const mul=()=>{let v=num();while(t[i]==='×'||t[i]==='÷'){const o=t[i++],w=num();if(o==='÷'&&w===0)throw 0;v=o==='×'?v*w:v/w}return v};
+  const sum=()=>{let v=mul();while(t[i]==='+'||t[i]==='-'){const o=t[i++],w=mul();v=o==='+'?v+w:v-w}return v};
+  if(!t.length)throw 0;const v=sum();if(i!==t.length||!isFinite(v))throw 0;return Number(v.toPrecision(12))}
+const calcFmt=v=>v.toLocaleString('ja-JP',{maximumFractionDigits:10});
+const calcShow=ex=>ex.replace(/\d+(?:\.\d+)?/g,m=>{const [a,b]=m.split('.');return Number(a).toLocaleString('ja-JP')+(b!=null?'.'+b:'')}).replace(/-/g,'−');
+function calKey(key){
+  const op='+-×÷';
+  if(key==='C'){cal.ex='';cal.res=null;return}
+  if(key==='←'){cal.ex=cal.ex.slice(0,-1);cal.res=null;return}
+  if(key==='='){if(!cal.ex)return;try{const v=calcEval(cal.ex);cal.tape=[`${calcShow(cal.ex)} ＝ ${calcFmt(v)}`,...cal.tape].slice(0,3);cal.res=v;cal.ex=''}catch(e){cal.res='エラー';cal.ex=''}return}
+  if(typeof cal.res==='number'&&!cal.ex&&op.includes(key))cal.ex=String(cal.res); // 答えの続きに計算を足せる
+  cal.res=null;
+  if(op.includes(key)&&op.includes(cal.ex.slice(-1))&&key!=='-')cal.ex=cal.ex.slice(0,-1);
+  cal.ex+=key;
+}
+function calRender(){
+  const k=us.i,p=U[k],box=$('calc');if(!box)return;
+  if(cal.k!==k)cal={k,ex:'',res:null,tape:[]};
+  const main=cal.res!=null?(cal.res==='エラー'?'エラー':calcFmt(cal.res)):cal.ex?calcShow(cal.ex):'0';
+  const keys=['C','←','(',')','7','8','9','÷','4','5','6','×','1','2','3','-','0','.','=','+'];
+  box.innerHTML=`<div class="ctitle">電卓（問題の数はボタンで入れられます）</div>
+   <div class="cnums">${p.nums.map((n,j)=>`<button class="ck cn" data-n="${j}">${esc(n[0])}</button>`).join('')}</div>
+   <div class="cdisp"><div class="cex">${esc(cal.tape[0]||'')}</div><div class="cmain" id="cmain">${esc(main)}</div></div>
+   <div class="ckeys">${keys.map(x=>`<button class="ck ${'+-×÷'.includes(x)?'op':''} ${x==='='?'eq':''}" data-k="${x}">${x==='-'?'−':x}</button>`).join('')}</div>
+   ${p.t==='num'?`<button class="hbtn" id="toAns" ${typeof cal.res==='number'?'':'disabled'}>この数を答えの欄に入れる</button>`:''}
+   <div class="ctape">${cal.tape.slice(1).map(esc).join('<br>')}</div>`;
+  box.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{calKey(b.dataset.k);calRender()});
+  box.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const v=String(p.nums[+b.dataset.n][1]);
+    if(cal.res!=null){cal.ex='';cal.res=null}if(/[\d.)]$/.test(cal.ex))cal.ex+='×';cal.ex+=v;calRender()});
+  const ta=$('toAns');if(ta)ta.onclick=()=>{const ni=$('ni');ni.value=String(cal.res);us.ans[k]=ni.value;uSave();uChrome()};
 }
 function uConfirm(){
   const left=U.map((_,k)=>k).filter(k=>!uAnswered(k));
@@ -741,7 +801,7 @@ function uDone(){
    <div class="row"><button class="btn" id="tomenu">メニューへ</button></div>
    <div class="q" style="font-size:18px">答え合わせ</div>
    ${U.map((p,k)=>{const c=uCorrect(k);return `<div class="rv"><div class="h"><span class="mark ${c?'o':'x'}">${c?'○':'×'}</span><span>第${k+1}問（${esc(kindOf(p))}）　${esc(p.q.split('\n')[0])}</span></div>
-     ${uReview(k)}<div class="e pt">${esc(p.e)}</div></div>`}).join('')}`;
+     ${uReview(k)}${us.hint&&us.hint[k]?'<div class="pt hint">（ヒントを見た）</div>':''}<div class="e pt">${esc(p.e)}</div></div>`}).join('')}`;
   $('tomenu').onclick=()=>setMode('menu');uDemoBind();
 }
 render();
