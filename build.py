@@ -20,6 +20,7 @@
   キャッシュレス商店.html → shop/index.html （同上。電子マネー単元の経営ゲーム：店ごとに決済を選ぶ）
   決済をえらぶ.html   → emoney2/index.html（同上。電子マネー②：商店のふりかえり・トレードオフ・設計ワーク）
   ふりかえり演習.html  → review1/index.html（同上。コンピュータシステム技術 6回分の復習演習。仮想通貨・電子マネーを含む）
+  小テスト第2回導入.html → review1/intro.html（同上。小テスト第2回の前に映す導入スライド。N キーで先生用メモ）
   制御クイズ100.html   → seigyo100/index.html（同上。電子計測制御の5択150問）
   制御クイズ導入.html   → seigyo100/intro.html（同上。授業冒頭の導入スライド）
 
@@ -151,7 +152,8 @@ print("生成: emoney2/index.html")
 # 1n) ふりかえり演習（TCP/IP・通信速度・電波・パスワード・電子マネーの復習。用語・選択・記述）
 os.makedirs("review1", exist_ok=True)
 shutil.copyfile("ふりかえり演習.html", "review1/index.html")
-print("生成: review1/index.html")
+shutil.copyfile("小テスト第2回導入.html", "review1/intro.html")
+print("生成: review1/index.html, review1/intro.html")
 
 # 1o) サトシ・ナカモト事件ファイル（ブロックチェーン・マイニングの体験スライド）
 os.makedirs("bitcoin", exist_ok=True)

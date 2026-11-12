@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>小テスト第2回 導入</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@700;900&display=swap">
+<style>
+/* レイアウト: 制御クイズの導入と同じ 4:3 固定ステージ（1024x768）。左が本体、右が用語欄。手順や注意は口頭で（N キーで先生用メモ）
+   色は小テスト本体（ふりかえり演習）とそろえる。ライトモード固定 */
+:root{
+  --bg:#eef2f6; --paper:#ffffff; --ink:#1c2836; --sub:#5b6876; --line:#d5dde6;
+  --accent:#2a5fc4; --accent-soft:#e3ebfa; --ok:#1d7f55; --ok-soft:#e1f3ea; --warm:#c7741f; --warm-soft:#fff3e2; --panel:#f3f6f9;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-head:"Zen Maru Gothic","BIZ UDPGothic","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body)}
+#vp{position:relative;width:100%;height:100%;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1024px;height:768px;background:var(--paper);border-radius:6px;display:flex;flex-direction:column;overflow:hidden;transform:translate(-50%,-50%)}
+.slide{display:none;flex:1;flex-direction:column;min-height:0}
+.slide.on{display:flex}
+.slide>header{display:flex;align-items:baseline;gap:14px;padding:22px 28px 8px}
+.slide>header .no{font-weight:700;color:var(--accent);font-size:18px;font-variant-numeric:tabular-nums}
+.slide>header h2{margin:0;font-family:var(--f-head);font-weight:900;font-size:30px}
+.body{flex:1;min-height:0;display:flex;gap:16px;padding:6px 28px 14px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.gloss{width:210px;flex:none;background:var(--panel);border-radius:8px;padding:14px 16px;font-size:14px;line-height:1.6}
+.gloss h3{margin:0 0 8px;font-size:12px;letter-spacing:.15em;color:var(--sub)}
+.gloss dt{font-weight:700;color:var(--accent);margin-top:10px}
+.gloss dt:first-of-type{margin-top:0}
+.gloss dd{margin:2px 0 0}
+.msg{font-size:24px;font-weight:700;line-height:1.5;margin:0}
+/* 表紙 */
+.title-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 64px;gap:16px}
+.title-wrap .tag{color:var(--accent);font-weight:700;letter-spacing:.08em}
+.title-wrap h1{font-family:var(--f-head);font-weight:900;font-size:64px;line-height:1.25;margin:0}
+.title-wrap p{font-size:24px;margin:0;color:var(--sub)}
+.sun{display:flex;gap:10px;margin-top:18px}
+.sun span{flex:1;height:10px;border-radius:5px;background:var(--line)}
+@media (prefers-reduced-motion:no-preference){.slide.on .sun span{animation:day 6s infinite}.sun span:nth-child(2){animation-delay:.6s!important}.sun span:nth-child(3){animation-delay:1.2s!important}.sun span:nth-child(4){animation-delay:1.8s!important}.sun span:nth-child(5){animation-delay:2.4s!important}.sun span:nth-child(6){animation-delay:3s!important}}
+@keyframes day{0%,10%{background:var(--line)}20%,70%{background:var(--accent)}90%,100%{background:var(--line)}}
+/* ユウの1日 */
+.day{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;flex:1;min-height:0}
+.scene{border:2px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--paper)}
+.scene .tm{font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}
+.scene .pl{font-family:var(--f-head);font-weight:900;font-size:22px}
+.scene .ic{height:70px;display:flex;align-items:center}
+.scene .ic svg{height:64px;width:auto}
+.scene .ch{margin-top:auto;font-size:14px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:3px 8px;align-self:flex-start}
+@media (prefers-reduced-motion:no-preference){.slide.on .scene{animation:lit 9s infinite}
+  .scene:nth-child(2){animation-delay:1.5s!important}.scene:nth-child(3){animation-delay:3s!important}.scene:nth-child(4){animation-delay:4.5s!important}.scene:nth-child(5){animation-delay:6s!important}.scene:nth-child(6){animation-delay:7.5s!important}}
+@keyframes lit{0%,2%{border-color:var(--line)}6%,16%{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}20%,100%{border-color:var(--line);box-shadow:none}}
+/* 答え方：6つの小さな見本が動く */
+.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1;min-height:0}
+.way{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:#fbfcfe;min-height:0;overflow:hidden}
+.way h3{margin:0;font-family:var(--f-head);font-size:21px;font-weight:900}
+.way>*:not(h3):not(.s){zoom:1.25} /* 見本の画面を、プロジェクターで見える大きさにする */
+.way{justify-content:flex-start;gap:8px}
+.way .s{font-size:13px;color:var(--sub);margin:-4px 0 2px}
+.chip{display:flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:7px;padding:3px 8px;font-size:13px;background:#fff}
+.badge{width:20px;height:20px;border-radius:50%;border:2px dashed var(--line);flex:none;display:grid;place-items:center;font-size:12px;font-weight:900;color:#fff;position:relative}
+.badge::after{content:attr(data-n);opacity:0}
+.seg{display:flex;gap:3px;margin-left:auto}
+.seg i{font-style:normal;font-size:12px;border:2px solid var(--line);border-radius:5px;padding:1px 6px;background:#fff}
+.row2{display:flex;align-items:center;font-size:13px;gap:6px}
+.blank{display:inline-block;min-width:70px;border:2px dashed var(--sub);border-radius:6px;padding:0 6px;font-weight:700;text-align:center;position:relative;height:22px;vertical-align:middle}
+.blank b{opacity:0}
+.words{display:flex;gap:4px;flex-wrap:wrap}
+.words i{font-style:normal;font-size:12px;border:2px solid var(--line);border-radius:6px;padding:1px 7px;background:#fff}
+.calc{display:grid;grid-template-columns:1fr;gap:5px}
+.cdisp{border:1px solid var(--line);border-radius:6px;background:#fff;text-align:right;padding:2px 8px;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;position:relative;height:30px;overflow:hidden}
+.cdisp span{position:absolute;right:8px;top:2px;opacity:0}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.keys i{font-style:normal;font-size:11px;text-align:center;border:1px solid var(--line);border-radius:4px;background:#fff;padding:2px 0}
+.hintb{font-size:12px;background:var(--warm-soft);border:1px solid #e9c46a;border-radius:6px;padding:3px 7px}
+.spots{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.spot{border:2px solid var(--line);border-radius:7px;padding:4px 6px;font-size:12px;background:#fff}
+.spot .w{display:inline-block;width:6px;height:13px;border-radius:1px;vertical-align:middle;margin:0 1px}
+.wd{background:#b9824b}.cn{background:#8a9099}
+.mail{display:flex;flex-direction:column;gap:3px}
+.mail .chip{border-style:dashed;font-size:12px}
+.boxm{width:14px;height:14px;border:2px solid var(--sub);border-radius:3px;flex:none}
+/* 動き（くり返し） */
+@media (prefers-reduced-motion:no-preference){
+  .slide.on .o1 .badge{animation:bdg 8s infinite}
+  .slide.on .o1 .badge::after{animation:bdgt 8s infinite}
+  .o1 .chip:nth-child(1) .badge,.o1 .chip:nth-child(1) .badge::after{animation-delay:1.2s!important}
+  .o1 .chip:nth-child(2) .badge,.o1 .chip:nth-child(2) .badge::after{animation-delay:.4s!important}
+  .o1 .chip:nth-child(3) .badge,.o1 .chip:nth-child(3) .badge::after{animation-delay:2s!important}
+  .slide.on .m1 .on{animation:pick 8s infinite}
+  .m1 .row2:nth-child(2) .on{animation-delay:.9s!important}.m1 .row2:nth-child(3) .on{animation-delay:1.8s!important}
+  .slide.on .f1 .blank{animation:fill 8s infinite}.slide.on .f1 .blank b{animation:showb 8s infinite}.slide.on .f1 .words .on{animation:pick 8s infinite}
+  .slide.on .c1 .cdisp .e{animation:s1 8s infinite}.slide.on .c1 .cdisp .r{animation:s2 8s infinite}.slide.on .c1 .hintb{animation:showb 8s infinite}
+  .slide.on .p1 .spot.on{animation:pick 8s infinite;animation-delay:1s}
+  .slide.on .t1 .on{animation:pick 8s infinite}.slide.on .t1 .on .boxm{animation:pickbox 8s infinite}
+  .t1 .chip:nth-child(3).on,.t1 .chip:nth-child(3).on .boxm{animation-delay:1s!important}
+}
+@media (prefers-reduced-motion:reduce){
+  .o1 .badge{background:var(--accent);border:none}.o1 .badge::after{opacity:1}
+  .m1 .on,.f1 .words .on,.p1 .spot.on,.t1 .on{border-color:var(--accent);background:var(--accent-soft)}
+  .f1 .blank{border-style:solid;border-color:var(--accent)}.f1 .blank b{opacity:1}
+  .c1 .cdisp .r,.c1 .hintb{opacity:1}
+}
+@keyframes bdg{0%,20%{background:transparent;border:2px dashed var(--line)}26%,88%{background:var(--accent);border:2px solid var(--accent)}96%,100%{background:transparent;border:2px dashed var(--line)}}
+@keyframes bdgt{0%,20%{opacity:0}26%,88%{opacity:1}96%,100%{opacity:0}}
+@keyframes pick{0%,20%{border-color:var(--line);background:#fff}26%,88%{border-color:var(--accent);background:var(--accent-soft)}96%,100%{border-color:var(--line);background:#fff}}
+@keyframes pickbox{0%,20%{background:transparent}26%,88%{background:var(--accent);border-color:var(--accent)}96%,100%{background:transparent}}
+@keyframes fill{0%,30%{border-style:dashed;border-color:var(--sub)}36%,88%{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}96%,100%{border-style:dashed;border-color:var(--sub);background:transparent}}
+@keyframes showb{0%,30%{opacity:0}36%,88%{opacity:1}96%,100%{opacity:0}}
+@keyframes s1{0%,8%{opacity:0}12%,40%{opacity:1}46%,100%{opacity:0}}
+@keyframes s2{0%,46%{opacity:0}50%,88%{opacity:1}96%,100%{opacity:0}}
+/* 提出まで */
+.flow{display:flex;align-items:stretch;gap:8px}
+.flow .st{flex:1;border:2px solid var(--line);border-radius:12px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:#fff}
+.flow .st b{font-family:var(--f-head);font-size:18px;white-space:nowrap}
+.flow .ar{align-self:center;color:var(--sub);font-size:18px}
+.flow .big{font-size:24px;font-weight:900;letter-spacing:.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.flow .st{padding:12px 6px!important;min-width:0}
+.flow .done{white-space:nowrap;font-size:17px!important}
+.flow .send{background:var(--accent);color:#fff;border-radius:8px;padding:6px 14px;font-weight:700}
+.flow .done{color:var(--ok);font-family:var(--f-head);font-weight:900;font-size:22px}
+.flow .one{font-size:13px;font-weight:700;color:var(--warm);background:var(--warm-soft);border-radius:6px;padding:2px 8px}
+.flow .lock{font-size:30px}
+@media (prefers-reduced-motion:no-preference){.slide.on .flow .st{animation:lit2 10s infinite}
+  .flow .st:nth-of-type(2){animation-delay:2s!important}.flow .st:nth-of-type(3){animation-delay:4s!important}.flow .st:nth-of-type(4){animation-delay:6s!important}.flow .st:nth-of-type(5){animation-delay:8s!important}}
+@keyframes lit2{0%,2%{border-color:var(--line)}5%,18%{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}22%,100%{border-color:var(--line);box-shadow:none}}
+.keep{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.keep div{background:var(--panel);border-radius:10px;padding:14px;font-size:18px;font-weight:700;line-height:1.5}
+.keep div span{display:block;font-size:14px;font-weight:400;color:var(--sub);margin-top:4px}
+/* URL */
+.url{display:flex;gap:28px;align-items:center;flex:1;min-height:0}
+.url .code{width:360px;height:360px;flex:none;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px}
+.url .code svg{width:100%;height:100%;display:block}
+.url .addr{font-size:21px;line-height:1.5;word-break:break-all;margin:0;font-variant-numeric:tabular-nums}
+.url .menu{margin-top:18px;display:inline-flex;flex-direction:column;gap:4px;border:2px solid var(--accent);border-radius:12px;padding:10px 16px}
+.url .menu b{font-family:var(--f-head);font-size:22px;color:var(--accent)}
+nav{display:flex;align-items:center;justify-content:space-between;padding:8px 18px;border-top:1px solid var(--line);font-size:14px;color:var(--sub)}
+nav button{font:inherit;font-weight:700;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 16px;cursor:pointer}
+nav button:disabled{opacity:.4;cursor:default}
+.dots{display:flex;gap:7px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--accent)}
+#note{position:absolute;left:16px;right:16px;bottom:58px;background:#1c2836f2;color:#fff;border-radius:8px;padding:14px 18px;font-size:17px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="vp"><div id="stage">
+
+<section class="slide on" data-note="今日は小テスト第2回です。第1回は用語と選択でしたが、今回は、これまで習ったことを「使う」問題です。高校生ユウの1日を追いかけながら解いていきます。">
+  <div class="title-wrap">
+    <div class="tag">コンピュータシステム技術 ／ 小テスト第2回</div>
+    <h1>ユウの1日</h1>
+    <p>6回の授業を、1日の中で使ってみよう</p>
+    <div class="sun" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+</section>
+
+<section class="slide" data-note="朝の駅の改札から、寝る前のニュースまで。場面ごとに、どの授業の内容を使うかが決まっています。電子マネー、ネット、速さ、電波、パスワード、ビットコイン。6回の授業が全部出てきます。">
+  <header><span class="no">01</span><h2>ユウの1日</h2></header>
+  <div class="body"><div class="main">
+    <div class="day">
+      <div class="scene"><span class="tm">朝 7:40</span><span class="pl">駅の改札</span>
+        <span class="ic"><svg viewBox="0 0 80 60" aria-hidden="true"><rect x="6" y="14" width="30" height="40" rx="4" fill="#d5dde6"/><rect x="44" y="14" width="30" height="40" rx="4" fill="#d5dde6"/><rect x="30" y="4" width="20" height="28" rx="3" fill="#2a5fc4"/><path d="M36 12h8M36 18h8" stroke="#fff" stroke-width="2"/></svg></span>
+        <span class="ch">残高はどこにある？</span></div>
+      <div class="scene"><span class="tm">昼 12:30</span><span class="pl">教室でトーク</span>
+        <span class="ic"><svg viewBox="0 0 80 60" aria-hidden="true"><rect x="4" y="8" width="44" height="26" rx="10" fill="#2a5fc4"/><path d="M14 34l-4 10 14-10z" fill="#2a5fc4"/><rect x="34" y="28" width="42" height="24" rx="10" fill="#d5dde6"/><path d="M14 21h24" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
+        <span class="ch">メッセージが届くまで</span></div>
+      <div class="scene"><span class="tm">夕方 16:50</span><span class="pl">帰りの電車で動画</span>
+        <span class="ic"><svg viewBox="0 0 80 60" aria-hidden="true"><rect x="22" y="2" width="36" height="56" rx="6" fill="#1c2836"/><rect x="26" y="10" width="28" height="36" rx="2" fill="#e3ebfa"/><path d="M36 20v16l12-8z" fill="#2a5fc4"/></svg></span>
+        <span class="ch">速い・遅いの正体</span></div>
+      <div class="scene"><span class="tm">夜 19:30</span><span class="pl">家のWi-Fi</span>
+        <span class="ic"><svg viewBox="0 0 80 60" aria-hidden="true"><path d="M10 26a42 42 0 0 1 60 0" stroke="#3b6fd6" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M20 36a28 28 0 0 1 40 0" stroke="#e98a2b" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M30 46a14 14 0 0 1 20 0" stroke="#d73a2a" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="40" cy="54" r="4" fill="#1c2836"/></svg></span>
+        <span class="ch">電波はどこまで届くか</span></div>
+      <div class="scene"><span class="tm">夜 21:00</span><span class="pl">あやしいメール</span>
+        <span class="ic"><svg viewBox="0 0 80 60" aria-hidden="true"><rect x="8" y="10" width="56" height="40" rx="5" fill="#d5dde6"/><path d="M8 14l28 20 28-20" stroke="#5b6876" stroke-width="3" fill="none"/><circle cx="64" cy="14" r="12" fill="#c7741f"/><path d="M64 7v9M64 20v1" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
+        <span class="ch">パスワードは何秒で破られる？</span></div>
+      <div class="scene"><span class="tm">夜 22:30</span><span class="pl">ニュースのビットコイン</span>
+        <span class="ic"><svg viewBox="0 0 80 60" aria-hidden="true"><rect x="2" y="18" width="20" height="24" rx="3" fill="#d5dde6"/><rect x="30" y="18" width="20" height="24" rx="3" fill="#d5dde6"/><rect x="58" y="18" width="20" height="24" rx="3" fill="#d5dde6"/><path d="M22 30h8M50 30h8" stroke="#2a5fc4" stroke-width="4"/></svg></span>
+        <span class="ch">サトシ・ナカモト事件ファイル</span></div>
+    </div>
+  </div>
+  <aside class="gloss"><h3>用語</h3><dl>
+    <dt>小テスト第1回</dt><dd>用語と選択の30問でした。</dd>
+    <dt>小テスト第2回</dt><dd>習ったことを、場面の中で使う20問です。</dd>
+  </dl></aside></div>
+</section>
+
+<section class="slide" data-note="答え方は6種類です。どれもタップで答えます。並べかえは、1番目から順にタップ。組み合わせは、行ごとに1つ選びます。穴うめは、空らんをタップしてから言葉をタップ。計算の問題には電卓とヒントがあります。ヒントは押したときだけ出ます。シミュレーションは、条件に合う場所を選びます。見つけるは、あてはまるものを全部タップします。">
+  <header><span class="no">02</span><h2>答え方は6種類</h2></header>
+  <div class="body"><div class="main">
+    <div class="ways">
+      <div class="way o1"><h3>並べかえ</h3><p class="s">起きる順にタップ</p>
+        <div class="chip"><span class="badge" data-n="2"></span>パケットに分ける</div>
+        <div class="chip"><span class="badge" data-n="1"></span>DNSで調べる</div>
+        <div class="chip"><span class="badge" data-n="3"></span>ルーターが運ぶ</div></div>
+      <div class="way m1"><h3>組み合わせ</h3><p class="s">行ごとに1つ選ぶ</p>
+        <div class="row2">メッセージ<span class="seg"><i class="on">TCP</i><i>UDP</i></span></div>
+        <div class="row2">ビデオ通話<span class="seg"><i>TCP</i><i class="on">UDP</i></span></div>
+        <div class="row2">写真を送る<span class="seg"><i class="on">TCP</i><i>UDP</i></span></div></div>
+      <div class="way f1"><h3>穴うめ</h3><p class="s">空らん → 言葉の順にタップ</p>
+        <div style="font-size:13px;line-height:1.9">先に数秒ぶんを <span class="blank"><b>バッファ</b></span> にためる</div>
+        <div class="words"><i>キャッシュ</i><i class="on">バッファ</i><i>ping</i></div></div>
+      <div class="way c1"><h3>計算</h3><p class="s">電卓とヒントがある</p>
+        <div class="calc"><div class="cdisp"><span class="e">3,000÷5</span><span class="r">600</span></div>
+          <div class="keys"><i>7</i><i>8</i><i>9</i><i>÷</i><i>4</i><i>5</i><i>6</i><i>×</i></div></div>
+        <div class="hintb">ヒント：1台あたり何人？</div></div>
+      <div class="way p1"><h3>シミュレーション</h3><p class="s">条件に合う場所を選ぶ</p>
+        <div class="spots"><div class="spot">ア<br><span class="w cn"></span><span class="w wd"></span></div><div class="spot on">イ<br><span class="w wd"></span></div><div class="spot">ウ<br><span class="w cn"></span></div></div>
+        <div style="font-size:12px;color:var(--sub)"><span class="w wd" style="display:inline-block;width:6px;height:12px;vertical-align:middle"></span> 木の壁　<span class="w cn" style="display:inline-block;width:6px;height:12px;vertical-align:middle"></span> コンクリート</div></div>
+      <div class="way t1"><h3>見つける</h3><p class="s">あてはまるものを全部</p>
+        <div class="mail"><div class="chip on"><span class="boxm"></span>差出人 …@mirai-1d</div><div class="chip"><span class="boxm"></span>受信 21:03</div><div class="chip on"><span class="boxm"></span>【至急】24時間以内</div></div></div>
+    </div>
+  </div>
+  <aside class="gloss"><h3>用語</h3><dl>
+    <dt>並べかえ</dt><dd>起きる順番に番号をつけます。</dd>
+    <dt>組み合わせ</dt><dd>左の言葉に合うものを右から選びます。</dd>
+    <dt>シミュレーション</dt><dd>実際に置いたり動かしたりして確かめることです。</dd>
+  </dl></aside></div>
+</section>
+
+<section class="slide" data-note="出席番号を4けたで入れて始めます。答えはあとから変えられ、とばしてもかまいません。最後に確認の画面が出るので、まだの問題がないか見てから「提出する」を押します。提出は1回だけです。正解と解説は、提出したあとに見られます。並べかえ・組み合わせ・穴うめは、全部合って1点です。">
+  <header><span class="no">03</span><h2>はじめから提出まで</h2></header>
+  <div class="body"><div class="main">
+    <div class="flow" style="flex:1;align-items:center">
+      <div class="st"><b>出席番号</b><span class="big">0000</span><span style="font-size:13px;color:var(--sub)">4けた</span></div>
+      <span class="ar">→</span>
+      <div class="st"><b>20問</b><span class="big" style="font-size:22px">朝 → 夜</span></div>
+      <span class="ar">→</span>
+      <div class="st"><b>確認</b><span class="big" style="font-size:22px">20 / 20</span></div>
+      <span class="ar">→</span>
+      <div class="st"><b>提出</b><span class="send">提出する</span><span class="one">1回だけ</span></div>
+      <span class="ar">→</span>
+      <div class="st"><b>答え合わせ</b><span class="done">提出しました</span></div>
+    </div>
+  </div>
+  <aside class="gloss"><h3>用語</h3><dl>
+    <dt>出席番号</dt><dd>4けたの数字で入れます。</dd>
+    <dt>提出</dt><dd>答えを出すことです。1回だけで、あとから変えられません。</dd>
+  </dl></aside></div>
+</section>
+
+<section class="slide" data-note="Chromebook のカメラで読むか、Classroom のリンクから開きます。メニューの「小テスト第2回」を選びます。第1回やふりかえり演習とまちがえないように。">
+  <header><span class="no">04</span><h2>はじめよう</h2></header>
+  <div class="body"><div class="main">
+    <div class="url">
+      <div class="code" role="img" aria-label="小テストのURLのQRコード"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37"><path stroke="#000" d="M2 2.5h7m4 0h3m2 0h6m1 0h1m2 0h7m-33 1h1m5 0h1m3 0h2m1 0h5m4 0h1m1 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h3m1 0h2m1 0h1m1 0h6m1 0h1m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h1m1 0h1m2 0h2m5 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h3m1 0h2m1 0h1m2 0h1m2 0h3m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h1m1 0h2m1 0h5m2 0h3m3 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m2 0h1m2 0h2m5 0h2m-23 1h1m1 0h5m3 0h1m1 0h2m1 0h1m1 0h1m4 0h1m3 0h5m-30 1h1m1 0h3m2 0h1m2 0h2m3 0h1m1 0h2m1 0h1m1 0h1m2 0h2m1 0h2m1 0h1m-31 1h2m2 0h3m1 0h1m4 0h1m2 0h1m1 0h2m2 0h3m1 0h1m1 0h2m-31 1h1m1 0h1m4 0h1m1 0h3m1 0h1m1 0h1m3 0h3m2 0h2m1 0h4m-32 1h1m1 0h3m1 0h1m3 0h1m7 0h1m5 0h2m1 0h3m2 0h1m-33 1h1m1 0h1m2 0h1m2 0h1m2 0h1m2 0h4m2 0h1m2 0h1m1 0h3m1 0h1m1 0h2m-33 1h1m1 0h2m1 0h2m2 0h1m2 0h2m4 0h2m2 0h1m2 0h2m2 0h1m1 0h1m-32 1h1m2 0h2m3 0h1m1 0h1m2 0h2m1 0h1m2 0h3m2 0h3m2 0h2m-30 1h2m3 0h1m1 0h5m4 0h1m1 0h1m3 0h3m1 0h3m2 0h1m-33 1h1m6 0h4m1 0h1m4 0h1m1 0h2m2 0h1m1 0h3m1 0h4m-33 1h1m3 0h6m2 0h4m1 0h1m2 0h1m1 0h1m4 0h2m1 0h2m-30 1h1m1 0h2m1 0h1m3 0h1m1 0h1m3 0h3m1 0h4m1 0h7m-31 1h2m2 0h1m1 0h1m1 0h7m2 0h3m2 0h2m2 0h2m2 0h1m-33 1h2m2 0h2m4 0h1m1 0h1m2 0h1m2 0h1m4 0h1m2 0h1m2 0h2m1 0h1m-33 1h1m1 0h1m3 0h1m1 0h1m2 0h1m2 0h3m3 0h3m1 0h1m3 0h4m-32 1h1m1 0h3m3 0h3m1 0h1m2 0h1m2 0h1m2 0h3m1 0h8m-33 1h1m1 0h2m2 0h4m1 0h1m1 0h3m1 0h1m4 0h1m1 0h5m2 0h2m-25 1h4m4 0h1m1 0h4m1 0h2m3 0h1m1 0h1m1 0h1m-33 1h7m2 0h3m3 0h2m1 0h1m1 0h2m1 0h2m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h2m2 0h2m1 0h2m3 0h2m1 0h2m3 0h5m-33 1h1m1 0h3m1 0h1m1 0h1m3 0h2m1 0h1m2 0h1m2 0h1m2 0h6m1 0h2m-33 1h1m1 0h3m1 0h1m1 0h1m2 0h1m3 0h3m2 0h1m4 0h1m2 0h1m3 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h3m3 0h2m1 0h3m2 0h2m1 0h2m-31 1h1m5 0h1m4 0h4m1 0h1m1 0h4m1 0h1m1 0h1m2 0h3m-31 1h7m1 0h4m1 0h2m1 0h2m1 0h2m1 0h4m1 0h1m3 0h1"/></svg></div>
+      <div>
+        <p class="msg" style="margin-bottom:14px">読み取って、メニューから選びます。</p>
+        <p class="addr">https://snsdpen-luke.github.io/<br>kyouiku/review1/</p>
+        <div class="menu"><span style="font-size:13px;color:var(--sub)">メニュー</span><b>小テスト第2回</b></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div id="note" hidden></div>
+<nav><button id="prev">← 前へ</button><div class="dots" id="dots"></div><span><span id="pg"></span> <button id="next">次へ →</button></span></nav>
+</div></div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const vp=$('vp'),stage=$('stage'),slides=[...document.querySelectorAll('.slide')];
+const fit=()=>{const s=Math.min(vp.clientWidth/1024,vp.clientHeight/768);stage.style.transform='translate(-50%,-50%) scale('+s+')'};
+addEventListener('resize',fit);fit();
+let cur=0;
+$('dots').innerHTML=slides.map(()=>'<i></i>').join('');
+const dots=[...$('dots').children];
+function go(i){cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('on',k===cur));
+  dots.forEach((d,k)=>d.classList.toggle('on',k===cur));
+  $('pg').textContent=(cur+1)+' / '+slides.length;
+  $('prev').disabled=cur===0;$('next').disabled=cur===slides.length-1;
+  $('note').textContent=slides[cur].dataset.note}
+$('prev').onclick=()=>go(cur-1);$('next').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  if(e.key==='n'||e.key==='N')$('note').hidden=!$('note').hidden});
+go(0);
+})();
+</script>
+</body>
+</html>

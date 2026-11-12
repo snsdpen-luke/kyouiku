@@ -49,7 +49,7 @@
 | Arduino 教材 2回目 | <https://snsdpen-luke.github.io/kyouiku/arduino/src/arduino-kyozai-2.html> （課題21〜31・ジョイスティック・レポート） |
 | 決済をえらぶ | <https://snsdpen-luke.github.io/kyouiku/emoney2/> |
 | 電子計測制御 後期中間考査 出題範囲 | <https://snsdpen-luke.github.io/kyouiku/seigyo100/> （電子計測制御の5択150問の練習と、語群で答える小テスト50点満点〔5ステージ×8問・各4分＋ボス10問・5分、出席番号つき〕。導入スライドは `seigyo100/intro.html`。N キーで先生用メモ） |
-| ふりかえり演習 | <https://snsdpen-luke.github.io/kyouiku/review1/> （コンピュータシステム技術 6回分の復習。メニューから、ふりかえり演習100問と小テスト30問（出席番号4けた・ダミーの提出）を選ぶ） |
+| ふりかえり演習 | <https://snsdpen-luke.github.io/kyouiku/review1/> （コンピュータシステム技術 6回分の復習。メニューから、ふりかえり演習100問・小テスト第1回30問・小テスト第2回20問（ユウの1日・電卓とヒントつき）を選ぶ。どちらの小テストも出席番号4けた・ダミーの提出。第2回の先生用デモは `/review1/#demo`。導入スライドは `review1/intro.html`。N キーで先生用メモ） |
 | サトシ・ナカモト事件ファイル | <https://snsdpen-luke.github.io/kyouiku/bitcoin/> （ブロックチェーン・マイニング） |
 | 技能試験 筆記トレーニング | <https://snsdpen-luke.github.io/kyouiku/ginou/> （第二種電気工事士 技能試験の知識を、定期考査と同じ答え方で練習。先生は末尾に #exam で模擬テスト、#q=問題の id でその問題） |
 
@@ -76,6 +76,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `残高はどこにある.html` | **残高はどこにある（電子マネー①）の本体。直すのはここだけ** |
 | `決済をえらぶ.html` | **決済をえらぶ（電子マネー②）の本体。直すのはここだけ** |
 | `ふりかえり演習.html` | **ふりかえり演習（復習）の本体。直すのはここだけ** |
+| `小テスト第2回導入.html` | **小テスト第2回の導入スライドの本体**（配布は `review1/intro.html`。QR は `/review1/` を指す） |
 | `制御クイズ100.html` | **制御クイズ100の本体。直すのはここだけ**（配布は `seigyo100/index.html`。`build.py` の生成物。問題データの書き方はファイル内のコメント） |
 | `制御クイズ導入.html` | **制御クイズ100の導入スライドの本体**（配布は `seigyo100/intro.html`。QR は `/seigyo100/` を指す） |
 | `サトシ・ナカモト事件ファイル.html` | **サトシ・ナカモト事件ファイル（ブロックチェーン）の本体。直すのはここだけ** |
