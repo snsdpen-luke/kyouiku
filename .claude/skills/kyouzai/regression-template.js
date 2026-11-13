@@ -67,7 +67,7 @@ function answer(w, q, right) {
 }
 // 小テストを受ける（right：全部正しく／全部まちがえて）
 async function takeTest(w, right, no = '0101') {
-  $(w, '#no').value = no; click(w, '#tgo');
+  if ($(w, '#no')) $(w, '#no').value = no; click(w, '#tgo');
   const set = w.eval('st.test.set');
   for (let k = 0; k < set.length; k++) {
     const q = w.eval(`QI["${set[k]}"]`);
@@ -206,8 +206,10 @@ async function takeTest(w, right, no = '0101') {
     {
       const w = open(); toTest(w);
       ok('受ける前は「次へ」が押せない', $(w, '#next').disabled);
-      $(w, '#no').value = '12'; click(w, '#tgo'); ok('出席番号が4けたでないと始まらない', !w.eval('st.test') && /4けた/.test($(w, '#nomsg').textContent));
-      $(w, '#no').value = '０１０２'; click(w, '#tgo'); ok('全角の数字でも始まる', w.eval('st.test && st.test.no') === '0102');
+      if (w.eval('TEST.no !== false')) {
+        $(w, '#no').value = '12'; click(w, '#tgo'); ok('出席番号が4けたでないと始まらない', !w.eval('st.test') && /4けた/.test($(w, '#nomsg').textContent));
+        $(w, '#no').value = '０１０２'; click(w, '#tgo'); ok('全角の数字でも始まる', w.eval('st.test && st.test.no') === '0102');
+      } else { ok('出席番号を使わない設定：番号の欄がない', !$(w, '#no')); click(w, '#tgo'); ok('出席番号なしで始まる', !!w.eval('st.test')); }
       ok('受けている間は「前へ・次へ」を隠す', $(w, '#foot').hidden);
       const plan = w.eval('TEST.plan'), set = w.eval('st.test.set');
       ok('分野ごとの数どおりに出る', Object.entries(plan).every(([c, n]) => set.filter(id => w.eval(`QI["${id}"].ch`) === c).length === n) && new Set(set).size === set.length);
@@ -221,7 +223,7 @@ async function takeTest(w, right, no = '0101') {
       ok('提出後に開き直しても、結果のまま（受け直せない）', !!$(w2, '.rv') && !$(w2, '#tgo') && ![...w2.document.querySelectorAll('#card .btn')].some(b => /もう一度/.test(b.textContent)));
     }
     {
-      const w = open(); toTest(w); $(w, '#no').value = '0103'; click(w, '#tgo');
+      const w = open(); toTest(w); if ($(w, '#no')) $(w, '#no').value = '0103'; click(w, '#tgo');
       const key = w.eval('KEY'); w.eval('st.test.dl=Date.now()-1000;save()');
       const w2 = open({ store: { [key]: w.localStorage.getItem(key) } }); toTest(w2); await sleep(50);
       ok('開き直したとき時間切れなら、その場で採点', !!w2.eval('st.test.sent') && w2.eval('st.test.timeUp') === true);

@@ -46,6 +46,12 @@ function inspect() {
   const inScroller = e => { for (let p = e.parentElement; p; p = p.parentElement) { const s = getComputedStyle(p); if (/(auto|scroll)/.test(s.overflowY + s.overflowX) && (p.scrollHeight > p.clientHeight + 1 || p.scrollWidth > p.clientWidth + 1)) return true; } return false; };
   const fixedIn = e => { for (let p = e; p; p = p.parentElement) if (getComputedStyle(p).position === 'fixed') return true; return false; };
   out.overflowX = document.documentElement.scrollWidth > vw + 1;
+  // 横長の画面で、中をスクロールしないと見えない所があるか（縦長にしない）
+  out.scrolly = [];
+  if (vw > vh) for (const e of document.querySelectorAll('body *')) {
+    if (!vis(e)) continue; const s = getComputedStyle(e);
+    if (/(auto|scroll)/.test(s.overflowY) && e.scrollHeight > e.clientHeight + 4 && s.position !== 'fixed') out.scrolly.push(name(e) + ` あと ${e.scrollHeight - e.clientHeight}px`);
+  }
   // 重なって隠れた文字・部品：真ん中の点で、いちばん上にある物が自分（か自分の中・外側）でなければ隠れている
   out.hidden = [];
   for (const e of document.querySelectorAll('body *')) {
@@ -109,14 +115,14 @@ for (const V of VIEWS) {
   await p.goto(url); await p.waitForTimeout(300);
   const dark = await p.evaluate(() => { const b = getComputedStyle(document.body).backgroundColor.match(/\d+/g).map(Number); return (b[0] + b[1] + b[2]) / 3 < 100; });
   const press = async sel => { const h = await p.$(sel); if (!h) return false; if (V.touch) await h.tap(); else await h.click(); await p.waitForTimeout(80); return true; };
-  const shots = []; const issues = { contrast: new Set(), hidden: new Set(), outside: new Set(), tiny: new Set(), small: new Set(), taps: new Set(), canvas: new Set(), overflowX: 0 };
+  const shots = []; const issues = { scrolly: new Set(), contrast: new Set(), hidden: new Set(), outside: new Set(), tiny: new Set(), small: new Set(), taps: new Set(), canvas: new Set(), overflowX: 0 };
   const snap = async label => {
     await p.waitForTimeout(150);
     const k = String(shots.length + 1).padStart(2, '0'); const f = path.join(OUT, V.name, `${k}-${label}.png`.replace(/[\\/:*?"<>|\s]/g, '_'));
     fs.mkdirSync(path.dirname(f), { recursive: true }); await p.screenshot({ path: f });
     const r = await p.evaluate(inspect); shots.push(f);
     if (r.overflowX) issues.overflowX++;
-    for (const key of ['outside', 'hidden', 'contrast', 'tiny', 'small', 'taps', 'canvas']) r[key].forEach(x => issues[key].add(`${k}: ${x}`));
+    for (const key of ['outside', 'hidden', 'contrast', 'scrolly', 'tiny', 'small', 'taps', 'canvas']) r[key].forEach(x => issues[key].add(`${k}: ${x}`));
   };
   const label = async () => p.evaluate(() => { try { const P = FLOW[st.p]; return (st.p + 1) + '-' + P.sec + (P.sub ? '-' + P.sub.replace(/\s/g, '') : ''); } catch (e) { return 'page'; } });
   await snap(await label());
@@ -153,6 +159,7 @@ for (const V of VIEWS) {
   if (issues.overflowX) NG.push(`${V.name}: 横にはみ出してスクロールが出る画面 ${issues.overflowX}`);
   if (issues.outside.size) NG.push(`${V.name}: 画面の外に出て押せない部品 ${issues.outside.size}`);
   if (issues.hidden.size) NG.push(`${V.name}: ほかの物に重なって隠れた文字・部品 ${issues.hidden.size}`);
+  if (issues.scrolly.size) NG.push(`${V.name}: 横長の画面なのに、中をスクロールしないと見えない所がある画面 ${issues.scrolly.size}`);
   if (issues.contrast.size) NG.push(`${V.name}: 背景との色の差が小さく読めない文字 ${issues.contrast.size}`);
   if (issues.tiny.size) NG.push(`${V.name}: 12px 未満の文字 ${issues.tiny.size}`);
   if (issues.canvas.size) NG.push(`${V.name}: 図のゆがみ ${issues.canvas.size}`);
@@ -169,7 +176,7 @@ for (const r of report) {
     const rows = [...g].map(([k, ns]) => '  - ' + k + (ns.length ? `（画面 ${ns.length > 6 ? ns.slice(0, 6).join(',') + '…ほか' + (ns.length - 6) : ns.join(',')}）` : ''));
     L.push(`- ${t}（${g.size}種類）`, ...rows.slice(0, 15), ...(rows.length > 15 ? ['  - …'] : [])); };
   sec('エラー', r.errs); sec('外への通信（止めた）', r.net);
-  sec('画面の外に出て押せない', [...r.issues.outside]); sec('重なって隠れた文字・部品', [...r.issues.hidden]); sec('背景との色の差が小さい（比 3 未満）', [...r.issues.contrast]); sec('12px 未満の文字', [...r.issues.tiny]); sec('図のゆがみ', [...r.issues.canvas]);
+  sec('画面の外に出て押せない', [...r.issues.outside]); sec('重なって隠れた文字・部品', [...r.issues.hidden]); sec('背景との色の差が小さい（比 3 未満）', [...r.issues.contrast]); sec('横長なのにスクロールが要る（縦長にしない）', [...r.issues.scrolly]); sec('12px 未満の文字', [...r.issues.tiny]); sec('図のゆがみ', [...r.issues.canvas]);
   sec('注意：14px 未満の文字', [...r.issues.small]); sec('注意：44px 未満のボタン', [...r.issues.taps]);
   L.push(`- 画面写真：\`${path.join(OUT, r.view.split(' ')[0])}/\``, '');
 }
