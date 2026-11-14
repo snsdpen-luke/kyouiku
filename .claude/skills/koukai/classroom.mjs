@@ -53,9 +53,13 @@ if (cmd === 'setup') {
   if (!url) url = await ask('ウェブアプリの URL を貼って Enter: ');
   if (!/^https:\/\/script\.google\.com\/(a\/macros\/[\w.-]+\/s|macros\/s)\/[\w-]+\/exec$/.test(url || '')) die('URL の形がちがう。https://script.google.com/macros/s/…/exec の形（最後が /exec）を貼る。もう一度 setup から', 2);
   if (!key) key = await ask('合言葉（実行ログの KEY）を貼って Enter: ', true);
-  if (!key) die('合言葉が空。もう一度 setup から', 2);
+  // 貼りつけで混ざる物を落とす：「合言葉（KEY）:」ごとコピーした頭、貼りつけの制御文字（ESC[200~ など）、空白。
+  // 合言葉は setup() が作る 64 文字の 0-9a-f
+  key = String(key || '').replace(/\x1b\[[0-9;]*[~A-Za-z]/g, '').replace(/^.*[:：]/, '').replace(/[^0-9a-fA-F]/g, '').toLowerCase();
+  if (key.length !== 64) die(`合言葉の長さが ${key.length} 文字（正しくは 64 文字の英数字）。実行ログの「合言葉（KEY）:」の後ろだけをコピーして、もう一度 setup から`, 2);
   const c = { ...(load() || {}), url, key, courses: (load() || {}).courses || {} };
   const r = await call(c, { action: 'courses' });
+  if (!r.ok && /合言葉/.test(r.err)) die('つながらない: 合言葉がちがう（長さは 64 文字で合っている）。\n考えられること：URL と合言葉が別のプロジェクトの物／setup のあとに resetKey を押した。\nURL を出したのと同じ Apps Script で、⚙ プロジェクトの設定 → スクリプト プロパティの KEY を見て、もう一度 setup から', 1);
   if (!r.ok) die('つながらない: ' + r.err);
   save(c);
   console.log(`ok   受け口につながった。受け持っているクラス ${r.courses.length}。設定は ${CONF}（この Mac だけ）`);
