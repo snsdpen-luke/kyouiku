@@ -23,8 +23,9 @@ crocky（この Mac）──classroom.mjs──▶ Apps Script（剛さんのア
 7. 出てきた **ウェブアプリの URL**（`https://script.google.com/macros/s/…/exec`）を控える
 8. **Mac のターミナルで**（会話には合言葉を貼らない）：
    ```bash
-   cd ~/dev/kyouiku && node .claude/skills/koukai/classroom.mjs setup 'ウェブアプリのURL' '合言葉'
+   cd ~/dev/kyouiku && node .claude/skills/koukai/classroom.mjs setup
    ```
+   URL と合言葉を順に聞かれるので、貼って Enter。合言葉は画面に出ない（AI に頼めば、このコマンドを打った状態のターミナルを開いてくれる）
    `ok 受け口につながった` と出れば完了。設定はこの Mac の `~/.config/kyouiku/classroom.json` にだけ置かれる（GitHub には上がらない）
 9. あとは AI に「Classroom のクラスに呼び名を付けて」と言えば、一覧を出して**科目ごと**に呼び名を付ける（例：電気回路・電子計測制御・コンピュータシステム技術）。同じ科目のクラスが2つ以上あれば、1つの呼び名にまとめる（載せると全部に入る）
 

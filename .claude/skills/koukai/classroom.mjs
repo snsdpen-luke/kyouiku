@@ -41,8 +41,19 @@ const [cmd, ...a] = process.argv.slice(2);
 const flag = n => { const i = a.indexOf(n); return i < 0 ? null : a[i + 1]; };
 
 if (cmd === 'setup') {
-  const [url, key] = a;
-  if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url || '') || !key) die('使い方: node classroom.mjs setup <https://script.google.com/macros/s/…/exec> <合言葉>', 2);
+  // 引数がなければ聞く（合言葉は画面に出さない・シェルの履歴にも残らない）
+  const ask = async (q, hidden) => {
+    const rl = (await import('readline')).createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+    if (hidden) rl._writeToOutput = s => { if (s.includes(q)) process.stdout.write(s); };
+    const v = await new Promise(r => rl.question(q, r));
+    rl.close(); if (hidden) process.stdout.write('（入力しました・画面には出しません）\n');
+    return v.trim().replace(/^['"]|['"]$/g, '');
+  };
+  let [url, key] = a;
+  if (!url) url = await ask('ウェブアプリの URL を貼って Enter: ');
+  if (!/^https:\/\/script\.google\.com\/(a\/macros\/[\w.-]+\/s|macros\/s)\/[\w-]+\/exec$/.test(url || '')) die('URL の形がちがう。https://script.google.com/macros/s/…/exec の形（最後が /exec）を貼る。もう一度 setup から', 2);
+  if (!key) key = await ask('合言葉（実行ログの KEY）を貼って Enter: ', true);
+  if (!key) die('合言葉が空。もう一度 setup から', 2);
   const c = { ...(load() || {}), url, key, courses: (load() || {}).courses || {} };
   const r = await call(c, { action: 'courses' });
   if (!r.ok) die('つながらない: ' + r.err);
