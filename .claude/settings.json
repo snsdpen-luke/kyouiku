@@ -4,16 +4,30 @@
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/kakunin.py\" --guard" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/kakunin.py\" --guard"
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/kakunin.py\" --stop" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/kakunin.py\" --stop"
+          }
         ]
       }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git push origin HEAD:main)",
+      "Bash(git push origin main)",
+      "Bash(git push)",
+      "Bash(git pull --rebase origin main)"
     ]
   }
 }
