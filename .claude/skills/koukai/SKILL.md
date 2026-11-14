@@ -1,6 +1,6 @@
 ---
 name: koukai
-description: kyouiku の教材を公開する（git push で GitHub Pages に出す）とき、公開した教材の URL や QR コードを出すときに使う。教材を直し終えたら毎回（push は自動）。「push して」「公開して」「プッシュ」「出して」「URL は？」「反映されてない」「中身が変わってないぞ」と言われたら開く。
+description: kyouiku の教材を公開する（git push で GitHub Pages に出す）とき、Classroom に載せるとき、公開した教材の URL や QR コードを出すときに使う。教材を直し終えたら毎回（push は自動）。「push して」「公開して」「プッシュ」「出して」「URL は？」「反映されてない」「中身が変わってないぞ」「Classroom に出して」と言われたら開く。
 ---
 
 # koukai — 教材を公開して、本当に変わったかを確かめる
@@ -52,9 +52,26 @@ bash .claude/skills/koukai/kakunin-koukai.sh <フォルダ> <VER>
 - ok が出てから剛さんに伝える。出なければ、何が古いままかを書く
 - 剛さんの Chromebook で古いままなら：ページの再読み込み（Ctrl+Shift+R）。Classroom にはファイルではなく URL を貼る
 
-## 4. 剛さんに返すもの（2〜4行）
+## 4. Classroom に載せる（公開ページの ok が出たあと）
+
+受け口の準備は `apps-script/README-Classroom.md`（剛さんが1回）。準備ができているかは `node .claude/skills/koukai/classroom.mjs status`（終わりのコード 3 なら未準備 → この章は飛ばし、報告に「Classroom には手で貼る」と書く）。
+
+| いつ | すること |
+|---|---|
+| **新しい教材**（URL が増えた） | その科目のクラスに**下書き**で載せる：`node .claude/skills/koukai/classroom.mjs post <呼び名> <フォルダ>`。どのクラスか（呼び名）が決まらなければ聞く |
+| 剛さんが「Classroom に出して」 | 言われたクラスに下書きで載せる。「すぐ公開」「生徒に出して」と言われたときだけ `--publish` |
+| 直しただけ | 載せない（URL は同じ。生徒は前のリンクから新しい版を開く） |
+
+- 題は README の「生徒に配るURL」の表の名前を使う（`--title` で変えられる）。導入スライド（`intro.html`）は先生が映す物なので載せない
+- 先生用の入口（`#sensei` など）は載せない（classroom.mjs が断る）
+- 同じ URL がもうあれば二重に載せない（`もう載っている` と出る）
+- 載せたら、Classroom の下書きのリンクを報告に書く。剛さんが開いて「投稿」を押すと生徒に出る
+- 呼び名を付けるのは `classroom.mjs courses` → `classroom.mjs map <呼び名> <id>`。受け口の URL と合言葉は `~/.config/kyouiku/classroom.json` にだけある。会話・repo・all-db に書かない
+
+## 5. 剛さんに返すもの（2〜4行）
 
 - 生徒に配る URL：`https://snsdpen-luke.github.io/kyouiku/<フォルダ>/`（トップのラダー工房だけ `/kyouiku/`）
 - 先生用の入口（`#sensei` / `#demo` / `N` キー）があれば、その URL も
 - 公開ページで確かめた版
+- Classroom に載せたなら、その下書きのリンク（載せなかったなら、その理由）
 - QR コードが要ると言われたら：`node .claude/skills/dounyuu/qr.mjs <URL> --png /tmp/qr.png` で作って SendUserFile で渡す
