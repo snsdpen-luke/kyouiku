@@ -26,7 +26,13 @@ crocky（この Mac）──classroom.mjs──▶ Apps Script（剛さんのア
    cd ~/dev/kyouiku && node .claude/skills/koukai/classroom.mjs setup 'ウェブアプリのURL' '合言葉'
    ```
    `ok 受け口につながった` と出れば完了。設定はこの Mac の `~/.config/kyouiku/classroom.json` にだけ置かれる（GitHub には上がらない）
-9. あとは AI に「Classroom のクラスに呼び名を付けて」と言えば、一覧を出して `電子計測制御3年` のような呼び名を付ける（`classroom.mjs courses` と `map`）
+9. あとは AI に「Classroom のクラスに呼び名を付けて」と言えば、一覧を出して**科目ごと**に呼び名を付ける（例：電気回路・電子計測制御・コンピュータシステム技術）。同じ科目のクラスが2つ以上あれば、1つの呼び名にまとめる（載せると全部に入る）
+
+## クラスが増えた・終わったとき
+
+- **増えた**：Classroom でクラスを作り、AI に「〇〇のクラスが増えた」と言う。AI が一覧から見つけて呼び名に足す（`classroom.mjs map 呼び名 新しいid`）。Apps Script はそのままでよい
+- **年度が終わった**：Classroom でアーカイブすると一覧から消える。AI が `courses` で気づいて呼び名から外す（`unmap`）
+- **別の先生のクラス**：載せられない（受け口は剛さんが先生として受け持つクラスだけを見る）
 
 職場の Mac でも使うなら、8 をそちらでもやる。
 

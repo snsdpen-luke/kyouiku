@@ -3,7 +3,9 @@
 //
 //   node classroom.mjs setup <受け口のURL> <合言葉>     最初に1回（剛さんがターミナルで。合言葉を会話に貼らない）
 //   node classroom.mjs courses                          受け持っているクラスの一覧（id と、付けた呼び名）
-//   node classroom.mjs map <呼び名> <クラスのid>         呼び名を付ける（例: 電子計測制御3年）
+//   node classroom.mjs map <呼び名> <クラスのid> [<id> …]  呼び名を付ける。1つの呼び名にクラスをいくつでも（足していく）
+//        例: node classroom.mjs map 電子計測制御 111 112      （3年1組と2組。post するとどちらにも載る）
+//   node classroom.mjs unmap <呼び名> [<id>]              外す（id を省くと呼び名ごと）
 //   node classroom.mjs post <呼び名> <フォルダ|URL> [--title 題] [--desc 説明] [--publish]
 //        例: node classroom.mjs post 電子計測制御3年 seigyo100
 //        題を省くと README の「生徒に配るURL」の表の名前を使う。--publish がなければ下書き
@@ -50,22 +52,32 @@ if (cmd === 'setup') {
 } else {
   const c = load();
   if (!c) die('まだ設定がない（Classroom 投稿は使えない）。手順は apps-script/README-Classroom.md', 3);
+  const ids = name => [].concat(c.courses[name] || []);   // 呼び名1つに、クラスをいくつでも（3年1組・2組など）
   if (cmd === 'status') {
-    console.log(`ok   受け口あり。呼び名: ${Object.keys(c.courses).join('・') || 'なし'}`);
+    console.log(`ok   受け口あり。呼び名: ${Object.keys(c.courses).map(k => `${k}（${ids(k).length}クラス）`).join('・') || 'なし'}`);
   } else if (cmd === 'courses') {
     const r = await call(c, { action: 'courses' });
     if (!r.ok) die('NG   ' + r.err);
-    const names = Object.fromEntries(Object.entries(c.courses).map(([k, v]) => [v, k]));
-    for (const x of r.courses) console.log(`${x.id}\t${x.name}${x.section ? '（' + x.section + '）' : ''}${names[x.id] ? '\t← 呼び名: ' + names[x.id] : ''}`);
+    for (const x of r.courses) {
+      const nm = Object.keys(c.courses).filter(k => ids(k).includes(x.id));
+      console.log(`${x.id}\t${x.name}${x.section ? '（' + x.section + '）' : ''}${nm.length ? '\t← 呼び名: ' + nm.join('・') : ''}`);
+    }
+    const live = new Set(r.courses.map(x => x.id));
+    for (const k of Object.keys(c.courses)) for (const id of ids(k)) if (!live.has(id)) console.log(`注意 呼び名「${k}」の ${id} は、今は受け持っていない（アーカイブ済みかも）。unmap で外す`);
   } else if (cmd === 'map') {
+    const [name, ...list] = a;
+    if (!name || !list.length || !list.every(id => /^\d+$/.test(id))) die('使い方: node classroom.mjs map <呼び名> <クラスのid> [<id> …]（足していく）', 2);
+    c.courses[name] = [...new Set([...ids(name), ...list])]; save(c);
+    console.log(`ok   ${name} → ${c.courses[name].join('・')}`);
+  } else if (cmd === 'unmap') {
     const [name, id] = a;
-    if (!name || !/^\d+$/.test(id || '')) die('使い方: node classroom.mjs map <呼び名> <クラスのid（数字）>', 2);
-    c.courses[name] = id; save(c);
-    console.log(`ok   ${name} → ${id}`);
+    if (!c.courses[name]) die(`呼び名「${name}」がない`, 2);
+    if (id) c.courses[name] = ids(name).filter(x => x !== id); else delete c.courses[name];
+    if (c.courses[name] && !c.courses[name].length) delete c.courses[name];
+    save(c); console.log(`ok   ${name} → ${c.courses[name] ? c.courses[name].join('・') : '（消した）'}`);
   } else if (cmd === 'post') {
     const [name, target] = a;
-    const id = c.courses[name];
-    if (!id) die(`呼び名「${name}」がない。あるのは: ${Object.keys(c.courses).join('・') || 'なし'}（map で付ける）`, 2);
+    if (!ids(name).length) die(`呼び名「${name}」がない。あるのは: ${Object.keys(c.courses).join('・') || 'なし'}（map で付ける）`, 2);
     if (!target) die('使い方: node classroom.mjs post <呼び名> <フォルダ|URL> [--title 題] [--desc 説明] [--publish]', 2);
     const url = /^https?:\/\//.test(target) ? target : BASE + target.replace(/^\/|\/$/g, '') + '/';
     if (!url.startsWith(BASE)) die('kyouiku の教材の URL だけ載せられる: ' + url, 2);
@@ -73,11 +85,15 @@ if (cmd === 'setup') {
     const folder = url.slice(BASE.length).replace(/\/$/, '').split('/')[0];
     const title = flag('--title') || titleFromReadme(folder) || folder;
     const publish = a.includes('--publish');
-    const r = await call(c, { action: 'post', courseId: id, url, title, description: flag('--desc') || '', publish });
-    if (!r.ok) die('NG   ' + r.err);
-    if (r.dup) console.log(`ok   もう載っている（${r.state === 'DRAFT' ? '下書き' : '公開中'}）「${r.title}」 ${r.link}`);
-    else console.log(`ok   ${name} に「${r.title}」を${r.state === 'DRAFT' ? '下書きで' : '生徒に公開して'}載せた ${r.link}`);
+    let bad = 0;
+    for (const id of ids(name)) {
+      const r = await call(c, { action: 'post', courseId: id, url, title, description: flag('--desc') || '', publish });
+      if (!r.ok) { bad++; console.log(`NG   ${name}（${id}）: ${r.err}`); continue; }
+      if (r.dup) console.log(`ok   ${name}（${id}）にもう載っている（${r.state === 'DRAFT' ? '下書き' : '公開中'}）「${r.title}」 ${r.link}`);
+      else console.log(`ok   ${name}（${id}）に「${r.title}」を${r.state === 'DRAFT' ? '下書きで' : '生徒に公開して'}載せた ${r.link}`);
+    }
+    if (bad) process.exit(1);
   } else {
-    die('使い方: node classroom.mjs setup|status|courses|map|post（ファイルの先頭を見る）', 2);
+    die('使い方: node classroom.mjs setup|status|courses|map|unmap|post（ファイルの先頭を見る）', 2);
   }
 }

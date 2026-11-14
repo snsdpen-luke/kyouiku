@@ -66,7 +66,8 @@ bash .claude/skills/koukai/kakunin-koukai.sh <フォルダ> <VER>
 - 先生用の入口（`#sensei` など）は載せない（classroom.mjs が断る）
 - 同じ URL がもうあれば二重に載せない（`もう載っている` と出る）
 - 載せたら、Classroom の下書きのリンクを報告に書く。剛さんが開いて「投稿」を押すと生徒に出る
-- 呼び名を付けるのは `classroom.mjs courses` → `classroom.mjs map <呼び名> <id>`。受け口の URL と合言葉は `~/.config/kyouiku/classroom.json` にだけある。会話・repo・all-db に書かない
+- 呼び名は**科目ごと**（例：電気回路・電子計測制御・コンピュータシステム技術）。1つの呼び名にクラスをいくつでも入れられ、post するとその全部に載る。教材の科目は README の「何をするもの」の表の科目の欄で決める
+- 呼び名を付けるのは `classroom.mjs courses` → `classroom.mjs map <呼び名> <id> [<id> …]`（足していく）。新しいクラスができたら同じく map で足す。年度が終わってアーカイブしたクラスは `courses` が「注意」で知らせるので `unmap <呼び名> <id>` で外す。受け口の URL と合言葉は `~/.config/kyouiku/classroom.json` にだけある。会話・repo・all-db に書かない
 
 ## 5. 剛さんに返すもの（2〜4行）
 
