@@ -110,6 +110,8 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `regression-obake.js` | お化け屋敷サンプラーのリグレッション（jsdom・83項目。効果音の合成・声の高さ・BGM のつなぎ目・録音・操作） |
 | `regression-sampler.js` | こえサンプラーのリグレッション（jsdom・69項目。音の合成・録音した声の加工・操作） |
 | `build.py` | 本体から配布物を作る。本体と配る場所の対応は、ファイルの先頭の表 `PAGES` にまとめてある（新しい教材は1行足す） |
+| `kakunin.py` | 直したあとの確かめ。変わった本体ごとに、build 忘れ・VER の上げ忘れ・確認スクリプト・confirm や外のフォントが増えていないかを見る（`python3 kakunin.py`、全部なら `--all`） |
+| `.claude/skills/naoshi/`・`mondai/`・`dounyuu/`・`koukai/` | 既存の教材を直す／問題と小テスト／導入スライドと QR／公開と公開後の確かめ（Claude Code のスキル） |
 | `.claude/skills/kyouzai/` | **新しい教材を作るときの手順（Claude Code のスキル）**。ひな形 `template.html`、確認スクリプトのひな形、実ブラウザ確認 `check-browser.mjs`、計算の検証の手引き |
 | `HANDOFF.md` | **ラダー工房の引き継ぎ書。仕様・設計判断・禁止事項の正典。作業前に必ず読む** |
 | `HANDOFF-複線図練習.md` | **複線図れんしゅうの引き継ぎ書。問題データの足し方もここ** |

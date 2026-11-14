@@ -116,6 +116,7 @@ description: 高校の授業で生徒が Chromebook の Chrome で使う Web 教
    - `VER` を今日の日付に
    - `build.py` の `PAGES` に1行：`("音で距離を測る.html", "oto/index.html", "メモ"),`
    - `python3 build.py`
+   - `python3 kakunin.py`（NG 0 まで。build 忘れ・VER・確認スクリプトをまとめて見る）
    - `README.md` の「何をするもの」の表と「生徒に配るURL」の表と「ファイル」の表に1行ずつ
    - コミット（`[crocky] ` で始め、何を作ったかを日本語で）。push は先生の確認を取ってから
 9. **報告**：作ったもの・URL（予定）・**1章の表のうち、聞かずに既定値で決めたもの全部**・検証の結果（合格数、実ブラウザの NG 数、見た画面写真）・未解決のことを短く
