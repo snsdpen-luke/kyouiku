@@ -4,6 +4,7 @@
   python3 kakunin.py                 変わった本体だけ（git で HEAD と比べる）
   python3 kakunin.py 制御クイズ100.html ...   名前を挙げた本体だけ
   python3 kakunin.py --all           build.py の表 PAGES の全部
+  python3 kakunin.py --base origin/main   push の前に、公開中の版と比べる（コミット済みで未 push の直しも見る）
   python3 kakunin.py --quick         確認スクリプトを走らせない（一瞬で終わる。regression-parking3.js は約5分かかる）
   python3 kakunin.py --guard         Claude Code のフック用（下）
   python3 kakunin.py --stop          Claude Code のフック用（下）
@@ -15,15 +16,18 @@
   NG   confirm / alert / prompt・外のフォントや CDN が、HEAD より増えた
   注意 Apps Script やスプレッドシートの URL が、HEAD より増えた（鍵になりうる。剛さんが決めたものだけ）
   注意 ライトモード固定（color-scheme）がない
+  聞く 保存の名前（'〇〇-v3' など）が変わった・消えた → 生徒の途中の記録が消える。push の前に剛さんに聞く
+  聞く build.py の配る場所が消えた → 配った URL が切れる。push の前に剛さんに聞く
 増えたかどうかで見るので、前からある古い教材の違反では止まらない。
 
 --guard：Claude Code の PreToolUse フック。標準入力の JSON を読み、
 生成物（<フォルダ>/index.html など）と、引き継ぎ前の授業用 ラダー工房.html への書き込みを止める。
 
 --stop：Claude Code の Stop フック。--quick で見て、NG があれば終わらせずに直させる（終わりのコード 2）。
+main の枝で、コミット済みなのに公開していない本体があり、「聞く」もなければ、push させる（push は自動 2026-11-14）。
 一度止めたあと（stop_hook_active）は止めない（同じ所で回り続けないため）。
 
-終わりのコード：NG があれば 1、なければ 0。
+終わりのコード：NG があれば 1、「聞く」だけなら 3、なければ 0。
 """
 import io, json, os, re, subprocess, sys
 
@@ -38,14 +42,17 @@ def pages():
     return re.findall(r'\(\s*"([^"]+)"\s*,\s*"([^"]+)"', block)
 
 
+BASE = "HEAD"
+
+
 def head_text(path):
-    r = subprocess.run(["git", "show", "HEAD:" + path], capture_output=True)
+    r = subprocess.run(["git", "show", BASE + ":" + path], capture_output=True)
     return r.stdout.decode("utf-8", "replace") if r.returncode == 0 else None
 
 
 def changed_files():
     out = subprocess.run(["git", "status", "--porcelain", "-uall"], capture_output=True, text=True).stdout
-    files = []
+    files = subprocess.run(["git", "diff", "--name-only", BASE], capture_output=True, text=True).stdout.split()
     for line in out.splitlines():
         p = line[3:].strip().strip('"')
         if " -> " in p:
@@ -106,6 +113,10 @@ def check(src, dst, results, quick=False):
         a, b = count(pat, old), count(pat, now)
         if b > a:
             put(kind, "%s が増えた（%d → %d）" % (name, a, b))
+    keys = lambda t: set(re.findall(r"['\"]([\w.-]+-v\d+)['\"]", t or ""))
+    gone = keys(old) - keys(now)
+    if old is not None and gone:
+        put("聞く", "保存の名前が変わった・消えた（%s → %s）。生徒の途中の記録が消える" % ("・".join(sorted(gone)), "・".join(sorted(keys(now) - keys(old))) or "なし"))
     if "color-scheme" not in now:
         put("注意", "ライトモード固定（color-scheme）がない")
 
@@ -143,6 +154,7 @@ def guard():
 
 
 def main(argv):
+    global BASE
     if "--guard" in argv:
         return guard()
     if "--stop" in argv:
@@ -155,15 +167,39 @@ def main(argv):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             rc = main(["--quick"])
-        if rc:
+        if rc == 1:
             print("教材の直しが終わっていません。直してから終えてください（naoshi スキルの3章）。\n" + buf.getvalue(), file=sys.stderr)
             return 2
+        # push は自動（2026-11-14）。main にコミットしたのに公開していない本体があれば、koukai の手順で出させる。
+        # Trinity の worktree の枝（main 以外）では見ない（Trinity が取り込んで公開する）
+        branch = subprocess.run(["git", "branch", "--show-current"], capture_output=True, text=True).stdout.strip()
+        if branch == "main":
+            ahead = subprocess.run(["git", "diff", "--name-only", "origin/main", "HEAD"], capture_output=True, text=True).stdout.split()
+            srcs = sorted({s for s, d in pages() if s in ahead or d in ahead})
+            if srcs:
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    rc = main(["--quick", "--base", "origin/main"])
+                if rc == 0:
+                    print("コミット済みで公開していない教材があります（%s）。push は自動の約束です。koukai スキルの手順で push して、公開ページの版を確かめてください。" % "・".join(srcs), file=sys.stderr)
+                    return 2
         return 0
     quick = "--quick" in argv
+    if "--base" in argv:
+        BASE = argv[argv.index("--base") + 1]
+        argv = [a for i, a in enumerate(argv) if not (a == "--base" or (i and argv[i - 1] == "--base"))]
     table = pages()
     by_src = {}
     for src, dst in table:
         by_src.setdefault(src, []).append(dst)
+
+    results = []
+    old_build = head_text("build.py")
+    if old_build and "PAGES = [" in old_build:
+        blk = old_build[old_build.index("PAGES = ["):]
+        old_dst = set(re.findall(r'\(\s*"[^"]+"\s*,\s*"([^"]+)"', blk[: blk.index("]\n")]))
+        for d in sorted(old_dst - {d for _, d in table}):
+            results.append(("聞く", "build.py", "配る場所 %s が表から消えた。配った URL が切れる" % d))
 
     if "--all" in argv:
         targets = list(by_src)
@@ -172,11 +208,10 @@ def main(argv):
     else:
         ch = set(changed_files())
         targets = [s for s in by_src if s in ch or any(d in ch for d in by_src[s])]
-        if not targets:
+        if not targets and not results:
             print("変わった本体はありません（build.py の表 PAGES にある本体だけを見ます）")
             return 0
 
-    results = []
     for src in targets:
         if src not in by_src:
             results.append(("注意", src, "build.py の表 PAGES にない（新しい教材なら1行足す。README の表にも）"))
@@ -184,12 +219,15 @@ def main(argv):
         for dst in by_src[src]:
             check(src, dst, results, quick)
 
-    order = {"NG": 0, "注意": 1, "ok": 2}
+    order = {"NG": 0, "聞く": 1, "注意": 2, "ok": 3}
     for kind, src, msg in sorted(results, key=lambda r: order[r[0]]):
         print("%-4s %s：%s" % (kind, src, msg))
     ng = sum(1 for r in results if r[0] == "NG")
-    print("\nNG %d・注意 %d（本体 %d）" % (ng, sum(1 for r in results if r[0] == "注意"), len(targets)))
-    return 1 if ng else 0
+    ask = sum(1 for r in results if r[0] == "聞く")
+    print("\nNG %d・聞く %d・注意 %d（本体 %d）" % (ng, ask, sum(1 for r in results if r[0] == "注意"), len(targets)))
+    if ask:
+        print("「聞く」がある。push の前に剛さんに聞く（自動 push の例外）")
+    return 1 if ng else 3 if ask else 0
 
 
 if __name__ == "__main__":

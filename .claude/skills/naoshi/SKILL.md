@@ -50,7 +50,7 @@ python3 kakunin.py
 ## 4. 剛さんに見せる（「見せて」「どうやって見るの」と言われる前に）
 
 報告の最後に、必ずどれか1つを書く。
-- **まだ push していない**：ブラウザの画面（Claude の Browser pane）で `file:///Users/uemuratsuyoshi/dev/kyouiku/<本体>.html` を開いて見せる。4:3 を見たいと言われたら `resize_window` で 1024×768
+- **push の前に聞いた（自動 push の例外）・まだ出していない**：ブラウザの画面（Claude の Browser pane）で `file:///Users/uemuratsuyoshi/dev/kyouiku/<本体>.html` を開いて見せる。4:3 を見たいと言われたら `resize_window` で 1024×768
 - **push した**：生徒に配る URL（`https://snsdpen-luke.github.io/kyouiku/<フォルダ>/`）と、表示されるはずの版。公開まで1〜2分かかることも書く（確かめ方は koukai）
 - 先生用があるなら、その入口（`#sensei` / `#demo` / `N` キー）も
 
@@ -58,4 +58,4 @@ python3 kakunin.py
 
 何を直したか（剛さんの言葉に対応させて）／聞かずに既定で決めたこと／`kakunin.py` と確認スクリプトの結果／どう見るか（4章）／push したか、していないか。
 
-push は剛さんが「push して」「公開して」と言ったときだけ（→ koukai）。Trinity から任された作業（worktree の中）なら push しない。
+直し終えたら、そのまま koukai の手順で push して公開する（自動 push。剛さんの判断 2026-11-14）。保存の名前・URL を変えるときなどの例外は koukai の冒頭。Trinity から任された作業（worktree の中）なら push しない（Trinity が取り込む）。
