@@ -42,20 +42,41 @@ const flag = n => { const i = a.indexOf(n); return i < 0 ? null : a[i + 1]; };
 
 if (cmd === 'setup') {
   // 引数がなければ聞く（合言葉は画面に出さない・シェルの履歴にも残らない）
-  const ask = async (q, hidden) => {
+  const ask = async q => {
     const rl = (await import('readline')).createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-    if (hidden) rl._writeToOutput = s => { if (s.includes(q)) process.stdout.write(s); };
     const v = await new Promise(r => rl.question(q, r));
-    rl.close(); if (hidden) process.stdout.write('（入力しました・画面には出しません）\n');
+    rl.close();
     return v.trim().replace(/^['"]|['"]$/g, '');
   };
+  // 合言葉は1文字も画面に出さない。readline を使わず、端末の生の入力を自分で読む（readline は行を描き直すときに中身を出してしまう）
+  const askHidden = q => new Promise(res => {
+    process.stdout.write(q);
+    const inp = process.stdin;
+    if (!inp.isTTY) { let b = ''; inp.setEncoding('utf8'); inp.on('data', d => { b += d; }); inp.on('end', () => res(b.split(/\r?\n/)[0] || '')); inp.resume(); return; }
+    inp.setRawMode(true); inp.setEncoding('utf8'); inp.resume();
+    let buf = '';
+    const on = d => {
+      for (const ch of d) {
+        if (ch === '\u0003') { inp.setRawMode(false); process.stdout.write('\n'); process.exit(130); }
+        if (ch === '\r' || ch === '\n') {
+          if (!buf.replace(/\x1b\[[0-9;]*[~A-Za-z]/g, '').trim()) continue;   // 貼る前の空の Enter は数えない
+          inp.off('data', on); inp.setRawMode(false); inp.pause();
+          process.stdout.write('（入力しました・画面には出しません）\n'); res(buf); return;
+        }
+        if (ch === '\u007f' || ch === '\b') buf = buf.slice(0, -1); else buf += ch;
+      }
+    };
+    inp.on('data', on);
+  });
   let [url, key] = a;
   if (!url) url = await ask('ウェブアプリの URL を貼って Enter: ');
   if (!/^https:\/\/script\.google\.com\/(a\/macros\/[\w.-]+\/s|macros\/s)\/[\w-]+\/exec$/.test(url || '')) die('URL の形がちがう。https://script.google.com/macros/s/…/exec の形（最後が /exec）を貼る。もう一度 setup から', 2);
-  if (!key) key = await ask('合言葉（実行ログの KEY）を貼って Enter: ', true);
+  if (!key) key = await askHidden('合言葉（実行ログの KEY）を貼って Enter（貼っても何も出ません。1回だけ貼る）: ');
   // 貼りつけで混ざる物を落とす：「合言葉（KEY）:」ごとコピーした頭、貼りつけの制御文字（ESC[200~ など）、空白。
   // 合言葉は setup() が作る 64 文字の 0-9a-f
   key = String(key || '').replace(/\x1b\[[0-9;]*[~A-Za-z]/g, '').replace(/^.*[:：]/, '').replace(/[^0-9a-fA-F]/g, '').toLowerCase();
+  // 何回か貼ってしまったとき（同じ 64 文字のくり返し）は1つにする
+  if (key.length > 64 && key.length % 64 === 0 && key === key.slice(0, 64).repeat(key.length / 64)) key = key.slice(0, 64);
   if (key.length !== 64) die(`合言葉の長さが ${key.length} 文字（正しくは 64 文字の英数字）。実行ログの「合言葉（KEY）:」の後ろだけをコピーして、もう一度 setup から`, 2);
   const c = { ...(load() || {}), url, key, courses: (load() || {}).courses || {} };
   const r = await call(c, { action: 'courses' });
