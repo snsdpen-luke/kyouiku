@@ -35,7 +35,7 @@ description: 授業や小テストの最初に、教室の大画面（プロジ�
 3. **確かめる**：
    - `python3 build.py` と `python3 kakunin.py`
    - 実物の Chrome で全スライドを撮る：`node .claude/skills/kyouzai/check-browser.mjs 本体.html --walk next --next '#next' --only chromebook,4x3 --out /tmp/dounyuu`。写真を自分の目で見る（文字のはみ出し・小さすぎ）
-   - QR を読んで URL が合っているか：`node .claude/skills/dounyuu/qr.mjs <URL> --check 本体.html`（本体の中の QR が、その URL を作り直した物と同じかを比べる）
+   - QR を読んで URL が合っているか：`node .claude/skills/dounyuu/qr.mjs <URL> --check 本体.html`（本体の中の QR を Chrome の読み取り機能で実際に読む。PNG も渡せる。模様どうしは比べない：作る道具がちがうと同じ URL でも模様が変わる）
 4. 公開は koukai。教材本体の URL がまだ公開されていないと、QR を読んでも開けないことを報告に書く
 
 ## 3. 報告
