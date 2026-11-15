@@ -81,6 +81,7 @@ table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 .mbtn .s{font-size:14px;color:var(--sub)}
 .mbtn.game{border-color:var(--accent);background:var(--accent-soft)}
 .menu{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.menu.three .mbtn .t{font-size:20px}
 .hbtn{font:inherit;font-size:14px;font-weight:700;padding:4px 12px;border-radius:8px;border:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
 .nobox label{font-size:15px;color:var(--sub)}
 .nobox input{font:inherit;font-size:28px;width:160px;padding:8px 14px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);letter-spacing:.15em;font-variant-numeric:tabular-nums}
@@ -127,6 +128,41 @@ table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 @keyframes beat{50%{opacity:.45}}
 @media (max-width:760px){.menu{grid-template-columns:1fr}.qwrap{flex-direction:column}.gloss{width:auto;align-self:stretch;min-height:0}.opts{grid-template-columns:1fr}.bar{grid-template-columns:120px 1fr 54px}.card{padding:14px}}
 @media (prefers-reduced-motion:no-preference){.fill,.prog div{transition:width .5s ease}}
+/* 小テスト第2回（記述・計算・図） */
+.tag{font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.flow{flex:none;display:flex;align-items:stretch;gap:6px;flex-wrap:wrap}
+.arw{align-self:center;font-size:22px;color:var(--sub)}
+.slot{font:inherit;flex:1;min-width:150px;text-align:left;padding:8px 10px;border-radius:10px;border:2px dashed var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.slot .sl{font-weight:700;color:var(--accent)} .slot .sd{font-size:13px;color:var(--sub);line-height:1.4} .slot .sv{font-weight:700;font-size:16px;margin-top:auto}
+.slot.fill{border-style:solid} .slot.act{border-color:var(--accent);background:var(--accent-soft)}
+.wds{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:15px}
+.wd{padding:2px 10px;border-radius:999px;border:2px solid var(--line);font-weight:700;color:var(--sub)}
+.wd.in{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+textarea{font:inherit;font-size:17px;line-height:1.6;width:100%;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
+textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.numin{font-size:20px;font-weight:700}
+.numin input{font:inherit;font-size:26px;width:200px;padding:6px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
+.jump{display:flex;gap:6px;flex-wrap:wrap}
+.jump .opt{min-height:38px}
+.crit{margin:2px 0 0;padding-left:22px;font-size:14px}
+.cq{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start}
+.cl{display:flex;flex-direction:column;gap:10px}
+.hbox{background:#fff6dc;border:1px solid #e9c46a;border-radius:10px;padding:8px 14px;font-size:15px;line-height:1.6}
+.calc{border:1px solid var(--line);border-radius:12px;background:#f6f8fb;padding:10px;display:flex;flex-direction:column;gap:6px}
+.ctitle{font-size:12px;font-weight:700;color:var(--sub)}
+.cdisp{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 10px;text-align:right;min-height:58px}
+.cex{font-size:12px;color:var(--sub);min-height:1.3em;overflow-wrap:anywhere}
+.cmain{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.2}
+.cnums{display:flex;gap:4px;flex-wrap:wrap}
+.ckeys{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.ck{font:inherit;font-size:18px;font-weight:700;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.ck.op{color:var(--accent)} .ck.eq{background:var(--accent);color:var(--card);border-color:var(--accent)}
+.ck.cn{height:auto;padding:4px 8px;font-size:14px;border:2px solid var(--accent);color:var(--accent)}
+.ctape{font-size:12px;color:var(--sub);min-height:1em}
+.menu.three{grid-template-columns:repeat(3,1fr)}
+.scene{flex:none}
+@media (max-height:700px){.scene{display:none}.cl svg{height:68px!important}.ck{height:31px}.cdisp{min-height:46px}.cmain{font-size:20px}} /* 低い画面では、図の問題の車の絵を省く（①〜④の箱に説明がある） */
+@media (max-width:760px){.cq{grid-template-columns:1fr}.menu.three{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -143,7 +179,7 @@ table.plan td{padding:4px 18px 4px 0;border-bottom:1px solid var(--line)}
 </div>
 
 <script>
-const VER='2026-11-11d';
+const VER='2026-11-16a';
 const TITLE='電子計測制御 後期中間考査 出題範囲';
 // 問題データ。1行1問：[分野, 種類, 難しさ, 用語, 問題文, [正解, 誤り4つ], 解説]
 // 分野 A〜E（CH）／種類 m 用語→意味・r 意味→用語・u 使いどころ・b 大事な場面（KIND）／難しさ 1〜3。
@@ -428,9 +464,10 @@ function chrome(){
 function render(){
   stopTick();
   $('ver').textContent='版 '+VER;
-  $('menuBtn').hidden=mode==='menu'||(mode==='test'&&ts.phase==='play'&&!ts.done);
+  $('menuBtn').hidden=mode==='menu'||(mode==='test'&&ts.phase==='play'&&!ts.done)||(mode==='test2'&&u2.dl>0&&!u2.done);
   if(mode==='menu')return menu();
   if(mode==='test')return tRender();
+  if(mode==='test2')return u2Render();
   $('ttl').textContent=TITLE;
   chrome();
   if(st.i<0)return start();
@@ -482,18 +519,20 @@ function result(){
 }
 // ===== メニュー =====
 let mode='menu';
-try{const m=localStorage.getItem('seigyo100-mode');if(m==='drill'||m==='test')mode=m}catch(e){}
+try{const m=localStorage.getItem('seigyo100-mode');if(m==='drill'||m==='test'||m==='test2')mode=m}catch(e){}
 function setMode(m){mode=m;try{localStorage.setItem('seigyo100-mode',m)}catch(e){}render()}
 $('menuBtn').onclick=()=>setMode('menu');
 function menu(){
   $('ttl').textContent=TITLE;$('chips').innerHTML='';$('count').textContent='';$('bar').style.width='0';
   const tst=ts.done?`提出済み（${tScore()} / ${tMax()} 点）`:ts.stages?`とちゅう（STAGE ${ts.s+1} / ${ts.stages.length}）`:'まだ受けていません';
-  $('card').innerHTML=`<div class="q">どちらをやりますか</div>
-   <div class="menu">
+  const u2st=u2.done?`提出済み（図と計算 ${u2AutoSum()} / ${T2AUTO} 点・記述は先生が採点）`:u2.dl?'とちゅう':'まだ受けていません';
+  $('card').innerHTML=`<div class="q">どれをやりますか</div>
+   <div class="menu three">
     <button class="mbtn" id="mDrill"><span class="t">練習（${Q.length}問）</span><span class="d">5択。答えるとすぐに正解と解説が出ます。時間の制限はありません。</span><span class="s">進み具合 ${doneCount()} / ${Q.length} 問</span></button>
-    <button class="mbtn game" id="mTest"><span class="t">小テスト（${TALL()}点満点）</span><span class="d">練習の問題から、語群で答えます。ステージごとに制限時間があります。全${TPLAN.length}ステージ、およそ30分。受けられるのは1回だけで、最後に提出します。</span><span class="s">${tst}</span></button>
+    <button class="mbtn game" id="mTest"><span class="t">小テスト第1回（${TALL()}点満点）</span><span class="d">練習の問題から、語群で答えます。ステージごとに制限時間があります。全${TPLAN.length}ステージ、およそ30分。受けられるのは1回だけで、最後に提出します。</span><span class="s">${tst}</span></button>
+    <button class="mbtn game" id="mTest2"><span class="t">小テスト第2回（${T2MAX}点満点）</span><span class="d">記述が中心です（記述${T2.filter(p=>p.t==='text').length}問・計算${T2.filter(p=>p.t==='num').length}問・図1問）。指定語句を入れて説明します。制限時間${T2SEC/60}分。受けられるのは1回だけで、最後に提出します。</span><span class="s">${u2st}</span></button>
    </div>`;
-  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');
+  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');$('mTest2').onclick=()=>setMode('test2');
 }
 
 // ===== 小テスト（語群・ステージ制・制限時間つき） =====
@@ -660,6 +699,258 @@ function tFinal(){
    </div>
    <div class="row"><button class="btn" id="tomenu">メニューへ</button></div>`;
   $('tomenu').onclick=()=>setMode('menu');demoBind();
+}
+
+// ===== 小テスト第2回（記述中心・40分） =====
+// 13問 50点。図に書き込み1問（語群・自動採点）・計算4問（自動採点）・記述8問（指定語句を入れて書く。先生が採点）。
+// 指定語句 w は形の変わらない言葉（名詞）にする。動詞だと「ゆるめて」のように形が変わり、印がつかない。
+// 記述の採点の観点 c は [観点, 点]。点の合計が pt と同じになる（regression-seigyo100.js で確かめる）。
+// 計算の答え a は、regression-seigyo100.js が教材のコードを使わずに計算し直して突き合わせる。
+// 時間は締め切りの時刻（dl）で持つ。開き直しても止まらない。時間になったら答えを変えられず、提出だけできる。
+const T2SEC=40*60;
+const T2=[
+{g:'A',t:'fig',pt:4,q:'衝突被害軽減ブレーキは、前の車にぶつかりそうになると、自動でブレーキをかけます。下の図の①〜④に入る言葉を、語群から選びなさい。語群の言葉は1回ずつ使います。使わない言葉もあります。',
+ slots:[['① 測る','40 m 先の前の車までの距離と、近づく速さを測る部品','ミリ波レーダー'],['② 決める','測った値から計算し、ブレーキをかけるかを決める部品','ECU'],['③ ②が計算する値','このまま進むと、何秒後にぶつかるか','TTC（衝突余裕時間）'],['④ 動かす','②の指令を受けて、車を止める部品','ブレーキ']],
+ bank:['ミリ波レーダー','超音波センサ','車輪速センサ','ECU','TTC（衝突余裕時間）','車間時間','ブレーキ','アクセル'],
+ e:'レーダーが測り、ECU が TTC を計算して決め、アクチュエータのブレーキが動きます。超音波センサは 40 m 先まで届きません。車間時間は ACC で使う値です。'},
+{g:'A',t:'text',pt:5,q:'フィードバック制御とシーケンス制御のちがいを説明しなさい。それぞれ、車の中で使われている例を1つずつ挙げなさい。',
+ w:['目標値','偏差','順番'],len:[80,200],
+ m:'フィードバック制御は、結果を測って目標値とくらべ、偏差（ずれ）が小さくなるように直し続ける制御です。例はクルーズコントロールです。シーケンス制御は、決めた順番どおりに手順を一つずつ進める制御です。例は自動駐車の「進む・止まる・R に入れる・下がる」の手順です。',
+ c:[['フィードバック制御：測って目標値とくらべ、偏差を小さく直し続ける',2],['シーケンス制御：決めた順番どおりに進める',1],['フィードバック制御の例（クルーズコントロール・ACC・オートエアコン・車線維持支援など）',1],['シーケンス制御の例（自動駐車の手順・オートライトの点灯の順など）',1]]},
+{g:'B',t:'num',pt:3,q:'駐車センサ（超音波センサ）が超音波を出してから、うしろの壁で反射して返ってくるまでの往復時間は 0.008 秒でした。音速を 340 m/s とすると、センサから壁までの距離は何 m ですか。',
+ unit:'m',a:1.36,nums:[['0.008',0.008],['340',340]],hint:'音は壁まで行って帰ってきます。往復で進んだ距離は「音速 × 往復時間」です。壁までの距離は、その半分です。',
+ m:'340 × 0.008 ÷ 2 ＝ 1.36（m）',e:'往復の時間なので、最後に 2 で割ります。'},
+{g:'B',t:'text',pt:4,q:'気温 35℃ の暑い日に、駐車センサが音速を 340 m/s のまま距離を計算しています。表示される距離は、本当の距離より長く出ますか、短く出ますか。理由も説明しなさい。',
+ w:['音速','気温','往復時間'],len:[60,160],
+ m:'本当より短く出ます。気温が高いほど音速は速くなる（35℃で約 352 m/s）ので、音が早く返り、往復時間が短くなります。センサは音速を 340 m/s のまま「音速 × 往復時間 ÷ 2」で計算するので、距離が短く出ます。',
+ c:[['「短く出る」と答えている',1],['気温が高いと音速が速くなる',1],['往復時間が短くなる',1],['340 m/s のまま計算するので短くなる',1]]},
+{g:'B',t:'text',pt:4,q:'高速道路で、前の車（50 m 先）との車間を測るのに、超音波センサは使えません。理由を2つ説明しなさい。',
+ w:['減衰','往復時間'],len:[60,160],
+ m:'1つ目は、超音波は進むうちに広がったり空気に吸われたりして減衰し、数 m しか届かないからです。2つ目は、音は遅いので往復時間が長く（50 m で約 0.3 秒）、1回測る間に車が長い距離（時速 100 km で約 8 m）を進んでしまうからです。',
+ c:[['減衰して、遠く（50 m）まで届かない',2],['往復時間が長く、測る間に車が進んでしまう',2]]},
+{g:'C',t:'num',pt:3,q:'タイヤの周長は 1.8 m、センサロータの歯は 40 個です。車輪速センサから、1秒間に 500 個のパルスが出ました。この車の速さは時速何 km ですか。',
+ unit:'km/h',a:81,nums:[['1.8',1.8],['40',40],['500',500],['3.6',3.6]],hint:'歯1つ分で進む長さは「周長 ÷ 歯の数」です。それに1秒のパルスの数をかけると秒速（m/s）です。秒速を時速（km/h）にするには × 3.6 します。',
+ m:'1.8 ÷ 40 ＝ 0.045（m）、0.045 × 500 ＝ 22.5（m/s）、22.5 × 3.6 ＝ 81（km/h）',e:'1パルスで進む長さ → 秒速 → 時速 の順に出します。'},
+{g:'C',t:'text',pt:4,q:'車輪速センサの「パッシブ型」と「アクティブ型」のちがいを説明しなさい。止まる直前の、とても遅い速さを読めるかどうかについても書きなさい。',
+ w:['電磁誘導','電源','止まる直前'],len:[80,200],
+ m:'パッシブ型は磁石とコイルでできていて、電磁誘導で電気を作るので電源はいりません。しかし、ゆっくりだと生まれる電気（波）が小さくなり、止まる直前は読めません。アクティブ型はホール素子などを使うので電源が必要ですが、止まる直前の遅い速さまで読めます。',
+ c:[['パッシブ型：電磁誘導で電気を作り、電源がいらない',1],['パッシブ型：遅いと波が小さく、止まる直前は読めない',1],['アクティブ型：電源が必要',1],['アクティブ型：止まる直前まで読める',1]]},
+{g:'C',t:'text',pt:3,q:'急ブレーキのとき、ABS がタイヤのロックしかけに気づいてから、ロックを防ぐまでの流れを説明しなさい。',
+ w:['車輪速センサ','ロック','ブレーキ'],len:[60,160],
+ m:'4つのタイヤの車輪速センサで回る速さを測り、くらべます。1つだけ急に遅くなったら、そのタイヤがロックしかけたと判断します。そのタイヤのブレーキを一瞬ゆるめて、タイヤを回し続けます。',
+ c:[['車輪速センサでタイヤの速さを測る（くらべる）',1],['1つだけ急に遅くなったらロックしかけと判断する',1],['ブレーキを一瞬ゆるめてタイヤを回し続ける',1]]},
+{g:'D',t:'num',pt:3,q:'ACC で、車間時間を 2 秒に決めました。時速 90 km で走っているとき、前の車との車間は何 m にしますか。',
+ unit:'m',a:50,nums:[['90',90],['2',2],['3.6',3.6]],hint:'時速（km/h）を秒速（m/s）にするには ÷ 3.6 します。車間は「秒速 × 車間時間」です。',
+ m:'90 ÷ 3.6 ＝ 25（m/s）、25 × 2 ＝ 50（m）',e:'車間時間は「前の車が通った所を、何秒後に通るか」です。'},
+{g:'D',t:'num',pt:3,fig:'cars',q:'前の車まで 30 m です。自分の車は時速 72 km、前の車は時速 54 km で、同じ向きに走っています。このままの速さで進むと、何秒後にぶつかりますか（TTC）。',
+ unit:'秒',a:6,nums:[['30',30],['72',72],['54',54],['3.6',3.6]],hint:'まず、2台の速さの差（相対速度）を出し、÷ 3.6 で秒速にします。TTC は「距離 ÷ 速さの差」です。',
+ m:'72 − 54 ＝ 18（km/h）、18 ÷ 3.6 ＝ 5（m/s）、30 ÷ 5 ＝ 6（秒）',e:'自分の速さではなく、速さの差で割ります。'},
+{g:'D',t:'text',pt:3,q:'衝突被害軽減ブレーキなどで、ミリ波レーダーとカメラの結果を合わせて使うのはなぜですか。それぞれの得意なことと苦手なことを挙げて説明しなさい。',
+ w:['得意','苦手','雨'],len:[80,200],
+ m:'ミリ波レーダーは、雨や霧、夜でも、距離や近づく速さを測るのが得意ですが、物の形（人か車か）を見分けるのは苦手です。カメラは形や白線を見分けるのが得意ですが、暗さや雨が苦手です。合わせて使うと、おたがいの苦手をおぎなえるからです。',
+ c:[['レーダーの得意と苦手（雨や夜でも距離を測れる／形が分からない）',1],['カメラの得意と苦手（形が分かる／暗さや雨に弱い）',1],['おたがいの苦手をおぎなう',1]]},
+{g:'E',t:'text',pt:6,q:'ACC（前の車についていく制御）のしくみを、「測る → くらべる → 決める → 動かす」の順に説明しなさい。',
+ w:['ミリ波レーダー','車輪速センサ','車間時間','アクチュエータ'],len:[120,300],
+ m:'測る：ミリ波レーダーで前の車までの距離を、車輪速センサで自分の速さを測ります。くらべる：今の車間を、決めた車間時間（例：2 秒）と自分の速さから出した目標の車間とくらべます。決める：ECU が、近すぎれば速さを落とし、遠すぎれば速さを上げると決めます。動かす：アクチュエータ（ブレーキやエンジン）を動かして速さを変えます。これをくり返します。',
+ c:[['測る：ミリ波レーダー（前の車までの距離）と車輪速センサ（自分の速さ）',2],['くらべる：車間時間から決めた目標の車間とくらべる',1],['決める：近ければ速さを落とし、遠ければ上げる',1],['動かす：アクチュエータ（ブレーキ・エンジン）で速さを変える',1],['これをくり返す（フィードバック制御）',1]]},
+{g:'E',t:'text',pt:5,q:'「自動運転への階段」のレベル5では、路面が雪のとき、晴れのときとはちがう数字（速さや止める距離）に切り替えました。切り替えが必要な理由と、数字をどちらへ変えたかを説明しなさい。',
+ w:['すべりにくさ','止まるまでに進む距離'],len:[80,200],
+ m:'雪の路面は晴れよりすべりにくさが小さいので、同じ速さでもブレーキをかけてから止まるまでに進む距離が長くなります。晴れ向きの数字のままだと、止まりきれずに当たります。そこで雪のときは、速さを下げたり、止める距離（余裕）を大きくしたりしました。車は路面を測って、表の雪の行の数字に切り替えます。',
+ c:[['雪はすべりにくさが小さい',1],['止まるまでに進む距離が長くなる',1],['晴れの数字のままだと止まりきれず当たる',1],['速さを下げる・止める距離を大きくする',1],['路面を測って数字を切り替える',1]]},
+];
+const T2MAX=T2.reduce((a,p)=>a+p.pt,0);
+const T2AUTO=T2.filter(p=>p.t!=='text').reduce((a,p)=>a+p.pt,0);
+const T2KEY=DEMO?'seigyo100-test2-demo':'seigyo100-test2-v1';
+const u2blank=()=>({no:'',i:-1,ans:{},hint:{},dl:0,warn:false,act:0,done:null});
+let u2=u2blank(),u2sending=false;
+try{const s=JSON.parse(localStorage.getItem(T2KEY)||'null');if(s)u2=Object.assign(u2,s)}catch(e){}
+function u2Save(){try{localStorage.setItem(T2KEY,JSON.stringify(u2))}catch(e){}}
+const u2Over=()=>u2.dl>0&&Date.now()>=u2.dl;
+const numOf=v=>{const s=String(v??'').normalize('NFKC').replace(/[,\s]/g,'');return /^-?\d+(\.\d+)?$/.test(s)?Number(s):null};
+const u2Has=(k)=>{const p=T2[k],a=u2.ans[k];
+  if(p.t==='fig')return Array.isArray(a)&&a.every(Boolean);
+  if(p.t==='num')return numOf(a)!=null;
+  return !!(a&&String(a).trim())};
+const u2Started=k=>{const a=u2.ans[k];return Array.isArray(a)?a.some(Boolean):!!(a&&String(a).trim())};
+// 自動で採点する点（図と計算）。記述は null（先生が採点）
+function u2Auto(k){const p=T2[k],a=u2.ans[k];
+  if(p.t==='fig')return p.slots.filter((s,j)=>Array.isArray(a)&&a[j]===s[2]).length;
+  if(p.t==='num'){const v=numOf(a);return v!=null&&Math.abs(v-p.a)<=Math.abs(p.a)*0.01?p.pt:0}
+  return null}
+const u2AutoSum=()=>T2.reduce((s,p,k)=>s+(u2Auto(k)||0),0);
+const wordsIn=(k)=>{const a=String(u2.ans[k]||'');return T2[k].w.map(w=>a.includes(w))};
+const chars=t=>[...String(t||'').replace(/\s/g,'')].length;
+
+function u2Chrome(){
+  $('ttl').textContent=DEMO?'小テスト第2回（先生用デモ）':'小テスト第2回';
+  $('chips').innerHTML=u2.dl?Object.keys(CH).map(g=>{const ks=T2.map((p,k)=>k).filter(k=>T2[k].g===g),n=ks.filter(u2Has).length;
+    return `<span class="chip ${u2.i>=0&&T2[u2.i]&&T2[u2.i].g===g?'now':n===ks.length?'done':''}">${CHS[g]} ${n}/${ks.length}</span>`}).join(''):'';
+  $('count').textContent=u2.no&&u2.dl?'出席番号 '+u2.no:'';
+  $('bar').style.width=u2.dl?(T2.filter((p,k)=>u2Has(k)).length/T2.length*100)+'%':'0';
+}
+function u2Demo(){if(!DEMO)return '';
+  return `<div class="demo">先生用デモ：何度でも受け直せます。生徒の記録とは別に保存します。${u2.dl&&!u2.done&&!u2Over()?'<button id="dEnd">時間を終わらせる</button>':''}<button id="dReset">最初からやり直す</button></div>`}
+function u2DemoBind(){if(!DEMO)return;
+  const r=$('dReset');if(r)r.onclick=()=>{u2=Object.assign(u2blank(),{no:u2.no});u2sending=false;u2Save();render()};
+  const e=$('dEnd');if(e)e.onclick=()=>{u2.dl=Date.now()-1;u2Save();render()}}
+function u2Render(){
+  u2Chrome();
+  if(u2.done)return u2Final();
+  if(!u2.dl)return u2Start();
+  if(u2sending)return tSending();
+  if(u2Over()||u2.i<0)return u2Confirm();
+  u2Play();
+}
+function u2Start(){
+  const nt=T2.filter(p=>p.t==='text').length,nn=T2.filter(p=>p.t==='num').length;
+  $('card').innerHTML=u2Demo()+`<div class="q">小テスト第2回（${T2MAX}点満点・記述が中心）</div>
+   <table class="plan">
+    <tr><td>問題</td><td>${T2.length}問：記述 ${nt}問・計算 ${nn}問・図 1問。分野は練習と同じ5つです</td></tr>
+    <tr><td>記述</td><td>指定された言葉（指定語句）を、そのままの形で必ず入れて書きます。入れると、その言葉の色が変わります</td></tr>
+    <tr><td>計算</td><td>答えの数字だけを入れます。電卓とヒントを使えます</td></tr>
+    <tr><td>制限時間</td><td><b>${T2SEC/60}分</b>。問題は好きな順に解けます。時間になると答えを変えられなくなります。ページを開き直しても時間は止まりません</td></tr>
+    <tr><td>提出</td><td>最後に「提出する」を押します。<b>受けられるのは1回だけです</b></td></tr></table>
+   <div class="nobox"><label for="no">出席番号（4けた）</label><br><input id="no" inputmode="numeric" maxlength="4" autocomplete="off" value="${esc(u2.no)}" placeholder="0000"></div>
+   <div class="warn" id="nomsg"></div>
+   <div class="row"><button class="btn ghost" id="tomenu">メニューへ</button><button class="btn" id="go">はじめる（時間が動きます）</button></div>`;
+  const no=$('no');
+  const go=()=>{const v=fixNo(no.value);
+    if(!/^\d{4}$/.test(v)){$('nomsg').textContent='出席番号は4けたの数字で入れます（例 2105）。';no.focus();return}
+    u2.no=v;u2.dl=Date.now()+T2SEC*1000;u2.i=0;u2.ans={};u2.hint={};u2Save();render()};
+  $('go').onclick=go;no.onkeydown=e=>{if(e.key==='Enter')go()};u2DemoBind();
+  $('tomenu').onclick=()=>setMode('menu');
+}
+function u2Tick(){const left=u2.dl-Date.now();
+  if(left<=0){stopTick();render();return}
+  if($('tm'))$('tm').textContent=mmss(left);
+  if($('tfill'))$('tfill').style.width=(left/(T2SEC*1000)*100)+'%';
+  if($('tbar'))$('tbar').classList.toggle('hot',left<=5*60000)}
+// 図：衝突被害軽減ブレーキの場面（自分の車・前の車・レーダーの電波）
+function carSVG(me,front,dist){
+  const car=(x,c,lb)=>`<g transform="translate(${x},40)"><rect x="0" y="8" width="120" height="34" rx="10" fill="${c}"/><rect x="22" y="0" width="64" height="18" rx="7" fill="${c}"/><rect x="30" y="4" width="22" height="12" rx="3" fill="#dfe8f5"/><rect x="58" y="4" width="22" height="12" rx="3" fill="#dfe8f5"/><circle cx="26" cy="44" r="10" fill="#33414f"/><circle cx="94" cy="44" r="10" fill="#33414f"/><text x="60" y="78" text-anchor="middle" font-size="15" fill="#1c2836" font-weight="700">${lb}</text></g>`;
+  return `<svg viewBox="0 0 640 152" role="img" aria-label="自分の車と前の車" style="height:min(150px,18vh);width:auto;max-width:100%;display:block;flex:none">
+   ${car(20,'#2a5fc4','自分の車'+(me?'　'+me:''))}${car(500,'#8a96a3','前の車'+(front?'　'+front:''))}
+   ${[0,1,2].map(i=>`<path d="M${150+i*16},40 q10,22 0,44" fill="none" stroke="#d9a400" stroke-width="3"/>`).join('')}
+   <line x1="145" y1="140" x2="495" y2="140" stroke="#5b6876" stroke-width="2" marker-start="url(#ah)" marker-end="url(#ah)"/>
+   <defs><marker id="ah" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#5b6876"/></marker></defs>
+   <rect x="280" y="128" width="80" height="24" fill="#fff"/><text x="320" y="146" text-anchor="middle" font-size="17" font-weight="700" fill="#1c2836">${dist}</text>
+   <text x="200" y="30" font-size="14" fill="#9a6f00">電波</text></svg>`}
+function u2Body(k){const p=T2[k],a=u2.ans[k],lock=u2Over();
+  if(p.t==='fig'){const A=Array.isArray(a)?a:p.slots.map(()=>null),act=u2.act||0;
+    return `<div class="scene">${carSVG('','','40 m')}</div>
+     <div class="flow">${p.slots.map((s,j)=>`${j?'<span class="arw">→</span>':''}<button class="slot ${j===act?'act':''} ${A[j]?'fill':''}" data-j="${j}" ${lock?'disabled':''}><span class="sl">${esc(s[0])}</span><span class="sd">${esc(s[1])}</span><span class="sv">${A[j]?esc(A[j]):'（ここを押して選ぶ）'}</span></button>`).join('')}</div>
+     <div class="hint">空らん（いま選んでいるのは「${esc(p.slots[act][0])}」）を押してから、下の語群の言葉を押します。</div>
+     <div class="bank">${p.bank.map(w=>{const o=A.indexOf(w);return `<button class="opt ${o===act?'pick':o>=0?'used':''}" data-w="${esc(w)}" ${lock?'disabled':''}>${o>=0&&o!==act?`<span class="no">${'①②③④'[o]}</span>`:''}${esc(w)}</button>`}).join('')}</div>`}
+  if(p.t==='num')return `${p.fig==='cars'?carSVG('72 km/h','54 km/h','30 m'):''}<div class="numin"><input id="ni" inputmode="decimal" autocomplete="off" value="${esc(a??'')}" placeholder="数字" ${lock?'disabled':''}> ${esc(p.unit)}</div><div class="hint">数字だけを入れます（単位は入れません）。割り切れないときは小数第2位まで書きます。</div>`;
+  const n=chars(a),inw=wordsIn(k);
+  return `<div class="wds">指定語句：${p.w.map((w,j)=>`<span class="wd ${inw[j]?'in':''}">${inw[j]?'✓ ':''}${esc(w)}</span>`).join('')}</div>
+   <textarea id="ta" rows="7" maxlength="400" placeholder="ここに書きます" ${lock?'disabled':''}>${esc(a||'')}</textarea>
+   <div class="hint" id="cnt">${n} 字（目安 ${p.len[0]}〜${p.len[1]} 字）</div>`}
+function u2Play(){
+  const k=u2.i,p=T2[k],n=T2.length,calc=p.t==='num';
+  const top=`<div class="sec"><span class="lbl">第${k+1}問 / ${n}</span><span class="nm">${esc(CH[p.g])}</span><span class="tag">${{fig:'図',num:'計算',text:'記述'}[p.t]}・${p.pt}点</span></div>
+   <div class="q">${esc(p.q)}</div>`;
+  $('card').innerHTML=u2Demo()+`<div class="tbar" id="tbar"><span class="tm" id="tm">${mmss(u2.dl-Date.now())}</span><div class="ttrack"><div id="tfill"></div></div></div>
+   <div class="dots">${T2.map((_,j)=>`<button data-j="${j}" class="${u2Has(j)?'fill':''} ${j===k?'now':''}" aria-label="第${j+1}問">${j+1}</button>`).join('')}</div>
+   ${calc?`<div class="cq"><div class="cl">${top}${u2Body(k)}${u2HintHTML(k)}</div><div class="calc" id="calc"></div></div>`:top+u2Body(k)}
+   <div class="row"><button class="btn ghost" id="back" ${k===0?'disabled':''}>もどる</button><button class="btn ghost" id="next" ${k===n-1?'disabled':''}>次へ</button><button class="btn ghost" id="toConf">提出の確認へ</button></div>`;
+  u2Tick();if(u2Over())return;
+  tick=setInterval(u2Tick,250);
+  if(p.t==='fig'){
+    document.querySelectorAll('.slot').forEach(b=>b.onclick=()=>{u2.act=+b.dataset.j;u2Save();render()});
+    document.querySelectorAll('.bank .opt').forEach(b=>b.onclick=()=>{const w=b.dataset.w,A=Array.isArray(u2.ans[k])?u2.ans[k]:p.slots.map(()=>null),act=u2.act||0;
+      if(A[act]===w)A[act]=null;else{const o=A.indexOf(w);if(o>=0)A[o]=null;A[act]=w;
+        const nx=A.map((_,j)=>(act+1+j)%A.length).find(j=>!A[j]);if(nx!=null)u2.act=nx}
+      u2.ans[k]=A;u2Save();render()})}
+  if(p.t==='num'){const ni=$('ni');ni.oninput=()=>{u2.ans[k]=ni.value;u2Save();u2Chrome();dotFill()};calRender2(k);bindHint2(k)}
+  if(p.t==='text'){const ta=$('ta');ta.oninput=()=>{u2.ans[k]=ta.value;u2Save();u2Chrome();dotFill();
+    const inw=wordsIn(k);document.querySelectorAll('.wd').forEach((e,j)=>{e.classList.toggle('in',inw[j]);e.textContent=(inw[j]?'✓ ':'')+p.w[j]});
+    $('cnt').textContent=`${chars(ta.value)} 字（目安 ${p.len[0]}〜${p.len[1]} 字）`}}
+  const go=j=>{u2.i=j;u2.act=0;u2Save();render()};
+  document.querySelectorAll('.dots button').forEach(b=>b.onclick=()=>go(+b.dataset.j));
+  $('back').onclick=()=>go(k-1);$('next').onclick=()=>go(k+1);
+  $('toConf').onclick=()=>{u2.i=-1;u2.warn=false;u2Save();render()};
+  u2DemoBind();
+}
+function dotFill(){document.querySelectorAll('.dots button').forEach(b=>b.classList.toggle('fill',u2Has(+b.dataset.j)))}
+function u2HintHTML(k){const p=T2[k];
+  return u2.hint[k]?`<div class="hbox"><b>ヒント</b>　${esc(p.hint)}</div>`:`<div><button class="hbtn" id="hintBtn">ヒントを見る</button></div>`}
+function bindHint2(k){const b=$('hintBtn');if(b)b.onclick=()=>{u2.hint[k]=1;u2Save();b.parentNode.outerHTML=`<div class="hbox"><b>ヒント</b>　${esc(T2[k].hint)}</div>`}}
+// ===== 計算問題の電卓（ふりかえり演習と同じ。eval は使わない） =====
+let cal={k:-1,ex:'',res:null,tape:[]};
+function calcEval(ex){
+  const t=ex.match(/\d+(?:\.\d+)?|[+\-×÷()]/g)||[];if(t.join('')!==ex)throw 0;let i=0;
+  const num=()=>{const x=t[i++];if(x==='('){const v=sum();if(t[i++]!==')')throw 0;return v}if(x==='-')return -num();if(x==null||!/^\d/.test(x))throw 0;return Number(x)};
+  const mul=()=>{let v=num();while(t[i]==='×'||t[i]==='÷'){const o=t[i++],w=num();if(o==='÷'&&w===0)throw 0;v=o==='×'?v*w:v/w}return v};
+  const sum=()=>{let v=mul();while(t[i]==='+'||t[i]==='-'){const o=t[i++],w=mul();v=o==='+'?v+w:v-w}return v};
+  if(!t.length)throw 0;const v=sum();if(i!==t.length||!isFinite(v))throw 0;return Number(v.toPrecision(12))}
+const calcFmt=v=>v.toLocaleString('ja-JP',{maximumFractionDigits:10});
+const calcShow=ex=>ex.replace(/\d+(?:\.\d+)?/g,m=>{const [a,b]=m.split('.');return Number(a).toLocaleString('ja-JP')+(b!=null?'.'+b:'')}).replace(/-/g,'−');
+function calKey(key){
+  const op='+-×÷';
+  if(key==='C'){cal.ex='';cal.res=null;return}
+  if(key==='←'){cal.ex=cal.ex.slice(0,-1);cal.res=null;return}
+  if(key==='='){if(!cal.ex)return;try{const v=calcEval(cal.ex);cal.tape=[`${calcShow(cal.ex)} ＝ ${calcFmt(v)}`,...cal.tape].slice(0,3);cal.res=v;cal.ex=''}catch(e){cal.res='エラー';cal.ex=''}return}
+  if(typeof cal.res==='number'&&!cal.ex&&op.includes(key))cal.ex=String(cal.res);
+  cal.res=null;
+  if(op.includes(key)&&op.includes(cal.ex.slice(-1))&&key!=='-')cal.ex=cal.ex.slice(0,-1);
+  cal.ex+=key;
+}
+function calRender2(k){
+  const p=T2[k],box=$('calc');if(!box)return;
+  if(cal.k!==k)cal={k,ex:'',res:null,tape:[]};
+  const main=cal.res!=null?(cal.res==='エラー'?'エラー':calcFmt(cal.res)):cal.ex?calcShow(cal.ex):'0';
+  const keys=['C','←','(',')','7','8','9','÷','4','5','6','×','1','2','3','-','0','.','=','+'];
+  box.innerHTML=`<div class="ctitle">電卓（問題の数はボタンで入れられます）</div>
+   <div class="cnums">${p.nums.map((n,j)=>`<button class="ck cn" data-n="${j}">${esc(n[0])}</button>`).join('')}</div>
+   <div class="cdisp"><div class="cex">${esc(cal.tape[0]||'')}</div><div class="cmain" id="cmain">${esc(main)}</div></div>
+   <div class="ckeys">${keys.map(x=>`<button class="ck ${'+-×÷'.includes(x)?'op':''} ${x==='='?'eq':''}" data-k="${x}">${x==='-'?'−':x}</button>`).join('')}</div>
+   <button class="hbtn" id="toAns" ${typeof cal.res==='number'?'':'disabled'}>この数を答えの欄に入れる</button>
+   <div class="ctape">${cal.tape.slice(1).map(esc).join('<br>')}</div>`;
+  box.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{calKey(b.dataset.k);calRender2(k)});
+  box.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const v=String(p.nums[+b.dataset.n][1]);
+    if(cal.res!=null){cal.ex='';cal.res=null}if(/[\d.)]$/.test(cal.ex))cal.ex+='×';cal.ex+=v;calRender2(k)});
+  const ta=$('toAns');if(ta)ta.onclick=()=>{const ni=$('ni');ni.value=String(Number(cal.res.toFixed(2)));u2.ans[k]=ni.value;u2Save();u2Chrome();dotFill()};
+}
+function u2Confirm(){
+  const over=u2Over(),left=T2.map((_,k)=>k).filter(k=>!u2Has(k));
+  $('card').innerHTML=u2Demo()+(over?'<div class="warn">時間になりました。答えはもう変えられません。このまま「提出する」を押します。</div>':'')+`<div class="q">提出の前に確かめます</div>
+   <table class="plan"><tr><td>出席番号</td><td style="font-size:22px;font-weight:700;letter-spacing:.1em">${esc(u2.no)}</td></tr>
+   <tr><td>答えた問題</td><td>${T2.length-left.length} / ${T2.length} 問</td></tr>
+   ${over?'':`<tr><td>残り時間</td><td id="tm">${mmss(u2.dl-Date.now())}</td></tr>`}</table>
+   ${left.length?`<div>まだ答えていない・とちゅうの問題${over?'':'（押すとその問題へ）'}</div><div class="jump">${left.map(k=>`<button class="opt" data-k="${k}" ${over?'disabled':''}>第${k+1}問${u2Started(k)?'（とちゅう）':''}</button>`).join('')}</div>`:'<div>全部の問題に答えました。</div>'}
+   ${u2.warn&&left.length?`<div class="warn">まだ答えていない問題が${left.length}問あります。このまま提出するときは、もう一度「提出する」を押します。</div>`:''}
+   <div class="hint">提出は1回だけです。提出したあとは、答えを変えられません。</div>
+   <div class="row">${over?'':'<button class="btn ghost" id="back">問題にもどる</button>'}<button class="btn" id="send">提出する</button></div>`;
+  document.querySelectorAll('.jump .opt').forEach(b=>b.onclick=()=>{u2.i=+b.dataset.k;u2.act=0;u2Save();render()});
+  if($('back'))$('back').onclick=()=>{u2.i=0;u2Save();render()};
+  if(!over)tick=setInterval(()=>{if(u2Over()){stopTick();render();return}if($('tm'))$('tm').textContent=mmss(u2.dl-Date.now())},250);
+  // ダミーの提出：どこにも送らず、送信しているような表示のあと「提出しました」にする
+  $('send').onclick=()=>{if(left.length&&!u2.warn&&!over){u2.warn=true;u2Save();render();return}
+    stopTick();u2sending=true;render();
+    setTimeout(()=>{u2sending=false;u2.done=stamp();u2Save();render()},1500)};
+  u2DemoBind();
+}
+function u2Final(){
+  const sc=u2AutoSum();
+  $('card').innerHTML=u2Demo()+`<div class="cert">
+    <div class="big ok pop">提出しました</div>
+    <div class="who">出席番号 <b>${esc(u2.no)}</b>　　受付 ${esc(u2.done)}</div>
+    <div><span class="score pop">${sc}</span><span style="font-size:24px;font-weight:700"> / ${T2AUTO} 点</span>　<span class="hint">図と計算の${T2AUTO}点分は、ここで採点しました。記述の${T2MAX-T2AUTO}点分は、先生が採点します。</span></div>
+   </div>
+   <div class="row" style="position:static"><button class="btn" id="tomenu">メニューへ</button></div>
+   <div class="hint">答え合わせ（記述は、模範解答と採点の観点を見て、自分の答えと見くらべます）</div>
+   ${T2.map((p,k)=>{const a=u2.ans[k],au=u2Auto(k);
+     const mine=p.t==='fig'?p.slots.map((s,j)=>`${esc(s[0])}：${Array.isArray(a)&&a[j]?esc(a[j]):'未回答'}`).join('　'):a!=null&&String(a).trim()?esc(a)+(p.t==='num'?' '+esc(p.unit):''):'未回答';
+     const right=p.t==='fig'?p.slots.map(s=>`${esc(s[0])}：${esc(s[2])}`).join('　'):esc(p.m);
+     const mk=au==null?'<span class="mark">記</span>':au===p.pt?'<span class="mark o">○</span>':au>0?'<span class="mark o">△</span>':'<span class="mark x">×</span>';
+     return `<div class="rv"><div class="h">${mk}<span>第${k+1}問（${p.pt}点）${au!=null?` ${au}点`:''}　${esc(p.q)}</span></div>
+      <div><b>あなたの答え</b>　${mine}</div>
+      ${p.t==='text'?`<div class="hint">指定語句：${p.w.map((w,j)=>wordsIn(k)[j]?'✓ '+esc(w):'× '+esc(w)).join('　')}　／　${chars(a)} 字</div>`:''}
+      <div><b>${p.t==='text'?'模範解答':'正解'}</b>　${right}</div>
+      ${p.c?`<ul class="crit">${p.c.map(c=>`<li>${esc(c[0])}（${c[1]}点）</li>`).join('')}</ul>`:''}
+      ${p.e?`<div class="hint">${esc(p.e)}</div>`:''}</div>`}).join('')}`;
+  $('tomenu').onclick=()=>setMode('menu');u2DemoBind();
 }
 render();
 </script>

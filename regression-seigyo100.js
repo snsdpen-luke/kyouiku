@@ -301,6 +301,117 @@ console.log('■ 小テスト：通しで受ける');
   nd.close(); dw.close();
   w.close(); W.close();
 
+  // ===== 小テスト第2回（記述中心・40分） =====
+  console.log('■ 小テスト第2回：問題データ');
+  {
+    const w = open(null, 'menu'); const { T2, T2MAX, T2AUTO } = w.eval('({T2,T2MAX,T2AUTO})');
+    ok('13問・50点満点', T2.length === 13 && T2MAX === 50, T2.length + '問 ' + T2MAX + '点');
+    ok('5分野がそろう（各2問以上）', Object.keys(w.eval('CH')).every(g => T2.filter(p => p.g === g).length >= 2));
+    const nt = T2.filter(p => p.t === 'text').length, nn = T2.filter(p => p.t === 'num').length;
+    ok('記述8問・計算4問・図1問', nt === 8 && nn === 4 && T2.filter(p => p.t === 'fig').length === 1, `${nt} ${nn}`);
+    ok('記述が点の半分以上（記述が中心）', T2MAX - T2AUTO >= 25, T2MAX - T2AUTO);
+    ok('記述の観点の点の合計が、その問題の点と同じ', T2.filter(p => p.t === 'text').every(p => p.c.reduce((a, c) => a + c[1], 0) === p.pt),
+      T2.filter(p => p.t === 'text' && p.c.reduce((a, c) => a + c[1], 0) !== p.pt).map(p => p.q.slice(0, 12)));
+    ok('指定語句は形の変わらない言葉（動詞でない）', T2.filter(p => p.t === 'text').every(p => p.w.every(x => !/(る|て|める|する)$/.test(x))), T2.flatMap(p => p.w || []).filter(x => /(る|て)$/.test(x)));
+    ok('模範解答に指定語句がそのまま入っている', T2.filter(p => p.t === 'text').every(p => p.w.every(x => p.m.includes(x))),
+      T2.filter(p => p.t === 'text' && !p.w.every(x => p.m.includes(x))).map(p => p.w.filter(x => !p.m.includes(x))));
+    const len = t => [...t.replace(/\s/g, '')].length;
+    ok('模範解答の長さが目安の字数に入る', T2.filter(p => p.t === 'text').every(p => len(p.m) >= p.len[0] && len(p.m) <= p.len[1]),
+      T2.filter(p => p.t === 'text').map(p => len(p.m) + '/' + p.len).join(' '));
+    const fig = T2.find(p => p.t === 'fig');
+    ok('図：正解が語群に1回ずつあり、語群に重なりがない', fig.slots.every(s => fig.bank.filter(b => b === s[2]).length === 1) && new Set(fig.bank).size === fig.bank.length);
+    // 計算の答えは教材のコードを使わずに計算し直す
+    const indep = [340 * 0.008 / 2, 1.8 / 40 * 500 * 3.6, 90 / 3.6 * 2, 30 / ((72 - 54) / 3.6)];
+    const nums = T2.filter(p => p.t === 'num');
+    ok('計算の答えが計算し直した値と同じ（1.36 m・81 km/h・50 m・6 秒）', nums.every((p, j) => Math.abs(p.a - indep[j]) < 1e-9), nums.map(p => p.a).join(' '));
+    ok('計算の問題文に、使う数がすべて出ている', nums.every(p => p.nums.every(n => p.q.includes(n[0]) || n[0] === '3.6')));
+    ok('計算にヒントと模範の式がある', nums.every(p => p.hint && p.m));
+    const banned = /PLC|ラダー|PID|インターロック|自己保持|掃除機|接点|積分|微分|ゲイン|クリープ|すえ切り|Arduino|Trig|pulseIn|HC-SR04/;
+    ok('Arduino・ラダー（PLC）・範囲の外の語がない', !T2.some(p => banned.test(JSON.stringify(p))));
+    ok('文が です・ます（問題文は「〜なさい。」「〜ですか。」）', T2.every(p => /(なさい|ですか|ますか|ます)。$|）。$/.test(p.q.replace(/（TTC）/, ''))));
+    w.close();
+  }
+
+  console.log('■ 小テスト第2回：通しで受ける');
+  {
+    const w = open(null, 'test2'); const d = w.document;
+    ok('メニューの「小テスト第2回」から開ける形（ボタンがある）', (() => { const m = open(null, 'menu'); const r = !!m.document.getElementById('mTest2') && m.document.getElementById('mTest').textContent.includes('第1回'); m.close(); return r; })());
+    click(w, '#go');
+    ok('出席番号が4けたでないと始まらない', d.getElementById('nomsg').textContent.includes('4けた') && w.eval('u2.dl') === 0);
+    d.getElementById('no').value = '２１０５'; click(w, '#go');
+    ok('全角の番号も受け付け、40分の締め切りが入る', w.eval('u2.no') === '2105' && Math.abs(w.eval('u2.dl') - Date.now() - 2400000) < 5000 && d.getElementById('tm').textContent === '40:00');
+    ok('問題中はメニューボタンを出さない', d.getElementById('menuBtn').hidden);
+    // 第1問：図。①②を正しく、③をまちがえる
+    const T2 = w.eval('T2');
+    const tap = w2 => [...d.querySelectorAll('.bank .opt')].find(b => b.dataset.w === w2).click();
+    tap('ミリ波レーダー'); tap('ECU'); tap('車間時間');
+    ok('図：選ぶと次の空らんへ進む', w.eval('u2.act') === 3 && w.eval('u2.ans[0][2]') === '車間時間');
+    d.querySelector('.slot[data-j="2"]').click(); tap('TTC（衝突余裕時間）');
+    ok('空らんを選び直して入れかえられる', w.eval('u2.ans[0][2]') === 'TTC（衝突余裕時間）');
+    ok('図は4つ入れるまで「答えた」にならない', !w.eval('u2Has(0)'));
+    // 第3問：計算（1.36）を電卓で出して入れる
+    d.querySelector('.dots button[data-j="2"]').click();
+    ok('計算の問題に電卓とヒントのボタン', !!d.getElementById('calc') && !!d.getElementById('hintBtn'));
+    const key = k => [...d.querySelectorAll('#calc [data-k]')].find(b => b.dataset.k === k).click();
+    d.querySelector('#calc [data-n="1"]').click(); key('×'); d.querySelector('#calc [data-n="0"]').click(); key('÷'); key('2'); key('=');
+    ok('電卓：340×0.008÷2 ＝ 1.36', d.getElementById('cmain').textContent === '1.36');
+    click(w, '#toAns');
+    ok('「答えの欄に入れる」で答えが入る', w.eval('u2.ans[2]') === '1.36' && w.eval('u2Auto(2)') === 3);
+    click(w, '#hintBtn');
+    ok('ヒントを見られる（記録される）', !!d.querySelector('.hbox') && w.eval('u2.hint[2]') === 1);
+    // 第6問：計算をまちがえる（全角で入れる）
+    d.querySelector('.dots button[data-j="5"]').click();
+    const ni = d.getElementById('ni'); ni.value = '２２．５'; ni.dispatchEvent(new w.Event('input'));
+    ok('全角の数も数として読み、まちがいは0点', w.eval('u2Has(5)') && w.eval('u2Auto(5)') === 0);
+    // 第2問：記述。指定語句の印
+    d.querySelector('.dots button[data-j="1"]').click();
+    const ta = d.getElementById('ta'); ta.value = 'フィードバック制御は目標値とくらべて偏差を直す。'; ta.dispatchEvent(new w.Event('input'));
+    const wd = [...d.querySelectorAll('.wd')];
+    ok('記述：入れた指定語句だけに印（目標値・偏差 ✓、順番 なし）', wd[0].classList.contains('in') && wd[1].classList.contains('in') && !wd[2].classList.contains('in'));
+    ok('記述：字数を数える', d.getElementById('cnt').textContent.startsWith('24 字'));
+    ok('記述は自動で点をつけない', w.eval('u2Auto(1)') === null);
+    // 開き直しても時間は戻らず、答えも残る
+    const saved = JSON.parse(w.localStorage.getItem('seigyo100-test2-v1')); saved.dl = Date.now() + 61000;
+    const w3 = open(null, 'test2'); w3.close();
+    const dom3 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/seigyo100/', beforeParse(x) { x.localStorage.setItem('seigyo100-mode', 'test2'); x.localStorage.setItem('seigyo100-test2-v1', JSON.stringify(saved)); x.confirm = () => false; } });
+    ok('開き直しても残り時間は締め切りから計算（1:01）・答えも残る', dom3.window.document.getElementById('tm').textContent === '1:01' && dom3.window.document.getElementById('ta').value.includes('偏差'));
+    dom3.window.close();
+    // 提出の確認：未回答があると1回目は止まる
+    click(w, '#toConf');
+    ok('確認の画面に未回答の問題（とちゅうの印つき）', d.querySelectorAll('.jump .opt').length === 10 && d.querySelector('.jump').textContent.includes('第1問（とちゅう）'));
+    click(w, '#send');
+    ok('未回答があると1回目の「提出する」では出さない', !!d.querySelector('.warn') && !w.eval('u2.done'));
+    // 時間切れ：開き直すと答えを変えられず、提出だけできる
+    const late = JSON.parse(w.localStorage.getItem('seigyo100-test2-v1')); late.dl = Date.now() - 1; late.i = 1;
+    const dom4 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/seigyo100/', beforeParse(x) { x.localStorage.setItem('seigyo100-mode', 'test2'); x.localStorage.setItem('seigyo100-test2-v1', JSON.stringify(late)); x.confirm = () => false; } });
+    const W = dom4.window, D = W.document;
+    ok('時間切れなら問題を開かず、提出の画面（問題にもどれない）', D.querySelector('.warn')?.textContent.includes('時間になりました') && !D.getElementById('ta') && !D.getElementById('back') && D.querySelector('.jump .opt').disabled);
+    D.getElementById('send').click();
+    ok('時間切れなら未回答があっても1回で提出に進む', D.querySelector('.card').textContent.includes('送信しています'));
+    await new Promise(r => setTimeout(r, 1700));
+    ok('「提出しました」：図3点＋計算3点＝6 / 16 点', D.querySelector('.cert .big')?.textContent === '提出しました' && D.querySelector('.cert .score').textContent === '6' && D.querySelector('.cert').textContent.includes('/ 16 点'));
+    ok('答え合わせ13問・記述は模範解答と観点・指定語句の有無', D.querySelectorAll('.rv').length === 13 && D.querySelectorAll('.crit').length === 8 && D.querySelector('.card').textContent.includes('× 順番'));
+    ok('ランク・受け直しがない', !D.querySelector('.card').textContent.includes('ランク') && !D.getElementById('dReset'));
+    const box = W.localStorage.getItem('seigyo100-test2-v1');
+    const dom5 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/seigyo100/', beforeParse(x) { x.localStorage.setItem('seigyo100-mode', 'test2'); x.localStorage.setItem('seigyo100-test2-v1', box); } });
+    ok('開き直しても「提出しました」のまま（受け直せない）', !!dom5.window.document.querySelector('.cert') && !dom5.window.document.getElementById('no'));
+    dom5.window.document.getElementById('tomenu').click();
+    ok('メニューに「提出済み」', dom5.window.document.getElementById('mTest2').textContent.includes('提出済み（図と計算 6 / 16 点'));
+    ok('第1回の記録は第2回で変わらない', dom5.window.eval('ts.done') === null);
+    dom5.window.close();
+    // 先生用デモ：生徒の箱とは別。時間を終わらせて提出、やり直し
+    const dom6 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/seigyo100/#demo', beforeParse(x) { x.localStorage.setItem('seigyo100-mode', 'test2'); x.localStorage.setItem('seigyo100-test2-v1', box); } });
+    const dw = dom6.window, dd = dw.document;
+    ok('#demo なら、提出済みの生徒でも最初の画面（別の箱）', !!dd.getElementById('no') && !!dd.querySelector('.demo'));
+    dd.getElementById('no').value = '0000'; dd.getElementById('go').click();
+    dd.getElementById('dEnd').click();
+    ok('デモは「時間を終わらせる」で時間切れの確かめができる', dd.querySelector('.warn')?.textContent.includes('時間になりました'));
+    dd.getElementById('send').click(); await new Promise(r => setTimeout(r, 1700));
+    dd.getElementById('dReset').click();
+    ok('デモは提出後も受け直せ、生徒の箱を変えない', !!dd.getElementById('no') && dw.localStorage.getItem('seigyo100-test2-v1') === box && !!dw.localStorage.getItem('seigyo100-test2-demo'));
+    dw.close(); W.close(); w.close();
+  }
+
   done();
 })();
 function done() {
