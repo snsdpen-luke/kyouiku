@@ -412,6 +412,42 @@ console.log('■ 小テスト：通しで受ける');
     dw.close(); W.close(); w.close();
   }
 
+  console.log('■ 小テスト第2回：答案を送る（受け口の URL を入れたとき）');
+  {
+    ok('いまは送り先が空（ダミーの提出）', /const T2_URL='';/.test(html));
+    const html2 = html.replace("const T2_URL='';", "const T2_URL='https://script.example.test/exec';");
+    const sent = []; let mode = 'fail';
+    const dom = new JSDOM(html2, { runScripts: 'dangerously', url: 'https://example.test/seigyo100/', beforeParse(x) {
+      x.localStorage.setItem('seigyo100-mode', 'test2');
+      x.fetch = async (url, o) => { sent.push({ url, o }); if (mode === 'fail') throw new Error('offline'); return { json: async () => ({ ok: true }) }; };
+    } });
+    const w = dom.window, d = w.document;
+    d.getElementById('no').value = '2105'; d.getElementById('go').click();
+    [...d.querySelectorAll('.bank .opt')].find(b => b.dataset.w === 'ミリ波レーダー').click();
+    w.eval("u2.ans[1]='=目標値とくらべて偏差を直す。\\n2行目';u2.ans[2]='1.36';u2.hint[2]=1;u2.ans[9]='6';u2Save()");
+    w.eval('u2.dl=Date.now()-1;render()');
+    d.getElementById('send').click(); await new Promise(r => setTimeout(r, 50));
+    ok('送れないと「提出しました」にならず、答えを残して「もう一度送る」', !w.eval('u2.done') && d.querySelector('.card').textContent.includes('送れませんでした') && d.getElementById('send').textContent === 'もう一度送る' && w.eval('u2.ans[2]') === '1.36');
+    const sid = w.eval('u2.sid');
+    ok('送る先は T2_URL・POST・ヘッダなし', sent[0].url === 'https://script.example.test/exec' && sent[0].o.method === 'POST' && !sent[0].o.headers);
+    mode = 'ok'; d.getElementById('send').click(); await new Promise(r => setTimeout(r, 50));
+    ok('送れたら「提出しました」', !!w.eval('u2.done') && d.querySelector('.cert .big')?.textContent === '提出しました');
+    const body = JSON.parse(sent[1].o.body);
+    ok('送り直しても同じ提出ID（受け口で二重にならない）', JSON.parse(sent[0].o.body).sid === sid && body.sid === sid && /^[0-9a-z]{24}$/.test(sid));
+    ok('送る中身：出席番号・13問・図は4つの欄・点・ヒント', body.no === '2105' && body.ans.length === 13 && Array.isArray(body.ans[0]) && body.ans[0][0] === 'ミリ波レーダー' && body.auto === 7 && JSON.stringify(body.hints) === '[3]' && body.v === 1 && body.demo === 0);
+    ok('送る中身に名前や練習の記録を入れない', Object.keys(body).sort().join() === 'ans,auto,demo,hints,no,sid,v');
+    // 受け口（.gs）の makeRow に、アプリが送った形をそのまま通す
+    const vm = require('vm'); const ctx = {}; vm.createContext(ctx);
+    vm.runInContext(fs.readFileSync('apps-script/小テスト第2回.gs', 'utf8') + ';this.makeRow=makeRow;this.Q=Q;this.AUTO_MAX=AUTO_MAX;', ctx);
+    const row = ctx.makeRow(body);
+    ok('受け口の問題の並び・点がアプリと同じ', ctx.Q.length === 13 && ctx.Q.every((q, i) => q[1] === w.eval('T2')[i].t && q[2] === w.eval('T2')[i].pt) && ctx.AUTO_MAX === w.eval('T2AUTO'));
+    ok('受け口が受け取れる（1行27列・出席番号・図は「／」でつなぐ）', row.length === 27 && row[1] === "'2105" && row[5] === 'ミリ波レーダー ／ 未回答 ／ 未回答 ／ 未回答' && row[18] === '3');
+    ok('受け口：「=」で始まる答えは式として読ませない・改行は残す', row[6].startsWith("'=") && row[6].includes('\n'));
+    const bad = f => { try { ctx.makeRow(f(JSON.parse(JSON.stringify(body)))); return false; } catch (e) { return true; } };
+    ok('受け口：おかしな形は捨てる（出席番号・提出ID・答えの数・点）', bad(b => (b.no = '12', b)) && bad(b => (b.sid = 'x', b)) && bad(b => (b.ans.pop(), b)) && bad(b => (b.auto = 99, b)));
+    w.close();
+  }
+
   done();
 })();
 function done() {
