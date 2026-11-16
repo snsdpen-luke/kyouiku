@@ -22,7 +22,7 @@ function open(store, mode = 'drill', test) {
   });
   return dom.window;
 }
-const vars = w => w.eval('({Q,RAW,GLOSS,CH,KIND,st,LET})');
+const vars = w => w.eval('({Q:QALL,RAW,GLOSS,CH,KIND,st,LET})');
 const click = (w, sel) => { const el = w.document.querySelector(sel); if (!el) throw new Error('ない: ' + sel); el.click(); };
 
 console.log('■ 問題データ');
@@ -66,6 +66,52 @@ console.log('■ 問題データ');
   ok('正解だけが極端に長い問題がない', far.length === 0, far.map(q => q.id));
 }
 
+console.log('■ 練習の選択問題（厳選50問）');
+{
+  // 2026-11-16 剛さん「本番の中間考査範囲としてふさわしい、難易度の得点バランスを考えた厳選50問」
+  const w = open(); const P = w.eval('Q'), CH = w.eval('CH');
+  const c = f => { const o = {}; P.forEach(q => { const k = f(q); o[k] = (o[k] || 0) + 1; }); return o; };
+  const byG = c(q => q.g), byD = c(q => q.d), byT = c(q => q.t);
+  console.log('    分野', JSON.stringify(byG), '難しさ', JSON.stringify(byD), '種類', JSON.stringify(byT));
+  ok('50問・すべて150問の中にある', P.length === 50 && P.every(q => w.eval('QALL').includes(q)));
+  ok('分野ごとに10問', Object.keys(CH).every(g => byG[g] === 10));
+  ok('むずかしさ ★1:★2:★3 ＝ 12:23:15（どの分野にも ★1 2問以上・★3 3問）', byD[1] === 12 && byD[2] === 23 && byD[3] === 15 && Object.keys(CH).every(g => P.filter(q => q.g === g && q.d === 1).length >= 2 && P.filter(q => q.g === g && q.d === 3).length === 3));
+  ok('どの分野にも、意味・用語・使いどころ・場面のうち3種類以上', Object.keys(CH).every(g => new Set(P.filter(q => q.g === g).map(q => q.t)).size >= 3));
+  ok('同じ用語は1分野に2問まで（大事な用語は、ちがう問い方で2回）', Object.keys(CH).every(g => { const a = P.filter(q => q.g === g).map(q => q.w); return a.every(x => a.filter(y => y === x).length <= 2); }), Object.keys(CH).map(g => P.filter(q => q.g === g).map(q => q.w).filter((x, i, a) => a.indexOf(x) !== i)));
+  ok('同じ分野が続かない', P.every((q, i) => i === 0 || P[i - 1].g !== q.g));
+}
+
+console.log('■ 練習：分野をえらぶ・記述の練習');
+{
+  const w = open(); const d = w.document;
+  ok('練習の最初に、選択問題の分野ボタン5つ＋すべて、記述の分野ボタン5つ', !!d.getElementById('go') && d.querySelectorAll('[data-sg]').length === 5 && d.querySelectorAll('[data-kg]').length === 5);
+  d.querySelector('[data-sg="C"]').click();
+  ok('分野をえらぶと、その分野の10問だけ（1 / 10）', d.getElementById('count').textContent === '1 / 10' && w.eval('Q[st.i].g') === 'C');
+  for (let i = 0; i < 10; i++) { d.querySelector('.opt[data-k="0"]').click(); click(w, '#next'); }
+  ok('10問のあとは、その分野の結果（10 / 10・バー1本）', d.querySelector('.res-total').textContent === '10' && d.querySelectorAll('.bars .bar').length === 1 && d.querySelector('.card').textContent.includes('回転と速さを測る'));
+  click(w, '#reset'); click(w, '#reset');
+  ok('「この分野をやり直す」は、その分野の答えだけ消す', Object.keys(w.eval('st').ans).length === 0 && !!d.getElementById('go'));
+  d.querySelector('[data-sg="A"]').click(); d.querySelector('.opt[data-k="0"]').click(); click(w, '#pick');
+  d.querySelector('[data-kg="D"]').click();
+  const KJ = w.eval('KJ');
+  ok('記述：分野ごとに3問・小テスト第2回とは別の問題', ['A','B','C','D','E'].every(g => KJ.filter(p => p.g === g).length === 3) && !KJ.some(p => w.eval('T2').some(q => q.q === p.q)));
+  ok('記述：観点の点の合計＝その問題の点・模範解答に指定語句が入る・字数の目安に入る', KJ.every(p => p.c.reduce((s, c) => s + c[2], 0) === p.pt && p.w.every(x => p.m.includes(x)) && [...p.m.replace(/\s/g, '')].length >= p.len[0] && [...p.m.replace(/\s/g, '')].length <= p.len[1]),
+    KJ.filter(p => !(p.w.every(x => p.m.includes(x)) && [...p.m.replace(/\s/g, '')].length >= p.len[0] && [...p.m.replace(/\s/g, '')].length <= p.len[1])).map(p => p.id + ':' + [...p.m.replace(/\s/g, '')].length));
+  const banned = /PLC|ラダー|PID|インターロック|自己保持|掃除機|接点|積分|微分|ゲイン|クリープ|すえ切り|Arduino|Trig|pulseIn|HC-SR04/;
+  ok('記述：範囲の外の語がない・です・ます', !KJ.some(p => banned.test(JSON.stringify(p))) && KJ.every(p => /(なさい|ですか)。$/.test(p.q) && /す。$/.test(p.m) && /す。$/.test(p.kh)));
+  ok('記述：レーダーの1問目・採点の基準と書き方のヒントが出て、答えはまだ出ない', d.getElementById('count').textContent === '1 / 3' && !!d.querySelector('.kijun') && !d.querySelector('.kans'));
+  const ta = d.getElementById('kta'); ta.value = 'ドップラー効果で周波数が高くなる'; ta.dispatchEvent(new w.Event('input'));
+  ok('記述：指定語句が入るとしるしがつく', [...d.querySelectorAll('.wd.in')].length === 2);
+  click(w, '#kshow');
+  ok('記述：答え合わせで模範解答と自己採点の項目が出る', !!d.querySelector('.kans') && d.querySelectorAll('.kc').length === 3 && d.getElementById('kpt').textContent === '0');
+  d.querySelectorAll('.kc')[0].click(); d.querySelectorAll('.kc')[2].click();
+  ok('記述：押した項目の点が足される（2 / 3）', d.getElementById('kpt').textContent === '2');
+  const w2 = open(w.localStorage.getItem('seigyo100-v4'));
+  ok('記述：開き直しても、書いた答えと自己採点が残る', w2.document.getElementById('kta')?.value === 'ドップラー効果で周波数が高くなる' && w2.document.getElementById('kpt')?.textContent === '2');
+  click(w, '#kback2');
+  ok('記述：分野をえらぶ画面にもどると、答え合わせ 1 / 3', d.querySelector('[data-kg="D"]').textContent.includes('1 / 3'));
+}
+
 console.log('■ 正解の位置');
 {
   const totals = [0, 0, 0, 0, 0]; let sameAll = true, first = null;
@@ -74,12 +120,12 @@ console.log('■ 正解の位置');
     const pos = [];
     w.eval('Q').forEach((q, i) => { const a = w.eval(`order(${i})`); pos.push(a.indexOf(0)); });
     const c = [0, 0, 0, 0, 0]; pos.forEach(p => { c[p]++; totals[p]++; });
-    if (!c.every(n => n === 30)) ok('ア〜オが30問ずつ', false, c);
+    if (!c.every(n => n === 10)) ok('ア〜オが10問ずつ', false, c);
     if (!pos.every((v, k) => k < 2 || !(v === pos[k - 1] && v === pos[k - 2]))) ok('同じ位置が3問続かない', false, pos.join(''));
     if (first == null) first = pos.join(''); else if (first !== pos.join('')) sameAll = false;
     w.close();
   }
-  ok('30人分すべて ア〜オが30問ずつ・3問続かない', totals.every(n => n === 900), totals);
+  ok('30人分すべて ア〜オが10問ずつ・3問続かない', totals.every(n => n === 300), totals);
   ok('解く人ごとに正解の位置が違う', !sameAll);
 }
 
@@ -88,14 +134,14 @@ console.log('■ 最初から最後まで解く');
   const w = open(); const d = w.document;
   ok('出席番号の欄がない', !d.getElementById('no') && !d.querySelector('.card').textContent.includes('出席番号'));
   click(w, '#go');
-  ok('始めると1問目', d.getElementById('count').textContent === '1 / 150');
+  ok('始めると1問目', d.getElementById('count').textContent === '1 / 50');
   ok('選択肢のボタンが5つ', d.querySelectorAll('.opt').length === 5);
   ok('答える前は「次へ」がない', !d.getElementById('next'));
   ok('答える前は解説が出ない', !d.querySelector('.fb'));
   ok('答える前は用語欄に答えが出ない', !!d.querySelector('.gloss .wait'));
   const Q = w.eval('Q');
-  // 5問おきにわざと間違える（＝120問正解）
-  for (let i = 0; i < 150; i++) {
+  // 5問おきにわざと間違える（＝40問正解）
+  for (let i = 0; i < 50; i++) {
     const pickRight = i % 5 !== 0;
     const btn = [...d.querySelectorAll('.opt')].find(b => (b.dataset.k === '0') === pickRight);
     btn.click();
@@ -108,21 +154,21 @@ console.log('■ 最初から最後まで解く');
     if (i === 1) ok('正解すると「正解です。」', d.querySelector('.fb.ok').textContent.startsWith('正解です。'));
     click(w, '#next');
   }
-  ok('150問のあとは結果の画面', !!d.querySelector('.res-total'));
-  ok('採点：150問中120問正解', d.querySelector('.res-total').textContent === '120');
+  ok('50問のあとは結果の画面', !!d.querySelector('.res-total'));
+  ok('採点：50問中40問正解', d.querySelector('.res-total').textContent === '40');
   ok('分野ごとのバーが5本', d.querySelectorAll('.bars .bar').length === 5);
   const barSum = [...d.querySelectorAll('.bar .num')].reduce((s, e) => s + parseInt(e.textContent, 10), 0);
-  ok('バーの合計が総得点と同じ', barSum === 120, barSum);
-  ok('まちがえた問題の番号が30個', d.querySelectorAll('.miss button').length === 30);
+  ok('バーの合計が総得点と同じ', barSum === 40, barSum);
+  ok('まちがえた問題の番号が10個', d.querySelectorAll('.miss button').length === 10);
   ok('先生に見せる案内がない', !d.querySelector('.card').textContent.includes('先生'));
   ok('全問解いたら「続きをとく」は出ない', !d.getElementById('cont'));
   d.querySelector('.miss button').click();
-  ok('番号を押すとその問題へ', d.getElementById('count').textContent === '1 / 150' && !!d.querySelector('.fb.ng'));
+  ok('番号を押すとその問題へ', d.getElementById('count').textContent === '1 / 50' && !!d.querySelector('.fb.ng'));
   click(w, '#toRes');
   // 開き直しても残る
   const saved = w.localStorage.getItem('seigyo100-v4');
   const w2 = open(saved);
-  ok('開き直しても結果が残る', w2.document.querySelector('.res-total')?.textContent === '120');
+  ok('開き直しても結果が残る', w2.document.querySelector('.res-total')?.textContent === '40');
   // やり直しは2回押し（confirm が false でも動く）
   click(w, '#reset');
   ok('やり直しの1回目では消えない', !!d.querySelector('.res-total'));
@@ -140,7 +186,7 @@ console.log('■ 途中で結果を見る');
   ok('途中でも採点が出る', d.querySelector('.res-total').textContent === '3');
   ok('解いた数が出る', d.querySelector('.card').textContent.includes('解いたのは 3 問'));
   click(w, '#cont');
-  ok('続きをとくと4問目', d.getElementById('count').textContent === '4 / 150');
+  ok('続きをとくと4問目', d.getElementById('count').textContent === '4 / 50');
 }
 
 console.log('■ localStorage が使えないとき');
@@ -153,7 +199,7 @@ console.log('■ localStorage が使えないとき');
   ok('保存できなくても最初はメニュー', !!d.getElementById('mDrill') && !!d.getElementById('mTest'));
   d.getElementById('mDrill').click();
   d.getElementById('go').click();
-  ok('保存できなくても解ける', d.getElementById('count').textContent === '1 / 150' && d.querySelectorAll('.opt').length === 5);
+  ok('保存できなくても解ける', d.getElementById('count').textContent === '1 / 50' && d.querySelectorAll('.opt').length === 5);
 }
 
 console.log('■ メニュー');
@@ -173,7 +219,7 @@ console.log('■ 小テスト：組み立て');
   for (let t = 0; t < 20; t++) {
     const w = open(null, 'test'); const d = w.document;
     d.getElementById('no').value = '２１０５'; click(w, '#go');
-    const ts = w.eval('ts'), Q = w.eval('Q'), QID = Object.fromEntries(Q.map(q => [q.id, q]));
+    const ts = w.eval('ts'), Q = w.eval('QALL'), QID = Object.fromEntries(Q.map(q => [q.id, q]));
     const bad = [];
     if (ts.no !== '2105') bad.push('全角の出席番号 ' + ts.no);
     if (ts.stages.length !== 6) bad.push('ステージ数');

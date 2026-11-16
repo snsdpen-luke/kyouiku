@@ -149,6 +149,16 @@ textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .kijun{border:1px solid var(--line);border-radius:12px;background:#fbf8ef;padding:10px 12px;font-size:14px;line-height:1.5}.kijun>b{display:block;color:#7a5a12;margin:2px 0 4px}.kijun ul{margin:0 0 8px;padding:0;list-style:none}.kijun li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed #e3d9bf}.kijun li em{font-style:normal;font-weight:700;white-space:nowrap}.kijun p{margin:0}
 .cq.tx{grid-template-columns:1fr 360px}
 @media (max-height:700px){.kijun{font-size:13px;line-height:1.4;padding:8px 10px}.kijun li{padding:2px 0}.kijun ul{margin-bottom:4px}.cq.tx textarea{height:130px}.cl{gap:6px}.q{font-size:18px}.yogo{font-size:13px;padding:4px 10px}}
+.pk{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.pkh{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}.pkh b{font-size:18px;color:var(--accent)}.pkh span{font-size:14px;color:var(--sub)}
+.pkg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.pkb{font:inherit;text-align:left;padding:10px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:4px;min-height:64px}
+.pkb:hover{border-color:var(--accent)}.pkb .t{font-weight:700;font-size:15px;line-height:1.3}.pkb .s{font-size:13px;color:var(--sub)}.pkb.all{background:#eef4fb}.pkb.sp{border:none;background:none;cursor:default}
+.kans{border:2px solid #9cc9a4;background:#f2faf3;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}.kans>b{color:#2e6b3a}.kans p{margin:0;line-height:1.6}
+.kchk{display:flex;flex-direction:column;gap:6px}.kc{font:inherit;text-align:left;display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.kc .bx{width:24px;height:24px;flex:none;border:2px solid #9aa;border-radius:6px;display:grid;place-items:center;font-weight:700}.kc em{margin-left:auto;font-style:normal;font-weight:700;white-space:nowrap}.kc.on{border-color:#3a8a4a;background:#e3f4e6}.kc.on .bx{background:#3a8a4a;border-color:#3a8a4a;color:#fff}
+.kself{font-size:16px}.kself b{font-size:22px;color:#2e6b3a}
+@media (max-width:900px){.pkg{grid-template-columns:repeat(3,1fr)}.pkb.sp{display:none}}
 .cq{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start}
 .cl{display:flex;flex-direction:column;gap:10px}
 .hbox{background:#fff6dc;border:1px solid #e9c46a;border-radius:10px;padding:8px 14px;font-size:15px;line-height:1.6}
@@ -183,7 +193,7 @@ textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 </div>
 
 <script>
-const VER='2026-11-16d';
+const VER='2026-11-16e';
 const TITLE='電子計測制御 後期中間考査 出題範囲';
 // 問題データ。1行1問：[分野, 種類, 難しさ, 用語, 問題文, [正解, 誤り4つ], 解説]
 // 分野 A〜E（CH）／種類 m 用語→意味・r 意味→用語・u 使いどころ・b 大事な場面（KIND）／難しさ 1〜3。
@@ -424,7 +434,7 @@ const GLOSS={
 };
 
 // 出題の順番：分野を順に回し（A B C D E A …）、各分野の中は難しさ 1・2・3 を順に回す。全員同じ順番
-const Q=(()=>{
+const QALL=(()=>{
   const counter={},all=RAW.map(r=>{counter[r[0]]=(counter[r[0]]||0)+1;
     return {id:r[0]+String(counter[r[0]]).padStart(2,'0'),g:r[0],t:r[1],d:r[2],w:r[3],q:r[4],o:r[5],e:r[6]}});
   const lists=Object.keys(CH).map(g=>{
@@ -433,6 +443,14 @@ const Q=(()=>{
     return out});
   const seq=[];for(let k=0;seq.length<all.length;k++)for(const l of lists)if(l[k])seq.push(l[k]);
   return seq})();
+// 練習の選択問題は、中間考査の範囲として厳選した50問（2026-11-16 剛さん「難易度の得点バランスを考えた厳選50問」）。
+// 分野ごとに10問、むずかしさ ★1:★2:★3 ＝ 12:23:15。小テスト第1回は、今までどおり150問（QALL）から作る
+const PICK=new Set(['A01','A09','A17','A03','A12','A14','A21','A15','A29','A30',
+ 'B01','B24','B08','B13','B14','B23','B26','B17','B21','B28',
+ 'C01','C09','C26','C02','C04','C16','C27','C15','C18','C25',
+ 'D01','D09','D02','D07','D14','D24','D28','D19','D20','D27',
+ 'E01','E17','E02','E11','E12','E14','E30','E05','E26','E28']);
+const Q=(()=>{const L=Object.keys(CH).map(g=>QALL.filter(q=>q.g===g&&PICK.has(q.id))),o=[];for(let k=0;o.length<PICK.size;k++)for(const l of L)if(l[k])o.push(l[k]);return o})(); // 分野を順に回す
 const LET='アイウエオ';
 const KEY='seigyo100-v4'; // 問題を入れかえたので前の記録は引きつがない（v4：計測と制御の5分野に書き直し）
 const blank=()=>({i:-1,ans:{},ord:{},pos:null});
@@ -456,12 +474,14 @@ const answered=i=>st.ans[Q[i].id]!=null;
 const correct=i=>st.ans[Q[i].id]===0;
 const idxOf=f=>Q.map((q,i)=>i).filter(i=>f(Q[i]));
 const doneCount=()=>Q.filter((q,i)=>answered(i)).length;
+// 選択問題を分野でしぼる（st.g が空なら全部）
+const FL=()=>idxOf(q=>!st.g||q.g===st.g);
 
 function chrome(){
   const cur=st.i>=0&&st.i<Q.length?Q[st.i].g:null;
   $('chips').innerHTML=Object.keys(CH).map(g=>{const a=idxOf(q=>q.g===g),n=a.filter(answered).length;
     return `<span class="chip ${cur===g?'now':n===a.length?'done':''}">${CHS[g]} ${n}/${a.length}</span>`}).join('');
-  $('count').textContent=st.i>=0&&st.i<Q.length?`${st.i+1} / ${Q.length}`:'';
+  const fl=FL();$('count').textContent=st.i>=0&&st.i<Q.length?`${fl.indexOf(st.i)+1} / ${fl.length}`:'';
   $('ver').textContent='版 '+VER;
   $('bar').style.width=(doneCount()/Q.length*100)+'%';
 }
@@ -473,13 +493,14 @@ function render(){
   if(mode==='test')return tRender();
   if(mode==='test2')return u2Render();
   $('ttl').textContent=TITLE;
+  if(st.kg&&CH[st.kg])return kRender();
   chrome();
   if(st.i<0)return start();
   if(st.i>=Q.length)return result();
   question();
 }
 function question(){
-  const i=st.i,q=Q[i],ord=order(i),pick=st.ans[q.id],done=pick!=null,ok=done&&pick===0;
+  const i=st.i,q=Q[i],ord=order(i),pick=st.ans[q.id],done=pick!=null,ok=done&&pick===0,fl=FL(),last=fl.indexOf(i)===fl.length-1;
   const long=q.o.some(o=>o.length>15);
   const cls=k=>!done?'':k===0?'right':k===pick?'wrong':'';
   $('card').innerHTML=`<div class="qwrap"><div class="main">
@@ -487,39 +508,176 @@ function question(){
     <div class="q">${esc(q.q)}</div>
     <div class="opts ${long?'long':''}">${ord.map((k,pos)=>`<button class="opt ${cls(k)}" data-k="${k}" ${done?'disabled':''}><span class="mk">${LET[pos]}</span><span>${esc(q.o[k])}</span></button>`).join('')}</div>
     ${done?`<div class="fb ${ok?'ok':'ng'}"><strong>${ok?'正解です。':'正解は「'+LET[ord.indexOf(0)]+'」です。'}</strong>${esc(q.e)}</div>`:''}
-    <div class="row"><button class="btn ghost left" id="toRes">結果を見る</button><button class="btn ghost" id="back" ${i===0?'disabled':''}>もどる</button>${done?`<button class="btn" id="next">${i===Q.length-1?'採点する':'次へ'}</button>`:''}</div>
+    <div class="row"><button class="btn ghost left" id="toRes">結果を見る</button><button class="btn ghost" id="pick">分野をえらぶ</button><button class="btn ghost" id="back" ${fl.indexOf(i)===0?'disabled':''}>もどる</button>${done?`<button class="btn" id="next">${last?'採点する':'次へ'}</button>`:''}</div>
    </div>
    <aside class="gloss" aria-label="用語"><h2>用語</h2>${done?`<dl><dt>${esc(q.w)}</dt><dd>${esc(GLOSS[q.w])}</dd></dl>`:'<p class="wait">答えると、この問題の用語の説明がここに出ます。</p>'}</aside></div>`;
   if(!done)document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{st.ans[q.id]=+b.dataset.k;save();render()});
-  $('back').onclick=()=>{st.i--;save();render()};
+  $('back').onclick=()=>{st.i=fl[fl.indexOf(i)-1];save();render()};
   $('toRes').onclick=()=>{st.i=Q.length;save();render()};
-  if($('next'))$('next').onclick=()=>{st.i++;save();render()};
+  $('pick').onclick=()=>{st.i=-1;save();render()};
+  if($('next'))$('next').onclick=()=>{const n=fl[fl.indexOf(i)+1];st.i=n==null?Q.length:n;save();render()};
 }
 function start(){
-  $('card').innerHTML=`<div class="q">後期中間考査の出題範囲です。車の制御とセンサの用語を、5択で確かめます</div>
-   <table class="plan">${Object.keys(CH).map(g=>`<tr><td>${esc(CH[g])}</td><td>${Q.filter(q=>q.g===g).length}問</td></tr>`).join('')}</table>
-   <p style="margin:0">用語の意味、意味から用語、使いどころ、大事な場面を問います。答えるとすぐに正解と解説が出ます。途中でやめても、この端末に続きが残ります。</p>
-   <div class="row"><button class="btn ghost" id="tomenu">メニューへ</button><button class="btn" id="go">はじめる</button></div>`;
-  $('go').onclick=()=>{st.i=0;positions();save();render()};$('tomenu').onclick=()=>setMode('menu');
+  const sel=g=>{const a=idxOf(q=>!g||q.g===g);return `${a.filter(answered).length} / ${a.length}`};
+  $('card').innerHTML=`<div class="q">練習　分野と、問題の種類をえらびます</div>
+   <div class="pk"><div class="pkh"><b>選択問題（5択）</b><span>答えるとすぐに正解と解説が出ます。</span></div>
+    <div class="pkg"><button class="pkb all" id="go"><span class="t">すべての分野</span><span class="s">${sel(null)} 問</span></button>${Object.keys(CH).map(g=>`<button class="pkb" data-sg="${g}"><span class="t">${esc(CH[g])}</span><span class="s">${sel(g)} 問</span></button>`).join('')}</div></div>
+   <div class="pk"><div class="pkh"><b>記述問題</b><span>指定語句を入れて書き、模範解答を見て自分で採点します。</span></div>
+    <div class="pkg"><span class="pkb sp"></span>${Object.keys(CH).map(g=>`<button class="pkb kj" data-kg="${g}"><span class="t">${esc(CH[g])}</span><span class="s">答え合わせ ${kjIn(g).filter(x=>kjDone(x.id)).length} / ${kjIn(g).length} 問</span></button>`).join('')}</div></div>
+   <p class="hint" style="margin:0">途中でやめても、この端末に続きが残ります。小テストとは別の問題です。</p>
+   <div class="row"><button class="btn ghost" id="tomenu">メニューへ</button></div>`;
+  const goSel=g=>{st.g=g;st.kg=null;positions();const a=FL();const f=a.find(i=>!answered(i));st.i=f==null?a[0]:f;save();render()};
+  $('go').onclick=()=>{st.g=null;st.kg=null;positions();st.i=0;save();render()};
+  document.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>goSel(b.dataset.sg));
+  document.querySelectorAll('[data-kg]').forEach(b=>b.onclick=()=>{st.kg=b.dataset.kg;const L=kjIn(st.kg),f=L.findIndex(x=>!kjDone(x.id));st.ki=f<0?0:f;save();render()});
+  $('tomenu').onclick=()=>setMode('menu');
 }
 function result(){
-  const all=idxOf(()=>true),n=doneCount(),sc=a=>a.filter(correct).length,total=sc(all);
+  const all=FL(),n=all.filter(answered).length,sc=a=>a.filter(correct).length,total=sc(all);
   const miss=all.filter(i=>answered(i)&&!correct(i)),first=all.find(i=>!answered(i));
-  $('card').innerHTML=`<div class="q">結果</div>
-   <div><span class="res-total">${total}</span><span style="font-size:20px"> / ${Q.length} 問 正解</span>${n<Q.length?`<span class="hint">　（解いたのは ${n} 問）</span>`:''}</div>
-   <div class="bars">${Object.keys(CH).map(g=>{const a=idxOf(q=>q.g===g),r=sc(a);
+  $('card').innerHTML=`<div class="q">結果${st.g?`（${esc(CH[st.g])}）`:''}</div>
+   <div><span class="res-total">${total}</span><span style="font-size:20px"> / ${all.length} 問 正解</span>${n<all.length?`<span class="hint">　（解いたのは ${n} 問）</span>`:''}</div>
+   <div class="bars">${Object.keys(CH).filter(g=>!st.g||g===st.g).map(g=>{const a=idxOf(q=>q.g===g),r=sc(a);
      return `<div class="bar"><span>${esc(CH[g])}</span><div class="track"><div class="fill" style="width:${r/a.length*100}%"></div></div><span class="num">${r}/${a.length}</span></div>`}).join('')}</div>
-   <div class="parts">${Object.keys(KIND).map(t=>{const a=idxOf(q=>q.t===t);return `<span>${KIND[t]} <b>${sc(a)}</b> / ${a.length}</span>`}).join('')}</div>
-   ${miss.length?`<div class="hint">まちがえた問題（番号を押すと見直せます）</div><div class="miss">${miss.map(i=>`<button data-i="${i}">${i+1}</button>`).join('')}</div>`:''}
-   <div class="hint">いちばん短いバーの分野を見直しましょう。</div>
-   <div class="row"><button class="btn ghost left" id="reset">最初からやり直す</button><button class="btn ghost" id="back">最後の問題にもどる</button>${first!=null?`<button class="btn" id="cont">続きをとく</button>`:''}</div>`;
+   <div class="parts">${Object.keys(KIND).map(t=>{const a=all.filter(i=>Q[i].t===t);return `<span>${KIND[t]} <b>${sc(a)}</b> / ${a.length}</span>`}).join('')}</div>
+   ${miss.length?`<div class="hint">まちがえた問題（番号を押すと見直せます）</div><div class="miss">${miss.map(i=>`<button data-i="${i}">${all.indexOf(i)+1}</button>`).join('')}</div>`:''}
+   ${st.g?'':'<div class="hint">いちばん短いバーの分野を見直しましょう。</div>'}
+   <div class="row"><button class="btn ghost left" id="reset">${st.g?'この分野をやり直す':'最初からやり直す'}</button><button class="btn ghost" id="pick">分野をえらぶ</button><button class="btn ghost" id="back">最後の問題にもどる</button>${first!=null?`<button class="btn" id="cont">続きをとく</button>`:''}</div>`;
   document.querySelectorAll('.miss button').forEach(b=>b.onclick=()=>{st.i=+b.dataset.i;save();render()});
-  $('back').onclick=()=>{st.i=Q.length-1;save();render()};
+  $('back').onclick=()=>{st.i=all[all.length-1];save();render()};
+  $('pick').onclick=()=>{st.i=-1;save();render()};
   if($('cont'))$('cont').onclick=()=>{st.i=first;save();render()};
   // ブラウザの confirm は Classroom などで使えないので、2回押しで確かめる
   let armed=false;const rs=$('reset');
   rs.onclick=()=>{if(!armed){armed=true;rs.textContent='もう一度押すと記録を消します';return}
-    st=blank();save();render()};
+    if(st.g){for(const i of all)delete st.ans[Q[i].id];st.i=-1;save();render();return}
+    const keep={ka:st.ka,kc:st.kc,kk:st.kk};st=Object.assign(blank(),keep);save();render()};
+}
+// ===== 記述の練習（分野ごと3問・自己採点） =====
+// 2026-11-16 剛さん「練習モードで、選択問題と記述問題をカテゴリー別で演習できるように」。
+// 小テスト第2回の記述（本番）とは別の問題にする。c は [見る所（書く前に見せる）, 答えの要点（答え合わせで見せる）, 点]
+const KJ=[
+{id:'A1',g:'A',pt:3,q:'衝突被害軽減ブレーキを例にして、制御の「測る → 決める → 動かす」の流れを説明しなさい。',
+ w:['センサ','ECU','アクチュエータ'],len:[60,160],
+ y:[['アクチュエータ','指令を受けて、実際に動く部品']],
+ c:[['測る：何が、何を測るか','センサ（ミリ波レーダーなど）が前の車までの距離を測る',1],['決める：何が、どう決めるか','ECU が測った値から計算し、ブレーキをかけるかを決める',1],['動かす：何が動くか','アクチュエータのブレーキが動いて車を止める',1]],
+ kh:'「まず、〜が〜を測ります。次に、〜が〜を決めます。最後に、〜が〜します。」と、3つの文で順に書きます。',
+ m:'まず、センサのミリ波レーダーが前の車までの距離を測ります。次に、ECU が測った値から計算して、ブレーキをかけるかを決めます。最後に、アクチュエータのブレーキが動いて車を止めます。'},
+{id:'A2',g:'A',pt:3,q:'オートエアコンで、車内の目標値を 25℃ にしました。今、車内は 30℃ です。偏差はいくつですか。そのあと、エアコンがどう動くかを説明しなさい。',
+ w:['目標値','偏差'],len:[60,160],
+ y:[['偏差','目標値と、今の値とのずれ']],
+ c:[['偏差の値','偏差は 5℃（30 − 25）',1],['エアコンがどう動くか','偏差が小さくなるように車内を冷やす',1],['そのあと、どうするか','測ってくらべることをくり返し、目標値に近づける',1]],
+ kh:'「偏差は〜です。エアコンは〜。そして〜。」と、はじめに数を書き、そのあと動きを順に書きます。',
+ m:'偏差は 30 − 25 で 5℃ です。エアコンは偏差が小さくなるように車内を冷やします。そして、温度を測って目標値とくらべることをくり返し、25℃ に近づけます。'},
+{id:'A3',g:'A',pt:3,q:'自動駐車のようなシーケンス制御で、次の手順へ進むために「終わりの条件」が必要なのはなぜですか。例を1つ挙げて説明しなさい。',
+ w:['終わりの条件','センサ'],len:[60,160],
+ y:[['シーケンス制御','決めた順番どおりに、手順を一つずつ進める制御'],['終わりの条件','次の手順へ進むきっかけ']],
+ c:[['何のために必要か','今の手順が終わったかを知り、次の手順へ進むため',1],['何で決めるか','センサの値で決める',1],['例','例：うしろの壁まで 30 cm になったら止まる、など',1]],
+ kh:'「終わりの条件は、〜ためです。〜の値で決めます。たとえば、〜。」と、理由 → 決め方 → 例 の順に書きます。',
+ m:'終わりの条件は、今の手順が終わったかを知って、次の手順へ進むために必要です。センサの値で決めます。たとえば、超音波センサで測ったうしろの壁までの距離が 30 cm になったら止まり、次の手順へ進みます。'},
+{id:'B1',g:'B',pt:3,q:'超音波センサが、物までの距離を測るしくみを説明しなさい。距離を求める式も書きなさい。',
+ w:['往復時間','音速'],len:[60,160],
+ y:[['超音波','人の耳に聞こえない、とても高い音']],
+ c:[['何を出して、何を測るか','超音波を出し、物で反射して返るまでの往復時間を測る',1],['距離の式','距離 ＝ 音速 × 往復時間 ÷ 2',1],['2 で割る理由','音は行って帰ってくるので、片道は半分',1]],
+ kh:'「〜を出し、〜までの往復時間を測ります。距離は〜で求めます。〜なので 2 で割ります。」の形で書きます。',
+ m:'超音波を出し、物に当たって反射して返ってくるまでの往復時間を測ります。距離は「音速 × 往復時間 ÷ 2」で求めます。音は行って帰ってくるので、片道にするために 2 で割ります。'},
+{id:'B2',g:'B',pt:3,q:'送受一体の超音波センサは、すぐ近くの物を測ることができません。理由を説明しなさい。',
+ w:['送受一体','残響'],len:[60,160],
+ y:[['送受一体','1枚の板で、音を出すのも聞くのも行うこと'],['残響','音を出したあとも、板が震え続けること']],
+ c:[['送受一体とはどういうことか','1枚の振動板で、音を出すのも聞くのも行う',1],['音を出したあと、板はどうなるか','残響で、しばらく震え続ける',1],['なぜ近くを測れないか','その間に返ってきた近くの物の音を、聞き分けられない',1]],
+ kh:'「送受一体のセンサは〜。音を出したあとも〜。そのため〜からです。」と、しくみ → 起きること → 理由 の順に書きます。',
+ m:'送受一体のセンサは、1枚の振動板で音を出すのも聞くのも行います。音を出したあとも残響で板がしばらく震え続けます。そのため、その間に返ってきた近くの物の音を聞き分けられないからです。'},
+{id:'B3',g:'B',pt:3,q:'超音波センサで遠くまで測ろうとすると、1秒間に測れる回数が減ります。理由を説明しなさい。',
+ w:['往復時間','測る回数'],len:[60,160],
+ y:[['測る回数','1秒間に何回測れるか']],
+ c:[['次の音を出す前に、何をするか','返ってくる音を待つ',1],['遠いと、何が長くなるか','往復時間が長くなる',1],['だから、どうなるか','1回にかかる時間が長くなり、測る回数が減る',1]],
+ kh:'「次の音を出す前に〜。遠いほど〜。そのため〜。」と、原因から順に書きます。',
+ m:'次の音を出す前に、返ってくる音を待つ必要があります。遠くを測るほど往復時間が長くなります。そのため、1回測るのにかかる時間が長くなり、1秒間の測る回数が減ります。'},
+{id:'C1',g:'C',pt:3,q:'車輪速センサで、タイヤの回る速さを測るしくみを説明しなさい。',
+ w:['センサロータ','パルス','周長'],len:[60,160],
+ y:[['センサロータ','タイヤといっしょに回る、歯のついた輪'],['周長','タイヤ1周の長さ']],
+ c:[['何が回り、何が出るか','センサロータが回り、歯が通るたびにパルスが出る',1],['何を数えるか','1秒間のパルスの数を数え、回転の数が分かる',1],['速さをどう出すか','回転の数に周長をかけて、進んだ長さ（速さ）を出す',1]],
+ kh:'「タイヤといっしょに〜が回り、〜。〜を数えると〜。それに〜をかけると〜。」と、順に書きます。',
+ m:'タイヤといっしょにセンサロータが回り、歯が通るたびにパルスが出ます。1秒間のパルスの数を数えると、タイヤが何回転したかが分かります。それに周長をかけると、1秒間に進んだ長さ（速さ）が出ます。'},
+{id:'C2',g:'C',pt:3,q:'センサロータの歯の数を多くすると、何がよくなりますか。理由も説明しなさい。',
+ w:['分解能','パルス'],len:[50,140],
+ y:[['分解能','どれだけ細かく測れるか']],
+ c:[['何がよくなるか','分解能がよくなる（細かく測れる）',1],['1回転で出るパルス','1回転で出るパルスが多くなる',1],['だから、どうなるか','少し回っただけでも動きが分かる',1]],
+ kh:'「〜がよくなります。歯が多いと〜ので、〜からです。」と、結論 → 理由 の順に書きます。',
+ m:'分解能がよくなり、速さを細かく測れます。歯が多いと1回転で出るパルスが多くなるので、少し回っただけでも動きが分かるからです。'},
+{id:'C3',g:'C',pt:3,q:'オートブレーキホールドには、どちらの型の車輪速センサが必要ですか。理由も説明しなさい。',
+ w:['アクティブ型','止まる直前'],len:[60,160],
+ y:[['オートブレーキホールド','止まったらブレーキを保ち、アクセルを踏むと外すしくみ']],
+ c:[['どちらの型か','アクティブ型',1],['なぜ必要か','車が止まったことを知るには、止まる直前の遅い速さまで読む必要がある',1],['もう一方の型はなぜだめか','パッシブ型は、ゆっくりだと波が小さく読めない',1]],
+ kh:'「〜型が必要です。〜を知るには〜。〜型は〜からです。」と、答え → 理由 → もう一方の型 の順に書きます。',
+ m:'アクティブ型が必要です。車が止まったことを知るには、止まる直前の遅い速さまで読む必要があります。パッシブ型は、ゆっくりだと生まれる電気（波）が小さくなり、読めないからです。'},
+{id:'D1',g:'D',pt:3,q:'ミリ波レーダーは、ドップラー効果を使って、前の車が近づいているか離れているかを知ります。そのしくみを説明しなさい。',
+ w:['ドップラー効果','周波数'],len:[60,160],
+ y:[['ドップラー効果','近づくと高く、離れると低く受け取ること'],['周波数','波が1秒間に何回ふるえるか。高い音ほど大きい']],
+ c:[['近づく物から返った電波','周波数が高くなって返る',1],['離れる物から返った電波','周波数が低くなって返る',1],['何が分かるか','周波数のちがいから、近づいているか離れているか（と速さ）が分かる',1]],
+ kh:'「近づく物から返った電波は〜。離れる物から返った電波は〜。この〜から、〜が分かります。」の形で書きます。',
+ m:'ドップラー効果で、近づく物から返った電波は周波数が高く、離れる物から返った電波は周波数が低くなって返ります。この周波数のちがいから、近づいているか離れているかと、その速さが分かります。'},
+{id:'D2',g:'D',pt:3,q:'TTC（衝突余裕時間）とは何か説明しなさい。また、前の車までの距離が同じでも TTC が短くなるのは、どんなときですか。',
+ w:['距離','相対速度'],len:[60,160],
+ y:[['相対速度','自分と相手の速さの差']],
+ c:[['TTC とは何か','このまま進むとぶつかるまでの秒数',1],['求める式','距離 ÷ 相対速度',1],['短くなるとき','相対速度が大きい（速く近づいている）とき',1]],
+ kh:'「TTC は〜で、〜で求めます。同じ距離でも、〜ときほど短くなります。」の形で書きます。',
+ m:'TTC は、このまま進むとぶつかるまでの秒数で、距離 ÷ 相対速度 で求めます。同じ距離でも、相対速度が大きい（速く近づいている）ときほど TTC は短くなります。'},
+{id:'D3',g:'D',pt:3,q:'ミリ波レーダーは、車にくらべて、人を見つけるのが苦手です。理由を説明しなさい。',
+ w:['電波','反射'],len:[50,140],
+ y:[['レーダー反射断面積（RCS）','物が電波をどれだけ強く返すか']],
+ c:[['車（金属）はどうか','金属の車は電波を強く反射する',1],['人はどうか','人は電波を弱くしか返さない（レーダー反射断面積が小さい）',1],['だから、どうなるか','返ってくる電波が弱く、見つけにくい',1]],
+ kh:'「金属の車は〜。人は〜。そのため〜からです。」と、車と人をくらべて書きます。',
+ m:'金属の車は電波を強く反射しますが、人は電波を弱くしか返しません（レーダー反射断面積が小さい）。そのため、返ってくる電波が弱く、見つけにくいからです。'},
+{id:'E1',g:'E',pt:3,q:'自動ブレーキは、前の物に近づいたとき、どのようにしてブレーキをかけるかを決めますか。説明しなさい。',
+ w:['止める距離','ブレーキ'],len:[50,140],
+ y:[['止める距離','これより近いとブレーキをかける、前もって決めておく距離']],
+ c:[['何を測るか','センサで前の物までの距離を測る',1],['何とくらべるか','測った距離を、止める距離とくらべる',1],['どうするか','止める距離より近くなったらブレーキをかける',1]],
+ kh:'「〜で〜を測り、〜とくらべます。〜より近くなったら〜。」と、測る → くらべる → 動かす の順に書きます。',
+ m:'センサで前の物までの距離を測り、前もって決めた止める距離とくらべます。止める距離より近くなったら、ブレーキをかけます。'},
+{id:'E2',g:'E',pt:3,q:'横滑り防止（ESC）は、どのようにして車の横滑りを直しますか。使うセンサもふくめて説明しなさい。',
+ w:['ハンドル角センサ','ヨーレートセンサ','ブレーキ'],len:[80,200],
+ y:[['ハンドル角センサ','ハンドルを切った角度を測るセンサ'],['ヨーレートセンサ','車の向きが回る速さを測るセンサ']],
+ c:[['行きたい向きを何で測るか','ハンドル角センサで、行きたい向きを測る',1],['実際の回り方を何で測るか','ヨーレートセンサで、実際に車の向きが回る速さを測る',1],['ずれたらどうするか','2つをくらべてずれていたら、タイヤごとにブレーキをかけて直す',1]],
+ kh:'「〜で行きたい向きを、〜で実際の回り方を測ります。2つをくらべて〜。」と、測る → くらべる → 直す の順に書きます。',
+ m:'ハンドル角センサで行きたい向きを、ヨーレートセンサで実際に車の向きが回る速さを測ります。2つをくらべてずれていたら、タイヤごとにブレーキをかけて、車の向きを直します。'},
+{id:'E3',g:'E',pt:3,q:'雪の坂道で発進するとき、トラクションコントロールはどのように動きますか。車輪速センサの使い方もふくめて説明しなさい。',
+ w:['車輪速センサ','空回り','エンジン'],len:[60,160],
+ y:[['トラクションコントロール','発進でタイヤが空回りしたら、エンジンの力をしぼるしくみ']],
+ c:[['車輪速センサで何をするか','4つのタイヤの速さを測ってくらべる',1],['何に気づくか','1つだけ速く回っていたら、空回りしていると判断する',1],['どうするか','エンジンの力をしぼり、タイヤが路面をつかむようにする',1]],
+ kh:'「〜で〜を測り、くらべます。〜なら、〜と判断します。そこで〜。」と、順に書きます。',
+ m:'車輪速センサで4つのタイヤの速さを測り、くらべます。1つだけ速く回っていたら、空回りしていると判断します。そこでエンジンの力をしぼり、タイヤが路面をつかむようにします。'},
+];
+const kjIn=(g)=>KJ.filter(p=>p.g===g);
+const kjDone=id=>!!(st.kc&&st.kc[id]);
+const kjSelf=id=>{const p=KJ.find(x=>x.id===id),a=(st.kk||{})[id]||[];return p.c.reduce((s,c,j)=>s+(a[j]?c[2]:0),0)};
+function kRender(){
+  const L=kjIn(st.kg),k=Math.max(0,Math.min(st.ki||0,L.length-1)),p=L[k],a=(st.ka||{})[p.id]||'',shown=kjDone(p.id),chk=(st.kk||{})[p.id]||[];
+  $('count').textContent=`${k+1} / ${L.length}`;
+  $('chips').innerHTML=Object.keys(CH).map(g=>`<span class="chip ${g===st.kg?'now':kjIn(g).every(x=>kjDone(x.id))?'done':''}">${CHS[g]} ${kjIn(g).filter(x=>kjDone(x.id)).length}/${kjIn(g).length}</span>`).join('');
+  $('bar').style.width=(KJ.filter(x=>kjDone(x.id)).length/KJ.length*100)+'%';
+  const inw=p.w.map(w=>a.includes(w));
+  $('card').innerHTML=`<div class="sec"><span class="lbl">記述の練習 ${k+1} / ${L.length}</span><span class="nm">${esc(CH[p.g])}</span><span class="tag">記述・${p.pt}点</span></div>
+   <div class="q">${esc(p.q)}</div>${p.y?`<div class="yogo"><b>ことば</b>${p.y.map(([w,d])=>`<span><b>${esc(w)}</b>：${esc(d)}</span>`).join('')}</div>`:''}
+   <div class="cq tx"><div class="cl"><div class="wds">指定語句：${p.w.map((w,j)=>`<span class="wd ${inw[j]?'in':''}">${inw[j]?'✓ ':''}${esc(w)}</span>`).join('')}</div>
+    <textarea id="kta" rows="6" maxlength="400" placeholder="ここに書きます">${esc(a)}</textarea>
+    <div class="hint" id="kcnt">${chars(a)} 字（目安 ${p.len[0]}〜${p.len[1]} 字）</div></div>
+    <div class="kijun"><b>採点の基準（${p.pt}点）</b><ul>${p.c.map(c=>`<li><span>${esc(c[0])}</span><em>${c[2]}点</em></li>`).join('')}</ul>
+    <b>書き方のヒント</b><p>${esc(p.kh)}</p></div></div>
+   ${shown?`<div class="kans"><b>模範解答</b><p>${esc(p.m)}</p>
+    <b>自分で採点します（書けていたら押します）</b>
+    <div class="kchk">${p.c.map((c,j)=>`<button class="kc ${chk[j]?'on':''}" data-j="${j}"><span class="bx">${chk[j]?'✓':''}</span><span>${esc(c[1])}</span><em>${c[2]}点</em></button>`).join('')}</div>
+    <div class="kself">自己採点 <b id="kpt">${kjSelf(p.id)}</b> / ${p.pt} 点</div></div>`:''}
+   <div class="row"><button class="btn ghost left" id="kback2">分野をえらぶ</button><button class="btn ghost" id="kprev" ${k===0?'disabled':''}>もどる</button>${shown?'':'<button class="btn ghost" id="kshow">答え合わせ</button>'}<button class="btn" id="knext">${k===L.length-1?'分野をえらぶ':'次へ'}</button></div>`;
+  const ta=$('kta');ta.oninput=()=>{st.ka=st.ka||{};st.ka[p.id]=ta.value;save();
+    const iw=p.w.map(w=>ta.value.includes(w));document.querySelectorAll('.wd').forEach((e,j)=>{e.classList.toggle('in',iw[j]);e.textContent=(iw[j]?'✓ ':'')+p.w[j]});
+    $('kcnt').textContent=`${chars(ta.value)} 字（目安 ${p.len[0]}〜${p.len[1]} 字）`};
+  if($('kshow'))$('kshow').onclick=()=>{st.kc=st.kc||{};st.kc[p.id]=1;save();render();const e=document.querySelector('.kans');if(e&&e.scrollIntoView)e.scrollIntoView({block:'nearest'})};
+  document.querySelectorAll('.kc').forEach(b=>b.onclick=()=>{st.kk=st.kk||{};const c=st.kk[p.id]=st.kk[p.id]||[];const j=+b.dataset.j;c[j]=!c[j];save();
+    b.classList.toggle('on',!!c[j]);b.querySelector('.bx').textContent=c[j]?'✓':'';$('kpt').textContent=kjSelf(p.id)});
+  $('kprev').onclick=()=>{st.ki=k-1;save();render()};
+  $('knext').onclick=()=>{if(k===L.length-1){st.kg=null;st.i=-1}else st.ki=k+1;save();render()};
+  $('kback2').onclick=()=>{st.kg=null;st.i=-1;save();render()};
 }
 // ===== メニュー =====
 let mode='menu';
@@ -532,7 +690,7 @@ function menu(){
   const u2st=u2.done?`提出済み（図と計算 ${u2AutoSum()} / ${T2AUTO} 点・記述は先生が採点）`:u2.dl?'とちゅう':'まだ受けていません';
   $('card').innerHTML=`<div class="q">どれをやりますか</div>
    <div class="menu three">
-    <button class="mbtn" id="mDrill"><span class="t">練習（${Q.length}問）</span><span class="d">5択。答えるとすぐに正解と解説が出ます。時間の制限はありません。</span><span class="s">進み具合 ${doneCount()} / ${Q.length} 問</span></button>
+    <button class="mbtn" id="mDrill"><span class="t">練習（${Q.length}問）</span><span class="d">分野ごとに、選択問題（5択）と記述問題を練習します。時間の制限はありません。</span><span class="s">進み具合 ${doneCount()} / ${Q.length} 問</span></button>
     <button class="mbtn game" id="mTest"><span class="t">小テスト第1回（${TALL()}点満点）</span><span class="d">練習の問題から、語群で答えます。ステージごとに制限時間があります。全${TPLAN.length}ステージ、およそ30分。受けられるのは1回だけで、最後に提出します。</span><span class="s">${tst}</span></button>
     <button class="mbtn game" id="mTest2"><span class="t">小テスト第2回（${T2MAX}点満点）</span><span class="d">記述が中心です（記述${T2.filter(p=>p.t==='text').length}問・計算${T2.filter(p=>p.t==='num').length}問・図1問）。指定語句を入れて説明します。制限時間${T2SEC/60}分。受けられるのは1回だけで、最後に提出します。</span><span class="s">${u2st}</span></button>
    </div>`;
@@ -545,8 +703,8 @@ function menu(){
 // 時間は締め切りの時刻で持つので、開き直しても止まらない。時間切れになると、そこまでの答えで採点する。
 const TPLAN=[...Object.keys(CH).map(g=>({g,sec:240})),{g:'X',sec:300,n:10}];
 const DISTRACT=4;
-const TALL=()=>TPLAN.reduce((s,p)=>s+(p.n||Q.filter(q=>q.g===p.g&&q.t==='r').length),0);
-const QID=Object.fromEntries(Q.map(q=>[q.id,q]));
+const TALL=()=>TPLAN.reduce((s,p)=>s+(p.n||QALL.filter(q=>q.g===p.g&&q.t==='r').length),0);
+const QID=Object.fromEntries(QALL.map(q=>[q.id,q]));
 // 先生用デモ：URL の末尾に #demo をつけて開く。何度でも受け直せ、生徒の記録とは別の箱に保存する
 const DEMO=/^#(demo|teacher|sensei)$/i.test(location.hash);
 addEventListener('hashchange',()=>location.reload());
@@ -562,9 +720,9 @@ function mkBank(qs){const ans=qs.map(q=>q.o[0]);
   return shuffle(ans.concat(wrong.slice(0,DISTRACT)))}
 function tMake(){
   return TPLAN.map(p=>{let qs;
-    if(p.g!=='X')qs=shuffle(Q.filter(q=>q.g===p.g&&q.t==='r'));
+    if(p.g!=='X')qs=shuffle(QALL.filter(q=>q.g===p.g&&q.t==='r'));
     else{const seen=new Set();qs=[];
-      for(const q of shuffle(Q.filter(q=>q.t!=='r'&&GLOSS[q.o[0]]))){if(qs.length>=p.n)break;if(seen.has(q.o[0]))continue;seen.add(q.o[0]);qs.push(q)}}
+      for(const q of shuffle(QALL.filter(q=>q.t!=='r'&&GLOSS[q.o[0]]))){if(qs.length>=p.n)break;if(seen.has(q.o[0]))continue;seen.add(q.o[0]);qs.push(q)}}
     return {g:p.g,name:p.g==='X'?'ボス：場面で使い分け':CH[p.g],sec:p.sec,qs:qs.map(q=>q.id),bank:mkBank(qs)}})}
 const tAns=s=>ts.ans[s]||(ts.ans[s]={});
 const tOK=(s,k)=>tAns(s)[k]===QID[ts.stages[s].qs[k]].o[0];
