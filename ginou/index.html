@@ -121,6 +121,11 @@ textarea{font:inherit;font-size:17px;width:100%;min-height:110px;padding:10px;bo
 /* 図示は図を画面の残りの高さに収める（4:3 の横画面でスクロールしない） */
 .main.wide{grid-template-columns:minmax(0,1fr) 210px}
 .card.dmode{gap:6px;padding:12px 18px}
+.efig{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:10px;align-items:start}
+.efig .lab{display:block;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:4px}
+.efig .fig svg{width:100%;height:auto}
+.etin{min-height:70px}
+@media (max-width:760px){.efig{grid-template-columns:1fr}}
 .card.dmode .q{font-size:15.5px;line-height:1.5}
 .card.dmode .note{font-size:12px}
 .card.dmode .zbox:not(.ans){flex:1 1 0;min-height:240px;display:flex}
@@ -145,7 +150,7 @@ textarea{font:inherit;font-size:17px;width:100%;min-height:110px;padding:10px;bo
 </div>
 <script>
 "use strict";
-const VER = "2026-10-30e";
+const VER = "2026-11-16a";
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const MK = ["ア", "イ", "ウ", "エ", "オ", "カ"];
@@ -450,13 +455,13 @@ function zushiScore(z, v) {
   return { ok, items, frac, dangling };
 }
 /* 図を描く。ans=true は解答例 */
-function zSvg(z, v, sel, ans) {
+function zSvg(z, v, sel, ans, opt) {
   const P = zPrep(z);
   let lines = (v && v.lines) || [], marks = (v && v.marks) || {};
   const slotPos = Object.assign({}, P.slots);
   if (ans) {   // お手本の接続点を、接続点の場所に割り当てて描く
     const map = zAnsMap(z);
-    lines = zAnswerLines(z).map(l => ({ a: map[l.a] || l.a, b: map[l.b] || l.b, c: l.c }));
+    lines = ((opt && opt.lines) || zAnswerLines(z)).map(l => ({ a: map[l.a] || l.a, b: map[l.b] || l.b, c: l.c }));
     marks = {}; const by = {};
     lines.forEach(l => [l.a, l.b].forEach(e => { if (P.slots[e]) (by[e] = by[e] || []).push(l); }));
     Object.keys(by).forEach(s => { marks[s] = needMark(z, P.slots[s].box, by[s]); });
@@ -472,6 +477,7 @@ function zSvg(z, v, sel, ans) {
   z.parts.forEach(p => { g += sym(p.type, p.x, p.y, 1) + (p.label && p.type !== "src" ? `<text x="${p.x + 22}" y="${p.y - 18}" font-size="15" font-weight="700">${esc(p.label)}</text>` : ""); });
   /* 線 */
   lines.forEach((l, i) => { const A = pos(l.a), B = pos(l.b); if (!A || !B) return; const col = COLORS[l.c] || "#888";
+    if (opt && opt.hi === i) g += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#f5c400" stroke-width="20" stroke-linecap="round" opacity=".75"/>`;
     g += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#555" stroke-width="7" stroke-linecap="round"/><line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="${col}" stroke-width="4.5" stroke-linecap="round"/>`;
     if (!ans) g += `<line data-l="${i}" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="transparent" stroke-width="16"/>`; });
   /* 端子 */
@@ -486,6 +492,12 @@ function zSvg(z, v, sel, ans) {
     if (marks[s.id]) { const b = P.box[s.box], dx = s.x - b.x, dy = s.y - b.y, m = Math.hypot(dx, dy) || 1, mx = s.x + dx / m * 15, my = s.y + dy / m * 15, tw = marks[s.id].length * 13 + 8;
       g += `<rect pointer-events="none" x="${mx - tw / 2}" y="${my - 10}" width="${tw}" height="19" rx="4" fill="#fff" stroke="#0f6b4f" stroke-width="1.5"/><text pointer-events="none" x="${mx}" y="${my + 5}" font-size="13" font-weight="700" text-anchor="middle" fill="#0f6b4f">${esc(marks[s.id])}</text>`; }
     if (!ans) g += `<circle data-s="${s.id}" cx="${s.x}" cy="${s.y}" r="13" fill="transparent"/>`; });
+  /* 線の番号（複線図の誤りを見つける問題）。番号どうしが重ならない位置を線の上で探す */
+  if (opt && opt.nums) { const put = [];
+    lines.forEach((l, i) => { const A = pos(l.a), B = pos(l.b); if (!A || !B) return; let at = null;
+      for (const t of [0.5, 0.38, 0.62, 0.28, 0.72, 0.2, 0.8]) { const px = A.x + (B.x - A.x) * t, py = A.y + (B.y - A.y) * t; if (put.every(p => Math.hypot(p[0] - px, p[1] - py) > 27)) { at = [px, py]; break; } }
+      at = at || [(A.x + B.x) / 2, (A.y + B.y) / 2]; put.push(at);
+      g += `<circle cx="${at[0]}" cy="${at[1]}" r="12.5" fill="#fff" stroke="#151a18" stroke-width="1.6"/><text x="${at[0]}" y="${at[1] + 5}" font-size="14" font-weight="700" text-anchor="middle" fill="#151a18">${i + 1}</text>`; }); }
   const [x, y, w, h] = P.vb;
   return `<svg class="zsvg" viewBox="${x} ${y} ${w} ${h}" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
 }
@@ -990,6 +1002,79 @@ kouho-95 思 B,kouho-100 思 B,kouho-106 思 B,kouho-112 思 C,kouho-125 思 C,k
   BANK.splice(0, BANK.length, ...keep);
 }
 /*SEL150-END*/
+/* ---------- 後期中間考査の範囲：50問に絞る（剛さんの指示 2026-11-16） ----------
+   選択 40問：上の 150問から分野ごとに 5問。答え方はすべて ア〜オ の5択にそろえる（4択には迷う選択肢を1つ足し、数値は5つの数から選ぶ形にする）
+   記述 10問：令和8年度の候補問題の複線図に、誤りを1か所入れたもの。誤っている線の番号と、正しくはどうするかを書く */
+cat("goshiki", "複線図の誤りを見つける（記述）", "複線図を読み、誤っている線の番号と正しいつなぎ方を書く");
+{
+  const SL = ["小スリーブ・刻印「○」", "小スリーブ・刻印「小」", "小スリーブ・刻印「中」", "中スリーブ・刻印「小」", "中スリーブ・刻印「中」"];
+  const mm = a => a.map(x => x + "mm");
+  const SEL40 = [
+    ["kekkan-17"], ["kekkan-25"], ["kekkan-31"], ["kekkan-57"], ["kekkan-73", { add: "取付位置" }],
+    ["sleeve-3", { o: SL, ans: SL[1] }], ["sleeve-6", { o: SL, ans: SL[1] }], ["sleeve-11", { o: SL, ans: SL[4] }], ["sleeve-14", { o: SL, ans: SL[4] }],
+    ["sleeve-new1", { o: ["1本", "2本", "3本", "4本", "5本"], ans: "4本", fix: true }],
+    ["jouken-3", { add: "白色・黒色のどちらでもよい" }], ["jouken-11", { add: "黒だけ接続箇所を設け、白はそのまま通す" }], ["jouken-13", { add: "ねじなしボックスコネクタの止めねじを、頭がねじ切れるまで締める作業" }],
+    ["jouken-16", { add: "予備品を含め、作品に必要な分だけを選んで使い、残りは返す" }], ["jouken-17", { add: "リングスリーブ・差込形コネクタ・ケーブル（短いもの）" }],
+    ["kigou-9", { add: "位置表示灯内蔵スイッチ" }], ["kigou-10", { add: "確認表示灯（パイロットランプ）" }], ["kigou-11", { add: "確認表示灯（パイロットランプ）" }], ["kigou-12", { add: "漏電遮断器" }], ["kigou-17", { add: "2口コンセント" }],
+    ["kougu-2", { add: "ドライバ（プラスとマイナス）" }], ["kougu-6", { add: "電源を入れなければ、導通を確かめるのに使ってよい" }], ["kougu-7", { add: "テープで目盛を隠せば、そのまま持ち込んで使える" }],
+    ["kougu-15", { add: "ねじの頭が当たって止まるまで（頭は残す）" }], ["kougu-16", { add: "ワイヤストリッパの目盛" }],
+    ["tejun-4", { add: "150mm" }], ["tejun-11", { o: mm([200, 250, 300, 350, 400]), ans: "300mm", fix: true }], ["tejun-14", { o: mm([200, 250, 300, 350, 400]), ans: "250mm", fix: true }],
+    ["tejun-19", { o: mm([20, 30, 50, 100, 150]), ans: "100mm", fix: true }], ["tejun-20", { o: mm([10, 20, 30, 50, 100]), ans: "20mm", fix: true }],
+    ["fukusen-2", { add: "スイッチを通さずに、照明の B 側と、コンセントの W 側へ" }], ["fukusen-6", { add: "電源の白（接地側）の線" }], ["fukusen-8", { add: "3路スイッチ1つと4路スイッチ2つ" }],
+    ["fukusen-12", { add: "照明と直列（返り線と照明の B 側のあいだ）に入れる" }], ["fukusen-19", { o: ["2つ", "3つ", "4つ", "5つ", "6つ"], ans: "3つ", fix: true }],
+    ["kouho-14", { drop: "差込形コネクタ 4本用" }], ["kouho-24", { drop: "リングスリーブ・刻印「○」" }], ["kouho-71", { drop: "リングスリーブ・刻印「○」" }],
+    ["kouho-141", { add: "IV 1.6 の黒・白・赤・緑 4本" }], ["kouho-150", { add: "EM-EEF 1.6-2C" }],
+  ];
+  const keep = SEL40.map(([id, x]) => {
+    const q = BANK.find(b => b.id === id); if (!q) throw new Error("範囲の問題がない: " + id);
+    x = x || {};
+    if (x.add) q.o = q.o.concat([x.add]);
+    if (x.o) { q.t = "c"; q.o = x.o.slice(); q.a = x.o.indexOf(x.ans); q.fix = !!x.fix; delete q.digits; delete q.unit; }
+    if (x.drop) { const ans = q.o[q.a]; q.o = q.o.filter(o => o !== x.drop); q.a = q.o.indexOf(ans); }
+    return q;
+  });
+  /* 記述：誤りの入れ方（ref の1本を差しかえる）。{n} は誤っている線の番号 */
+  const GOS = [
+    { z: "k1", ln: "Lb.W B2:1 白", to: "Lb.W B2:1 黒", keys: [["白", "接地側"]],
+      model: "ランプレセプタクル ロ の受金ねじ部（W）には、白（接地側）の電線をつなぐ。",
+      ex: "番号 {n} の線は、ランプレセプタクル ロ の受金ねじ部（W）に黒い電線をつないでいる。受金ねじ部には接地側の白をつなぐ（極性）。" },
+    { z: "k2", ln: "Pl.2 B2:2 白", to: "Pl.2 B2:3 白", keys: [["白", "接地側"]],
+      model: "確認表示灯の線を、白（接地側）の接続点につなぐ。電源の黒と白のあいだに入れて常時点灯にする。",
+      ex: "番号 {n} の線で、確認表示灯がスイッチと並列（異時点滅のつなぎ方）になっている。常時点灯にするには、電源の黒と白（接地側）のあいだにつなぐ。" },
+    { z: "k3", ln: "Ta.S2 B2:2 白", to: "Ta.S2 B2:2 黒", keys: [["白"]],
+      model: "タイムスイッチ（端子台）の S2 には、白の電線をつなぐ。",
+      ex: "番号 {n} の線は、タイムスイッチ（端子台）の S2 に黒い電線をつないでいる。施工条件で S2 には白。" },
+    { z: "k4", ln: "Lr.C B1:3 黒", to: "Lr.C B1:1 黒", keys: [["T相", "黒"]],
+      model: "電源表示灯の線を、R 相（赤）ではなく T 相（黒）の接続点につなぐ。電源表示灯は S 相と T 相のあいだ。",
+      ex: "番号 {n} の線で、電源表示灯が R 相（赤）と S 相（白）のあいだにつながっている。施工条件では S 相と T 相のあいだ。" },
+    { z: "k6", ln: "Sb.0 B2:4 黒", to: "Sb.0 B2:2 黒", keys: [["負荷", "引掛シーリング", "照明"]],
+      model: "その 3路スイッチの 0 を、引掛シーリングへ行く黒（負荷側）の接続点につなぐ。",
+      ex: "番号 {n} の線で、3路スイッチの 0 が、もう一方の3路スイッチとの間の線につながっている。施工条件で 0 には電源側又は負荷側の電線。この 3路スイッチの 0 は、引掛シーリング（負荷）へ行く線につなぐ。" },
+    { z: "k9", ln: "EET.W B1:2 白", to: "EET.W B1:2 黒", keys: [["白", "接地側"]],
+      model: "コンセントの W（接地側の極）には、白の電線をつなぐ。",
+      ex: "番号 {n} の線は、接地極付接地端子付コンセントの W に黒い電線をつないでいる。W には接地側の白をつなぐ（極性）。" },
+    { z: "k10", ln: "Sa.2 Pl.1 黒", to: "Sa.1 Pl.1 黒", keys: [["負荷", "返り", "照明と並列"]],
+      model: "確認表示灯を、スイッチの負荷側（返り線の側）につなぎ、照明と並列にする。",
+      ex: "番号 {n} の線で、確認表示灯がスイッチの電源側につながり、電源の黒と白のあいだ（常時点灯）になっている。同時点滅にするには、照明と並列（スイッチの負荷側と白のあいだ）につなぐ。" },
+    { z: "k11", ln: "Sa.1 O.L 黒", to: "Sa.2 O.L 黒", keys: [["電源側", "非接地", "電源の黒"]],
+      model: "コンセントへの渡り線を、スイッチの電源側（電源の黒がつながる端子）からとる。",
+      ex: "番号 {n} の線は、コンセントへの渡り線をスイッチ イ の負荷側からとっている。これではスイッチを入れないとコンセントが使えない。コンセントには電源の黒（非接地側）をそのまま送る。" },
+    { z: "k12", ln: "Sa.2 B2:3 白", to: "Sa.2 B2:2 白", keys: [["引掛シーリング", "照明", "負荷"]],
+      model: "スイッチ イ の返り線を、引掛シーリング イ へ行く黒の接続点につなぐ。",
+      ex: "番号 {n} の線で、スイッチ イ の返り線が白（接地側）の接続点につながっている。スイッチを入れると短絡する。返り線は引掛シーリング イ へ行く線につなぐ。" },
+    { z: "k13", ln: "Sa.1 B1:1 黒", to: "Sa.1 B1:2 黒", keys: [["非接地", "黒"]],
+      model: "スイッチを、非接地側（電源の黒）の接続点につなぐ。",
+      ex: "番号 {n} の線で、スイッチ イ が白（接地側）の接続点につながっている。スイッチは非接地側の黒に入れる（切ったとき器具に電圧がかからないように）。" },
+  ];
+  const n0 = BANK.length;
+  GOS.forEach(g => {
+    const z = ZUSHI.find(x => x.id === g.z), ln = z.ref.findIndex(r => r.join(" ") === g.ln);
+    if (ln < 0) throw new Error("誤りを入れる線がない: " + g.z + " " + g.ln);
+    add("goshiki", { t: "e", z, figZ: z.id, ln, to: g.to.split(" "), keys: g.keys, model: g.model, ex: g.ex.replace("{n}", ln + 1), kan: "思", lv: "C",
+      q: `単線図の配線を、複線図にした。複線図の中に、誤りが1か所ある。誤っている線の番号をぬり、正しくはどうするかを書け。\n施工条件：${ZCOND[z.id]}`, src: SRC_R8() });
+  });
+  BANK.splice(0, BANK.length, ...keep, ...BANK.slice(n0));
+}
 /*BANK-END*/
 
 /* ============================================================
@@ -1016,17 +1101,19 @@ function markNumber(q, v) {
   return started ? +s : null;
 }
 const S_MIN = 10;   // 文章は 10 字以上
+const E_MIN = 6;    // 誤りを直す文は 6 字以上
 function judge(q, v) {
   if (q.t === "c") return v === q.a;
   if (q.t === "m") return Array.isArray(v) && v.slice().sort().join() === q.a.slice().sort().join();   // すべて合って正解（部分点なし）
   if (q.t === "n") return markNumber(q, v) === q.a;
   if (q.t === "s") { const s = norm(v); if (s.length < S_MIN) return false; return q.keys.every(g => g.some(w => s.includes(norm(w)))); }
   if (q.t === "d") return zushiScore(q.z, v).ok;
+  if (q.t === "e") { if (!v || v.n !== q.ln + 1) return false; const s = norm(v.s); return s.length >= E_MIN && q.keys.every(g => g.some(w => s.includes(norm(w)))); }
   return false;
 }
-const keyHits = (q, v) => { const s = norm(v); return q.keys.map(g => ({ w: g[0], hit: g.some(w => s.includes(norm(w))) })); };
-const answerText = q => q.t === "c" ? q.o[q.a] : q.t === "m" ? q.a.map(i => MK[i]).join("・") + "（" + q.a.map(i => q.o[i]).join("／") + "）" : q.t === "n" ? q.a + (q.unit || "") : q.t === "d" ? "（解答例の図を見る）" : q.model;
-const hasAnswer = (q, v) => q.t === "c" ? v !== undefined : q.t === "m" ? Array.isArray(v) && v.length > 0 : q.t === "n" ? markNumber(q, v) !== null : q.t === "d" ? !!(v && v.lines && v.lines.length) : !!(v && String(v).trim());
+const keyHits = (q, v) => { const s = norm(q.t === "e" ? (v || {}).s : v); return q.keys.map(g => ({ w: g[0], hit: g.some(w => s.includes(norm(w))) })); };
+const answerText = q => q.t === "c" ? q.o[q.a] : q.t === "m" ? q.a.map(i => MK[i]).join("・") + "（" + q.a.map(i => q.o[i]).join("／") + "）" : q.t === "n" ? q.a + (q.unit || "") : q.t === "d" ? "（解答例の図を見る）" : q.t === "e" ? `線の番号 ${q.ln + 1}　${q.model}` : q.model;
+const hasAnswer = (q, v) => q.t === "c" ? v !== undefined : q.t === "m" ? Array.isArray(v) && v.length > 0 : q.t === "n" ? markNumber(q, v) !== null : q.t === "d" ? !!(v && v.lines && v.lines.length) : q.t === "e" ? !!(v && v.n && v.s && v.s.trim()) : !!(v && String(v).trim());
 
 /* ============================================================
    画面
@@ -1034,12 +1121,11 @@ const hasAnswer = (q, v) => q.t === "c" ? v !== undefined : q.t === "m" ? Array.
 /* 模擬テストの配分（本試験 30問の仮の形）。語群選択 20問×3点・数値 4問×2点・記述（文章）4問×4点・記述（図示）2問×8点 ＝ 100点 */
 /* 模擬テスト（定期考査と同じ組み方。先生の選定 2026-10-30）。知識・技能 50点＋思考・判断・表現 50点＝100点、47問・50分。
    記述（図示）は時間がかかるので入れない。単線図は1回のテストで2つまで */
-const isK5 = q => q.cat === "kekkan" && (q.t === "m" || (q.t === "c" && q.o.length === 5));
+/* 模擬テスト（後期中間考査と同じ組み方。剛さんの指示 2026-11-16）：選択 40問（ア〜オ）＋記述 10問（複線図の誤り）＝50問・50分。
+   範囲の 50問をすべて出し、順番だけ入れかえる。配点はまだ決まっていないので、正解の数で出す */
 const EXAM = { minutes: 50, sec: [
-  { name: "知識・技能", kan: "知", n: 25, pt: 2, pick: q => q.kan === "知" && (q.t === "c" || q.t === "n") },
-  { name: "思考・判断・表現（欠陥の判断）", kan: "思", n: 10, pt: 2, multi: 2, pick: q => isK5(q) },
-  { name: "思考・判断・表現（単線図・計算）", kan: "思", n: 10, pt: 2, figMax: 2, pick: q => q.kan === "思" && (q.t === "c" || q.t === "n") && !isK5(q) },
-  { name: "思考・判断・表現（記述）", kan: "思", n: 2, pt: 5, pick: q => q.kan === "思" && q.t === "s" },
+  { name: "選択（ア〜オ）", n: 40, pick: q => q.t === "c" },
+  { name: "記述（複線図の誤り）", n: 10, pick: q => q.t === "e" },
 ] };
 EXAM.n = EXAM.sec.reduce((s, x) => s + x.n, 0);
 let S = { view: "home" };     // view: home / q / result
@@ -1058,11 +1144,11 @@ function home() {
   const stat = c => { const qs = BANK.filter(q => q.cat === c.id), done = qs.filter(q => rec[q.id]), ok = qs.filter(q => rec[q.id] && rec[q.id].last === 1);
     return `${qs.length}問` + (done.length ? `・いま正解 ${ok.length}` : ""); };
   $("card").innerHTML = `
-    <p class="lead">中間考査の範囲は、ここにある <b>${BANK.length}問</b> です。第二種電気工事士の技能試験（複線図・施工条件・欠陥の判断基準・器具と工具）を、筆記の問題で練習します。<br>
-    答え方は定期考査と同じです。① 語群選択：記号の ○ をぬる（「すべて選べ」は当てはまるものを全部）　② 数値：位ごとに 0〜9 の ○ をぬる　③ 記述（文章）：指定語句をすべて使って書く　④ 記述（図示）：複線図の線・色・刻印を書き込む（練習だけ）<br>
-    模擬テストは本番と同じ組み方：知識・技能 50点＋思考・判断・表現 50点＝100点。</p>
+    <p class="lead">後期中間考査の範囲は、ここにある <b>${BANK.length}問</b> です（選択 ${BANK.filter(q => q.t === "c").length}問＋記述 ${BANK.filter(q => q.t === "e").length}問）。第二種電気工事士の技能試験を、筆記の問題で練習します。<br>
+    ① 選択：ア〜オ から1つ選び、解答欄の記号の ○ をぬる　② 記述：単線図と複線図を読み、複線図の中の誤り（1か所）を見つけて、誤っている線の番号をぬり、正しくはどうするかを書く<br>
+    模擬テストは本番と同じ組み方：選択 40問＋記述 10問・${EXAM.minutes}分。</p>
     <div class="big">
-      <button class="btn" id="goExam">模擬テスト（${EXAM.n}問・100点・${EXAM.minutes}分）</button>
+      <button class="btn" id="goExam">模擬テスト（${EXAM.n}問・${EXAM.minutes}分）</button>
       <button class="btn ghost" id="goWrong" ${nW ? "" : "disabled"}>まちがえた問題（${nW}問）</button>
       <button class="btn ghost" id="goAll">全部から10問</button>
     </div>
@@ -1086,24 +1172,12 @@ function startPractice(ids, title) {
   ids.forEach(id => S.ord[id] = prepOrder(byId(id)));
   render();
 }
-/* 模擬テストの問題を選ぶ。区分ごとの数を守り、分野はかたよらないように順に取る。単線図は2つまで */
+/* 模擬テストの問題：区分ごとに範囲の問題をすべて出す（区分の中で順番を入れかえる） */
 function makeExam(rnd) {
   const sh = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor((rnd || Math.random)() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-  const used = new Set(), ids = [], pts = {}, sec = {};
-  /* 単線図は2つまで。単線図・計算の区分が足りる組み合わせになるまで選び直す */
-  const all = [...new Set(BANK.filter(q => q.figZ).map(q => q.figZ))], s3 = EXAM.sec[2];
-  let figs = [];
-  for (let k = 0; k < 200; k++) { const f = sh(all).slice(0, 2); if (BANK.filter(q => s3.pick(q) && (!q.figZ || f.includes(q.figZ))).length >= s3.n + 2) { figs = f; break; } }
-  EXAM.sec.forEach((x, si) => {
-    let pool = BANK.filter(q => x.pick(q) && !used.has(q.group || q.id) && !(q.rel || []).some(r => ids.includes(r)) && (!q.figZ || figs.includes(q.figZ)));
-    const take = [];
-    if (x.multi) sh(pool.filter(q => q.t === "m")).slice(0, x.multi).forEach(q => take.push(q));
-    const byCat = sh(CATS.map(c => sh(pool.filter(q => q.cat === c.id && !take.includes(q)))).filter(a => a.length));
-    let k = 0, guard = 0;
-    while (take.length < x.n && guard++ < 999) { const p = byCat[k++ % byCat.length]; const q = p.find(y => !take.includes(y) && !used.has(y.group || y.id)); if (q) { take.push(q); used.add(q.group || q.id); } }
-    take.forEach(q => { used.add(q.group || q.id); ids.push(q.id); pts[q.id] = x.pt; sec[q.id] = si; });
-  });
-  return { ids, pts, sec };
+  const ids = [], sec = {};
+  EXAM.sec.forEach((x, si) => sh(BANK.filter(x.pick)).slice(0, x.n).forEach(q => { ids.push(q.id); sec[q.id] = si; }));
+  return { ids, sec };
 }
 function startExam() {
   S = { view: "q", mode: "exam", title: "模擬テスト", ...makeExam(), i: 0, ans: {}, done: {}, ord: {}, t0: Date.now() };
@@ -1116,7 +1190,7 @@ function stopTimer() { if (tick) clearInterval(tick); tick = null; $("timer").te
 function showTimer() { if (!S.t0) return; const s = Math.floor((Date.now() - S.t0) / 1000), m = Math.floor(s / 60);
   $("timer").textContent = `${m}分${String(s % 60).padStart(2, "0")}秒 ／ ${EXAM.minutes}分`; $("timer").style.color = m >= EXAM.minutes ? "var(--ng)" : ""; }
 
-const KIND = { c: "語群選択（記号をぬる）", m: "語群選択（すべて選ぶ）", n: "数値（数字をぬる）", s: "記述（文章）", d: "記述（図示）" };
+const KIND = { c: "語群選択（記号をぬる）", m: "語群選択（すべて選ぶ）", n: "数値（数字をぬる）", s: "記述（文章）", d: "記述（図示）", e: "記述（複線図の誤り）" };
 const picked = (q, v, oi) => q.t === "m" ? Array.isArray(v) && v.includes(oi) : v === oi;
 const rightOpt = (q, oi) => q.t === "m" ? q.a.includes(oi) : oi === q.a;
 /* 解答欄の部品 */
@@ -1155,7 +1229,7 @@ function render() {
   head(`${S.title}　${S.i + 1} / ${S.ids.length}`, (S.i + 1) / S.ids.length * 100);
   const c = CATS.find(x => x.id === q.cat);
   let h = `<div class="tags"><span class="tag kind">${KIND[q.t]}</span><span class="tag">${esc(c.name)}</span>${q.sub ? `<span class="tag">${esc(q.sub)}</span>` : ""}</div>
-    <div class="q">${esc(q.q)}</div>` + (q.t !== "d" && figOf(q) ? `<div class="fig">${figOf(q)}</div>` : "");
+    <div class="q">${esc(q.q)}</div>` + (q.t !== "d" && q.t !== "e" && figOf(q) ? `<div class="fig">${figOf(q)}</div>` : "");
   if (q.t === "c" || q.t === "m") {
     const ord = S.ord[id], long = q.o.some(s => String(s).length > 18) || q.oSvg;
     h += `<div class="opts ${long && q.o.length !== 6 ? "long" : q.o.length === 6 ? "three" : ""}">` + ord.map((oi, k) => {
@@ -1171,12 +1245,16 @@ function render() {
       <textarea id="tin" ${shown ? "disabled" : ""} placeholder="指定語句をすべて使って書く（${S_MIN}字以上）">${esc(v || "")}</textarea>`;
   } else if (q.t === "d") {
     h += zTools(q, v, shown) + `<div class="zbox">${zSvg(q.z, v, S.zsel, false)}</div>`;
+  } else if (q.t === "e") {
+    h += `<div class="efig"><div><span class="lab">単線図</span><div class="fig">${tanSvg(q.figZ)}</div></div>
+      <div><span class="lab">複線図（○の数字は線の番号）</span><div class="zbox">${eSvg(q, false)}</div></div></div>` + eSheet(q, v, shown);
   }
   if (shown) {
     const ok = judge(q, v), mk = q.t === "c" ? MK[S.ord[id].indexOf(q.a)] + "　" : "";   // すべて選ぶ（m）は answerText に記号が入る
     h += `<div class="fb ${ok ? "ok" : "ng"}"><b class="h">${ok ? "正解" : "ちがいます"}　答え：${esc(mk + answerText(q))}</b>`;
     if (q.t === "s") h += `<div class="keys">指定語句：${keyHits(q, v).map(k => `<span class="key ${k.hit ? "hit" : "lack"}">${esc(k.w)}${k.hit ? " ✓" : " なし"}</span>`).join("")}</div><div>模範解答：${esc(q.model)}</div>`;
     if (q.t === "d") h += zReport(q, v);
+    if (q.t === "e") h += eReport(q, v);
     h += (q.ex ? `<div>${esc(q.ex)}</div>` : "") + (q.src ? `<span class="src">${esc(q.src)}</span>` : "") + `</div>`;
   }
   if (S.mode === "exam" && q.t !== "d") h += `<div class="qlist">${S.ids.map((x, k) => `<button data-j="${k}" class="${hasAnswer(byId(x), S.ans[x]) ? "done" : ""} ${k === S.i ? "now" : ""}">${k + 1}</button>`).join("")}</div>`;
@@ -1189,9 +1267,22 @@ function render() {
   h += `</div>`;
   $("card").innerHTML = h;
   $("card").className = "card" + (q.t === "d" ? " dmode" : "") + (shown ? " shown" : "");
-  document.querySelector(".main").classList.toggle("wide", q.t === "d");
+  document.querySelector(".main").classList.toggle("wide", q.t === "d" || q.t === "e");
   setSide([q.q, shown ? (q.o || []).join(" ") + (q.ex || "") + answerText(q) : ""]);   // 答え合わせの前は、問題文の用語だけ（選択肢の用語の説明は答えになることがある）
   bind(q);
+}
+/* 複線図の誤り：誤りを入れた線（fixd なら正しい線）で描く */
+const eLines = (q, fixd) => q.z.ref.map((r, i) => { const [a, b, c] = !fixd && i === q.ln ? q.to : r; return { a, b, c }; });
+const eSvg = (q, fixd) => zSvg(q.z, null, null, true, { lines: eLines(q, fixd), nums: true, hi: fixd ? q.ln : -1 });
+function eSheet(q, v, shown) {
+  v = v || {};
+  return `<div class="sheet"><span class="sheet-h">誤っている線の番号</span>${q.z.ref.map((_, i) => {
+    let cls = v.n === i + 1 ? "fill" : ""; if (shown && i === q.ln) cls += " right"; if (shown && v.n === i + 1 && i !== q.ln) cls += " wrong";
+    return `<button class="bub sm ${cls}" data-en="${i + 1}" ${shown ? "disabled" : ""}>${i + 1}</button>`; }).join("")}</div>
+    <textarea id="tin" class="etin" ${shown ? "disabled" : ""} placeholder="正しくはどうするかを書く（例：〇〇の線を、△△の接続点につなぐ）">${esc(v.s || "")}</textarea>`;
+}
+function eReport(q, v) {
+  return `<div class="note">正しい複線図（黄色が番号 ${q.ln + 1} の線を直したところ）</div><div class="zbox ans">${eSvg(q, true)}</div>`;
 }
 function zReport(q, v) {
   const r = zushiScore(q.z, v);
@@ -1212,7 +1303,10 @@ function bind(q) {
   document.querySelectorAll(".bub[data-d]").forEach(b => b.onclick = () => { const a = Array.isArray(S.ans[id]) ? S.ans[id].slice() : Array(digitsOf(q)).fill(null);
     const c = +b.dataset.c, d = +b.dataset.d; a[c] = a[c] === d ? null : d; S.ans[id] = a; render(); });
   const tin = $("tin");
-  if (tin) { tin.oninput = () => { S.ans[id] = tin.value; const c = $("check"); if (c) c.disabled = !tin.value.trim(); }; }
+  if (tin) { tin.oninput = () => { if (q.t === "e") S.ans[id] = Object.assign({}, S.ans[id], { s: tin.value }); else S.ans[id] = tin.value;
+    const c = $("check"); if (c) c.disabled = !hasAnswer(q, S.ans[id]); }; }
+  document.querySelectorAll(".bub[data-en]").forEach(b => b.onclick = () => { const n = +b.dataset.en, v = S.ans[id] || {};
+    S.ans[id] = Object.assign({}, v, { n: v.n === n ? null : n }); render(); });
   if (q.t === "d") bindZ(q);
   const go = (k) => { S.i = k; S.zsel = null; S.zhist = []; S.zmsg = ""; render(); };
   if ($("check")) $("check").onclick = () => { S.done[id] = true; mark(id, judge(q, S.ans[id])); render(); };
@@ -1251,17 +1345,17 @@ function bindZ(q) {
 function finish() {
   const exam = S.mode === "exam";
   /* 図示は項目ごとの部分点（できた割合 × 配点、切り捨て） */
-  const rows = S.ids.map(id => { const q = byId(id), ok = judge(q, S.ans[id]), pt = exam ? S.pts[id] : 1;
+  const rows = S.ids.map(id => { const q = byId(id), ok = judge(q, S.ans[id]), pt = 1;
     const got = ok ? pt : q.t === "d" && exam ? Math.floor(zushiScore(q.z, S.ans[id]).frac * pt) : 0; return { q, ok, pt, got }; });
   if (exam) rows.forEach(r => mark(r.q.id, r.ok));
   stopTimer();
   const got = rows.reduce((s, r) => s + r.got, 0), full = rows.reduce((s, r) => s + r.pt, 0);
   const byCat = CATS.map(c => { const rs = rows.filter(r => r.q.cat === c.id); return { c, n: rs.length, ok: rs.filter(r => r.ok).length }; }).filter(x => x.n);
-  const kan = k => { const rs = rows.filter(r => EXAM.sec[S.sec[r.q.id]].kan === k); return `${rs.reduce((s, r) => s + r.got, 0)} / ${rs.reduce((s, r) => s + r.pt, 0)} 点`; };
+  const secRow = x => { const rs = rows.filter(r => x.pick(r.q)); return `${esc(x.name)} ${rs.filter(r => r.ok).length} / ${rs.length} 問`; };
   const min = S.t0 ? Math.round((Date.now() - S.t0) / 60000) : null;
   S.view = "result"; head(S.title + "　結果", 100);
-  $("card").innerHTML = `<div class="score">${exam ? `${got} / ${full} 点` : `${rows.filter(r => r.ok).length} / ${rows.length} 問 正解`}</div>
-    ${exam ? `<p class="lead"><b>知識・技能 ${kan("知")}</b>　／　<b>思考・判断・表現 ${kan("思")}</b></p>` : ""}
+  $("card").innerHTML = `<div class="score">${rows.filter(r => r.ok).length} / ${rows.length} 問 正解</div>
+    ${exam ? `<p class="lead"><b>${EXAM.sec.map(secRow).join("</b>　／　<b>")}</b></p>` : ""}
     ${min !== null ? `<p class="lead">かかった時間 約${min}分（目安 ${EXAM.minutes}分）</p>` : ""}
     <div class="bars">${byCat.map(x => `<div class="bar"><span>${esc(x.c.name)}</span><div class="track"><div class="fill" style="width:${x.ok / x.n * 100}%"></div></div><span class="num">${x.ok} / ${x.n}</span></div>`).join("")}</div>
     <h3>ふりかえり（番号を押すと、その問題の答えと解説）</h3>
@@ -1269,10 +1363,11 @@ function finish() {
     <div id="rev"></div>
     <div class="row"><button class="btn ghost" id="home">はじめの画面へ</button>${rows.some(r => !r.ok) ? `<button class="btn" id="redo">まちがえた問題をもう一度</button>` : ""}</div>`;
   document.querySelectorAll(".qlist button").forEach(b => b.onclick = () => { const r = rows[+b.dataset.j], q = r.q, v = S.ans[q.id];
-    const yours = q.t === "c" ? (v === undefined ? "（無回答）" : q.o[v]) : q.t === "m" ? (Array.isArray(v) && v.length ? v.map(i => MK[i]).join("・") : "（無回答）") : q.t === "n" ? (markNumber(q, v) ?? "（無回答）") : q.t === "d" ? `${r.got} / ${r.pt} 点` : (v || "（無回答）");
+    const yours = q.t === "c" ? (v === undefined ? "（無回答）" : q.o[v]) : q.t === "m" ? (Array.isArray(v) && v.length ? v.map(i => MK[i]).join("・") : "（無回答）") : q.t === "n" ? (markNumber(q, v) ?? "（無回答）") : q.t === "d" ? `${r.got} / ${r.pt} 点` : q.t === "e" ? (v && v.n ? `番号 ${v.n}　${v.s || ""}` : "（無回答）") : (v || "（無回答）");
     $("rev").innerHTML = `<div class="fb ${r.ok ? "ok" : "ng"}"><b class="h">${b.textContent}．${esc(q.q)}</b>あなたの答え：${esc(yours)}<br>答え：${esc(answerText(q))}`
       + (q.t === "s" ? `<div class="keys">指定語句：${keyHits(q, v).map(k => `<span class="key ${k.hit ? "hit" : "lack"}">${esc(k.w)}</span>`).join("")}</div>` : "")
       + (q.t === "d" ? `<div class="zbox">${zSvg(q.z, v, null, false)}</div>` + zReport(q, v) : "")
+      + (q.t === "e" ? `<div class="zbox">${eSvg(q, false)}</div>` + eReport(q, v) : "")
       + `${q.ex ? `<div>${esc(q.ex)}</div>` : ""}${q.src ? `<span class="src">${esc(q.src)}</span>` : ""}</div>`;
     setSide([q.q, q.ex || ""]); });
   $("home").onclick = home;
