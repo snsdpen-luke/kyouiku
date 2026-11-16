@@ -516,6 +516,69 @@ console.log('■ 解説（アンケートの31項目×4枚）');
   ok('#kai30 で30番の問いから開く', w.eval('mode') === 'kai' && $(w, '#card').textContent.includes('No.30'));
 }
 
+console.log('■ 試験範囲（確定版）：選択50問（ア〜オ）＋記述10問');
+{
+  const w = open(null, null);
+  const { HQ, HW, KD, CH, Q } = w.eval('({HQ,HW,KD,CH,Q})');
+  const cnt = s => HQ.filter(q => q.s === s).length;
+  ok('選択は50問（章ごと8問、電子マネーだけ10問）', HQ.length === 50 && ['A', 'B', 'C', 'D', 'F'].every(s => cnt(s) === 8) && cnt('E') === 10, Object.keys(CH).map(cnt));
+  ok('記述は10問', HW.length === 10);
+  ok('選択はどれも5つの選択肢で、同じ物がない', HQ.every(q => q.o.length === 5 && new Set(q.o).size === 5 && q.o.every(o => o.trim())));
+  ok('問題文が重ならない', new Set(HQ.map(q => q.q)).size === 50 && new Set(HW.map(q => q.q)).size === 10);
+  const pc = [0, 1, 2, 3, 4].map(n => HQ.filter(q => q.p === n).length);
+  ok('正解の位置はア〜オに10ずつ', pc.every(c => c === 10), pc);
+  ok('同じ位置の正解が3回続かない', HQ.every((q, j) => j < 2 || !(HQ[j - 1].p === q.p && HQ[j - 2].p === q.p)));
+  const longest = HQ.filter(q => q.o.slice(1).every(o => q.o[0].length > o.length)).length;
+  ok('正解だけが一番長い問題が多すぎない（15問以下）', longest <= 15, longest);
+  ok('どの問題にも解説の番号があり、その章の解説を指す', [...HQ, ...HW].every(q => { const d = KD.find(x => x.n === q.k); return d && d.s === q.s; }));
+  ok('解説（e）が空でなく、です・ます', HQ.every(q => q.e && /(です|ます|ません)(（[^）]*）)?。$/.test(q.e)));
+  ok('記述には模範解答と採点の観点2つ', HW.every(q => q.m && q.c.length === 2));
+  ok('「すべて選ぶ」は入れない', HQ.every(q => !/すべて選/.test(q.q)));
+  ok('選択の数の問題：元の問題（Q）の正解と同じ答え', HQ.every(q => { const s = Q.find(x => x.q === q.q); return !s || s.o[s.a] === q.o[0]; }));
+}
+{
+  const w = open(null, null);
+  ok('メニューの先頭に「試験範囲（確定版）」', $(w, '.menu .mbtn').id === 'mHan' && $(w, '#mHan').textContent.includes('選択50問'));
+  click(w, '#mHan');
+  ok('章をえらぶ画面（6章＋記述）', w.document.querySelectorAll('#card [data-s]').length === 7);
+  w.document.querySelector('#card [data-s="A"]').click();
+  const HQ = w.eval('HQ');
+  const A = HQ.map((q, j) => j).filter(j => HQ[j].s === 'A');
+  ok('A の1問目が出て、選択肢はア〜オの5つ', w.document.querySelectorAll('#card .opt').length === 5 && [...w.document.querySelectorAll('#card .opt .mk')].map(e => e.textContent).join('') === 'アイウエオ');
+  ok('画面の正解の位置に、正解の文がある', w.document.querySelectorAll('#card .opt')[HQ[A[0]].p].textContent.includes(HQ[A[0]].o[0]));
+  const wrong = (HQ[A[0]].p + 1) % 5;
+  w.document.querySelectorAll('#card .opt')[wrong].click();
+  ok('まちがえると正解の記号と解説が出る', $(w, '#card .fb.ng') && $(w, '#card .fb').textContent.includes('正解は「' + 'アイウエオ'[HQ[A[0]].p] + '」'));
+  ok('「くわしい解説」のボタンがある', $(w, '#hkai') && $(w, '#hkai').textContent.includes('No.' + HQ[A[0]].k));
+  click(w, '#hkai');
+  ok('解説（しくみ）が開き、「問題にもどる」がある', w.eval('mode') === 'kai' && $(w, '#card').textContent.includes('しくみ') && $(w, '#kret'));
+  click(w, '#kret');
+  ok('問題にもどると、同じ問題（答えたまま）', w.eval('mode') === 'han' && $(w, '#card .fb.ng') && w.eval('hs.i') === 0);
+  click(w, '#hnext');
+  for (let n = 1; n < A.length; n++) { w.document.querySelectorAll('#card .opt')[HQ[A[n]].p].click(); if (n < A.length - 1) click(w, '#hnext'); }
+  click(w, '#hnext');
+  ok('結果：7 / 8 正解、まちがえた1問が出る', $(w, '#card').textContent.includes('7') && w.document.querySelectorAll('#card [data-go]').length === 1);
+  click(w, '#hretry');
+  ok('やり直すと、まちがえた問題にもどり答えが消えている', w.eval('hs.i') === 0 && !$(w, '#card .fb'));
+  // 保存して開き直す
+  const store = w.localStorage.getItem('fukushu-han-v1');
+  const w2 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/review1/', beforeParse(x) { x.localStorage.setItem('fukushu-han-v1', store); x.localStorage.setItem('fukushu-mode', 'menu'); } }).window;
+  ok('開き直しても進み具合が残る（選択 7 / 50）', $(w2, '#mHan').textContent.includes('選択 7 / 50'));
+}
+{
+  const w = open(null, null);
+  click(w, '#mHan'); w.document.querySelector('#card [data-s="W"]').click();
+  ok('記述の1問目：書く欄と「模範解答を見る」', $(w, '#ta') && $(w, '#hshow'));
+  click(w, '#hshow');
+  ok('書かずに押しても模範解答は出ない', !$(w, '#card .model'));
+  const ta = $(w, '#ta'); ta.value = 'TCPは再送するので待つと止まるから'; ta.dispatchEvent(new w.Event('input'));
+  click(w, '#hshow');
+  ok('書くと模範解答と採点の観点2つ', $(w, '#card .model') && w.document.querySelectorAll('#card .model li').length === 2);
+  ok('次へは自己判定のあと', $(w, '#hnext') === null);
+  w.document.querySelectorAll('#card .self .opt')[0].click();
+  ok('自己判定すると次へ・解説へ', $(w, '#hnext') && $(w, '#hkai'));
+}
+
 (async () => {
 console.log('■ わからないところアンケート（無記名・スプレッドシートへ送る）');
 {
