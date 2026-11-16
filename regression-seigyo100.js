@@ -331,6 +331,10 @@ console.log('■ 小テスト：通しで受ける');
     // 2026-11-16 剛さん「専門用語については、補足をいれてほしい」。図の問題は空らんの説明が答えの手がかりなので付けない
     ok('図以外の問題に「ことば」の補足がある', T2.every(p => p.t === 'fig' ? !p.y : Array.isArray(p.y) && p.y.length && p.y.every(x => x[0] && x[1] && x[1].length <= 60)));
     ok('「ことば」の補足が答えを書いていない（計算の答えの数がない）', T2.filter(p => p.t === 'num').every(p => !p.y.some(x => x[1].includes(String(p.a)))));
+    // 2026-11-16 剛さん「記述問題は採点の基準を生徒に明示しよう」「書き方のヒントを与えよう」
+    ok('記述：生徒向けの採点の基準が、先生の観点と同じ数・同じ点', T2.filter(p => p.t === 'text').every(p => Array.isArray(p.k) && p.k.length === p.c.length && p.k.every((x, i) => x[1] === p.c[i][1])));
+    ok('記述：書き方のヒントがある（です・ます）', T2.filter(p => p.t === 'text').every(p => p.kh && /す。$/.test(p.kh)));
+    ok('記述：生徒向けの基準に指定語句以外の答えの言葉を出しすぎない（「短く出る」などの結論を書かない）', !T2.some(p => (p.k || []).some(x => /短く出ます|速くなります|ゆるめ/.test(x[0]))));
     ok('第13問は上り坂のクルーズコントロール（剛さん「13問目がむずかしい」2026-11-16）', /上り坂/.test(T2[12].q) && !/雪/.test(T2[12].q));
     ok('文が です・ます（問題文は「〜なさい。」「〜ですか。」）', T2.every(p => /(なさい|ですか|ますか|ます)。$|）。$/.test(p.q.replace(/（TTC）/, ''))));
     w.close();
@@ -356,6 +360,9 @@ console.log('■ 小テスト：通しで受ける');
     // 第3問：計算（1.36）を電卓で出して入れる
     d.querySelector('.dots button[data-j="2"]').click();
     ok('計算の問題に電卓とヒントのボタン', !!d.getElementById('calc') && !!d.getElementById('hintBtn'));
+    d.querySelector('.dots button[data-j="1"]').click();
+    ok('記述の画面に採点の基準と書き方のヒントが出る', /採点の基準（5点）/.test(d.querySelector('.kijun')?.textContent || '') && /書き方のヒント/.test(d.querySelector('.kijun').textContent));
+    d.querySelector('.dots button[data-j="2"]').click();
     ok('問題の下に「ことば」の補足が出る（第3問：超音波センサ）', (d.querySelector('.yogo')?.textContent || '').includes('超音波センサ'));
     const key = k => [...d.querySelectorAll('#calc [data-k]')].find(b => b.dataset.k === k).click();
     d.querySelector('#calc [data-n="1"]').click(); key('×'); d.querySelector('#calc [data-n="0"]').click(); key('÷'); key('2'); key('=');
