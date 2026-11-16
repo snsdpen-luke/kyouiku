@@ -34,7 +34,7 @@ PAGES = [
     ("決済をえらぶ.html",          "emoney2/index.html",  "電子マネー②"),
     ("ふりかえり演習.html",        "review1/index.html",  "コンピュータシステム技術の復習演習"),
     ("小テスト第2回導入.html",     "review1/intro.html",  "小テスト第2回の前に映す導入スライド"),
-    ("小テスト第2回解説.html",     "review1/kaisetsu.html", "アンケートで多かった項目の解説スライド（31項目×4枚）"),
+    ("小テスト第2回解説.html",     "review1/kaisetsu.html", "道標：解説はふりかえり演習のメニュー「解説」へ移った"),
     ("サトシ・ナカモト事件ファイル.html", "bitcoin/index.html", "ブロックチェーン・マイニング"),
     ("技能筆記練習.html",          "ginou/index.html",    "技能試験 筆記トレーニング"),
     ("制御クイズ100.html",         "seigyo100/index.html", "電子計測制御の5択150問"),

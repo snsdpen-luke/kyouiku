@@ -485,6 +485,37 @@ console.log('■ 第2回：計算問題の電卓とヒント');
   ok('電卓の画面にも正解は出ない', !/正解/.test((w.eval(`us.i=${calcQ[1]};render()`), $(w, '#card').textContent)));
 }
 
+console.log('■ 解説（アンケートの31項目×4枚）');
+{
+  const w = open(null, null);
+  const { KD, ASK } = w.eval('({KD,ASK})');
+  ok('解説はアンケートと同じ31項目で、番号と題がそろう', KD.length === ASK.length && KD.every((d, i) => d.n === ASK[i].n && d.t === ASK[i].t && d.s === ASK[i].s));
+  ok('どの項目にも問い・しくみ・例題（4段）・記述（観点2つ）がある', KD.every(d => d.q && d.qs && (d.fig || d.tbl || d.pts) && d.ex.st.length === 4 && d.w.q && d.w.m && d.w.k.length === 2));
+  ok('問いの一言で答えを先に言っていない', KD.every(d => !/答えは/.test(d.qs)));
+  ok('メニューに「解説」がある', $(w, '#mKai') && $(w, '#mKai').textContent.includes('31'));
+  click(w, '#mKai');
+  ok('解説を選ぶと31項目の一覧', w.document.querySelectorAll('#card [data-k]').length === 31 && w.location.hash === '#kai');
+  w.document.querySelectorAll('#card [data-k]')[6].click();
+  ok('7番を開くと問い', $(w, '#card').textContent.includes('100Mbpsの回線なら') && w.location.hash === '#kai7');
+  click(w, '#knext'); ok('次へで しくみ', $(w, '#card').textContent.includes('1バイト＝8ビット'));
+  click(w, '#knext'); ok('次へで 例題（答えはまだ出ない）', $(w, '#card').textContent.includes('500MB') && w.document.querySelectorAll('#card ol.k-st li').length === 0);
+  click(w, '#kstep'); click(w, '#kstep');
+  ok('「次の一行」で1段ずつ出る', w.document.querySelectorAll('#card ol.k-st li').length === 2);
+  const key = k => w.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true }));
+  key('ArrowRight'); key('ArrowRight');
+  ok('→ キーでも1段ずつ、最後に答え', w.document.querySelectorAll('#card ol.k-st li.ans').length === 1);
+  key('ArrowRight'); ok('→ で記述（模範解答はまだ）', $(w, '#card').textContent.includes('記述で確かめる') && !$(w, '#card .k-model'));
+  click(w, '#kstep'); ok('模範解答を見る', $(w, '#card .k-model') && w.document.querySelectorAll('#card .k-keys li').length === 2);
+  key('ArrowLeft'); key('ArrowLeft'); key('ArrowLeft'); key('ArrowLeft');
+  ok('← で戻り、問いの前は一覧', w.document.querySelectorAll('#card [data-k]').length === 31);
+  click(w, '#kmenu'); ok('一覧からメニューへ', $(w, '#mKai') && w.eval('mode') === 'menu');
+}
+{
+  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/review1/#kai30' });
+  const w = dom.window;
+  ok('#kai30 で30番の問いから開く', w.eval('mode') === 'kai' && $(w, '#card').textContent.includes('No.30'));
+}
+
 (async () => {
 console.log('■ わからないところアンケート（無記名・スプレッドシートへ送る）');
 {
