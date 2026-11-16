@@ -328,6 +328,10 @@ console.log('■ 小テスト：通しで受ける');
     ok('計算にヒントと模範の式がある', nums.every(p => p.hint && p.m));
     const banned = /PLC|ラダー|PID|インターロック|自己保持|掃除機|接点|積分|微分|ゲイン|クリープ|すえ切り|Arduino|Trig|pulseIn|HC-SR04/;
     ok('Arduino・ラダー（PLC）・範囲の外の語がない', !T2.some(p => banned.test(JSON.stringify(p))));
+    // 2026-11-16 剛さん「専門用語については、補足をいれてほしい」。図の問題は空らんの説明が答えの手がかりなので付けない
+    ok('図以外の問題に「ことば」の補足がある', T2.every(p => p.t === 'fig' ? !p.y : Array.isArray(p.y) && p.y.length && p.y.every(x => x[0] && x[1] && x[1].length <= 60)));
+    ok('「ことば」の補足が答えを書いていない（計算の答えの数がない）', T2.filter(p => p.t === 'num').every(p => !p.y.some(x => x[1].includes(String(p.a)))));
+    ok('第13問は上り坂のクルーズコントロール（剛さん「13問目がむずかしい」2026-11-16）', /上り坂/.test(T2[12].q) && !/雪/.test(T2[12].q));
     ok('文が です・ます（問題文は「〜なさい。」「〜ですか。」）', T2.every(p => /(なさい|ですか|ますか|ます)。$|）。$/.test(p.q.replace(/（TTC）/, ''))));
     w.close();
   }
@@ -352,6 +356,7 @@ console.log('■ 小テスト：通しで受ける');
     // 第3問：計算（1.36）を電卓で出して入れる
     d.querySelector('.dots button[data-j="2"]').click();
     ok('計算の問題に電卓とヒントのボタン', !!d.getElementById('calc') && !!d.getElementById('hintBtn'));
+    ok('問題の下に「ことば」の補足が出る（第3問：超音波センサ）', (d.querySelector('.yogo')?.textContent || '').includes('超音波センサ'));
     const key = k => [...d.querySelectorAll('#calc [data-k]')].find(b => b.dataset.k === k).click();
     d.querySelector('#calc [data-n="1"]').click(); key('×'); d.querySelector('#calc [data-n="0"]').click(); key('÷'); key('2'); key('=');
     ok('電卓：340×0.008÷2 ＝ 1.36', d.getElementById('cmain').textContent === '1.36');
