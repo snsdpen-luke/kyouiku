@@ -36,26 +36,25 @@ ok(new Set(B.map(q => q.q + (q.figZ || "") + (q.fig || "") + (q.o || []).join("|
 ok(C5.every(q => q.ex && /です|ます|。/.test(q.ex) || !q.ex), "選択の解説は文になっている");
 console.log("    分野: " + G.CATS.map(c => c.name + " " + B.filter(q => q.cat === c.id).length).join("・"));
 
-console.log("\n【B】記述（複線図の誤り）：誤りは本当に1か所で、直すと公表の解答どおり");
+console.log("\n【B】記述（複線図の誤り）：公表の単線図・複線図の画像と、答えの番号が合う");
 const mapped = (z, lines) => JSON.parse(E(`(()=>{ const z=ZUSHI.find(x=>x.id===${JSON.stringify(z.id)}), P=zPrep(z), map=zAnsMap(z);
   const lines=${JSON.stringify(lines)}.map(l=>({a:map[l.a]||l.a,b:map[l.b]||l.b,c:l.c}));
   const by={}; lines.forEach(l=>[l.a,l.b].forEach(e=>{ if(P.slots[e]) (by[e]=by[e]||[]).push(l); }));
   const marks={}; Object.keys(by).forEach(s=>marks[s]=needMark(z,P.slots[s].box,by[s]));
   return JSON.stringify({lines,marks}); })()`));
-const zs = E("zushiScore"), eLines = E("eLines");
-ok(new Set(EQ.map(q => q.z.id)).size === 10, "10問とも別の候補問題（" + EQ.map(q => q.z.no).join("・") + "）");
+const zs = E("zushiScore"), FIGS = E("FIGS");
+ok(new Set(EQ.map(q => q.no)).size === 10, "10問とも別の候補問題（No." + EQ.map(q => q.no).join("・") + "）");
 EQ.forEach(q => {
-  const bad = eLines(q, false), good = eLines(q, true);
-  const diff = bad.filter((l, i) => JSON.stringify(l) !== JSON.stringify(good[i])).length;
-  const sb = zs(q.z, mapped(q.z, bad)), sg = zs(q.z, mapped(q.z, good));
-  ok(diff === 1 && sg.ok && !sb.ok, `${q.id}（No.${q.z.no}）: 違うのは線 ${q.ln + 1} の1本だけ・直すと満点・誤りのままだと採点で誤り`);
+  const w = FIGS["fk" + q.no + "w"], g = FIGS["fk" + q.no + "ok"], m = FIGS["fk" + q.no + "meta"];
+  ok(/^data:image\/png;base64,/.test(w) && /^data:image\/png;base64,/.test(g) && w !== g, `${q.id}（No.${q.no}）: 公表の複線図の画像（誤りを入れたもの・正しいもの）があり、2枚は違う`);
+  ok(/^data:image\/png;base64,/.test(FIGS["tan" + q.no]), `${q.id}: 公表の単線図の画像がある`);
+  ok(q.nc === m.n && q.nc >= 6 && q.ln + 1 === m.ans && q.ln >= 0 && q.ln < q.nc, `${q.id}: 番号の候補 ${q.nc} 個・答えの番号 ${q.ln + 1} が画像の番号と合う`);
   ok(G.judge(q, { n: q.ln + 1, s: q.model }), `${q.id}: 番号と模範解答 → 正解`);
   ok(!G.judge(q, { n: q.ln === 0 ? 2 : 1, s: q.model }) && !G.judge(q, { n: q.ln + 1, s: "" }) && !G.judge(q, { n: q.ln + 1, s: "まちがいです" }), `${q.id}: 番号ちがい・空欄・言葉の足りない文 → 不正解`);
   ok(new RegExp("番号 " + (q.ln + 1) + " ").test(q.ex), `${q.id}: 解説の番号が正解の番号と同じ`);
+  ok(/施工条件：電源からの接地側電線には白/.test(q.q), `${q.id}: 問題文に色の施工条件がある（図のヒントの注記は消してある）`);
 });
-{ const kinds = EQ.map(q => q.to[0] === q.z.ref[q.ln][0] && q.to[1] === q.z.ref[q.ln][1] ? "色" : "つなぎ先");
-  ok(kinds.filter(k => k === "色").length >= 2 && kinds.filter(k => k === "つなぎ先").length >= 5, `誤りの種類が混ざる（色 ${kinds.filter(k => k === "色").length}・つなぎ先 ${kinds.filter(k => k === "つなぎ先").length}）`); }
-ok(new Set(EQ.map(q => q.ln + 1)).size >= 7, "誤っている線の番号がばらける（" + EQ.map(q => q.ln + 1).join("・") + "）");
+ok(new Set(EQ.map(q => q.ln + 1)).size >= 5, "誤っている箇所の番号がばらける（" + EQ.map(q => q.ln + 1).join("・") + "）");
 /* 図示の採点（範囲からは外したが、誤り探しの確かめに使う）：入れかえてよい端子 */
 {
   const ansVal = id => { const z = E("ZUSHI").find(x => x.id === id); return mapped(z, z.ref.map(([a, b, c]) => ({ a, b, c }))); };
@@ -90,7 +89,8 @@ Object.entries(CONNEXP).forEach(([id, m]) => { const q = B.find(x => x.id === id
 console.log("\n【F】剛さんの指摘（2026-10-30）");
 const allText = q => [q.q, q.ex || "", q.model || "", (q.o || []).join("|"), q.sub || "", q.src || ""].join(" ");
 ok(B.every(q => !/No\.\s?\d/.test(allText(q))), "候補問題の番号（No.7 など）を問題・選択肢・解説・出典に出さない");
-ok(B.filter(q => q.figZ).every(q => /<svg/.test(E("tanSvg")(q.figZ))), "番号の代わりに付ける単線図が描ける");
+ok(B.filter(q => q.figZ).every(q => /<svg|<img class="pdfz" src="data:image\/png/.test(E("tanSvg")(q.figZ))), "番号の代わりに付ける単線図が描ける（候補問題は公表の単線図の画像）");
+ok(B.filter(q => /^k\d+$/.test(q.figZ || "")).every(q => /<img class="pdfz"/.test(E("tanSvg")(q.figZ))), "候補問題の単線図は、どれも公表の PDF から作った画像");
 ok(B.every(q => !(q.o || []).some(o => /大スリーブ|刻印「大」/.test(o) || o === "大")), "リングスリーブの「大」を選択肢に出さない");
 ok(!E("MARKS").sleeve.includes("大"), "図示の刻印にも「大」を出さない");
 ok(B.every(q => !/外装（シース）をはぐ|外装をはぐ/.test(q.q + (q.o || []).join(""))), "「外装をはぐ」ではなく「ケーブルをはぐ」");
@@ -123,8 +123,7 @@ ok(d.querySelector(".bub.fill") && d.querySelector(".opt.pick"), "選択：解�
 ok(d.querySelectorAll(".bub[data-o]").length === 5 && /ア.*イ.*ウ.*エ.*オ/s.test(d.querySelector(".sheet").textContent), "選択：解答欄は ア〜オ の5つ");
 S.i = 40; E("render()");
 const eq = B.find(q => q.id === S.ids[40]);
-ok(d.querySelector(".zbox svg") && d.querySelector(".efig .fig svg") && d.querySelectorAll(".bub[data-en]").length === eq.z.ref.length, "記述：単線図と、番号つきの複線図と、線の番号の解答欄が出る");
-ok(d.querySelectorAll(".zbox svg text").length >= eq.z.ref.length && !/<line[^>]+data-l=/.test(d.querySelector(".zbox").innerHTML), "記述：複線図の線に番号があり、線は動かせない（読むだけ）");
+ok(d.querySelector(".efig .fig img.pdfz") && d.querySelector(".zbox img.eimg").getAttribute("src") === E("FIGS")["fk" + eq.no + "w"] && d.querySelectorAll(".bub[data-en]").length === eq.nc, "記述：公表の単線図と、誤りを入れた番号つきの複線図（画像）と、番号の解答欄が出る");
 d.querySelector(`.bub[data-en="${eq.ln + 1}"]`).click();
 const ta = d.getElementById("tin"); ta.value = eq.model; ta.dispatchEvent(new w.Event("input"));
 ok(S.ans[eq.id].n === eq.ln + 1 && S.ans[eq.id].s === eq.model && G.judge(eq, S.ans[eq.id]), "記述：番号をぬって文を書くと、両方が答えに残り正解になる");
@@ -136,7 +135,7 @@ ok(/\d+ \/ 50 問 正解/.test(d.querySelector(".score").textContent) && /選択
 G.startPractice([EQ[0].id], "t");
 d.querySelector(`.bub[data-en="${EQ[0].ln + 1}"]`).click();
 const t2 = d.getElementById("tin"); t2.value = EQ[0].model; t2.dispatchEvent(new w.Event("input")); d.getElementById("check").click();
-ok(/正解/.test(d.querySelector(".fb").textContent) && d.querySelector(".zbox.ans svg"), "練習：答え合わせで正解と、直した複線図（直した線に色）が出る");
+ok(/正解/.test(d.querySelector(".fb").textContent) && d.querySelector(".zbox.ans img.eimg").getAttribute("src") === E("FIGS")["fk" + EQ[0].no + "ok"], "練習：答え合わせで正解と、正しい複線図（答えの箇所に黄色の印）が出る");
 G.home();
 ok(/50問/.test(d.getElementById("card").textContent) && d.querySelectorAll(".menu button").length === 9, "はじめの画面：50問・9分野");
 
