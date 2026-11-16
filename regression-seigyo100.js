@@ -94,22 +94,23 @@ console.log('■ 練習：分野をえらぶ・記述の練習');
   d.querySelector('[data-sg="A"]').click(); d.querySelector('.opt[data-k="0"]').click(); click(w, '#pick');
   d.querySelector('[data-kg="D"]').click();
   const KJ = w.eval('KJ');
-  ok('記述：分野ごとに3問・小テスト第2回とは別の問題', ['A','B','C','D','E'].every(g => KJ.filter(p => p.g === g).length === 3) && !KJ.some(p => w.eval('T2').some(q => q.q === p.q)));
+  // 2026-11-16 剛さん「小テスト2回で出した問題を中心に絞ろう」
+  ok('記述：小テスト第2回の記述8問と同じ（どの分野にも1問以上）', KJ.length === 8 && KJ.every(p => w.eval('T2')[p.n - 1].q === p.q) && ['A','B','C','D','E'].every(g => KJ.some(p => p.g === g)));
   ok('記述：観点の点の合計＝その問題の点・模範解答に指定語句が入る・字数の目安に入る', KJ.every(p => p.c.reduce((s, c) => s + c[2], 0) === p.pt && p.w.every(x => p.m.includes(x)) && [...p.m.replace(/\s/g, '')].length >= p.len[0] && [...p.m.replace(/\s/g, '')].length <= p.len[1]),
     KJ.filter(p => !(p.w.every(x => p.m.includes(x)) && [...p.m.replace(/\s/g, '')].length >= p.len[0] && [...p.m.replace(/\s/g, '')].length <= p.len[1])).map(p => p.id + ':' + [...p.m.replace(/\s/g, '')].length));
   const banned = /PLC|ラダー|PID|インターロック|自己保持|掃除機|接点|積分|微分|ゲイン|クリープ|すえ切り|Arduino|Trig|pulseIn|HC-SR04/;
-  ok('記述：範囲の外の語がない・です・ます', !KJ.some(p => banned.test(JSON.stringify(p))) && KJ.every(p => /(なさい|ですか)。$/.test(p.q) && /す。$/.test(p.m) && /す。$/.test(p.kh)));
-  ok('記述：レーダーの1問目・採点の基準と書き方のヒントが出て、答えはまだ出ない', d.getElementById('count').textContent === '1 / 3' && !!d.querySelector('.kijun') && !d.querySelector('.kans'));
-  const ta = d.getElementById('kta'); ta.value = 'ドップラー効果で周波数が高くなる'; ta.dispatchEvent(new w.Event('input'));
-  ok('記述：指定語句が入るとしるしがつく', [...d.querySelectorAll('.wd.in')].length === 2);
+  ok('記述：範囲の外の語がない・です・ます', !KJ.some(p => banned.test(JSON.stringify(p))) && KJ.every(p => /(なさい|ですか)。$/.test(p.q) && /す。$|）。$/.test(p.m) && /す。$/.test(p.kh)));
+  ok('記述：レーダーの1問目・採点の基準と書き方のヒントが出て、答えはまだ出ない', d.getElementById('count').textContent === '1 / 1' && !!d.querySelector('.kijun') && !d.querySelector('.kans'));
+  const ta = d.getElementById('kta'); ta.value = '得意と苦手。雨に強い'; ta.dispatchEvent(new w.Event('input'));
+  ok('記述：指定語句が入るとしるしがつく', [...d.querySelectorAll('.wd.in')].length === 3);
   click(w, '#kshow');
   ok('記述：答え合わせで模範解答と自己採点の項目が出る', !!d.querySelector('.kans') && d.querySelectorAll('.kc').length === 3 && d.getElementById('kpt').textContent === '0');
   d.querySelectorAll('.kc')[0].click(); d.querySelectorAll('.kc')[2].click();
   ok('記述：押した項目の点が足される（2 / 3）', d.getElementById('kpt').textContent === '2');
   const w2 = open(w.localStorage.getItem('seigyo100-v4'));
-  ok('記述：開き直しても、書いた答えと自己採点が残る', w2.document.getElementById('kta')?.value === 'ドップラー効果で周波数が高くなる' && w2.document.getElementById('kpt')?.textContent === '2');
+  ok('記述：開き直しても、書いた答えと自己採点が残る', w2.document.getElementById('kta')?.value === '得意と苦手。雨に強い' && w2.document.getElementById('kpt')?.textContent === '2');
   click(w, '#kback2');
-  ok('記述：分野をえらぶ画面にもどると、答え合わせ 1 / 3', d.querySelector('[data-kg="D"]').textContent.includes('1 / 3'));
+  ok('記述：分野をえらぶ画面にもどると、答え合わせ 1 / 1', d.querySelector('[data-kg="D"]').textContent.includes('1 / 1'));
 }
 
 console.log('■ 正解の位置');
