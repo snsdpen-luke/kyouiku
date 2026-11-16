@@ -84,6 +84,9 @@ console.log('■ 練習の選択問題（厳選50問）');
 console.log('■ 練習：分野をえらぶ・記述の練習');
 {
   const w = open(); const d = w.document;
+  { const m = open(null, 'menu'); const tx = m.document.getElementById('mDrill').textContent;
+    ok('メニューの練習に、合計と内訳（全58問：選択50＋記述8）が出る', tx.includes('全58問') && tx.includes('選択問題（5択）50問') && tx.includes('記述問題8問'), tx); m.close(); }
+  ok('練習の最初の画面にも、合計と内訳が出る', d.querySelector('.card .q').textContent.includes('全58問') && d.querySelector('.card').textContent.includes('選択問題（5択）50問') && d.querySelector('.card').textContent.includes('記述問題 8問'));
   ok('練習の最初に、選択問題の分野ボタン5つ＋すべて、記述の分野ボタン5つ', !!d.getElementById('go') && d.querySelectorAll('[data-sg]').length === 5 && d.querySelectorAll('[data-kg]').length === 5);
   d.querySelector('[data-sg="C"]').click();
   ok('分野をえらぶと、その分野の10問だけ（1 / 10）', d.getElementById('count').textContent === '1 / 10' && w.eval('Q[st.i].g') === 'C');
