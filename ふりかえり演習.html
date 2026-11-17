@@ -240,7 +240,7 @@ ol.k-st{margin:0;padding-left:1.6em}ol.k-st li{margin:0 0 8px}ol.k-st li.ans{fon
 </div>
 
 <script>
-const VER='2026-11-17a';
+const VER='2026-11-17b';
 const CH={A:'メッセージが届くまで',B:'速い・遅いの正体',C:'電波はどこまで届くか',D:'パスワードは何秒で破られる？',E:'残高はどこにある？',F:'サトシ・ナカモト事件ファイル'};
 const PART={term:'第1部　用語',one:'第2部　選択',multi:'第2部　選択',w:'第3部　記述'};
 // t:'term' 入力 / 'one' 1つ選ぶ / 'multi' すべて選ぶ / 'w' 記述
@@ -1516,9 +1516,9 @@ function hWritten(j){
    ${shown?`<div class="model"><strong>模範解答の例</strong><br>${esc(q.m)}<div style="margin-top:6px"><strong>採点の観点（2つとも書けていれば○）</strong></div><ol class="list">${q.c.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
    <div class="hint">自分の答えと見比べて、えらびなさい。</div>
    <div class="self">${['できた','半分できた','できなかった'].map((t,n)=>`<button class="opt ${hs.self[j]===n?'pick':''}" data-n="${n}">${t}</button>`).join('')}</div>`:''}
-   ${shown?hNav(done,hKaiBtn(q.k)):`<div class="row"><button class="btn ghost" id="hup">章をえらぶ</button><button class="btn ghost" id="hback" ${hs.i===0?'disabled':''}>もどる</button><button class="btn" id="hshow">書けたので模範解答を見る</button></div>`}`;
+   ${shown?hNav(done,hKaiBtn(q.k)):`<div class="row"><button class="btn ghost" id="hup">章をえらぶ</button><button class="btn ghost" id="hback" ${hs.i===0?'disabled':''}>もどる</button><button class="btn" id="hshow">書けたので模範解答を見る</button></div><div class="warn" id="hwarn" hidden></div>`}`;
   const ta=$('ta');ta.oninput=()=>{hs.text[j]=ta.value;hSave()};
-  if($('hshow'))$('hshow').onclick=()=>{if(ta.value.trim().length<10){ta.focus();ta.placeholder='先に自分の答えを書きます（10文字以上）';return}hs.shown[j]=1;hSave();render()};
+  if($('hshow'))$('hshow').onclick=()=>{const n=ta.value.trim().length;if(n<10){const w=$('hwarn');w.hidden=false;w.textContent=n?`答えが短すぎます（今 ${n}文字）。10文字以上書いてから押すと、模範解答が出ます。`:'先に自分の答えを書きます（10文字以上）。書いてから押すと、模範解答が出ます。';ta.focus();return}hs.shown[j]=1;hSave();render()};
   $('card').querySelectorAll('.self .opt').forEach(b=>b.onclick=()=>{hs.self[j]=+b.dataset.n;hSave();render()});
   hBindNav();
 }

@@ -599,7 +599,11 @@ console.log('■ 試験範囲（確定版）：選択50問（ア〜オ）＋記�
   ok('記述の1問目：書く欄と「模範解答を見る」', $(w, '#ta') && $(w, '#hshow'));
   click(w, '#hshow');
   ok('書かずに押しても模範解答は出ない', !$(w, '#card .model'));
-  const ta = $(w, '#ta'); ta.value = 'TCPは再送するので待つと止まるから'; ta.dispatchEvent(new w.Event('input'));
+  ok('書かずに押すと、理由が画面に出る', $(w, '#hwarn') && !$(w, '#hwarn').hidden && $(w, '#hwarn').textContent.includes('10文字'));
+  const ta = $(w, '#ta');
+  ta.value = '再送するから'; ta.dispatchEvent(new w.Event('input'));
+  click(w, '#hshow');
+  ok('短い答え（6文字）では模範解答は出ず、文字数が画面に出る', !$(w, '#card .model') && $(w, '#hwarn').textContent.includes('今 6文字')); ta.value = 'TCPは再送するので待つと止まるから'; ta.dispatchEvent(new w.Event('input'));
   click(w, '#hshow');
   ok('書くと模範解答と採点の観点2つ', $(w, '#card .model') && w.document.querySelectorAll('#card .model li').length === 2);
   ok('次へは自己判定のあと', $(w, '#hnext') === null);
