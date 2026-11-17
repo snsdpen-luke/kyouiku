@@ -53,7 +53,7 @@ python3 kakunin.py
 - **push の前に聞いた（自動 push の例外）・まだ出していない**：ブラウザの画面（Claude の Browser pane）で `file:///Users/uemuratsuyoshi/dev/kyouiku/<本体>.html` を開いて見せる。4:3 を見たいと言われたら `resize_window` で 1024×768
 - **push した**：生徒に配る URL（`https://snsdpen-luke.github.io/kyouiku/<フォルダ>/`）と、表示されるはずの版。公開まで1〜2分かかることも書く（確かめ方は koukai）
 - 先生用があるなら、その入口（`#sensei` / `#demo` / `N` キー）も
-- 印刷・PDF を見せるなら、`python3 tools/pdf_gazou.py <PDF>` でページごとの PNG も作って一緒に渡す（剛さんはスマホで見る。CLAUDE.md「PDF を渡すときは画像も付ける」）
+- 印刷・PDF を見せるなら、`python3 tools/pdf_gazou.py <PDF>` で PNG（全ページをつないだ縦長1枚）も作って一緒に渡す（剛さんはスマホで見る。CLAUDE.md「PDF を渡すときは画像も付ける」）
 
 ## 5. 報告（3〜5行）
 
