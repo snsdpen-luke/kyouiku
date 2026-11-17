@@ -516,11 +516,11 @@ console.log('■ 要点まとめ（アンケートで多かった所に印・計
   const { KD, KMANY, KCALC } = w.eval('({KD,KMANY,KCALC})');
   ok('31項目すべてに「ここだけは押さえる」1行がある', KD.every(d => typeof d.y === 'string' && d.y.length > 10 && d.y.length < 90));
   ok('印の項目は解説の番号の中にある', KMANY.length > 0 && KMANY.every(n => KD.some(d => d.n === n)));
-  ok('計算の型は6つで、どれも解説の番号を指す', KCALC.length === 6 && KCALC.every(c => KD.some(d => d.n === c.k)));
+  ok('計算の型は6つで、解説の番号は解説の中にある', KCALC.length === 6 && KCALC.every(c => !c.k || KD.some(d => d.n === c.k)));
   // 計算の型の例を、教材のコードを使わずに計算し直す
-  ok('例の数が合う（10バイト・600個・4秒・5日・256分の1・9分の1・10,000通り・0.04秒）',
-    3 * 3 + 1 === 10 && 900000 / 1500 === 600 && 20 * 8 / 40 === 4 && 10 / 2 === 5 && 2 ** 8 === 256 && 3 * 3 === 9 && 10 ** 4 === 10000 && 80 / 2 / 1000 === 0.04);
-  ok('例の文が計算の答えと同じ', ['10バイト', '600個', '4秒', '5日', '256分の1', '9分の1', '10,000通り', '0.04秒'].every(x => KCALC.some(c => c.e.includes(x))));
+  ok('例の数が合う（10バイト・600個・4秒・5日・30人・20分・10,000通り・0.04秒）',
+    3 * 3 + 1 === 10 && 900000 / 1500 === 600 && 20 * 8 / 40 === 4 && 10 / 2 === 5 && 60 / 2 === 30 && 1800 / (3 * 30) === 20 && 10 ** 4 === 10000 && 80 / 2 / 1000 === 0.04);
+  ok('例の文が計算の答えと同じ', ['10バイト', '600個', '4秒', '5日', '30人', '20分', '10,000通り', '0.04秒'].every(x => KCALC.some(c => c.e.includes(x))));
   ok('メニューに「要点まとめ」がある', $(w, '#mYoten'));
   click(w, '#mYoten');
   ok('開くと計算の型（6つ）', w.eval('mode') === 'yoten' && w.document.querySelectorAll('#card .y-c').length === 6 && w.location.hash === '#yoten');
@@ -544,17 +544,18 @@ console.log('■ 要点まとめ（アンケートで多かった所に印・計
   ok('#kai30 で30番の問いから開く', w.eval('mode') === 'kai' && $(w, '#card').textContent.includes('No.30'));
 }
 
-console.log('■ 試験範囲（確定版）：選択50問（ア〜オ）＋記述10問');
+console.log('■ 試験範囲（確定版）：選択45問（ア〜オ）＋記述5問');
 {
   const w = open(null, null);
   const { HQ, HW, KD, CH, Q } = w.eval('({HQ,HW,KD,CH,Q})');
   const cnt = s => HQ.filter(q => q.s === s).length;
-  ok('選択は50問（章ごと8問、電子マネーだけ10問）', HQ.length === 50 && ['A', 'B', 'C', 'D', 'F'].every(s => cnt(s) === 8) && cnt('E') === 10, Object.keys(CH).map(cnt));
-  ok('記述は10問', HW.length === 10);
+  ok('選択は45問（電波だけ3問、電子マネー10問、ほかは8問）', HQ.length === 45 && ['A', 'B', 'D', 'F'].every(s => cnt(s) === 8) && cnt('C') === 3 && cnt('E') === 10, Object.keys(CH).map(cnt));
+  ok('記述は5問で、全体は50問', HW.length === 5 && HQ.length + HW.length === 50);
+  ok('記述は「2つの言葉を使って」の形で、模範解答は40〜80字', HW.every(q => /2つの言葉を使って/.test(q.q) && q.m.length >= 40 && q.m.length <= 80), HW.map(q => q.m.length));
   ok('選択はどれも5つの選択肢で、同じ物がない', HQ.every(q => q.o.length === 5 && new Set(q.o).size === 5 && q.o.every(o => o.trim())));
-  ok('問題文が重ならない', new Set(HQ.map(q => q.q)).size === 50 && new Set(HW.map(q => q.q)).size === 10);
+  ok('問題文が重ならない', new Set(HQ.map(q => q.q)).size === 45 && new Set(HW.map(q => q.q)).size === 5);
   const pc = [0, 1, 2, 3, 4].map(n => HQ.filter(q => q.p === n).length);
-  ok('正解の位置はア〜オに10ずつ', pc.every(c => c === 10), pc);
+  ok('正解の位置はア〜オに9ずつ', pc.every(c => c === 9), pc);
   ok('同じ位置の正解が3回続かない', HQ.every((q, j) => j < 2 || !(HQ[j - 1].p === q.p && HQ[j - 2].p === q.p)));
   const longest = HQ.filter(q => q.o.slice(1).every(o => q.o[0].length > o.length)).length;
   ok('正解だけが一番長い問題が多すぎない（15問以下）', longest <= 15, longest);
@@ -566,7 +567,7 @@ console.log('■ 試験範囲（確定版）：選択50問（ア〜オ）＋記�
 }
 {
   const w = open(null, null);
-  ok('メニューの先頭に「試験範囲（確定版）」', $(w, '.menu .mbtn').id === 'mHan' && $(w, '#mHan').textContent.includes('選択50問'));
+  ok('メニューの先頭に「試験範囲（確定版）」', $(w, '.menu .mbtn').id === 'mHan' && $(w, '#mHan').textContent.includes('選択45問'));
   click(w, '#mHan');
   ok('章をえらぶ画面（6章＋記述）', w.document.querySelectorAll('#card [data-s]').length === 7);
   w.document.querySelector('#card [data-s="A"]').click();
@@ -591,7 +592,12 @@ console.log('■ 試験範囲（確定版）：選択50問（ア〜オ）＋記�
   // 保存して開き直す
   const store = w.localStorage.getItem('fukushu-han-v1');
   const w2 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/review1/', beforeParse(x) { x.localStorage.setItem('fukushu-han-v1', store); x.localStorage.setItem('fukushu-mode', 'menu'); } }).window;
-  ok('開き直しても進み具合が残る（選択 7 / 50）', $(w2, '#mHan').textContent.includes('選択 7 / 50'));
+  ok('開き直しても進み具合が残る（選択 7 / 45）', $(w2, '#mHan').textContent.includes('選択 7 / 45'));
+  // 前の版（選択50・記述10）で保存した進み具合を、新しい番号に付け直す
+  const oldSave = JSON.stringify({ sec: null, i: -1, ans: { 0: 4, 16: 0, 20: 3, 49: 1 }, self: { 0: 0, 2: 1, 9: 2 }, text: { 0: 'abc', 9: 'xyz' }, shown: { 0: 1, 9: 1 } });
+  const w3 = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/review1/', beforeParse(x) { x.localStorage.setItem('fukushu-han-v1', oldSave); x.localStorage.setItem('fukushu-mode', 'menu'); } }).window;
+  const m = w3.eval('hs');
+  ok('前の版の保存：外した問題の答えは捨て、残りは新しい番号へ', m.v === 2 && JSON.stringify(m.ans) === JSON.stringify({ 0: 4, 16: 3, 44: 1 }) && JSON.stringify(m.self) === JSON.stringify({ 0: 0, 4: 2 }) && m.text[4] === 'xyz' && m.shown[4] === 1, JSON.stringify(m));
 }
 {
   const w = open(null, null);
