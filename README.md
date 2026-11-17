@@ -104,6 +104,7 @@ Google Classroom にはこのリンクを貼る。ファイルは配らない
 | `regression-ginou.js` | 技能試験 筆記トレーニングのリグレッション（jsdom・136項目。範囲 50問の形、記述の公表の図の画像と答えの番号が合うか、正解の刻印が令和8年度の公表の解答と同じかも見る） |
 | `HANDOFF-技能筆記練習.md` | **技能試験 筆記トレーニングの引き継ぎ書。問題の足し方・採点のしくみ・根拠** |
 | `tools/mkfig-ginou.py` | 技能筆記練習の単線図・複線図の画像を、令和8年度の公表の問題・解答 PDF から作り、本体の `const FIGS` を書きかえる（PDF は repo に入れない） |
+| `tools/pdf_gazou.py` | PDF を縦長の PNG 1枚にする（全ページをつなぐ。スマホで見る用）。PDF を渡すときは毎回これで画像も付ける。saiten-system の `tools/` にも同じものがある |
 | `fukusen-sheet.gs` | 複線図れんしゅうの記録を先生の Google スプレッドシートにためる Apps Script（使い方はファイルの先頭） |
 | `parking3-report.gs` | 自動運転への階段の「学びのレポート」を先生の Google スプレッドシートに1人1行ためる Apps Script（使い方はファイルの先頭） |
 | `regression-shinro.js` | 進路シミュレーションのリグレッション（jsdom・121項目） |
