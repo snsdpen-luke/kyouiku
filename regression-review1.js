@@ -551,7 +551,7 @@ console.log('■ 試験範囲（確定版）：選択45問（ア〜オ）＋記�
   const cnt = s => HQ.filter(q => q.s === s).length;
   ok('選択は45問（電波だけ3問、電子マネー10問、ほかは8問）', HQ.length === 45 && ['A', 'B', 'D', 'F'].every(s => cnt(s) === 8) && cnt('C') === 3 && cnt('E') === 10, Object.keys(CH).map(cnt));
   ok('記述は5問で、全体は50問', HW.length === 5 && HQ.length + HW.length === 50);
-  ok('記述は「2つの言葉を必ず使って」の形で、模範解答は40〜90字、指定の言葉が模範解答に入っている', HW.every(q => /2つの言葉を必ず使って/.test(q.q) && q.m.length >= 40 && q.m.length <= 90 && (q.q.match(/「([^」]+)」/g) || []).slice(0, 2).every(x => q.m.includes(x.slice(1, -1)) || q.m.includes(x.slice(1, -2)))), HW.map(q => q.m.length));
+  ok('記述は「2つの言葉を必ず使って」の形で、模範解答は40〜90字、指定の言葉が模範解答に入っている', HW.every(q => /2つの言葉を必ず使って/.test(q.q) && q.m.length >= 40 && q.m.length <= 90 && (q.q.match(/「([^」]+)」/g) || []).slice(0, 2).every(x => q.m.includes(x.slice(1, -1)))), HW.map(q => q.m.length));
   ok('選択はどれも5つの選択肢で、同じ物がない', HQ.every(q => q.o.length === 5 && new Set(q.o).size === 5 && q.o.every(o => o.trim())));
   ok('問題文が重ならない', new Set(HQ.map(q => q.q)).size === 45 && new Set(HW.map(q => q.q)).size === 5);
   const pc = [0, 1, 2, 3, 4].map(n => HQ.filter(q => q.p === n).length);
