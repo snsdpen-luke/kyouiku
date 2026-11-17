@@ -551,7 +551,7 @@ console.log('■ 試験範囲（確定版）：選択45問（ア〜オ）＋記�
   const cnt = s => HQ.filter(q => q.s === s).length;
   ok('選択は45問（電波だけ3問、電子マネー10問、ほかは8問）', HQ.length === 45 && ['A', 'B', 'D', 'F'].every(s => cnt(s) === 8) && cnt('C') === 3 && cnt('E') === 10, Object.keys(CH).map(cnt));
   ok('記述は5問で、全体は50問', HW.length === 5 && HQ.length + HW.length === 50);
-  ok('記述は「2つの言葉を必ず使って」の形で、模範解答は20〜60字、指定の言葉が模範解答に入っている', HW.every(q => /2つの言葉を必ず使って/.test(q.q) && q.m.length >= 20 && q.m.length <= 60 && (q.q.match(/「([^」]+)」/g) || []).slice(0, 2).every(x => q.m.includes(x.slice(1, -1)))), HW.map(q => q.m.length));
+  ok('記述は「2つの言葉を必ず使って」の形で、模範解答は40〜90字、指定の言葉が模範解答に入っている', HW.every(q => /2つの言葉を必ず使って/.test(q.q) && q.m.length >= 40 && q.m.length <= 90 && (q.q.match(/「([^」]+)」/g) || []).slice(0, 2).every(x => q.m.includes(x.slice(1, -1)) || q.m.includes(x.slice(1, -2)))), HW.map(q => q.m.length));
   ok('選択はどれも5つの選択肢で、同じ物がない', HQ.every(q => q.o.length === 5 && new Set(q.o).size === 5 && q.o.every(o => o.trim())));
   ok('問題文が重ならない', new Set(HQ.map(q => q.q)).size === 45 && new Set(HW.map(q => q.q)).size === 5);
   const pc = [0, 1, 2, 3, 4].map(n => HQ.filter(q => q.p === n).length);
@@ -561,7 +561,7 @@ console.log('■ 試験範囲（確定版）：選択45問（ア〜オ）＋記�
   ok('正解だけが一番長い問題が多すぎない（15問以下）', longest <= 15, longest);
   ok('どの問題にも解説の番号があり、その章の解説を指す', [...HQ, ...HW].every(q => { const d = KD.find(x => x.n === q.k); return d && d.s === q.s; }));
   ok('解説（e）が空でなく、です・ます', HQ.every(q => q.e && /(です|ます|ません)(（[^）]*）)?。$/.test(q.e)));
-  ok('記述には模範解答と採点の観点2つ', HW.every(q => q.m && q.c.length === 2));
+  ok('記述には模範解答と採点の観点3つ', HW.every(q => q.m && q.c.length === 3));
   ok('「すべて選ぶ」は入れない', HQ.every(q => !/すべて選/.test(q.q)));
   ok('選択の数の問題：元の問題（Q）の正解と同じ答え', HQ.every(q => { const s = Q.find(x => x.q === q.q); return !s || s.o[s.a] === q.o[0]; }));
 }
@@ -611,7 +611,7 @@ console.log('■ 試験範囲（確定版）：選択45問（ア〜オ）＋記�
   click(w, '#hshow');
   ok('短い答え（6文字）では模範解答は出ず、文字数が画面に出る', !$(w, '#card .model') && $(w, '#hwarn').textContent.includes('今 6文字')); ta.value = 'TCPは再送するので待つと止まるから'; ta.dispatchEvent(new w.Event('input'));
   click(w, '#hshow');
-  ok('書くと模範解答と採点の観点2つ', $(w, '#card .model') && w.document.querySelectorAll('#card .model li').length === 2);
+  ok('書くと模範解答と採点の観点3つ', $(w, '#card .model') && w.document.querySelectorAll('#card .model li').length === 3 && $(w, '#card .model').textContent.includes('3つとも'));
   ok('次へは自己判定のあと', $(w, '#hnext') === null);
   w.document.querySelectorAll('#card .self .opt')[0].click();
   ok('自己判定すると次へ・解説へ', $(w, '#hnext') && $(w, '#hkai'));
