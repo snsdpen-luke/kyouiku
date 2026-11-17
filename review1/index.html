@@ -194,11 +194,34 @@ ol.k-st{margin:0;padding-left:1.6em}ol.k-st li{margin:0 0 8px}ol.k-st li.ans{fon
 .h-opts .opt{min-height:0;padding:9px 14px}.h-kai{margin-right:auto;font-size:15px;padding:8px 14px}
 .h-secs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.h-sec{padding:12px 14px}.h-sec .t{font-size:17px}.h-sec .d,.h-sec .s{font-size:14px}
 @media (max-width:760px){.h-secs{grid-template-columns:1fr 1fr}}
-.k-idx{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-size:15px}
-.k-idx h3{margin:0 0 4px;font-size:14px;color:var(--sub)}
-.k-idx button{display:flex;gap:8px;align-items:baseline;width:100%;text-align:left;border:1px solid var(--line);background:#fbfcfe;border-radius:7px;padding:5px 8px;margin:0 0 4px;font:inherit;color:inherit;cursor:pointer;line-height:1.35}
+.k-idx{display:grid;grid-template-columns:repeat(3,1fr);gap:0 14px;font-size:15px}
+.k-idx h3{margin:0 0 2px;font-size:14px;color:var(--sub)}
+.k-idx button{display:flex;gap:8px;align-items:baseline;width:100%;text-align:left;border:1px solid var(--line);background:#fbfcfe;border-radius:7px;padding:3px 8px;margin:0 0 3px;font:inherit;color:inherit;cursor:pointer;line-height:1.3}
 .k-idx button:hover{border-color:var(--accent);background:var(--accent-soft)}
 .k-idx button b{color:var(--accent);min-width:1.6em;text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:1200px){.yn{display:none}}
+.ver{font-size:12px;color:var(--sub);white-space:nowrap}
+.menu.three .mbtn{padding:14px 18px;gap:6px}.menu.three .mbtn .t{font-size:20px}.menu.three .mbtn .d{font-size:15px;line-height:1.5}.menu.three{gap:12px}
+.k-idx button.many{border-color:#c7741f;background:#fff8ee}
+.k-many{flex:none;margin-left:auto;font-size:12px;font-weight:700;color:#c7741f;white-space:nowrap}
+.k-key{border:2px solid #c7741f;background:#fff3e2;border-radius:10px;padding:8px 14px;font-weight:700;line-height:1.5}
+.k-key .h,.y-row .h{display:block;font-size:13px;letter-spacing:.06em;color:#c7741f}
+.k-key b{color:var(--ng)}
+.y-list{display:flex;flex-direction:column;gap:8px}
+.y-row{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:inherit;font-size:17px;line-height:1.5;color:var(--ink);background:#fbfcfe;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+.y-row:hover{border-color:var(--accent)}
+.y-row.many{border:2px solid #c7741f;background:#fff8ee}
+.y-row .n{flex:none;min-width:2.2em;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums}
+.y-row .tx{flex:1;min-width:0}.y-row .tt{display:block;font-size:14px;color:var(--sub)}
+.y-row b{color:var(--ng)}
+.y-calc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.y-c{text-align:left;font:inherit;color:var(--ink);border:2px solid var(--accent);border-radius:10px;padding:8px 12px;background:#fbfcfe;font-size:15px;line-height:1.5;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.y-c:hover{background:var(--accent-soft)}
+.y-c .h{font-family:var(--f-head);font-weight:900;font-size:17px;color:var(--accent)}
+.y-c .f{font-weight:700;color:var(--ng)}.y-c .e{color:var(--sub);font-size:14px;white-space:pre-line}
+.y-tip{background:#f3f6f9;border-radius:10px;padding:8px 14px;font-size:16px}
+.y-tip b{color:var(--ng)}
+@media (max-width:760px){.y-calc{grid-template-columns:1fr}}
 @media (max-width:760px){.k-idx{grid-template-columns:1fr}.k-fig{flex-direction:column}.k-ar{transform:rotate(90deg)}.k-q{font-size:26px}}
 </style>
 
@@ -210,12 +233,14 @@ ol.k-st{margin:0;padding-left:1.6em}ol.k-st li{margin:0 0 8px}ol.k-st li.ans{fon
     <div class="chips" id="chips"></div>
     <div class="count" id="count"></div>
     <button class="hbtn" id="menuBtn" hidden>メニュー</button>
+    <div class="ver" id="ver"></div>
   </header>
   <div class="prog"><div id="bar" style="width:0"></div></div>
   <section class="card" id="card"></section>
 </div>
 
 <script>
+const VER='2026-11-17a';
 const CH={A:'メッセージが届くまで',B:'速い・遅いの正体',C:'電波はどこまで届くか',D:'パスワードは何秒で破られる？',E:'残高はどこにある？',F:'サトシ・ナカモト事件ファイル'};
 const PART={term:'第1部　用語',one:'第2部　選択',multi:'第2部　選択',w:'第3部　記述'};
 // t:'term' 入力 / 'one' 1つ選ぶ / 'multi' すべて選ぶ / 'w' 記述
@@ -371,12 +396,14 @@ function nav(canNext){return `<div class="row"><button class="btn ghost" id="bac
 function bindNav(){$('back').onclick=()=>{st.i--;save();render()};const n=$('next');if(n)n.onclick=()=>{st.i++;save();render()}}
 
 function render(){
+  $('ver').textContent='版 '+VER;
   $('menuBtn').hidden=mode==='menu';
   if(mode==='menu')return menu();
   if(mode==='test')return tRender();
   if(mode==='test2')return uRender();
   if(mode==='ask')return aRender();
   if(mode==='kai')return kRender();
+  if(mode==='yoten')return yRender();
   if(mode==='han')return hRender();
   $('ttl').textContent='ふりかえり演習';
   chrome();
@@ -458,7 +485,8 @@ function result(){
 }
 // ===== メニュー =====
 let mode='menu';
-try{const m=localStorage.getItem('fukushu-mode');if(m==='drill'||m==='test'||m==='test2'||m==='ask'||m==='kai'||m==='han')mode=m}catch(e){}
+try{const m=localStorage.getItem('fukushu-mode');if(m==='drill'||m==='test'||m==='test2'||m==='ask'||m==='kai'||m==='han'||m==='yoten')mode=m}catch(e){}
+if(/^#yoten$/i.test(location.hash))mode='yoten'; // 要点まとめ（先生が大画面に映すとき）
 if(/^#ask$/i.test(location.hash))mode='ask'; // アンケートの画面（送り先の設定前でも、先生が確かめられる）
 if(/^#(demo|teacher|sensei)$/i.test(location.hash))mode='test2'; // 先生用デモは第2回を開く
 function setMode(m){mode=m;try{localStorage.setItem('fukushu-mode',m)}catch(e){}render()}
@@ -470,15 +498,16 @@ function menu(){
   const ust=us.sent?'提出済み':us.i>=0?`とちゅう（${U.filter((_,k)=>uAnswered(k)).length} / ${U.length} 問）`:'まだ受けていません';
   const hq=HQ.filter((_,j)=>hs.ans[j]!=null).length,hw=HW.filter((_,j)=>hs.self[j]!=null).length;
   $('card').innerHTML=`<div class="q">どれをやりますか</div>
-   <div class="menu ${ASK_URL?'':'three'}">
+   <div class="menu three">
     <button class="mbtn" id="mHan" style="border-color:var(--accent)"><span class="t">試験範囲（確定版）</span><span class="d">選択${HQ.length}問（ア〜オ）と記述${HW.length}問。章ごとに解けて、どの問題からも解説へ飛べます。</span><span class="s">進み具合　選択 ${hq} / ${HQ.length}　記述 ${hw} / ${HW.length}</span></button>
+    <button class="mbtn" id="mYoten" style="border-color:#c7741f;background:#fff8ee"><span class="t" style="color:#c7741f">要点まとめ</span><span class="d">考査の前に、ここだけは押さえる要点です。計算の6つの型と、${KD.length}項目を1行ずつ。わからない人が多かった所に印があります。</span></button>
     <button class="mbtn" id="mDrill"><span class="t">ふりかえり演習</span><span class="d">全${Q.length}問（用語・選択・記述）。答えるとすぐに正解と解説が出ます。</span><span class="s">進み具合 ${dn} / ${Q.length} 問</span></button>
     <button class="mbtn" id="mTest"><span class="t">小テスト第1回</span><span class="d">${TN}問（用語・選択）。最後に出席番号をつけて提出します。答え合わせは提出のあとです。</span><span class="s">${tst}</span></button>
     <button class="mbtn" id="mTest2"><span class="t">小テスト第2回</span><span class="d">${U.length}問。高校生ユウの1日を追いながら、並べかえ・組み合わせ・穴うめ・計算・シミュレーションで答えます。提出は1回だけです。</span><span class="s">${ust}</span></button>
     ${ASK_URL?`<button class="mbtn" id="mAsk"><span class="t">わからないところアンケート</span><span class="d">${ASK.length}の項目から、解説してほしいところを選んで送ります。名前は送りません。</span><span class="s">${as.step==='sent'?'送信済み':'まだ送っていません'}</span></button>`:''}
     <button class="mbtn" id="mKai"><span class="t">解説</span><span class="d">わからないところアンケートの${KD.length}項目ごとに、問い・しくみ・例題・記述問題で確かめます。</span></button>
    </div>`;
-  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');$('mTest2').onclick=()=>setMode('test2');if($('mAsk'))$('mAsk').onclick=()=>setMode('ask');$('mKai').onclick=()=>{ks={item:-1,page:0,step:0};setMode('kai')};$('mHan').onclick=()=>{hs.sec=null;setMode('han')};
+  $('mDrill').onclick=()=>setMode('drill');$('mTest').onclick=()=>setMode('test');$('mTest2').onclick=()=>setMode('test2');if($('mAsk'))$('mAsk').onclick=()=>setMode('ask');$('mYoten').onclick=()=>{ys.page=0;setMode('yoten')};$('mKai').onclick=()=>{ks={item:-1,page:0,step:0};setMode('kai')};$('mHan').onclick=()=>{hs.sec=null;setMode('han')};
 }
 
 // ===== 小テスト（30問。提出はダミーで、どこにも送らない） =====
@@ -1288,6 +1317,80 @@ const KD=[
   k:['管理する会社がいない（取り戻してくれる人がいない）、と書けている','お金が動かせなくなる、と書けている']},
  nt:'ブロックチェーンに向くもの（中古車の走行距離・産地・証明書）と向かないもの（改札）も合わせて話せる。'},
 ];
+// KY：各項目の「ここだけは押さえる」1行（解説の「しくみ」の先頭と、メニューの「要点まとめ」に出す）
+const KY={
+1:'パケットの数 ＝ **全体のバイト数 ÷ 1つに入るバイト数**。日本語1文字＝**3バイト**、英数字1文字＝**1バイト**',
+2:'ヘッダは送り状。**宛先**＝運ぶ先、**送信元**＝返事（ACK）を返す先、**番号**＝並べ直す・欠けを見つける',
+3:'**DNS** で名前から数字の住所（**IPアドレス**）を調べるのが先。ルーターは数字の住所しか読まない',
+4:'**TTL** はルーターを1台通るごとに**1減り**、**0になると捨てられる**（迷子が回り続けないため）',
+5:'**NAT**：家の中の住所（192.168.〜）を、ルーターが**外向きの住所に書き換えて**外へ出す',
+6:'欠けてはいけない → **TCP**（ACKを待ち、来なければ**再送**）。新しさが大事 → **UDP**（再送しない）',
+7:'**b＝ビット、B＝バイト**（1B＝8b）。**秒 ＝ MB × 8 ÷ Mbps**（先に×8してそろえる）',
+8:'速さは**いちばん細いところ**で決まる。回線は同時に使う人で**分け合う**（1人分 ＝ 回線 ÷ 人数）',
+9:'解像度・fps が大きいほど**データが多い**。「自動」は**回線の速さ以下で、いちばん高い画質**',
+10:'**ギガ＝データの量**（速さとは別）。量が減るのは**画質を下げる**こと。5G→4G・再起動は効かない',
+11:'**ping＝往復**の時間（片道は**半分**）。バッファ＝先に**ためておく**。キャッシュ＝**保存して受け取り直さない**',
+12:'木の壁1枚＝**半分1回**、コンクリート1枚＝**半分4回**。回数は**足し算**してから計算する',
+13:'半分○回 → **2を○回かけた数** 分の1。距離が○倍 → 強さは **○×○ 分の1**',
+14:'**2.4GHz帯**＝遠くまで届き壁に強いが混む。**5GHz帯**＝速いが壁に弱い（近く向き）',
+15:'**干渉**＝同じ周波数の電波がぶつかる。電子レンジ（2.45GHz）は **2.4GHz帯**とぶつかる',
+16:'中継器は「**電波がまだ届く所**」と「**使う部屋**」の**間**に置く（受け取れないと出し直せない）',
+17:'組み合わせ ＝ **種類を、けた数の回だけかける**（数字10・小文字26・全部94）。時間 ＝ 組み合わせ ÷ 1秒の回数',
+18:'**辞書攻撃**＝よくある単語から先にためす。盗んだデータを**自分のパソコンで**ためすと**ロックはかからない**',
+19:'**二要素認証＝種類のちがう2つ**（知っている・持っている・体）。同じ種類を2つは**弱い**',
+20:'偽物かどうかは**住所**（差出人のアドレス・URL）で見る。急がせる・入力させるのが手口',
+21:'**ハッシュ**＝元に戻せない形で保存。**パスキー**＝サイトは**印影だけ**預かり、偽サイトには押さない',
+22:'自分のお金が減るのは、**前払い**＝チャージのとき、**即時払い**＝その場、**後払い**＝あとで',
+23:'**ICカード型**＝残高はカードのICチップ。**サーバ型**＝残高は会社のサーバ（画面は**見せているだけ**）',
+24:'**店舗提示型**＝お店のQRをお客が読む（屋台向き）。**利用者提示型**＝お客の画面をお店が読む（混む店向き）',
+25:'**オーソリ**＝使っていいかの問い合わせ。**不正検知**＝いつもとちがう使い方を止める。手数料は**お店**が払う',
+26:'**集中処理**＝真ん中の1台（変更がすぐ・止まると全部止まる）。**分散処理**＝その場で計算（通信が切れても動く）',
+27:'**前のブロックの指紋**でつなぐ。1文字ちがえば**別の指紋**。記録帳は**みんなが同じものを持つ**',
+28:'**ナンス**を変え続け、頭に0が並ぶ指紋を探す＝**マイニング**。見つけるのは大変、**確かめるのは一瞬**',
+29:'記録帳を**全部たどって残高を計算**し、足りない取り引き・**本人のハンコがない**取り引きは入れない',
+30:'書きかえると後ろを**全部作り直し**。追いつくには**全体の半分より多い計算の力**がいる',
+31:'**秘密鍵をなくすと取り戻せない**。弱点：電気を多く使う・約10分かかる・送りまちがいを取り消せない'};
+KD.forEach(d=>d.y=KY[d.n]);
+// KMANY：わからないところアンケート（2026-11-12〜16、9人）で3人以上が選んだ項目
+const KMANY=[3,5,6,10,11,14,17,19,22,28];
+// KCALC：計算の型。k は解説の番号（押すとその解説の「例題」へ）。数は授業の約束どおり
+const KCALC=[
+ {h:'① バイト・パケット',k:1,f:'パケットの数 ＝ 全体 ÷ 1つのバイト数',e:'「午後3時」＝ 日本語3文字×3 ＋ 数字1文字×1 ＝ 10バイト\n900,000バイト ÷ 1,500 ＝ 600個'},
+ {h:'② 送る時間',k:7,f:'秒 ＝ MB × 8 ÷ Mbps',e:'20MB を 40Mbps で送る\n20 × 8 ＝ 160Mb　→　160 ÷ 40 ＝ 4秒'},
+ {h:'③ ギガが何日もつか',k:10,f:'日数 ＝ 契約のGB ÷ 1日に使うGB',e:'720p（1時間 約1.0GB）を毎日2時間 → 1日2GB\n10GB の契約なら 10 ÷ 2 ＝ 5日'},
+ {h:'④ 半分の回数',k:13,f:'半分○回 → 2を○回かけた数 分の1',e:'コンクリートの壁2枚 → 半分 4＋4 ＝ 8回 → 256分の1\n距離が3倍 → 3×3 ＝ 9分の1'},
+ {h:'⑤ 組み合わせの数',k:17,f:'種類を、けた数の回だけかける',e:'数字4けた → 10×10×10×10 ＝ 10,000通り\n小文字で1文字増やす → 26倍'},
+ {h:'⑥ ping の片道',k:11,f:'片道 ＝ ping（往復）÷ 2',e:'ping 80ms → 片道 40ms ＝ 0.04秒'}];
+const YSH={A:'届くまで',B:'速さ',C:'電波',D:'パスワード',E:'電子マネー',F:'ビットコイン'};
+const YPG=['計算の型',...Object.keys(CH)];
+let ys={page:0};
+function yRender(){
+  $('ttl').textContent='要点まとめ';$('count').textContent=`${ys.page+1} / ${YPG.length}`;$('bar').style.width=((ys.page+1)/YPG.length*100)+'%';
+  $('chips').innerHTML=YPG.map((t,k)=>`<button class="chip ${k===ys.page?'now':''}" data-yp="${k}" style="cursor:pointer;font:inherit;font-size:13px">${k?t+'<span class="yn"> '+YSH[t]+'</span>':t}</button>`).join('');
+  let h;
+  if(ys.page===0){
+    h=`<div class="q" style="margin:0">計算は、この6つの型だけです</div>
+     <div class="y-tip">どの計算も、<b>① 単位をそろえる</b>（MB→Mb は ×8、ms→秒 は ÷1000）→ <b>② 型の式に入れる</b> → <b>③ 単位をつけて答える</b>、の順です。</div>
+     <div class="y-calc">${KCALC.map((c,i)=>`<button class="y-c" data-yc="${i}"><span class="h">${esc(c.h)}</span><span class="f">${esc(c.f)}</span><span class="e">${esc(c.e)}</span></button>`).join('')}</div>
+     <div class="hint">型を押すと、その解説の「例題」を1行ずつ見られます。</div>`;
+  }else{
+    const s=YPG[ys.page];
+    h=`<div class="sec"><span class="lbl">要点まとめ　${s}</span><span class="nm">${esc(CH[s])}</span></div>
+     <div class="y-list">${KD.filter(d=>d.s===s).map(d=>`<button class="y-row ${KMANY.includes(d.n)?'many':''}" data-yk="${d.n}"><span class="n">${d.n}</span><span class="tx"><span class="tt">${esc(d.t)}${KMANY.includes(d.n)?'　<span style="color:#c7741f;font-weight:700">● わからない人が多かった</span>':''}</span>${kRich(d.y)}</span></button>`).join('')}</div>
+     <div class="hint">押すと、その項目の解説（しくみ）へ進みます。</div>`;
+  }
+  h+=`<div class="row"><button class="btn ghost" id="ymenu">メニューへ</button><button class="btn ghost" id="yback" ${ys.page===0?'disabled':''}>もどる</button><button class="btn" id="ynext" ${ys.page===YPG.length-1?'disabled':''}>次へ</button></div>`;
+  $('card').innerHTML=h;$('card').scrollTop=0;
+  $('chips').querySelectorAll('[data-yp]').forEach(b=>b.onclick=()=>{ys.page=+b.dataset.yp;render()});
+  $('card').querySelectorAll('[data-yc]').forEach(b=>b.onclick=()=>{const c=KCALC[+b.dataset.yc];ks={item:KD.findIndex(d=>d.n===c.k),page:2,step:0,ret:'yoten'};setMode('kai')});
+  $('card').querySelectorAll('[data-yk]').forEach(b=>b.onclick=()=>{ks={item:KD.findIndex(d=>d.n===+b.dataset.yk),page:1,step:0,ret:'yoten'};setMode('kai')});
+  $('ymenu').onclick=()=>setMode('menu');$('yback').onclick=()=>{if(ys.page>0){ys.page--;render()}};$('ynext').onclick=()=>{if(ys.page<YPG.length-1){ys.page++;render()}};
+  try{history.replaceState(null,'','#yoten')}catch(e){}
+}
+addEventListener('keydown',e=>{if(mode!=='yoten'||/INPUT|TEXTAREA/.test(e.target.tagName))return;
+  if((e.key==='ArrowRight'||e.key==='PageDown')&&ys.page<YPG.length-1){e.preventDefault();ys.page++;render()}
+  else if((e.key==='ArrowLeft'||e.key==='PageUp')&&ys.page>0){e.preventDefault();ys.page--;render()}});
+
 // 試験範囲（確定版）の選択50問。o は正解が先頭、p は画面での正解の位置（0＝ア〜4＝オ。ア〜オに10ずつ）。k は解説（KD）の番号。src は元の Q の番号
 const HQ=[
 {s:"A",k:1,p:4,q:"「明日10時」と送ります。日本語1文字＝3バイト、英数字1文字＝1バイトとすると、何バイトですか。",o:["11バイト", "5バイト", "8バイト", "15バイト", "9バイト"],e:"「明」「日」「時」が3文字×3＝9、「1」「0」が2文字×1＝2。合わせて11バイトです。"},
@@ -1444,8 +1547,8 @@ function kRender(){
   $('ttl').textContent='解説';$('count').textContent='';
   if(ks.item<0){
     $('chips').innerHTML='';$('bar').style.width='0';
-    $('card').innerHTML=`<div class="q">どこの解説を見ますか</div><div class="hint">わからないところアンケートと同じ31項目です。1つの項目は4枚（問い・しくみ・例題・記述で確かめる）です。</div>
-     <div class="k-idx">${Object.keys(CH).map(s=>`<div><h3>${esc(CH[s])}</h3>${KD.filter(d=>d.s===s).map(d=>`<button data-k="${KD.indexOf(d)}"><b>${d.n}</b><span>${esc(d.t)}</span></button>`).join('')}</div>`).join('')}</div>
+    $('card').innerHTML=`<div class="q">どこの解説を見ますか</div><div class="hint">アンケートと同じ31項目で、1項目4枚です。<span style="color:#c7741f;font-weight:700">●</span>＝わからない人が多かった項目</div>
+     <div class="k-idx">${Object.keys(CH).map(s=>`<div><h3>${esc(CH[s])}</h3>${KD.filter(d=>d.s===s).map(d=>`<button data-k="${KD.indexOf(d)}" class="${KMANY.includes(d.n)?'many':''}"><b>${d.n}</b><span>${esc(d.t)}</span>${KMANY.includes(d.n)?'<span class="k-many">●</span>':''}</button>`).join('')}</div>`).join('')}</div>
      <div class="row"><button class="btn ghost" id="kmenu">メニューへ</button></div>`;
     $('card').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>kOpen(+b.dataset.k));$('kmenu').onclick=()=>setMode('menu');
     try{history.replaceState(null,'','#kai')}catch(e){}
@@ -1457,6 +1560,7 @@ function kRender(){
   let h=`<div class="sec"><span class="lbl">No.${d.n}　${esc(KPG[pg])}</span><span class="nm">${esc(CH[d.s])}</span></div><div class="k-body">`;
   if(pg===0)h+=`<div class="k-ask"><div class="k-tag">${esc(d.t)}</div><p class="k-q">${kRich(d.q)}</p><p class="k-qs">${kRich(d.qs)}</p></div>`;
   else if(pg===1)h+=`<div class="q" style="margin:0">${esc(d.t)}</div>`
+    +`<div class="k-key"><span class="h">ここだけは押さえる</span>${kRich(d.y)}</div>`
     +(d.fig?'<div class="k-fig">'+d.fig.map((b,i)=>{let c='';if(b[0]==='!'){c=' w';b=b.slice(1)}else if(b[0]==='#'){c=' g';b=b.slice(1)}return (i?'<span class="k-ar">→</span>':'')+`<div class="k-bx${c}">${kRich(b)}</div>`}).join('')+'</div>':'')
     +(d.tbl?'<table class="k-tb"><tr>'+d.tbl.h.map(x=>`<th>${esc(x)}</th>`).join('')+'</tr>'+d.tbl.r.map(r=>'<tr>'+r.map(c=>`<td>${kRich(c)}</td>`).join('')+'</tr>').join('')+'</table>':'')
     +(d.pts?'<ul class="k-pts">'+d.pts.map(x=>`<li>${kRich(x)}</li>`).join('')+'</ul>':'');
@@ -1465,10 +1569,10 @@ function kRender(){
   else h+=`<div class="k-wq">${kRich(d.w.q)}</div><div class="hint">自分の答えを、ノートかプリントに書いてから見ましょう。</div>`
     +(stp?`<div class="k-model"><h4>模範解答の例</h4>${kRich(d.w.m)}</div><div class="k-keys"><h4>採点の観点（2つとも書けていれば○）</h4><ul>${d.w.k.map(x=>`<li>${kRich(x)}</li>`).join('')}</ul></div>`
       :`<div><button class="btn ghost" id="kstep">模範解答を見る</button></div>`);
-  h+=`</div><div class="row">${ks.ret==='han'?'<button class="btn" id="kret">問題にもどる</button>':''}<button class="btn ghost" id="kidx">一覧</button><button class="btn ghost" id="kback">もどる</button><button class="btn" id="knext" ${pg===3?'disabled':''}>${pg===3?'おわり':'次へ'}</button></div>`;
+  h+=`</div><div class="row">${ks.ret==='han'?'<button class="btn" id="kret">問題にもどる</button>':ks.ret==='yoten'?'<button class="btn" id="kret">要点まとめにもどる</button>':''}<button class="btn ghost" id="kidx">一覧</button><button class="btn ghost" id="kback">もどる</button><button class="btn" id="knext" ${pg===3?'disabled':''}>${pg===3?'おわり':'次へ'}</button></div>`;
   $('card').innerHTML=h;$('card').scrollTop=0;
   if($('kstep'))$('kstep').onclick=()=>{ks.step++;render()};
-  $('kidx').onclick=()=>{ks.item=-1;ks.ret=null;render()};if($('kret'))$('kret').onclick=()=>{ks.ret=null;setMode('han')};$('kback').onclick=kPrev;$('knext').onclick=()=>{ks.step=kMax();kNext()};
+  $('kidx').onclick=()=>{ks.item=-1;ks.ret=null;render()};if($('kret'))$('kret').onclick=()=>{const r=ks.ret;ks.ret=null;setMode(r)};$('kback').onclick=kPrev;$('knext').onclick=()=>{ks.step=kMax();kNext()};
   try{history.replaceState(null,'','#kai'+d.n)}catch(e){}
 }
 addEventListener('keydown',e=>{if(mode!=='kai'||/INPUT|TEXTAREA/.test(e.target.tagName))return;

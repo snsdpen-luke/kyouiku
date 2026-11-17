@@ -510,6 +510,34 @@ console.log('■ 解説（アンケートの31項目×4枚）');
   ok('← で戻り、問いの前は一覧', w.document.querySelectorAll('#card [data-k]').length === 31);
   click(w, '#kmenu'); ok('一覧からメニューへ', $(w, '#mKai') && w.eval('mode') === 'menu');
 }
+console.log('■ 要点まとめ（アンケートで多かった所に印・計算の6つの型）');
+{
+  const w = open(null, null);
+  const { KD, KMANY, KCALC } = w.eval('({KD,KMANY,KCALC})');
+  ok('31項目すべてに「ここだけは押さえる」1行がある', KD.every(d => typeof d.y === 'string' && d.y.length > 10 && d.y.length < 90));
+  ok('印の項目は解説の番号の中にある', KMANY.length > 0 && KMANY.every(n => KD.some(d => d.n === n)));
+  ok('計算の型は6つで、どれも解説の番号を指す', KCALC.length === 6 && KCALC.every(c => KD.some(d => d.n === c.k)));
+  // 計算の型の例を、教材のコードを使わずに計算し直す
+  ok('例の数が合う（10バイト・600個・4秒・5日・256分の1・9分の1・10,000通り・0.04秒）',
+    3 * 3 + 1 === 10 && 900000 / 1500 === 600 && 20 * 8 / 40 === 4 && 10 / 2 === 5 && 2 ** 8 === 256 && 3 * 3 === 9 && 10 ** 4 === 10000 && 80 / 2 / 1000 === 0.04);
+  ok('例の文が計算の答えと同じ', ['10バイト', '600個', '4秒', '5日', '256分の1', '9分の1', '10,000通り', '0.04秒'].every(x => KCALC.some(c => c.e.includes(x))));
+  ok('メニューに「要点まとめ」がある', $(w, '#mYoten'));
+  click(w, '#mYoten');
+  ok('開くと計算の型（6つ）', w.eval('mode') === 'yoten' && w.document.querySelectorAll('#card .y-c').length === 6 && w.location.hash === '#yoten');
+  w.document.querySelectorAll('#card .y-c')[1].click();
+  ok('型を押すと、その解説の例題', w.eval('mode') === 'kai' && $(w, '#card').textContent.includes('例題') && $(w, '#kret') && $(w, '#kret').textContent.includes('要点まとめ'));
+  click(w, '#kret'); ok('「要点まとめにもどる」で戻る', w.eval('mode') === 'yoten' && w.document.querySelectorAll('#card .y-c').length === 6);
+  click(w, '#ynext');
+  ok('次へで A章の要点（印つき）', w.document.querySelectorAll('#card .y-row').length === KD.filter(d => d.s === 'A').length && w.document.querySelectorAll('#card .y-row.many').length === KD.filter(d => d.s === 'A' && KMANY.includes(d.n)).length);
+  const pages = 1 + new Set(KD.map(d => d.s)).size;
+  let rows = 0;
+  for (let i = 1; i < pages; i++) { w.document.querySelectorAll('#chips [data-yp]')[i].click(); rows += w.document.querySelectorAll('#card .y-row').length; }
+  ok('章のページを合わせると31項目', rows === 31);
+  w.document.querySelectorAll('#card .y-row')[0].click();
+  ok('項目を押すと解説の「しくみ」で、要点の枠がある', w.eval('mode') === 'kai' && $(w, '#card .k-key') && $(w, '#card').textContent.includes('ここだけは押さえる'));
+  click(w, '#kidx');
+  ok('解説の一覧に「多い」の印', w.document.querySelectorAll('#card [data-k].many').length === KMANY.length);
+}
 {
   const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'https://example.test/review1/#kai30' });
   const w = dom.window;
@@ -622,7 +650,7 @@ console.log('■ わからないところアンケート（無記名・スプレ
   const reply = async () => { if (mode === 'down') throw new TypeError('Failed to fetch');
     return { json: async () => mode === 'ng' ? { ok: false, error: '項目がちがいます' } : { ok: true } }; };
   const w = openA({ url: URL, reply });
-  ok('設定すると、メニューにアンケートが出る（4つ）', $(w, '#mAsk') && !$(w, '.menu.three') && $(w, '#mAsk').textContent.includes('まだ送っていません'));
+  ok('設定すると、メニューにアンケートが出る', $(w, '#mAsk') && $(w, '#mAsk').textContent.includes('まだ送っていません'));
   click(w, '#mAsk');
   ok('名前は送らないと書いてある', $(w, '#card').textContent.includes('名前は送りません'));
   click(w, '.agrp .opt[data-n="14"]'); click(w, '.agrp .opt[data-n="3"]'); click(w, '.agrp .opt[data-n="22"]'); click(w, '.agrp .opt[data-n="22"]');
