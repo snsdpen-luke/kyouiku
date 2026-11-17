@@ -453,9 +453,9 @@ function written(q){
    <div class="hint">自分の答えと見比べて、えらびなさい。</div>
    <div class="self">${['できた','半分できた','できなかった'].map((t,k)=>`<button class="opt ${st.self[i]===k?'pick':''}" data-k="${k}">${t}</button>`).join('')}</div>`:''}
    <div class="row"><button class="btn ghost" id="back">もどる</button>
-   ${shown?`<button class="btn" id="next" ${done?'':'disabled'}>次へ</button>`:`<button class="btn" id="show">書けたので模範解答を見る</button>`}</div>`;
+   ${shown?`<button class="btn" id="next" ${done?'':'disabled'}>次へ</button>`:`<button class="btn" id="show">書けたので模範解答を見る</button>`}</div><div class="warn" id="dwarn" hidden></div>`;
   const ta=$('ta');ta.oninput=()=>{st.text[i]=ta.value;save()};
-  if($('show'))$('show').onclick=()=>{if(ta.value.trim().length<10){ta.focus();ta.placeholder='先に自分の答えを書きます（10文字以上）';return}st.shown[i]=1;save();render()};
+  if($('show'))$('show').onclick=()=>{const n=ta.value.trim().length;if(n<10){const w=$('dwarn');w.hidden=false;w.textContent=n?`答えが短すぎます（今 ${n}文字）。10文字以上書いてから押すと、模範解答が出ます。`:'先に自分の答えを書きます（10文字以上）。書いてから押すと、模範解答が出ます。';ta.focus();return}st.shown[i]=1;save();render()};
   document.querySelectorAll('.self .opt').forEach(b=>b.onclick=()=>{st.self[i]=+b.dataset.k;save();render()});
   bindNav();
 }
