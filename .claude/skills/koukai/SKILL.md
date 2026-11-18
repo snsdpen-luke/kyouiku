@@ -69,7 +69,15 @@ bash .claude/skills/koukai/kakunin-koukai.sh <フォルダ> <VER>
 - 呼び名は**科目ごと**（例：電気回路・電子計測制御・コンピュータシステム技術）。1つの呼び名にクラスをいくつでも入れられ、post するとその全部に載る。教材の科目は README の「何をするもの」の表の科目の欄で決める
 - 呼び名を付けるのは `classroom.mjs courses` → `classroom.mjs map <呼び名> <id> [<id> …]`（足していく）。新しいクラスができたら同じく map で足す。年度が終わってアーカイブしたクラスは `courses` が「注意」で知らせるので `unmap <呼び名> <id>` で外す。受け口の URL と合言葉は `~/.config/kyouiku/classroom.json` にだけある。会話・repo・all-db に書かない
 
-## 5. 剛さんに返すもの（2〜4行）
+## 5. Google ドライブ（自動。未分類だけ見る）
+
+コミットのたびに git の post-commit フックが `tools/drive-sync.py` を裏で走らせ、教材の本体 `.html` と `.pdf` を Google ドライブの `00_共有/kyouiku教材/<分類>/` へ写す（剛さんの判断 2026-11-18。Drive for Desktop の同期フォルダに写すだけ）。結果は `.git/drive-sync.log`。
+- push のあと `tail -3 .git/drive-sync.log` を見る。`未分類:` が出ていたら、`tools/drive-sync.py` の `BUNRUI` に1行足し（分類は README の「何をするもの」の表の科目で決める）、`python3 tools/drive-sync.py` を走らせ直す（ドライブの中で正しいフォルダへ移る）。その直しもコミットする
+- 新しい教材を足したときは、push の前に `BUNRUI` に1行足しておけば未分類にならない
+- フックが無い（新しく clone した）ときは `python3 tools/drive-sync.py --install-hook`
+- ログやコマンドの出力の写し先のフルパスには学校アカウントのメールが入る。報告・コミット・all-db に貼らない
+
+## 6. 剛さんに返すもの（2〜4行）
 
 - 生徒に配る URL：`https://snsdpen-luke.github.io/kyouiku/<フォルダ>/`（トップのラダー工房だけ `/kyouiku/`）
 - 先生用の入口（`#sensei` / `#demo` / `N` キー）があれば、その URL も
