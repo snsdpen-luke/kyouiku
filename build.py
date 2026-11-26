@@ -39,6 +39,7 @@ PAGES = [
     ("技能筆記練習.html",          "ginou/index.html",    "技能試験 筆記トレーニング"),
     ("制御クイズ100.html",         "seigyo100/index.html", "電子計測制御の5択150問"),
     ("制御クイズ導入.html",        "seigyo100/intro.html", "制御クイズ100 の導入スライド"),
+    ("テックリーダー調べ.html",    "leaders/index.html",  "時代をつくったテックリーダーの調べ学習ノート"),
 ]
 
 # 来校者に配る URL は https://kyouiku-free.github.io/mart/（個人名の出ない別の箱）。横に clone してあればそこにも写す。

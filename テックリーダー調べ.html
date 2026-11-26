@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>テックリーダー調べノート</title>
+<style>
+/* Layout: same deck frame as テック体験ラボ30 — one full-height slide, fixed control bar, teacher notes from the right */
+:root{
+  /* つよしさんのスライド規定：白背景・ほぼ黒のダークグレー文字・差し色は青（主）と黄（強調） */
+  --bg:#ffffff; --panel:#ffffff; --ink:#26292e; --muted:#6b7078; --line:#e2e4e8; --soft:#f6f7f9;
+  --accent:#1a5fd0; --accent-soft:#eaf1fc;
+  --yellow:#f2c200; --yellow-soft:#fff7d1;
+  --f-body:"BIZ UDPGothic","Noto Sans JP","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.7;overflow:hidden}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.deck{position:relative;height:calc(100% - 64px - env(safe-area-inset-bottom,0px));overflow:hidden}
+.slide{position:absolute;inset:0;overflow-y:auto;padding-block:28px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.slide:not(.on){display:none}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-family:var(--f-mono);font-size:13px;letter-spacing:.08em;color:var(--accent);font-weight:700}
+h1,h2{font-weight:700;line-height:1.3;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(36px,6vw,64px)}
+h1 span{background:linear-gradient(transparent 70%,var(--yellow) 70%)}
+h2{font-size:clamp(24px,3.4vw,36px)}
+h3{font-size:18px;margin:0}
+p{margin:0}
+.lead{font-size:clamp(17px,2vw,21px);max-width:44em}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+.task{border-left:5px solid var(--yellow);padding:8px 14px;background:var(--yellow-soft);border-radius:0 8px 8px 0}
+.look{font-size:15px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+.look b{color:var(--ink)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:760px){.steps{grid-template-columns:1fr}}
+.steps>div{border-top:4px solid var(--accent);background:var(--soft);padding:14px;border-radius:0 0 8px 8px}
+.steps b{display:block;font-size:19px}
+.steps .m{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.rules{margin:0;padding-left:1.2em}
+.rules li{margin:4px 0}
+
+/* candidates timeline */
+.era{display:grid;grid-template-columns:6.5em 1fr;gap:10px;align-items:start;border-top:1px solid var(--line);padding-top:10px}
+.era>*{min-width:0}
+@media (max-width:560px){.era{grid-template-columns:1fr;gap:4px}.era .y{padding-top:0}.cand{min-width:0;flex:1 1 100%}}
+.era .y{font-family:var(--f-mono);font-weight:700;color:var(--muted);padding-top:8px}
+.cards{display:flex;flex-wrap:wrap;gap:8px}
+.cand{border:2px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:12em}
+.cand:hover{border-color:var(--accent)}
+.cand b{font-size:16px}
+.cand small{color:var(--muted);font-size:13px}
+.cand .yr{font-family:var(--f-mono);font-size:12px;color:var(--accent)}
+.cand.pick{border-color:var(--accent);background:var(--accent-soft)}
+.x-unused{content:"自分の担当";font-size:12px;font-weight:700;background:var(--yellow);border-radius:4px;padding:0 6px;align-self:flex-start;margin-top:2px}
+.own{display:flex;gap:8px;flex-wrap:wrap}
+.own input{flex:1;min-width:12em;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.picks input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+@media (max-width:560px){.picks{grid-template-columns:1fr}}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.three label{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:15px}
+.three input{width:100%;border:2px solid var(--accent);border-radius:8px;padding:8px 10px;font-weight:400}
+@media (max-width:560px){.three{grid-template-columns:1fr}}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:2px solid var(--line);background:var(--panel);border-radius:8px;padding:4px 12px;cursor:pointer;font-weight:700;display:flex;gap:6px;align-items:center}
+.tab .c{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.tab.on{border-color:var(--accent);background:var(--accent-soft)}
+.tab.on .c{color:var(--accent)}
+/* memo */
+.memo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.memo>*{min-width:0}
+@media (max-width:760px){.memo{grid-template-columns:1fr}}
+.fld{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.fld.wide{grid-column:1/-1}
+.fld label{font-weight:700;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.fld label .n{font-family:var(--f-mono);font-size:12px;color:#fff;background:var(--accent);border-radius:4px;padding:0 6px}
+.fld small{color:var(--muted);font-size:13px}
+.fld input[type=text],.fld textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
+.fld textarea{min-height:76px;resize:vertical}
+.fld.done{border-color:var(--accent)}
+.fld.done label .n{background:var(--ink)}
+.chk{display:flex;gap:8px;align-items:center;font-size:15px}
+.chk input{width:18px;height:18px;accent-color:var(--accent)}
+.status{display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:sticky;top:-28px;background:var(--bg);padding-block:8px;z-index:2;border-bottom:1px solid var(--line)}
+.meter{display:flex;gap:3px;flex:1;min-width:140px;max-width:320px}
+.meter i{flex:1;height:8px;border-radius:4px;background:var(--line)}
+.meter i.on{background:var(--accent)}
+.who{font-size:20px;font-weight:700;background:linear-gradient(transparent 62%,var(--yellow-soft) 62%)}
+.saved{font-size:13px;color:var(--muted)}
+
+/* summary */
+.speech{font-size:clamp(17px,2vw,20px);line-height:1.9;background:var(--soft);border-radius:10px;padding:18px;white-space:pre-wrap;min-height:120px}
+.speech mark{background:var(--yellow-soft);color:var(--ink);padding:0 2px}
+.speech .gap{color:var(--muted);border-bottom:2px dashed var(--yellow)}
+.copybox{width:100%;min-height:160px;font-family:var(--f-mono);font-size:13px;border:1px solid var(--line);border-radius:8px;padding:10px}
+
+/* control bar */
+.bar-ctl{position:fixed;left:0;right:0;bottom:0;height:calc(64px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);
+  background:var(--bg);color:var(--ink);border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));z-index:5}
+.bar-ctl button{background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700}
+.bar-ctl button:hover{border-color:var(--accent)}
+.bar-ctl #next{background:var(--accent);color:#fff;border-color:var(--accent)}
+.bar-ctl button:disabled{opacity:.35}
+.bar-ctl .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.secs{display:flex;gap:4px}
+.secs span{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.secs span.done{background:#9aa0a8} .secs span.cur{background:var(--accent)}
+.bar-ctl .lbl{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notes{position:fixed;top:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom,0px));width:min(380px,100%);background:var(--panel);border-left:1px solid var(--line);
+  padding:18px;padding-top:calc(18px + env(safe-area-inset-top,0px));padding-right:max(18px,env(safe-area-inset-right,0px));overflow-y:auto;z-index:6;box-shadow:-8px 0 24px rgba(0,0,0,.12);font-size:15px}
+.notes h3{font-size:14px;color:var(--accent);font-family:var(--f-mono);letter-spacing:.06em}
+.notes .time{font-family:var(--f-mono);font-weight:700;background:var(--yellow-soft);display:inline-block;padding:2px 8px;border-radius:6px}
+.notes ul{padding-left:1.2em;margin:6px 0}
+.notes q{font-weight:700}
+.note-src{display:none}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:8px;font-size:14px;z-index:9}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- 1 -->
+<section class="slide" data-title="今日のワーク">
+ <div class="wrap">
+  <div class="eyebrow">コンピュータシステム技術 ／ プレ授業</div>
+  <h1>時代をつくった<br><span>テックリーダー</span>を調べる</h1>
+  <p class="lead">スマホも、検索も、AIも、だれかが考えて、つくって、広めました。来週からの授業は、その「人」が主役です。今日は3人を自分で決めて、調べてメモします。</p>
+  <div class="steps">
+   <div><b>① 決める</b>長者番付の話から、調べる3人を自分で決めます<div class="m">7分</div></div>
+   <div><b>② 調べてメモ</b>1人6つの欄を、3人分うめます<div class="m">24分（1人8分）</div></div>
+   <div><b>③ くらべて紹介</b>3人の共通点を考え、1人を30秒で紹介します<div class="m">9分</div></div>
+  </div>
+  <div class="task"><b>調べるときのルール</b>
+   <ul class="rules">
+    <li>出典（情報のもと）を<b>2つ以上</b>書きます。1つのサイトだけで決めません。</li>
+    <li>AIで調べたときは、AIの答えをそのまま写しません。<b>元のページで確かめて</b>から書きます。（前回の体験1-3）</li>
+    <li>わからない欄は「わからなかった」と書いてかまいません。作り話より、ずっと良いです。</li>
+   </ul>
+  </div>
+  <p class="look"><b>メモの保存</b>：書いた内容はこの端末のブラウザに自動で残ります。提出は最後のスライドの「コピー」を使って、先生の指示する場所に貼ってください。</p>
+ </div>
+ <aside class="note-src"><span class="time">0〜3分</span>
+  <ul><li>来週から「人」が主役になることを予告する。</li>
+  <li>ルールの2つ目は前回の体験（AIの答えのまちがい探し）とつなげて話す。</li>
+  <li>時間は50分授業の目安（説明3・長者番付と決める7・調べる24（1人8分）・くらべる/紹介9・発表7）。短い授業なら③を宿題に。</li></ul>
+  <p>問いかけ：<q>今使っているもので、作った人の名前を知っているものはある？</q></p></aside>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="① 長者番付から決める">
+ <div class="wrap">
+  <div class="eyebrow">① 決める</div>
+  <h2>世界のお金持ちランキング。<br>上の人たちは、何をつくった？</h2>
+  <div class="task"><b>やること</b>：先生の「長者番付」の話を聞きながら、気になった<b>人の名前</b>や<b>会社の名前</b>をメモします。</div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+   <h3>気になった名前メモ</h3>
+   <div class="picks" id="picks"></div>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+   <h3>調べる3人を決める</h3>
+   <p class="muted" style="font-size:15px">番付の人でなくてもかまいません。自分が毎日使っているアプリや機械から、それをつくった人をたどってもかまいません。</p>
+   <div class="three" id="three"></div>
+   <p class="muted" style="font-size:14px">ヒント：ちがう種類の会社や、ちがう時代の人をまぜると、③でくらべるのが面白くなります。</p>
+  </div>
+  <p class="look"><b>見るところ</b>：番付の上のほうにいる人の「会社」を見てみよう。どんな種類の会社が多いでしょうか。</p>
+ </div>
+ <aside class="note-src"><span class="time">3〜10分</span>
+  <ul><li>先生から長者番付の話。最新の番付（例：Forbes「世界長者番付」）を見せる。上位の多くがテック企業の創業者であることに、生徒が自分で気づくように話す。</li>
+  <li>生徒は話を聞きながら、気になった名前・会社名をメモ欄に書く。</li>
+  <li>最後に3人を自分で決めて入力させる。番付外の人（研究者など）を選んでもよい。</li>
+  <li>同じ人が集中しても止めない。来週、同じ人を調べた生徒どうしで比べられる。</li></ul>
+  <p>問いかけ：<q>この人たちは、どうやってこんなにお金持ちになった？</q> <q>みんなもその会社のものを使っている？</q></p></aside>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="② 調べてメモ">
+ <div class="wrap">
+  <div class="status"><div class="tabs" id="tabs" role="tablist"></div><div class="meter" id="meter"></div><span class="mono" id="cnt">0/18</span><span class="saved" id="saved"></span></div>
+  <div class="memo" id="memo"></div>
+  <p class="look"><b>見るところ</b>：1人8分が目安です。③の「ない世界」は、自分の1日の生活で考えます。朝起きてから寝るまでの、どこで困るでしょうか。</p>
+ </div>
+ <aside class="note-src"><span class="time">10〜34分</span>
+  <ul><li>上のタブで3人を切りかえる。1人8分で次へ進むよう、8分ごとに声をかける。</li><li>⑥出典が空の生徒には、まず出典を2つ見つけるよう声をかける。</li>
+  <li>③（その技術がない世界）が書けている生徒をほめる。来週の授業の中心になる問い。</li>
+  <li>⑤失敗・苦労は見落とされやすい。「つくった人もうまくいかなかったことがある」に気づかせる。</li></ul>
+  <p>問いかけ：<q>その人がいなかったら、別のだれかが同じものを作ったと思う？</q></p></aside>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="③ くらべて紹介">
+ <div class="wrap">
+  <div class="eyebrow">③ くらべて紹介</div>
+  <h2>3人をくらべる。1人を紹介する。</h2>
+  <div class="memo">
+   <div class="fld"><label for="c1"><span class="n">A</span>3人に共通していること</label><small>きっかけ・失敗・つくったもの。3人の欄を見くらべましょう</small><textarea id="c1"></textarea></div>
+   <div class="fld"><label for="c2"><span class="n">B</span>来週、聞いてみたい質問</label><small>3人のうち1人に、1つだけ質問できるとしたら何を聞きますか</small><textarea id="c2"></textarea></div>
+  </div>
+  <div class="row"><b>30秒で紹介する人：</b><div class="tabs" id="tabs2"></div></div>
+  <div class="task">黄色の部分はメモから入りました。点線の部分はまだ空いている欄です。<b>読み上げて30秒</b>になるよう、②に戻って言葉を直しましょう。</div>
+  <div class="speech" id="speech"></div>
+  <div class="row"><span class="muted" style="font-size:14px">文字数：<span class="mono" id="chars">0</span>（30秒で読めるのは、だいたい150〜200文字）</span></div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+   <h3>提出用（3人分のメモ全部）</h3>
+   <textarea class="copybox" id="copybox" readonly aria-label="提出用のメモ"></textarea>
+   <div class="row"><button class="btn primary" id="copy" type="button">コピーする</button><button class="btn" id="clear" type="button">メモを全部消す</button><span id="clearAsk" hidden><b>本当に消す？</b> <button class="btn" id="clearYes" type="button">消す</button> <button class="btn" id="clearNo" type="button">やめる</button></span></div>
+  </div>
+  <p class="look"><b>見るところ</b>：紹介文の中で、聞いた人が「へえ」と思うのはどの1文でしょうか。そこを一番はっきり言いましょう。</p>
+ </div>
+ <aside class="note-src"><span class="time">34〜50分</span>
+  <ul><li>まずA（共通点）を書かせる。答えは言わない。「3人の⑤失敗の欄を並べて読んでみよう」など、見る欄を指す。</li><li>紹介文を整え、残りで2〜3人に読ませる。</li>
+  <li>提出：「コピーする」で全部のメモがコピーされる。Google フォームや Classroom などに貼らせる。</li>
+  <li>このページは自動では先生に送られない（各自のブラウザに保存）。</li></ul>
+  <p>来週へのつなぎ：<q>来週は、みんなが調べた人を年表に並べる。</q></p></aside>
+</section>
+</div>
+
+<aside class="notes" id="notes" hidden>
+ <div class="row" style="justify-content:space-between"><h3>教員メモ</h3><button class="btn" id="notesClose" type="button">閉じる</button></div>
+ <div id="notesBody"></div>
+</aside>
+<nav class="bar-ctl">
+ <span id="ver" class="mono" style="font-size:11px;color:var(--muted);white-space:nowrap"></span>
+ <button id="prev" type="button" aria-label="前へ">←</button>
+ <div class="grow"><div class="secs" id="secs"></div><div class="lbl" id="lbl"></div></div>
+ <button id="notesBtn" type="button">教員メモ</button>
+ <button id="next" type="button">次へ →</button>
+</nav>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const VER="2026-11-26a";
+const KEY='leader-memo-v2';
+try{document.getElementById('ver').textContent='版 '+VER}catch(e){}
+let S={};try{S=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){S={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));$('#saved').textContent='この端末に保存しました'}catch(e){$('#saved').textContent='保存できない環境です。最後にコピーしてください'}}
+function toast(t){const x=$('#toast');x.textContent=t;x.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>x.hidden=true,1800)}
+
+/* deck */
+const slides=[...document.querySelectorAll('.slide')];let cur=0;
+slides.forEach(()=>$('#secs').appendChild(el('span')));
+function go(i){cur=Math.max(0,Math.min(slides.length-1,i));
+ slides.forEach((s,k)=>s.classList.toggle('on',k===cur));
+ [...$('#secs').children].forEach((s,k)=>s.className=k<cur?'done':k===cur?'cur':'');
+ $('#lbl').textContent=`${cur+1}/${slides.length}　${slides[cur].dataset.title}`;
+ $('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1;
+ const n=slides[cur].querySelector('.note-src');$('#notesBody').innerHTML=`<p><b>${slides[cur].dataset.title}</b></p>`+(n?n.innerHTML:'');
+ slides[cur].scrollTop=0;if(cur===2){renderTabs();renderMemo()}if(cur===3){renderTabs();renderSpeech()}
+ try{history.replaceState(null,'','#s'+(cur+1))}catch(e){}}
+$('#prev').onclick=()=>go(cur-1);$('#next').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+$('#notesBtn').onclick=()=>$('#notes').hidden=!$('#notes').hidden;$('#notesClose').onclick=()=>$('#notes').hidden=true;
+
+/* ① picks + decide 3 */
+if(!Array.isArray(S.p)){S.p=[{},{},{}]}
+S.cur=S.cur||0;S.sp=S.sp||0;
+const picks=$('#picks');
+for(let i=0;i<6;i++){const t=el('input');t.type='text';t.id='pk'+i;t.placeholder=i<3?'例：人の名前':'例：会社の名前';t.setAttribute('aria-label','気になった名前 '+(i+1));t.value=(S.picks||[])[i]||'';
+ t.oninput=()=>{S.picks=S.picks||[];S.picks[i]=t.value;save()};picks.appendChild(t)}
+const pname=i=>(S.p[i].name||'').trim();
+for(let i=0;i<3;i++){const l=el('label','',`${i+1}人目<input type="text" id="nm${i}" placeholder="名前" value="${esc(S.p[i].name||'')}">`);$('#three').appendChild(l);
+ l.querySelector('input').oninput=e=>{S.p[i].name=e.target.value;save();renderTabs()}}
+
+/* ② memo fields (per person) */
+const F=[
+ ['f2','いつ・どこの人？','生まれた年、国、どんな仕事をしていた人か',0],
+ ['f3','何をつくった？','テックの名前と、それが世に出た年',0],
+ ['f4','それがない世界だったら？','自分の1日の生活で、どこが変わりますか。具体的に',1],
+ ['f5','なぜつくろうとした？','きっかけ・困っていたこと・目指したこと',1],
+ ['f6','うまくいかなかったこと','失敗・反対された・苦労したこと',1],
+ ['f7','出典（2つ以上）','サイト名とURL、本の名前など',1],
+];
+function renderTabs(){
+ [['#tabs','cur',()=>{renderMemo()}],['#tabs2','sp',()=>{renderSpeech()}]].forEach(([sel,key,fn])=>{
+  const box=$(sel);box.innerHTML='';
+  for(let i=0;i<3;i++){const n=F.filter(([id])=>(S.p[i][id]||'').trim()).length;
+   const b=el('button','tab'+(S[key]===i?' on':''),`${esc(pname(i)||(i+1)+'人目')}<span class="c">${n}/6</span>`);b.type='button';b.setAttribute('role','tab');
+   b.onclick=()=>{S[key]=i;save();renderTabs();fn()};box.appendChild(b)}});
+}
+function renderMemo(){
+ const P=S.p[S.cur],box=$('#memo');box.innerHTML='';
+ F.forEach(([id,lab,hint,wide],i)=>{
+  const d=el('div','fld'+(wide?' wide':''));
+  const inp=wide?`<textarea id="${id}">${esc(P[id]||'')}</textarea>`:`<input type="text" id="${id}" value="${esc(P[id]||'')}">`;
+  d.innerHTML=`<label for="${id}"><span class="n">${i+1}</span>${lab}${pname(S.cur)?`<small>（${esc(pname(S.cur))}）</small>`:''}</label><small>${hint}</small>${inp}`+
+   (id==='f7'?`<label class="chk" style="font-weight:400"><input type="checkbox" id="chk"${P.chk?' checked':''}> AIの答えは、元のページで確かめた（AIを使わなかった人もチェック）</label>`:'');
+  box.appendChild(d);
+  const t=d.querySelector('#'+id);t.oninput=()=>{P[id]=t.value;save();status()};
+ });
+ $('#chk').onchange=e=>{P.chk=e.target.checked;save()};
+ status();
+}
+function status(){
+ let n=0;for(let i=0;i<3;i++)F.forEach(([id])=>{if((S.p[i][id]||'').trim())n++});
+ F.forEach(([id])=>{const f=document.getElementById(id);if(f)f.closest('.fld').classList.toggle('done',!!(S.p[S.cur][id]||'').trim())});
+ $('#meter').innerHTML=Array.from({length:18},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('');$('#cnt').textContent=n+'/18';
+ document.querySelectorAll('#tabs .tab .c').forEach((c,i)=>c.textContent=F.filter(([id])=>(S.p[i][id]||'').trim()).length+'/6');
+}
+['c1','c2'].forEach(id=>{const t=$('#'+id);t.value=S[id]||'';t.oninput=()=>{S[id]=t.value;save();renderSpeech()}});
+
+/* ③ speech */
+function renderSpeech(){
+ const P=S.p[S.sp];
+ const v=k=>(k==='name'?pname(S.sp):k==='c2'?(S.c2||''):(P[k]||'')).trim();
+ const w=k=>v(k).replace(/[。．.、]+$/,'');
+ const m=(k,ph)=>v(k)?`<mark>${esc(w(k))}</mark>`:`<span class="gap">（${ph}）</span>`;
+ $('#speech').innerHTML=`わたしが紹介するのは、${m('name','名前')}です。\n${m('f2','いつ・どこの人')}。\nこの人がつくったのは、${m('f3','つくったもの')}です。\nもしこれがなかったら、${m('f4','ない世界')}。\nつくろうとしたきっかけは、${m('f5','なぜ')}。\nでも、${m('f6','うまくいかなかったこと')}。`;
+ $('#chars').textContent=$('#speech').textContent.length;
+ const all=[0,1,2].map(i=>`【${i+1}人目】${pname(i)||'（未記入）'}\n`+F.map(([id,lab],k)=>`${k+1}. ${lab}：${(S.p[i][id]||'').trim()||'（未記入）'}`).join('\n')+`\n確かめチェック：${S.p[i].chk?'した':'していない'}`).join('\n\n');
+ $('#copybox').value=all+`\n\n【3人に共通していること】${(S.c1||'').trim()||'（未記入）'}\n【来週聞いてみたい質問】${(S.c2||'').trim()||'（未記入）'}`;
+}
+$('#copy').onclick=()=>{const t=$('#copybox').value;
+ const fb=()=>{$('#copybox').focus();$('#copybox').select();toast('選択しました。Ctrl+C（⌘+C）でコピーしてください')};
+ try{navigator.clipboard.writeText(t).then(()=>toast('コピーしました'),fb)}catch(e){fb()}};
+$('#clear').onclick=()=>$('#clearAsk').hidden=false;$('#clearNo').onclick=()=>$('#clearAsk').hidden=true;
+$('#clearYes').onclick=()=>{S={p:[{},{},{}],cur:0,sp:0};save();document.querySelectorAll('#picks input,#three input,#c1,#c2').forEach(t=>t.value='');$('#clearAsk').hidden=true;renderTabs();renderMemo();renderSpeech();toast('メモを消しました')};
+
+renderTabs();renderMemo();
+const mm=/^#s(\d+)$/.exec(location.hash);go(mm?+mm[1]-1:0);
+})();
+</script>
+
+</body>
+</html>
