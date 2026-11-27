@@ -40,6 +40,7 @@ PAGES = [
     ("制御クイズ100.html",         "seigyo100/index.html", "電子計測制御の5択150問"),
     ("制御クイズ導入.html",        "seigyo100/intro.html", "制御クイズ100 の導入スライド"),
     ("テックリーダー調べ.html",    "leaders/index.html",  "時代をつくったテックリーダーの調べ学習ノート"),
+    ("コイルとコンデンサ.html",    "rlc/index.html",      "電気回路α：RLC回路から学ぶコイルとコンデンサ（30分の序論）"),
 ]
 
 # 来校者に配る URL は https://kyouiku-free.github.io/mart/（個人名の出ない別の箱）。横に clone してあればそこにも写す。
