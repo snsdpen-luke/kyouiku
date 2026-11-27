@@ -1,0 +1,1344 @@
+<title>生まれ変わりのサイコロ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column on a near-black ground with a vignette. Mincho headings, cold gray-blue accents, red only for Japan and for the "no second life" warning. A 3D die rolls full-screen at birth. */
+:root{
+  --bg:#0b0c0f; --surface:#131519; --ink:#d9dde3; --muted:#7b828d; --line:#252930; --soft:#1a1d22;
+  --band:#060709; --band-fg:#e4e7ec; --band-muted:#7b828d;
+  --blue:#7d9cc9; --blue-soft:#172030; --cyan:#a9c6e0; --cyan-soft:#1b2633; --indigo:#8a8fbf; --indigo-soft:#1c1e2e;
+  --red:#d6332b; --red-soft:#2a1214;
+  --pip:#0b0c0f; --dieface:#d9dde3; --v0:#1e232b; --v1:#2a323d; --v2:#3a4758; --v3:#52647b;
+  --f-jp:"BIZ UDPGothic","Hiragino Sans","Noto Sans CJK JP","Noto Sans JP","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  --f-min:"BIZ UDPMincho","Hiragino Mincho ProN","Noto Serif CJK JP","Noto Serif JP","Yu Mincho",serif;
+  --f-num:"BIZ UDPGothic","Hiragino Sans","Noto Sans CJK JP",system-ui,sans-serif;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--f-jp);font-size:17px;line-height:1.75;font-weight:500}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--f-min);font-weight:800;line-height:1.3;margin:0;text-wrap:balance;letter-spacing:.02em}
+h2{font-size:clamp(1.35rem,4.2vw,1.75rem)}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0}
+.muted{color:var(--muted)}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.small{font-size:.85rem}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.btn{border:0;border-radius:4px;padding:14px 28px;font-weight:700;font-size:1.05rem;background:var(--ink);color:var(--bg);letter-spacing:.04em;transition:transform .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.eyebrow{font-family:var(--f-num);font-size:.78rem;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+
+/* ---- title band ---- */
+.band{background:var(--band);color:var(--band-fg);border:1px solid var(--line);border-radius:6px;padding:36px 28px;display:flex;flex-direction:column;gap:20px;overflow:hidden;position:relative}
+.band .eyebrow{color:var(--band-muted)}
+.logo{display:flex;flex-direction:column;gap:2px}
+.logo .sub{font-weight:700;font-size:clamp(1.1rem,3.6vw,1.5rem);letter-spacing:.3em;color:var(--band-muted)}
+.logo .main{display:flex;align-items:center;gap:.04em;font-family:var(--f-min);font-weight:800;font-size:clamp(2.8rem,11vw,4.8rem);line-height:1;letter-spacing:.04em}
+.logo .glyph{width:.86em;height:.86em;border-radius:.16em;background:var(--ink);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:.12em;margin-left:.06em;transform:rotate(-8deg)}
+.logo .glyph i{width:.14em;height:.14em;border-radius:50%;background:var(--bg);place-self:center}
+.band .lead{font-family:var(--f-num);font-size:clamp(1.3rem,5vw,2rem);font-weight:600;color:var(--cyan)}
+.band p{color:var(--band-fg)}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.rule{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:4px}
+.rule .n{font-family:var(--f-num);font-weight:700;color:var(--blue)}
+.rule b{font-weight:900}
+@media (max-width:620px){.rules{grid-template-columns:1fr}}
+
+/* ---- dice overlay ---- */
+.overlay{position:fixed;inset:0;z-index:50;background:var(--band);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;color:var(--band-fg);padding:24px}
+.scene{width:120px;height:120px;perspective:600px}
+.cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;transform:rotateX(-20deg) rotateY(25deg)}
+.face{position:absolute;inset:0;background:var(--dieface);border-radius:18px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:16px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.06)}
+.face i{width:20px;height:20px;border-radius:50%;background:var(--pip);place-self:center}
+.face.one i{background:var(--red);width:26px;height:26px}
+.f1{transform:translateZ(60px)}
+.f6{transform:rotateY(180deg) translateZ(60px)}
+.f2{transform:rotateY(90deg) translateZ(60px)}
+.f5{transform:rotateY(-90deg) translateZ(60px)}
+.f3{transform:rotateX(90deg) translateZ(60px)}
+.f4{transform:rotateX(-90deg) translateZ(60px)}
+.shadow{width:110px;height:14px;border-radius:50%;background:rgba(0,0,0,.45);filter:blur(6px);margin-top:-18px}
+.cast{font-family:var(--f-min);font-weight:800;font-size:clamp(1.8rem,7vw,2.8rem);letter-spacing:.2em;opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s}
+.cast.on{opacity:1;transform:none}
+.cast small{display:block;font-family:var(--f-num);font-size:.9rem;letter-spacing:.3em;color:var(--band-muted);text-align:center;font-weight:500}
+
+/* ---- birth cards ---- */
+.dice{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (max-width:560px){.dice{grid-template-columns:1fr}}
+.die{perspective:800px;min-width:0}
+.die .in{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;background:var(--surface);animation:flip .6s cubic-bezier(.2,.8,.3,1.2) both;transform-origin:center}
+.die .k{font-size:.8rem;color:var(--muted)}
+.die .v{font-weight:900;font-size:1.15rem}
+.die .p{font-family:var(--f-num);font-size:.8rem;color:var(--muted)}
+.die.no .in{background:var(--soft);border-style:dashed}
+.die.no .v{color:var(--muted)}
+@keyframes flip{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
+.odds{display:flex;flex-direction:column;gap:2px;border-left:4px solid var(--blue);padding:6px 0 6px 16px}
+.odds .big{font-family:var(--f-num);font-size:clamp(1.5rem,6vw,2.2rem);font-weight:700;color:var(--blue)}
+
+/* ---- status ---- */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.status{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--band);color:var(--band-fg);border:1px solid var(--line);border-radius:6px;padding:12px 18px;display:flex;flex-direction:column;gap:8px}
+.status-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.age{font-family:var(--f-num);font-size:1.7rem;font-weight:700;line-height:1}
+.where{font-size:.82rem;color:var(--band-muted)}
+.tot{font-family:var(--f-num);color:var(--cyan);font-weight:600}
+.gauges{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.g{display:flex;flex-direction:column;gap:3px;min-width:0}
+.g .lab{display:flex;justify-content:space-between;font-size:.76rem;gap:4px}
+.g .lab span:last-child{font-family:var(--f-num);font-weight:700}
+.bar{height:6px;background:rgba(127,135,148,.28);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue);width:0;transition:width .7s ease}
+.g.flash .bar i{background:var(--cyan)}
+.g.flash .lab span:last-child{color:var(--cyan)}
+@media (max-width:520px){.gauges{grid-template-columns:repeat(3,1fr)}}
+.panel .gauges .lab{color:var(--ink)}
+
+/* ---- wall ---- */
+.wallhead{display:flex;gap:16px;align-items:flex-start}
+.brick{flex:none;width:48px;height:48px;display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px}
+.brick span{background:var(--ink);border-radius:2px}
+.brick span:nth-child(3){grid-column:span 2}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 16px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;transition:border-color .15s,transform .15s}
+.opt:hover:not(:disabled){border-color:var(--blue);transform:translateX(2px)}
+.opt .tag{font-size:.75rem;font-weight:900;padding:2px 10px;border-radius:999px;grid-row:span 2;align-self:start;margin-top:3px;letter-spacing:.08em}
+.opt.try .tag{background:var(--ink);color:var(--bg)}
+.opt.safe .tag{background:var(--soft);color:var(--muted)}
+.opt .meta{font-family:var(--f-num);font-size:.8rem;color:var(--muted)}
+.opt:disabled{opacity:.55;cursor:not-allowed;background:var(--soft)}
+
+/* ---- judge roll ---- */
+.judge{display:flex;align-items:center;gap:18px;padding:14px 16px;border-radius:14px;background:var(--soft)}
+.mini{width:64px;height:64px;perspective:400px;flex:none}
+.mini .cube{transform:rotateX(-20deg) rotateY(25deg)}
+.mini .face{border-radius:10px;padding:8px}
+.mini .face i{width:10px;height:10px}
+.mini .face.one i{width:13px;height:13px}
+.mini .f1{transform:translateZ(32px)}.mini .f6{transform:rotateY(180deg) translateZ(32px)}.mini .f2{transform:rotateY(90deg) translateZ(32px)}.mini .f5{transform:rotateY(-90deg) translateZ(32px)}.mini .f3{transform:rotateX(90deg) translateZ(32px)}.mini .f4{transform:rotateX(-90deg) translateZ(32px)}
+.readout{display:flex;flex-direction:column;gap:2px}
+.readout .roll{font-family:var(--f-num);font-size:2rem;font-weight:700;line-height:1}
+.readout .need{font-family:var(--f-num);font-size:.85rem;color:var(--muted)}
+
+/* ---- outcome ---- */
+.outcome{border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;animation:rise .4s ease both}
+.outcome.ok{background:var(--cyan-soft)}
+.outcome.ng{background:var(--indigo-soft)}
+.outcome.stay{background:var(--soft)}
+.outcome .head{font-weight:900;font-size:1.2rem}
+.outcome.ok .head{color:var(--cyan)}
+.outcome.ng .head{color:var(--indigo)}
+.deltas{display:flex;flex-wrap:wrap;gap:8px}
+.deltas span{font-family:var(--f-num);font-size:.85rem;background:var(--surface);border-radius:6px;padding:1px 10px}
+@keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---- log ---- */
+.log-row{display:grid;grid-template-columns:3.2em 1fr auto;gap:10px;padding:9px 0;border-top:1px solid var(--line);align-items:baseline;font-size:.92rem}
+.log-row:first-child{border-top:0}
+.log-row .a{font-family:var(--f-num);color:var(--muted)}
+.mark{font-size:.75rem;font-weight:900;padding:1px 10px;border-radius:999px;white-space:nowrap}
+.mark.ok{background:var(--cyan-soft);color:var(--cyan)}
+.mark.ng{background:var(--indigo-soft);color:var(--indigo)}
+.mark.stay{background:var(--soft);color:var(--muted)}
+
+/* ---- result ---- */
+.chart-wrap{overflow-x:auto}
+svg text{font-family:var(--f-num)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.q{border-left:4px solid var(--blue);padding:4px 0 4px 16px;display:flex;flex-direction:column;gap:8px}
+.q ol{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px}
+.card-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.card-sum div{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.card-sum .n{font-family:var(--f-num);font-size:1.5rem;font-weight:700}
+.card-sum .k{font-size:.8rem;color:var(--muted)}
+@media (max-width:560px){.card-sum{grid-template-columns:repeat(2,1fr)}}
+.src{font-size:.78rem;color:var(--muted)}
+.fadein{animation:rise .4s ease both}
+@media (prefers-reduced-motion:reduce){.fadein,.outcome,.die .in{animation:none}.bar i{transition:none}}
+
+/* ---- village ---- */
+.village{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:440px}
+.pyr-wrap{max-width:520px}
+.pyr{width:100%;height:auto;display:block}
+.tier{stroke:var(--bg);stroke-width:2}.tier.t0{fill:var(--v0)}.tier.t1{fill:var(--v1)}.tier.t2{fill:var(--v2)}.tier.t3{fill:var(--v3)}
+.pyr .cell{fill:#c9d1dc;fill-opacity:.55;transition:r .12s}
+.pyr .cell.jpc{fill:var(--red);fill-opacity:1;r:8px}
+.pyr .cell.hit{fill:#ffffff;fill-opacity:1;r:9px}
+.pyr .cell.me{fill:#ffffff;fill-opacity:1;r:9px;stroke:#ffffff;stroke-opacity:.35;stroke-width:4;animation:ring 1.6s ease-in-out infinite}
+@keyframes ring{50%{stroke-width:12}}
+.pyr .you{font-family:var(--f-min);font-weight:800;font-size:18px;fill:#ffffff;paint-order:stroke;stroke:var(--bg);stroke-width:5px;stroke-linejoin:round}
+.pyr .tl{font-family:var(--f-jp);font-weight:700;font-size:17px;fill:var(--ink)}
+.pyr .tn{font-family:var(--f-num);font-weight:700;font-size:19px;fill:var(--blue)}
+.sw.me{background:#ffffff;box-shadow:0 0 0 3px rgba(255,255,255,.3)}
+.b0,.sw.b0{background:var(--v0)}.b1,.sw.b1{background:var(--v1)}.b2,.sw.b2{background:var(--v2)}.b3,.sw.b3{background:var(--v3)}
+
+@keyframes pulse{50%{box-shadow:0 0 0 9px var(--cyan-soft)}}
+.vlegend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.82rem;color:var(--muted)}
+.vlegend span{display:inline-flex;align-items:center;gap:6px}
+.vlegend b{color:var(--ink);font-weight:600}
+.sw{width:12px;height:12px;border-radius:50%;display:inline-block;position:relative}
+.sw.jpm{background:var(--red)}
+.cmp{display:grid;grid-template-columns:2.4em 1fr 4.2em;gap:8px;align-items:center;font-size:.78rem;color:var(--muted)}
+.cmp .bar{height:6px}
+.cmp.jp .bar i{background:var(--red)}
+.cmp .num{text-align:right;color:var(--ink)}
+.tally{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tally div{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.tally .n{font-size:1.8rem;font-weight:700;color:var(--blue)}
+.tally div:last-child .n{color:var(--red)}
+.tally small{font-size:.9rem;color:var(--muted)}
+.tally .k{font-size:.8rem;color:var(--muted)}
+details.src summary{cursor:pointer;color:var(--blue)}
+details.src ul{margin:8px 0 0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+details.src a{color:var(--blue)}
+@media (prefers-reduced-motion:reduce){.cell.me,.pyr .cell.me{animation:none}}
+
+/* ---- rebirth ---- */
+.confirm{position:fixed;inset:0;z-index:60;background:rgba(5,6,8,.96);display:flex;align-items:center;justify-content:center;padding:24px max(16px,env(safe-area-inset-left,0px));animation:fadeBg .6s ease both}
+.confirm .box{max-width:460px;display:flex;flex-direction:column;gap:18px;text-align:center;align-items:center}
+.confirm h2{font-size:clamp(1.6rem,6vw,2.2rem);letter-spacing:.08em}
+.confirm .cnt{font-family:var(--f-num);color:var(--muted);letter-spacing:.2em;font-size:.85rem}
+.confirm .warn{color:var(--muted)}
+.btn.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+@keyframes fadeBg{from{opacity:0}to{opacity:1}}
+.scare{position:fixed;inset:0;z-index:70;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px;overflow:hidden}
+.scare canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.16;mix-blend-mode:screen}
+.scare .broken{width:min(42vw,180px);position:relative;animation:shake .12s steps(2) infinite}
+.scare .msg{position:relative;font-family:var(--f-min);font-weight:800;color:#f1f1f1;font-size:clamp(1.6rem,6.8vw,3.4rem);letter-spacing:.1em;text-align:center;line-height:1.4}
+.scare .msg span{opacity:0;transition:opacity .25s}
+.scare .msg span.on{opacity:1}
+.scare .msg.glitch{animation:glitch .18s steps(2) infinite}
+.scare .sub{position:relative;color:var(--red);font-family:var(--f-min);font-weight:600;letter-spacing:.3em;opacity:0;transition:opacity 1s}
+.scare .sub.on{opacity:1}
+.scare .btn{position:relative;opacity:0;transition:opacity 1s}
+.scare .btn.on{opacity:1}
+.boomflash{animation:boomflash .5s steps(3) 1}
+@keyframes boomflash{0%{background:#fff}50%{background:#6b0000}100%{background:#000}}
+@keyframes shake{0%{transform:translate(1px,-1px) rotate(-1deg)}100%{transform:translate(-2px,1px) rotate(1deg)}}
+@keyframes glitch{0%{text-shadow:3px 0 var(--red),-3px 0 #4a8fd6;transform:translateX(1px)}100%{text-shadow:-2px 0 var(--red),2px 0 #4a8fd6;transform:translateX(-1px)}}
+.locked{color:var(--red);font-family:var(--f-min);font-weight:600;letter-spacing:.1em}
+@media (prefers-reduced-motion:reduce){.scare .broken,.scare .msg.glitch,.boomflash,.confirm{animation:none}}
+
+.place{font-size:clamp(1.6rem,6.5vw,2.4rem);letter-spacing:.06em;min-height:1.4em}
+.place.spin{color:var(--muted)}
+.place.landed{animation:rise .5s ease both}
+.tier{transition:fill .15s,opacity .15s}
+.tier.lit{fill:#7f93ad}
+.pyr .medot{fill:#ffffff;stroke:#ffffff;stroke-opacity:.35;stroke-width:4;animation:ring 1.6s ease-in-out infinite}
+.pyr .jpdot{fill:var(--red)}
+.pyr .jpl{fill:var(--red);font-size:16px}
+.pyr .lead{stroke:var(--red);stroke-width:1.5}
+.sbs{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.sb{display:grid;grid-template-columns:8.5em 1fr 3em;gap:10px;align-items:center;font-size:.85rem}
+.sbn{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sbb{display:flex;height:12px;border-radius:2px;overflow:hidden;background:var(--soft)}
+.sbb i{display:block;height:100%}
+.sbb i.t0{background:var(--v0)}.sbb i.t1{background:var(--v1)}.sbb i.t2{background:var(--v2)}.sbb i.t3{background:var(--v3)}
+.sbb i.hl{background:#c9d4e2}
+.sbv{text-align:right;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.pyr .medot,.place.landed{animation:none}}
+.tempt{color:var(--muted);font-family:var(--f-min);font-weight:600;letter-spacing:.06em}
+.pyr .prevdot{fill:none;stroke:#aeb7c4;stroke-width:2.5;stroke-dasharray:4 3}
+.pyr .prevl{fill:#aeb7c4;font-size:15px}
+.sw.prev{background:transparent;border:2px dashed #aeb7c4}
+.place .rg{display:block;font-family:var(--f-jp);font-weight:500;font-size:.9rem;letter-spacing:.2em;color:var(--muted)}
+.place{min-height:2.6em}
+.overlay.slow{animation:darken 5.6s ease-in both}
+@keyframes darken{from{background:var(--band)}to{background:#000}}
+.overlay.slow .shadow{display:none}
+.scene.zoom{transition:transform 5.6s ease-in;transform:scale(1.55)}
+.scene.tremble{animation:shake .08s steps(2) infinite}
+.scene.zoom.tremble{transform:none;scale:1.55}
+.careers{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (max-width:520px){.careers{grid-template-columns:1fr}}
+.career{text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;transition:border-color .15s,transform .15s}
+.career:hover{border-color:var(--ink);transform:translateX(2px)}
+.career b{font-family:var(--f-min);font-weight:800;font-size:1.15rem;letter-spacing:.04em}
+.career span{font-size:.82rem;color:var(--muted)}
+.gate{color:var(--red)}
+p.gate{margin-top:6px}
+.plan-l{font-family:var(--f-min);font-weight:800;font-size:1.05rem;letter-spacing:.04em}
+#plan{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px 14px;resize:vertical;line-height:1.6}
+#plan:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.powers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:480px){.powers{grid-template-columns:1fr}}
+.mine{border-left:3px solid var(--ink);padding-left:12px;font-family:var(--f-min);font-weight:600}
+.vs{display:flex;gap:28px;align-items:flex-end;justify-content:center;padding:14px;background:var(--bg);border:1px solid var(--line);border-radius:4px}
+.vs .col{display:flex;flex-direction:column;align-items:center;gap:2px}
+.vs .stack{display:flex;flex-direction:column-reverse;gap:3px;min-height:20px;justify-content:flex-start}
+.vs .stack i{display:block;height:14px;border-radius:2px}
+.vs .pb{width:44px;background:#ffffff}
+.vs .wb{width:110px;background:var(--v3);background-image:linear-gradient(90deg,transparent 48%,var(--bg) 48%,var(--bg) 52%,transparent 52%)}
+.vs .wb:nth-child(even){background-image:linear-gradient(90deg,transparent 23%,var(--bg) 23%,var(--bg) 27%,transparent 27%,transparent 73%,var(--bg) 73%,var(--bg) 77%,transparent 77%)}
+.vs .vl{font-size:.78rem;color:var(--muted);margin-top:6px}
+.vs .vn{font-size:1.6rem;font-weight:700;line-height:1}
+.chance{font-family:var(--f-min);font-weight:600}
+.chance b{font-size:1.5rem;color:#fff}
+.tot.up{color:#fff}
+.dot.sq{border-radius:2px}
+.dot.ln{height:3px;width:18px;border-radius:0;background:#fff}
+.real{padding:14px 16px;background:var(--bg);border:1px solid var(--red);border-radius:4px;display:flex;flex-direction:column;gap:4px}
+.real .rl{font-size:.8rem;color:var(--red);letter-spacing:.04em}
+.real .rn{font-size:2.6rem;font-weight:700;line-height:1.1;color:#fff}
+.real p{margin:0}
+.ctype{margin-top:18px}.ctype h3{margin-bottom:2px}.ctype .careers{margin-top:8px}
+.careers.one{grid-template-columns:1fr}
+.career .gate{margin-top:6px}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.three div{border:1px solid var(--line);border-radius:4px;padding:8px 4px;display:flex;flex-direction:column;gap:2px}
+.three b{font-family:var(--f-min);font-size:1.05rem}.three span{font-size:.72rem;color:var(--muted)}
+.checks{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.checks legend{margin-bottom:6px}
+.checks label{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+.checks label:has(input:checked){border-color:var(--cyan)}
+.checks input{width:18px;height:18px;margin-top:2px;accent-color:#9fc3ff;flex:none}
+.checks small{display:block;color:var(--muted);font-size:.75rem}
+.edots{display:inline-flex;gap:3px;vertical-align:middle}
+.edots i{width:9px;height:9px;border-radius:50%;border:1px solid var(--muted);display:block}
+.edots i.on{background:#fff;border-color:#fff}
+.etable{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.erow{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.ebar{display:flex;gap:3px;flex-wrap:wrap}.ebar i{width:14px;height:14px;border-radius:2px;display:block}
+.ebar i.ok{background:var(--cyan)}.ebar i.ng{background:var(--indigo)}
+.jread{padding:12px 14px;border:1px solid var(--line);border-radius:4px;background:var(--bg)}
+.jread ul{list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:4px}
+.jread li{font-size:.9rem}.jread li small{display:block;margin-left:1.6em;color:var(--muted);font-size:.75rem}
+.jread li.y b{color:var(--cyan)}.jread li.n{color:var(--muted)}.jread li.n b{color:var(--indigo)}
+.jsum{margin:8px 0 0;font-weight:700}
+.ending{border-color:var(--red)}
+.ending .btn{text-decoration:none;display:inline-block}
+.ending ol{margin:4px 0 0;padding-left:1.4em;display:flex;flex-direction:column;gap:4px}
+.tlist{display:flex;flex-direction:column;gap:10px}
+.titem{border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+.titem p{margin:0}.tq{font-family:var(--f-min);margin:4px 0 8px!important}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag2{font-size:.78rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted)}
+.tag2.on{background:#fff;color:var(--bg);border-color:#fff}
+.ename{min-width:7em;font-size:.85rem}
+.cards8{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.card8{min-height:64px;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--soft);font-family:var(--f-min);font-weight:700;text-align:left}
+.card8.on{border-color:#fff;background:#fff;color:var(--bg)}
+.rev{display:flex;flex-direction:column;gap:8px}
+.revc{border:1px solid var(--line);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.revc b{font-size:.72rem;letter-spacing:.06em}.revc.trap b{color:var(--red)}.revc.real b{color:var(--cyan)}
+.revc.picked{border-color:#fff}.revc .rt{font-family:var(--f-min);font-weight:700}.revc p{margin:0;color:var(--muted)}
+.mydef{font-family:var(--f-min);font-size:1.05rem}.mydef b{font-size:1.25rem}
+.tlink{text-align:center;margin-top:24px}
+.linkbtn{background:none;border:0;color:var(--muted);font-size:.72rem;text-decoration:underline;opacity:.6}
+.tbtn{position:fixed;right:12px;bottom:12px;z-index:9999;font-size:.75rem;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.tsel{display:flex;flex-wrap:wrap;gap:10px}.tsel label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);flex:1;min-width:140px}
+.tsel select{background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:8px}
+.tjump{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (max-width:520px){.tjump{grid-template-columns:1fr}}
+.tj{text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.tj span{font-size:.75rem;color:var(--muted)}
+.tlist2{padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.tmap{border-top:1px solid var(--line);padding:8px 0}.tmap summary{cursor:pointer}
+.troute{margin:8px 0 0 8px}.troute p{margin:0 0 4px}.troute ol{margin:0;padding-left:1.4em;font-size:.85rem}
+.troute li.gate{color:var(--red)}
+.pin{font-size:1.6rem;letter-spacing:.4em;text-align:center;width:10em;max-width:100%;padding:8px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px;margin:8px auto;display:block}
+.ver{position:fixed;top:6px;right:10px;font-size:.7rem;color:var(--muted);opacity:.7;z-index:5;pointer-events:none}
+</style>
+
+<div class="wrap" id="app"></div>
+<span class="ver" id="ver"></span>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const app=$("#app");
+const VER="2026-11-27a";$("#ver").textContent="版 "+VER;
+const rnd=Math.random;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const pct=x=>Math.round(x*100);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---- 出典つきの数字 ----
+   所得の層：Our World in Data「Poverty」（世界銀行 Poverty and Inequality Platform、2021年の購買力平価）
+     1日3ドル未満 約10%、10ドル未満 52%、30ドル未満 81%（2025年ごろ）
+   電気：Tracking SDG7 2025（2023年）92%／安全な水：国連SDGs報告2025（2024年）74%
+   ネット：同（2024年）68%／高校卒業：同（2024年）60%
+   日本：文科省 高校等進学率98.6%（2025年度）、総務省 個人のネット利用率85.6%（2024年）、
+         貧困線127万円・子どもの貧困率11.5%（2022年国民生活基礎調査、2021年所得） */
+const BANDS=[
+  {name:"1日 約250円未満",       money:3, note:"1か月で約7,000円未満。世界銀行の「極度の貧困」"},
+  {name:"1日 約250〜1,100円",    money:8, note:"1か月で約7,000円〜3.4万円。食べることはできるが、余裕はほぼない"},
+  {name:"1日 約1,100〜3,400円",  money:18,note:"1か月で約3.4万〜10万円。中くらいの暮らし"},
+  {name:"1日 約3,400円以上",     money:30,note:"1か月で約10万円以上。世界の上位およそ15%"},
+];
+/* 国ごとのデータ：[名前, 地域, 2025年の人口(百万人), 1日250円未満, 250〜1,100円, 1,100〜3,400円, 3,400円以上, 調査年]
+   人口：国連 世界人口推計2024（Our World in Data経由）／所得：世界銀行 Poverty and Inequality Platform（2017年購買力平価、各国の最新調査）
+   調査年 0 = データがなく地域平均で推定、-1 = 小さな国をまとめた値 */
+const REGIONS=["アジア","アフリカ","ヨーロッパ","北アメリカ","中南米","オセアニア"];
+const COUNTRIES=[["アフガニスタン",0,43.8,0.0534,0.6169,0.2568,0.0729,0],["アルジェリア",1,47.4,0.0046,0.6751,0.31,0.0103,2011],["アンゴラ",1,39.0,0.3112,0.5758,0.1016,0.0114,2018],["アルゼンチン",4,45.9,0.0454,0.4266,0.4136,0.1144,0],["オーストラリア",5,27.0,0.005,0.01,0.1375,0.8475,2018],["アゼルバイジャン",0,10.4,0.0,0.6982,0.2879,0.0139,2005],["バングラデシュ",0,175.7,0.1347,0.8171,0.0457,0.0025,2016],["ベルギー",2,11.8,0.0008,0.0027,0.1199,0.8766,2019],["ベナン",1,14.8,0.199,0.7339,0.0637,0.0035,2018],["ボリビア",4,12.6,0.0312,0.2876,0.5157,0.1655,2020],["ブラジル",4,212.8,0.0195,0.3246,0.4936,0.1623,2020],["ブルキナファソ",1,24.1,0.3054,0.5794,0.1058,0.0094,2018],["ブルンジ",1,14.4,0.6513,0.3356,0.0125,0.0006,2013],["カンボジア",0,17.8,0.0534,0.6169,0.2568,0.0729,0],["カメルーン",1,29.9,0.2566,0.6066,0.1263,0.0105,2014],["カナダ",3,40.1,0.0025,0.01,0.1475,0.84,2017],["チャド",1,21.0,0.3088,0.6464,0.0432,0.0016,2018],["チリ",4,19.9,0.0075,0.198,0.5652,0.2293,2020],["中国",0,1416.1,0.0014,0.457,0.4651,0.0765,2019],["コロンビア",4,53.4,0.1082,0.4992,0.3087,0.0839,2020],["コートジボワール",1,32.7,0.1145,0.7695,0.1115,0.0045,2018],["キューバ",4,10.9,0.0454,0.4266,0.4136,0.1144,0],["チェコ",2,10.6,0.0,0.0107,0.3392,0.6501,2019],["コンゴ民主共和国",1,112.8,0.6969,0.294,0.0088,0.0003,2012],["ドミニカ共和国",4,11.5,0.0106,0.452,0.4558,0.0816,2020],["エクアドル",4,18.3,0.0652,0.4797,0.3697,0.0855,2020],["エジプト",1,118.4,0.025,0.867,0.101,0.007,2017],["エチオピア",1,135.5,0.2701,0.6938,0.0344,0.0017,2015],["フランス",2,66.7,0.0002,0.0032,0.1593,0.8374,2018],["ドイツ",2,84.1,0.0,0.0075,0.1223,0.8702,2018],["ガーナ",1,35.1,0.2529,0.6474,0.0943,0.0054,2016],["グアテマラ",4,18.7,0.0952,0.6326,0.2377,0.0344,2014],["ギニア",1,15.1,0.1382,0.8238,0.0379,0.0001,2018],["ハイチ",4,11.9,0.2919,0.6504,0.0536,0.0041,2012],["ホンジュラス",4,11.0,0.1274,0.5222,0.3005,0.0498,2019],["インド",0,1463.9,0.1001,0.8212,0.0726,0.0061,2019],["インドネシア",0,285.7,0.0355,0.762,0.1876,0.0149,2021],["イラン",0,92.4,0.0105,0.4719,0.4377,0.0799,2019],["イラク",0,47.0,0.0009,0.5313,0.4461,0.0217,2012],["イタリア",2,59.1,0.0146,0.032,0.264,0.6894,2018],["日本",0,123.1,0.0073,0.0176,0.2274,0.7477,2013],["ヨルダン",0,11.5,0.0004,0.2817,0.6177,0.1002,2010],["カザフスタン",0,20.8,0.0002,0.4636,0.507,0.0293,2018],["ケニア",1,57.5,0.2937,0.6433,0.0599,0.0031,2015],["マダガスカル",1,32.7,0.8073,0.1868,0.0058,0.0001,2012],["マラウイ",1,22.2,0.7006,0.2905,0.0084,0.0004,2019],["マレーシア",0,36.0,0.0002,0.1361,0.5338,0.3298,2015],["マリ",1,25.2,0.1479,0.7678,0.081,0.0033,2018],["メキシコ",4,131.9,0.031,0.4945,0.3925,0.082,2020],["モロッコ",1,38.4,0.0144,0.6431,0.3013,0.0411,2013],["モザンビーク",1,35.6,0.6464,0.3188,0.0286,0.0061,2014],["ミャンマー",0,54.9,0.0199,0.8519,0.1232,0.005,2017],["ネパール",0,29.6,0.0824,0.8366,0.0785,0.0025,2010],["オランダ",2,18.3,0.001,0.0067,0.1101,0.8822,2019],["ニジェール",1,27.9,0.5063,0.4695,0.0227,0.0014,2018],["ナイジェリア",1,237.5,0.3086,0.6606,0.0301,0.0007,2018],["北朝鮮",0,26.6,0.0534,0.6169,0.2568,0.0729,0],["パキスタン",0,255.2,0.0493,0.8953,0.0527,0.0026,2018],["パプアニューギニア",5,10.8,0.3968,0.5625,0.0399,0.0008,2009],["ペルー",4,34.6,0.0583,0.5608,0.3352,0.0457,2020],["フィリピン",0,116.8,0.0298,0.6947,0.2441,0.0313,2018],["ポーランド",2,38.1,0.0,0.1317,0.721,0.1473,2019],["ポルトガル",2,10.4,0.0015,0.0413,0.4743,0.4829,2019],["ルーマニア",2,18.9,0.0216,0.1775,0.5905,0.2104,2019],["ロシア",2,144.0,0.0001,0.1519,0.6579,0.1902,2020],["ルワンダ",1,14.6,0.5201,0.4483,0.0284,0.0033,2016],["サウジアラビア",0,34.6,0.0534,0.6169,0.2568,0.0729,0],["セネガル",1,18.9,0.0934,0.7867,0.1124,0.0076,2018],["ソマリア",1,19.7,0.7073,0.288,0.0046,0.0001,2017],["南アフリカ",1,64.7,0.2048,0.5101,0.1847,0.1003,2014],["韓国",0,51.7,0.0023,0.0252,0.3175,0.655,2016],["南スーダン",1,12.2,0.6733,0.3148,0.0115,0.0005,2016],["スペイン",2,47.9,0.0079,0.0386,0.2722,0.6812,2019],["スリランカ",0,23.2,0.013,0.7371,0.2234,0.0266,2016],["スーダン",1,51.7,0.1526,0.7951,0.0485,0.0037,2014],["スウェーデン",2,10.7,0.0032,0.0106,0.1386,0.8477,2019],["シリア",0,25.6,0.011,0.7006,0.2626,0.0258,2003],["台湾",0,23.1,0.0,0.0075,0.31,0.6825,2016],["タジキスタン",0,10.8,0.0611,0.7917,0.1421,0.005,2015],["タンザニア",1,70.5,0.4495,0.5162,0.032,0.0023,2018],["タイ",0,71.6,0.0005,0.3378,0.5619,0.0998,2020],["チュニジア",1,12.3,0.0014,0.4125,0.5318,0.0543,2015],["トルコ",0,87.7,0.0036,0.2467,0.539,0.2107,2019],["ウガンダ",1,51.4,0.4221,0.5417,0.0337,0.0025,2019],["ウクライナ",2,39.0,0.0003,0.2721,0.6888,0.0389,2020],["アラブ首長国連邦",0,11.3,0.0,0.0,0.1688,0.8312,2013],["イギリス",2,69.6,0.0031,0.0148,0.2393,0.7428,2017],["アメリカ",3,347.3,0.01,0.0125,0.1375,0.84,2019],["ウズベキスタン",0,37.1,0.822,0.1759,0.0019,0.0002,2003],["ベネズエラ",4,28.5,0.0713,0.5103,0.3639,0.0545,2006],["ベトナム",0,101.6,0.0123,0.4255,0.504,0.0582,2018],["イエメン",0,41.8,0.198,0.738,0.0605,0.0034,2014],["ザンビア",1,21.9,0.6135,0.3372,0.0438,0.0055,2015],["ジンバブエ",1,17.0,0.3975,0.5167,0.0738,0.012,2019],["ヨーロッパのほかの国（人口1000万人未満）",2,114.7,0.0033,0.0805,0.4106,0.5055,-1],["中南米のほかの国（人口1000万人未満）",4,42.5,0.0232,0.4104,0.4214,0.145,-1],["アジアのほかの国（人口1000万人未満）",0,85.8,0.0689,0.5456,0.2626,0.1229,-1],["北アメリカのほかの国（人口1000万人未満）",3,0.1,0.0092,0.0122,0.1386,0.84,-1],["アフリカのほかの国（人口1000万人未満）",1,75.9,0.2691,0.615,0.1023,0.0136,-1],["オセアニアのほかの国（人口1000万人未満）",5,8.6,0.1133,0.3734,0.1249,0.3885,-1]];
+const POPTOT=COUNTRIES.reduce((a,c)=>a+c[2],0);
+const JAPAN=COUNTRIES.find(c=>c[0]==="日本");
+const WORLDB=[0.0971, 0.5173, 0.2405, 0.145];
+const ITEMS=[
+  {k:"elec",  label:"家に電気",       yes:"ある",           no:"ない",            world:.92,wy:"2023年",jp:1,    jpt:"ほぼ100%"},
+  {k:"water", label:"安全な飲み水",   yes:"いつでも飲める", no:"すぐには飲めない",world:.74,wy:"2024年",jp:1,    jpt:"ほぼ100%"},
+  {k:"net",   label:"インターネット", yes:"使える",         no:"使えない",        world:.68,wy:"2024年",jp:.856, jpt:"85.6%（13〜69歳はどの年代も90%超）"},
+  {k:"school",label:"高校を卒業",     yes:"できる",         no:"できない",        world:.60,wy:"2024年",jp:.986, jpt:"98.6%が高校へ進学"},
+];
+const WORLD=82; // 億人
+const STATS=[["body","体力"],["know","知識"],["skill","技術"],["link","つながり"],["money","お金"]];
+const LABEL=Object.fromEntries(STATS);
+
+/* ---- 進路・進み方・壁 ----
+   壁：W(年齢, 題, 説明, よける/あきらめる文, 関門)
+   関門：{name, rate(実際の割合), label, fact, src:[名前,URL], game:true=公式の数字なし} */
+const SRC={
+  draft:["高校野球ドットコム「2025年ドラフト 指名選手の内訳」","https://www.hb-nippon.com/articles/9634"],
+  hsShibou:["高校野球ドットコム（高校生の志望届）","https://www.hb-nippon.com/articles/18505"],
+  uShibou:["プロ志望届まとめ（大学生 2025年）","https://www.xn--8wv97xz6xo7h.online/pro-shibou-daigaku-2025/"],
+  npb:["NPB「戦力外／現役引退選手の進路調査（2018年）」","https://npb.jp/npb/careersupport2019_1.html"],
+  geidan:["日本芸能実演家団体協議会「第11回 芸能実演家の活動と生活実態調査」速報","https://geidankyo.or.jp/img/research/11th-jittaichousa_prereport_performer"],
+  saitama:["埼玉県「市町村の勤務条件等の調査結果 令和6年度」","https://www.pref.saitama.lg.jp/documents/14479/r6_gaiyou.pdf"],
+  kokkaD:["人事院「2025年度 国家公務員 一般職（大卒程度）合格者発表」","https://www.jinji.go.jp/kouho_houdo/kisya/2508/daisotsutougoukaku.html"],
+  igaku:["文部科学省「医学部医学科の入学者選抜における男女別合格率」","https://www.mext.go.jp/content/20251201-mxt_igaku-100001063_02.pdf"],
+  ronin:["アガルートメディカル（文部科学省のデータのまとめ）","https://www.agaroot.jp/agaroot-medical/column/roninrate/"],
+  ishi:["厚生労働省「第120回医師国家試験の合格発表」","https://www.mhlw.go.jp/general/sikaku/successlist/2026/siken01/about.html"],
+  shiho:["伊藤塾コラム（法務省発表のまとめ）","https://column.itojuku.co.jp/shihou/shihoushiken/shihoushiken-kekka/"],
+  yobi:["伊藤塾コラム「予備試験の合格率」","https://column.itojuku.co.jp/shihou/yobi/yobishiken_gokakuritsu/"],
+  ipa:["IPA 情報処理推進機構 プレス発表（2025年秋）","https://www.ipa.go.jp/news/2025/shiken_20251225.html"],
+  chori:["厚生労働省「令和7年度 調理師試験 実施状況」","https://www.mhlw.go.jp/content/10900000/001715554.pdf"],
+  panel:["日本政策金融公庫「新規開業パネル調査」","https://www.jfc.go.jp/n/findings/pdf/panel_211221.pdf"],
+  kaigyo:["日本政策金融公庫「2025年度 新規開業実態調査」","https://www.jfc.go.jp/n/findings/pdf/kaigyo_251205_1.pdf"],
+  nogyo:["総務省「農業労働力の確保に関する行政評価・監視」","https://www.soumu.go.jp/main_content/000607884.pdf"],
+  shunou:["農林水産省「令和7年 新規就農者調査」","https://www.maff.go.jp/j/tokei/kouhyou/sinki/pdf/sinki_syunou_25.pdf"],
+  kango:["厚生労働省「第115回看護師国家試験の合格発表」","https://www.mhlw.go.jp/general/sikaku/successlist/2026/siken03_04_05/about.html"],
+};
+const W=(a,t,b,safe,g)=>({a,t,b,safe,g:g||null});
+const MOSHI=(dept)=>W(17,"模試の判定は「E」",`第一志望の${dept}。このままでは届かない。`,"判定を見なかったことにする");
+const CAREERS=[
+ {name:"プロスポーツ選手",type:"talent",line:"体ひとつで、勝負の世界へ。",note:"ここではプロ野球を例にする。",routes:[
+  {name:"高校からプロへ",desc:"高校3年の秋、プロ志望届を出してドラフトを待つ。",walls:[
+    W(17,"レギュラーから外された","後輩にポジションを取られた。スカウトは試合に出ている選手しか見ない。","部活をやめて、夢はなかったことにする"),
+    W(18,"ドラフト会議の日","名前を呼ばれなければ、プロにはなれない。","プロをあきらめて就職する",{name:"ドラフト指名",rate:33/124,label:"志望届を出した高校生のうち、指名された割合",fact:"2025年、プロ志望届を出した高校生は124人。指名されたのは33人。そのうち14人は「育成」（年俸が低く、支配下に上がれなければ数年で契約が切れる）。",src:SRC.hsShibou}),
+    W(21,"2軍から上がれない","1軍の試合に、一度も出られないまま3年がたった。","練習の手をぬく"),
+    W(26,"戦力外通告","球団から「来年は契約しない」と言われた。","野球の話はもうしない",{name:"プロに残る",rate:.5,game:true,label:"ゲームの数字",fact:"2018年に戦力外・引退になった選手136人の平均は29.2歳、プロにいた年数は平均8.3年。プロに入れても、ほとんどの人が30歳前後で次の仕事を探す。",src:SRC.npb}),
+  ]},
+  {name:"大学で力をつけてからプロへ",desc:"大学の野球部で4年間きたえて、22歳でドラフトを待つ。",walls:[
+    W(17,"レギュラーから外された","後輩にポジションを取られた。大学のスカウトにも見てもらえない。","部活をやめて、夢はなかったことにする"),
+    W(18,"大学の野球部で、ベンチにも入れない","部員は100人以上。全国から集まった選手ばかりだ。","野球部をやめて、ふつうの学生になる"),
+    W(22,"ドラフト会議の日","大学4年の秋。ここで呼ばれなければ、ほとんどの人は就職する。","プロをあきらめて就職する",{name:"ドラフト指名",rate:54/176,label:"志望届を出した大学生のうち、指名された割合",fact:"2025年、プロ志望届を出した大学生は176人。指名されたのは54人（うち育成14人）。",src:SRC.uShibou}),
+    W(27,"戦力外通告","球団から「来年は契約しない」と言われた。","野球の話はもうしない",{name:"プロに残る",rate:.5,game:true,label:"ゲームの数字",fact:"2018年に戦力外・引退になった選手136人の平均は29.2歳、プロにいた年数は平均8.3年。",src:SRC.npb}),
+  ]},
+  {name:"社会人（実業団）・独立リーグからプロへ",desc:"会社のチームや独立リーグで、働きながら・安い給料で野球を続け、ドラフトを待つ。",walls:[
+    W(17,"レギュラーから外された","後輩にポジションを取られた。","部活をやめて、夢はなかったことにする"),
+    W(19,"給料だけでは暮らせない","独立リーグの給料は、シーズン中の数か月だけ。冬はアルバイトだ。","野球をやめて、ふつうに働く"),
+    W(23,"ドラフト会議の日","毎年、年齢は上がる。球団は若い選手をほしがる。","プロをあきらめる",{name:"ドラフト指名",rate:.1,game:true,label:"ゲームの数字",fact:"2025年のドラフトで、社会人から指名されたのは13人、独立リーグからは13人（その多くは育成）。それぞれ何人が志望していたかの数字は見つからなかった。",src:SRC.draft}),
+    W(28,"戦力外通告","球団から「来年は契約しない」と言われた。","野球の話はもうしない",{name:"プロに残る",rate:.5,game:true,label:"ゲームの数字",fact:"2018年に戦力外・引退になった選手136人の平均は29.2歳、プロにいた年数は平均8.3年。",src:SRC.npb}),
+  ]},
+ ]},
+ {name:"ミュージシャン",type:"talent",line:"自分の音で、人の心を動かす。",routes:[
+  {name:"音楽の専門学校・音大へ",desc:"学費を払って、音楽の基礎とプロとのつながりを手に入れる。",walls:[
+    W(17,"進路面談で「音楽で食べていく」と言った","親と先生に、そろって反対された。「それで生活できるのか」。答えられなかった。","親の言うとおりの進路を書く"),
+    W(20,"同級生のほうが、ずっとうまい","同じ学校に、自分より上の人が何十人もいる。","目立たないように過ごす"),
+    W(21,"レコード会社のオーディション","うまいだけの人は、いくらでもいる。","音楽で生きるのをあきらめる",{name:"オーディション",rate:.05,game:true,label:"ゲームの数字",fact:"オーディションの合格率を示す公式の統計は見つからなかった。ここはゲームが決めた数字。"}),
+    W(27,"音楽だけでは食べていけない","演奏の仕事は月に数回。家賃が払えない。","楽器をしまって、さわらない",{name:"音楽で暮らす",rate:.455,label:"芸能の仕事をする人のうち、年収300万円以上の割合",fact:"演奏家・俳優など芸能の仕事をする人1,424人に聞くと、2024年の年収（ほかの仕事もふくむ）が300万円未満の人が54.5%。100万円未満も14.4%いた。",src:SRC.geidan}),
+  ]},
+  {name:"働きながら、ライブと動画で勝負",desc:"学校には行かない。アルバイトをしながら、ライブと動画配信で聴いてくれる人を増やす。",walls:[
+    W(17,"進路面談で「音楽で食べていく」と言った","親と先生に、そろって反対された。「それで生活できるのか」。","親の言うとおりの進路を書く"),
+    W(18,"初めてのライブ。客は3人だった","ライブハウスに払うお金のほうが、もらうお金より多い。","もう人前では演奏しない"),
+    W(21,"動画の再生回数が、ずっと2けたのまま","毎週1曲上げているのに、だれにも届かない。","配信をやめる"),
+    W(25,"音楽だけでは食べていけない","25歳。同級生は就職して、給料をもらっている。","楽器をしまって、さわらない",{name:"音楽で暮らす",rate:.455,label:"芸能の仕事をする人のうち、年収300万円以上の割合",fact:"演奏家・俳優など芸能の仕事をする人1,424人に聞くと、2024年の年収（ほかの仕事もふくむ）が300万円未満の人が54.5%。",src:SRC.geidan}),
+  ]},
+ ]},
+ {name:"公務員",type:"exam",line:"町の人の暮らしを、支える。",routes:[
+  {name:"高校を出て、すぐ受ける",desc:"高卒程度の試験を受けて、18歳から市役所などで働く。",walls:[
+    W(17,"公務員試験の範囲が広すぎる","数学、国語、社会、理科、時事。何から手をつければいいかわからない。","「直前にやればいい」と後回しにする"),
+    W(18,"採用試験の日","採用される人数は、はじめから決まっている。","公務員をあきらめて就職する",{name:"採用試験",rate:3262/14175,label:"受験した人のうち、合格した割合",fact:"2024年度、埼玉県内の市町村（さいたま市をのぞく）の採用試験。受験者14,175人、合格者3,262人。競争率4.3倍。",src:SRC.saitama}),
+    W(24,"窓口で、住民にどなられた","こちらに落ち度はないはずなのに。","「決まりですから」とくり返す"),
+    W(40,"町に大きな災害が起きた","自分の家も被害を受けている。","指示が来るまで待つ"),
+  ]},
+  {name:"大学を出てから受ける",desc:"大学で4年学び、大卒程度の試験を受ける。",walls:[
+    MOSHI("大学"),
+    W(18,"大学入試の日","模試の判定は最後まで厳しかった。","志望校を下げて、受かりそうな大学にする"),
+    W(22,"採用試験の日","国の役所の試験。筆記で落ちる人が半分。そのあと面接。","公務員をあきらめて就職する",{name:"採用試験",rate:8815/18406,label:"受験した人のうち、最終合格した割合",fact:"2025年度、国家公務員一般職（大卒程度）。受験者18,406人、最終合格者8,815人。合格しても、役所の面接で採用されるとは限らない。",src:SRC.kokkaD}),
+    W(40,"町に大きな災害が起きた","自分の家も被害を受けている。","指示が来るまで待つ"),
+  ]},
+ ]},
+ {name:"医師",type:"exam",line:"人の命と、向き合う。",note:"医師になる道は、医学部に入って医師国家試験に受かる、の1本しかない。",routes:[
+  {name:"医学部に入り、国家試験を受ける",desc:"6年間の医学部と、医師国家試験。道はこれだけ。",walls:[
+    MOSHI("医学部"),
+    W(18,"医学部入試の日","落ちれば、もう1年。医学部に入る人の多くは浪人している。","医師をあきらめて、ほかの学部に行く",{name:"医学部入試",rate:.114,label:"受験した人のうち、合格した割合",fact:"2025年度の医学部医学科の入試（国公私立の合計）。受験者121,397人、合格者13,879人。1人で何校も受けるので、実際の人数で見るともう少し高い。合格者の6割以上は浪人生という調べもある（2018年）。",src:SRC.igaku}),
+    W(22,"実習で、手がふるえて何もできなかった","患者さんの前で固まってしまった。","見学だけで済ませる"),
+    W(24,"医師国家試験の日","6年間の最後の試験。落ちれば、医師としては働けない。","医師をあきらめる",{name:"医師国家試験",rate:.916,label:"受験した人のうち、合格した割合",fact:"2026年2月の第120回医師国家試験。受験者9,980人、合格者9,139人。841人が落ちた。",src:SRC.ishi}),
+    W(30,"担当した患者さんを助けられなかった","家族の泣く声が耳に残っている。","考えないようにする"),
+  ]},
+ ]},
+ {name:"弁護士",type:"exam",line:"法律で、困っている人を守る。",routes:[
+  {name:"法科大学院（ロースクール）を通る",desc:"大学の法学部に4年、法科大学院に2〜3年。そのあと司法試験。",walls:[
+    MOSHI("法学部"),
+    W(18,"大学入試の日","模試の判定は最後まで厳しかった。","志望校を下げて、受かりそうな大学にする"),
+    W(22,"法科大学院の学費","2〜3年で数百万円。そのあいだ給料はない。","法律の道をあきらめて就職する"),
+    W(25,"司法試験の日","何年も勉強してきた。受けられるのは5年で5回まで。","弁護士をあきらめる",{name:"司法試験",rate:.2149,label:"法科大学院を修了して受けた人のうち、合格した割合",fact:"2026年の司法試験。法科大学院を修了して受けた人は1,959人、合格は421人（21.5%）。全体では受験者3,871人、合格者1,595人（41.2%）。",src:SRC.shiho}),
+  ]},
+  {name:"予備試験の近道",desc:"法科大学院に行かず、予備試験に受かれば司法試験を受けられる。そのかわり、予備試験はとても狭い門。",walls:[
+    W(17,"法律の勉強を、独学で始めた","学校の勉強もある。だれにも聞けない。","法律の本を閉じる"),
+    W(20,"予備試験の日","合格すれば近道。合格するのは、受けた人の100人に4人ほど。","予備試験をやめて、法科大学院の道に切りかえる",{name:"予備試験",rate:.0364,label:"受験した人のうち、最終合格した割合",fact:"2025年度の予備試験。受験者12,432人、最終合格者452人。",src:SRC.yobi}),
+    W(22,"司法試験の日","予備試験を通った人は、ここでは強い。","弁護士をあきらめる",{name:"司法試験",rate:.8592,label:"予備試験に合格して受けた人のうち、合格した割合",fact:"2026年の司法試験。予備試験に合格して受けた人は476人、合格は409人（85.9%）。",src:SRC.shiho}),
+  ]},
+ ]},
+ {name:"エンジニア",type:"exam",line:"まだ無いものを、作って動かす。",routes:[
+  {name:"大学の工学部へ",desc:"4年間、理論と実験を学んでから、メーカーやIT企業へ。",walls:[
+    MOSHI("工学部"),
+    W(18,"大学入試の日","数学と物理が足を引っぱる。","志望校を下げて、受かりそうな大学にする"),
+    W(23,"国家試験「応用情報技術者」","会社から「とるように」と言われた。エンジニアとしての力を証明する試験。","試験は受けないことにする",{name:"応用情報技術者試験",rate:10792/44005,label:"受験した人のうち、合格した割合",fact:"2025年秋の応用情報技術者試験。受験者44,005人、合格者10,792人。",src:SRC.ipa}),
+    W(30,"自分の設計ミスで、製品が回収になった","会社に大きな損が出た。","だまっておく"),
+  ]},
+  {name:"高校を出て就職し、現場で学ぶ",desc:"18歳から工場やIT企業で働き、仕事をしながら資格をとる。",walls:[
+    W(17,"求人票を見ても、何の仕事かわからない","「生産技術」「SE」「保守」。どれを選べばいいのか。","先生がすすめた会社に、そのまま決める"),
+    W(19,"毎日同じ作業のくり返し","設計をやりたいのに、任されるのは決まった作業だけ。","言われたことだけを、てきとうにこなす"),
+    W(22,"国家試験「応用情報技術者」","大学を出た人と同じ試験。仕事のあとに勉強するしかない。","試験は受けないことにする",{name:"応用情報技術者試験",rate:10792/44005,label:"受験した人のうち、合格した割合",fact:"2025年秋の応用情報技術者試験。受験者44,005人、合格者10,792人。",src:SRC.ipa}),
+    W(30,"見たことのない新しい技術が出てきた","今の技術は、すぐ古くなるかもしれない。","「今のやり方で十分」と使わない"),
+  ]},
+ ]},
+ {name:"料理人",type:"biz",goal:"自分の店を持つ料理人",line:"ひと皿で、人を笑顔にする。",routes:[
+  {name:"調理師の専門学校へ",desc:"1〜2年学べば、卒業と同時に調理師の免許がもらえる。そのあと店で修業。",walls:[
+    W(17,"「料理人になる」と言ったら、親に反対された","「大学くらい出ておけ」と言われた。学費も100万円以上かかる。","親の言うとおりの進路を書く"),
+    W(20,"修業先で、1年間は皿洗いだけだった","包丁もにぎらせてもらえない。","やめる理由を探す"),
+    W(30,"自分の店を出した","料理がうまいだけでは、客は来ない。仕入れ先、銀行、常連さん。人とのつながりがないと続かない。","店をたたむ",{name:"店を5年続ける",rate:1-.147,label:"5年目まで続いた割合",fact:"2016年に開業した飲食店・宿泊業563社のうち、2020年末までに14.7%が廃業。全業種でいちばん高い。お金を借りられた店だけの数字。開業した人の33%は、今も赤字が続いている（2025年度）。",src:SRC.panel}),
+    W(40,"食材の値段が上がり、今の味を守れない","値上げすれば、客がはなれるかもしれない。","こっそり質を落とす"),
+  ]},
+  {name:"高校を出て、すぐ店で修業",desc:"学費はかからない。そのかわり、調理師の免許は2年働いてから試験で取る。",walls:[
+    W(17,"「料理人になる」と言ったら、親に反対された","「せめて専門学校に行け」と言われた。","親の言うとおりの進路を書く"),
+    W(18,"修業先で、1年間は皿洗いだけだった","朝6時から夜11時まで。包丁もにぎらせてもらえない。","やめる理由を探す"),
+    W(20,"調理師試験の日","仕事のあとに勉強した。","免許なしで働き続ける",{name:"調理師試験",rate:.604,label:"受験した人のうち、合格した割合",fact:"2025年度の調理師試験。受験者18,600人、合格者11,240人。",src:SRC.chori}),
+    W(30,"自分の店を出した","料理がうまいだけでは、客は来ない。仕入れ先、銀行、常連さん。","店をたたむ",{name:"店を5年続ける",rate:1-.147,label:"5年目まで続いた割合",fact:"2016年に開業した飲食店・宿泊業563社のうち、2020年末までに14.7%が廃業。お金を借りられた店だけの数字。",src:SRC.panel}),
+  ]},
+ ]},
+ {name:"農家",type:"biz",goal:"農業で食べていける農家",line:"土と天気を相手に、食べ物を育てる。",routes:[
+  {name:"農業法人に就職する",desc:"農業の会社に雇われて、給料をもらいながら学ぶ。",walls:[
+    W(17,"農業をやりたいが、家に畑がない","どこに行けば農業の仕事ができるのか、だれに聞けばいいのかもわからない。","考えるのを先のばしにする"),
+    W(19,"体がきつい","夏の作業は朝4時から。腰も痛い。","楽な作業だけをする"),
+    W(20,"この仕事を続けるか","同じ時期に入った人が、次々に辞めていく。","農業をやめる",{name:"農業を続ける",rate:1-.354,label:"農業法人で研修を始めた人のうち、続けた人の割合",fact:"2014年度に農業法人で研修を始めた1,591人のうち、564人（35.4%）がやめた（18の道府県の調べ）。",src:SRC.nogyo}),
+    W(30,"独立するか、雇われのままか","自分の畑を持つには、土地も機械もお金も人のつながりもいる。","今のまま、考えないでおく"),
+  ]},
+  {name:"自分で農業を始める",desc:"土地を借り、機械を買い、ひとりで始める。2025年にこの道を選んだのは全国で3,360人。",walls:[
+    W(17,"農業をやりたいが、家に畑がない","土地も機械もお金もない。何から始めればいいのか。","考えるのを先のばしにする"),
+    W(22,"土地を貸してもらえない","よそから来た若者に、だれも畑を貸してくれない。","農業をあきらめる"),
+    W(25,"台風で、収穫前の作物がだめになった","1年分の収入が消えた。","天気のせいにして、同じやり方を続ける"),
+    W(30,"農業だけで食べていけるか","作っても、安くしか売れない。買ってくれる人、教えてくれる先輩農家、手伝ってくれる近所の人がいるか。","農業をやめる",{name:"農業で食べていく",rate:.245,label:"新しく始めた人のうち、農業の所得で生計が成り立っている割合",fact:"新しく農業を始めた人2,265人（始めてからおよそ10年以内）のうち、農業の所得だけで生活できている人は24.5%（2016年度の調べ）。",src:SRC.nogyo}),
+  ]},
+ ]},
+ {name:"看護師",type:"exam",line:"いちばん近くで、患者さんを支える。",routes:[
+  {name:"看護大学（4年）",desc:"4年間で看護を学ぶ。保健師などの資格もめざせる。学費は高め。",walls:[
+    MOSHI("看護学部"),
+    W(18,"大学入試の日","看護学部は人気が高い。","志望校を下げて、受かりそうな学校にする"),
+    W(21,"病院実習で、毎晩記録が終わらない","睡眠は3時間。実習に落ちれば卒業できない。","実習をやめて、学校を休む"),
+    W(22,"看護師国家試験の日","受かる人のほうが多い。それでも、10人に1人は落ちる。","看護師をあきらめる",{name:"看護師国家試験",rate:.883,label:"受験した人のうち、合格した割合",fact:"2026年2月の第115回看護師国家試験。受験者59,614人、合格者52,666人。6,948人が落ちた。",src:SRC.kango}),
+    W(23,"夜勤で、患者さんの急変に気づくのが遅れた","先輩が気づいて、大事にはいたらなかった。","だれにも言わない"),
+  ]},
+  {name:"看護の専門学校（3年）",desc:"3年で国家試験を受けられる。早く現場に出られるが、実習はびっしり。",walls:[
+    W(17,"看護専門学校の入試の倍率が高い","数学と国語と面接。地元の学校は定員が少ない。","入りやすい学校を、調べずに選ぶ"),
+    W(19,"病院実習で、毎晩記録が終わらない","睡眠は3時間。実習に落ちれば卒業できない。","実習をやめて、学校を休む"),
+    W(21,"看護師国家試験の日","受かる人のほうが多い。それでも、10人に1人は落ちる。","看護師をあきらめる",{name:"看護師国家試験",rate:.883,label:"受験した人のうち、合格した割合",fact:"2026年2月の第115回看護師国家試験。受験者59,614人、合格者52,666人。6,948人が落ちた。",src:SRC.kango}),
+    W(22,"夜勤で、患者さんの急変に気づくのが遅れた","先輩が気づいて、大事にはいたらなかった。","だれにも言わない"),
+  ]},
+ ]},
+ {name:"起業家",type:"biz",line:"自分の会社で、世の中の困りごとを解く。",routes:[
+  {name:"学生のうちに起業",desc:"大学に通いながら会社を作る。失うものは少ないが、経験もお金も人脈もない。",walls:[
+    W(17,"文化祭で出した店が、大赤字だった","クラスのお金を減らしてしまった。","なかったことにする"),
+    W(20,"考えたサービスを、だれも使ってくれない","半年かけて作ったのに。","作ったものを、引っこめる"),
+    W(22,"売上が、目標にとどくか","お金を出してくれる人、買ってくれるお客さん、いっしょに働く仲間。人とのつながりがないと、会社は続かない。","会社をたたむ",{name:"売上の目標",rate:.587,label:"開業した人のうち、売上が見こみに届いた割合",fact:"2025年度、開業した2,165人に聞くと、売上が見こみに届いた人は58.7%。33.0%は赤字が続いている。開業した人の平均は43.9歳で、97.6%は会社で働いた経験があった。",src:SRC.kaigyo}),
+    W(25,"いちばん信頼していた仲間が辞めた","「ついていけない」と言われた。","去る者は追わず、何も変えない"),
+  ]},
+  {name:"会社で働いてから起業",desc:"10年ほど会社で働いて、経験とお金と人脈をためてから独立する。開業する人の平均は43.9歳。",walls:[
+    W(17,"文化祭で出した店が、大赤字だった","クラスのお金を減らしてしまった。","なかったことにする"),
+    W(25,"会社の仕事が、やりたいことと違う","上司の言うとおりに動くだけの毎日。","不満を言いながら続ける"),
+    W(35,"会社を辞めて、独立した","安定した給料を捨てた。家族は不安そうだ。","会社員にもどる"),
+    W(40,"会社を5年続けられるか","お客さん、銀行、仕入れ先、社員。人とのつながりで会社は続く。","会社をたたむ",{name:"会社を5年続ける",rate:1-.089,label:"5年目まで続いた割合",fact:"2016年に開業した3,517社のうち、2020年末までに8.9%が廃業。お金を借りられた会社だけの数字。2025年度に開業した人の33.0%は赤字が続いている。",src:SRC.panel}),
+  ]},
+ ]},
+];
+const TYPES={
+  exam:{name:"学校と試験の道",desc:"入試や国家試験に受からないと、なれない。"},
+  talent:{name:"才能の道",desc:"席の数が、はじめから決まっている。努力した人が全員なれる世界ではない。"},
+  biz:{name:"経営の道",desc:"始めることはできる。続けられるかは、お客さんと、助けてくれる人しだい。"}};
+const rateTxt=r=>(Math.round(r*1000)/10)+"%";
+const LAST_WALL=W(50,"若い人から「やり方を教えてほしい」と言われた","教えるのは、自分でやるより難しい。","「もう歳だから」と断る");
+const ALT=a=>[
+  W(a+1,"夢とはちがう仕事を、一から覚えることになった","年下の先輩に教わる毎日だ。","言われたことだけを、てきとうにこなす"),
+  W(a+8,"あの夢のことを、まだ思い出す","同い年の人が、その世界で活躍している。","見ないようにする"),
+  W(Math.max(50,a+15),LAST_WALL.t,LAST_WALL.b,LAST_WALL.safe)];
+function mkEvents(list,alt){
+  return list.map((w,i)=>({...w,gate:!!w.g,dodge:!w.g&&!alt&&i<list.length-1,alt:!!alt}));
+}
+function careerScreen(){
+  const s=S;s.age=17;
+  app.innerHTML=`
+  <section class="panel fadein">
+    <p class="eyebrow">Age 17 ・ 高校2年生</p>
+    <h2>進路希望調査の紙が、配られた。</h2>
+    <p class="muted">あなたは日本の高校2年生。提出は今日まで。<br>なりたいものを1つ選ぶ。選んだら、その人になったつもりで生きてみよう。</p>
+    ${Object.entries(TYPES).map(([k,t])=>`<div class="ctype"><h3>${t.name}</h3><p class="small muted">${t.desc}</p>
+      <div class="careers">${CAREERS.map((c,i)=>c.type===k?`<button class="career" data-i="${i}"><b>${c.name}</b><span>${c.line}</span></button>`:"").join("")}</div></div>`).join("")}
+  </section>`;
+  app.querySelectorAll(".career").forEach(b=>b.onclick=()=>routeScreen(CAREERS[+b.dataset.i]));
+  window.scrollTo({top:0});
+}
+function routeScreen(c){
+  const s=S;
+  app.innerHTML=`
+  <section class="panel fadein">
+    <p class="eyebrow">Age 17 ・ ${c.name}をめざす</p>
+    <h2>どの道で、${c.goal||c.name}をめざす？</h2>
+    ${c.note?`<p class="small muted">${c.note}</p>`:""}
+    <div class="careers one">${c.routes.map((r,i)=>`<button class="career" data-i="${i}"><b>${r.name}</b><span>${r.desc}</span>
+      <span class="small gate">関門：${r.walls.filter(w=>w.g).map(w=>w.g.name+"（"+(w.g.game?"数字なし":rateTxt(w.g.rate))+"）").join(" → ")}</span></button>`).join("")}</div>
+    <p class="small muted">関門の％は、実際の統計（なしの所はゲームの数字）。くわしくは選んだあとに出る。</p>
+    <div class="row"><button class="btn ghost" id="backc">進路を選びなおす</button></div>
+  </section>`;
+  $("#backc").onclick=careerScreen;
+  app.querySelectorAll(".career").forEach(b=>b.onclick=()=>{
+    const r=c.routes[+b.dataset.i];
+    // 才能：1〜5。本人には見えない。
+    const tr=rnd();const talent=tr<.1?1:tr<.3?2:tr<.7?3:tr<.9?4:5;
+    Object.assign(s,{career:c,route:r,events:mkEvents([...r.walls,LAST_WALL]),step:0,log:[],tries:0,gateFails:0,passed:false,gaveUp:false,talent,dodged:0,exp:0,lastPlan:"",gatesPassed:0,chase:0,job:null,crossGate:null,failedGate:null,fails:0,crossN:0});
+    s.hist=[];
+    eventScreen();
+  });
+  window.scrollTo({top:0});
+}
+
+let S=null;
+
+function pick(list,key){let r=rnd(),acc=0;for(const it of list){acc+=it[key];if(r<acc)return it}return list[list.length-1]}
+function total(s){return STATS.reduce((a,[k])=>a+s.stats[k],0)}
+
+/* ===== born ===== */
+function pickCountry(){let r=rnd()*POPTOT;for(const c of COUNTRIES){r-=c[2];if(r<0)return c}return COUNTRIES[0]}
+const WCUM=[0];for(let i=0;i<4;i++)WCUM.push(WCUM[i]+WORLDB[i]);
+function born(jp){
+  const c=jp?JAPAN:pickCountry();
+  let bi;
+  if(jp)bi=3;else{let r=rnd(),a=0;bi=3;for(let i=0;i<4;i++){a+=c[3+i];if(r<a){bi=i;break}}}
+  const band=BANDS[bi];
+  // 世界の中で下から何%の位置か（同じ層の中ではランダム）
+  const q=jp?.93:WCUM[bi]+rnd()*WORLDB[bi];
+  // 暮らしの項目：世界全体の割合に合うように、お金が少ない人ほど持っていない確率が高いモデル
+  const env={};
+  for(const it of ITEMS){const t=1-it.world;const pr=1/(1+Math.exp(-(q-t)/.05));env[it.k]=jp?true:rnd()<pr}
+  const j=()=>Math.round(rnd()*6-3);
+  const stats={
+    body:15+(env.water?8:0)+j(),
+    know:8+(env.school?8:0)+(env.net?4:0)+j(),
+    skill:8+(env.elec?4:0)+j(),
+    link:12+j(),
+    money:band.money+j()
+  };
+  for(const k in stats)stats[k]=Math.max(1,stats[k]);
+  S={jp:!!jp,country:c,bi,band,env,q,stats,exp:{},step:0,age:0,log:[],hist:[]};
+  S.hist.push({age:0,total:total(S)});
+}
+const who=()=>S.jp?"日本生まれ":S.country[0]+"生まれ";
+const placeHTML=c=>c[0].includes("ほかの国")?`<span class="rg">${REGIONS[c[1]]}</span>ほかの国<span class="rg">人口1000万人未満の国のどこか</span>`:`<span class="rg">${REGIONS[c[1]]}</span>${c[0]}`;
+const placeName=()=>placeHTML(S.country);
+
+/* ---- サイコロ（3D） ---- */
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function faceHTML(n){let h="";for(let i=0;i<9;i++)h+=PIPS[n].includes(i)?`<i style="grid-area:${Math.floor(i/3)+1}/${i%3+1}"></i>`:"";return `<div class="face f${n} ${n===1?"one":""}">${h}</div>`}
+function cubeHTML(){return `<div class="cube">${[1,2,3,4,5,6].map(faceHTML).join("")}</div>`}
+const FACE_ROT={1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180]};
+async function rollCube(cube,ms){
+  const n=1+Math.floor(rnd()*6);const [fx,fy]=FACE_ROT[n];
+  const sx=(2+Math.floor(rnd()*2))*360,sy=(2+Math.floor(rnd()*2))*360;
+  cube.style.transition="none";cube.style.transform="rotateX(-20deg) rotateY(25deg)";
+  cube.getBoundingClientRect();
+  cube.style.transition=`transform ${RM?0:ms}ms cubic-bezier(.15,.75,.25,1)`;
+  cube.style.transform=`rotateX(${fx-sx-12}deg) rotateY(${fy+sy+18}deg)`;
+  await wait(RM?50:ms);
+  return n;
+}
+
+
+/* ---- 生まれ変わり ---- */
+let LOCKED=false,PREV=null;
+function rebirthButton(id){
+  return LOCKED?`<span class="locked">もう、生まれ変われない。</span>`:`<button class="btn" id="${id}">もう一度サイコロをふって、生まれ変わる</button>`;
+}
+function askRebirth(back){
+  const ov=document.createElement("div");ov.className="confirm";
+  ov.innerHTML=`<div class="box">
+    <h2>本当に、<br>生まれ変わりますか。</h2>
+    <p class="warn">今の人生は消える。<br>次に、どこに生まれるかはわからない。</p>
+    <div class="row" style="justify-content:center"><button class="btn danger" id="yes">はい、生まれ変わる</button><button class="btn ghost" id="no">いいえ</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  $("#no").onclick=()=>ov.remove();
+  $("#yes").onclick=()=>{ov.remove();scare()};
+  $("#no").focus();
+}
+function brokenDieSVG(){
+  return `<svg class="broken" viewBox="0 0 120 120" aria-hidden="true">
+    <rect x="6" y="6" width="108" height="108" rx="18" fill="#d9dde3"/>
+    <circle cx="34" cy="34" r="9" fill="#0b0c0f"/><circle cx="86" cy="86" r="9" fill="#0b0c0f"/><circle cx="60" cy="60" r="11" fill="#d6332b"/>
+    <polyline points="58,0 52,26 66,40 48,62 70,80 56,120" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="bevel"/>
+    <polyline points="58,0 52,26 66,40 48,62 70,80 56,120" fill="none" stroke="#d6332b" stroke-width="2" stroke-linejoin="bevel"/>
+  </svg>`;
+}
+function noise(cv){
+  const ctx=cv.getContext("2d");let on=true;
+  const draw=()=>{if(!on)return;cv.width=160;cv.height=100;const im=ctx.createImageData(160,100);for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}ctx.putImageData(im,0,0);requestAnimationFrame(draw)};
+  if(!RM)draw();return ()=>{on=false};
+}
+function boom(){
+  try{
+    const A=new (window.AudioContext||window.webkitAudioContext)();const t=A.currentTime;
+    const o=A.createOscillator(),g=A.createGain();o.type="sawtooth";o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(32,t+2.4);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.05);g.gain.exponentialRampToValueAtTime(.0001,t+2.6);
+    o.connect(g).connect(A.destination);o.start(t);o.stop(t+2.7);
+    const len=A.sampleRate*.5,buf=A.createBuffer(1,len,A.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);
+    const n=A.createBufferSource(),ng=A.createGain();n.buffer=buf;ng.gain.value=.18;n.connect(ng).connect(A.destination);n.start(t);
+  }catch(e){}
+}
+async function scare(){
+  // いつものようにサイコロが転がり始める……
+  const ov=document.createElement("div");ov.className="overlay";
+  ov.innerHTML=`<div class="scene">${cubeHTML()}</div><div class="shadow"></div>`;
+  document.body.appendChild(ov);
+  // ゆっくり転がり、止まりかけ、息を止める間があって……割れる
+  const cube=ov.querySelector(".cube"),scene=ov.querySelector(".scene");
+  ov.classList.add("slow");
+  if(!RM){
+    cube.style.transition="none";cube.style.transform="rotateX(-20deg) rotateY(25deg)";cube.getBoundingClientRect();
+    cube.style.transition="transform 5600ms cubic-bezier(.12,.55,.18,1)";
+    cube.style.transform="rotateX(-1092deg) rotateY(1458deg)";
+    scene.classList.add("zoom");
+    await wait(5600);
+    await wait(900);            // 止まった。静かな間
+    scene.classList.add("tremble");
+    await wait(700);
+  }else await wait(100);
+  ov.remove();
+  const sc=document.createElement("div");sc.className="scare boomflash";
+  const msg="人は、生まれ変われない。";
+  sc.innerHTML=`<canvas></canvas>${brokenDieSVG()}<p class="msg glitch">${[...msg].map(c=>`<span>${c}</span>${c==="、"?"<br>":""}`).join("")}</p><p class="sub">サイコロは、一度しか振れない。</p><button class="btn danger" id="backlife">本当の人生にもどる</button>`;
+  document.body.appendChild(sc);
+  boom();
+  const stop=noise(sc.querySelector("canvas"));
+  const spans=[...sc.querySelectorAll(".msg span")];
+  await wait(RM?0:500);
+  await wait(RM?0:600);
+  for(const sp of spans){sp.classList.add("on");await wait(RM?0:230)}
+  await wait(RM?0:700);
+  sc.querySelector(".msg").classList.remove("glitch");
+  sc.querySelector(".sub").classList.add("on");
+  await wait(RM?0:1200);
+  const bt=$("#backlife");bt.classList.add("on");bt.focus();
+  LOCKED=true;
+  bt.onclick=()=>{stop();sc.remove();PREV=S;born(true);birthScreen()};
+}
+
+/* ---------- 画面 ---------- */
+function titleScreen(){
+  app.innerHTML=`
+  <section class="band fadein">
+    <p class="eyebrow">Life simulator ・ 10 min</p>
+    <div class="logo"><span class="sub">生まれ変わりの</span><span class="main">サイコ<span class="glyph" aria-label="ロ">${[0,2,4,6,8].map(i=>`<i style="grid-area:${Math.floor(i/3)+1}/${i%3+1}"></i>`).join("")}</span></span></div>
+    <p class="lead">今日は、あなたの誕生日です。</p>
+    <p>今から、あなたは生まれます。<br>世界には約83億人。どの国の、どんな暮らしに生まれるかは、選べません。<br>それを今から、サイコロで決めます。</p>
+    <div class="row"><button class="btn" id="go">サイコロをふって、生まれる</button></div>
+  </section>
+  <section class="rules">
+    <div class="rule"><span class="n">01</span><b>生まれる</b><p class="small muted">生まれる国と暮らしが、世界の本当の人口と所得のデータで決まる。サイコロは一度だけ。</p></div>
+    <div class="rule"><span class="n">02</span><b>壁に向き合う</b><p class="small muted">進路と道を選ぶ。壁のこえ方を自分で書いて、挑む。こえられるかは、努力と才能と運で決まる。</p></div>
+    <div class="rule"><span class="n">03</span><b>ふり返る</b><p class="small muted">最後に、自分の記録を使って「あきらめずに挑戦する力」とは何かを考える。</p></div>
+  </section>
+`;
+  $("#go").onclick=()=>castDice();
+  // 教師用：タイトルのロゴを2秒以内に5回たたくと、暗証番号の画面が出る（生徒には見せない）
+  let taps=[];$(".logo").addEventListener("click",()=>{const t=Date.now();taps=taps.filter(x=>t-x<2000);taps.push(t);if(taps.length>=5){taps=[];askPin()}});
+}
+
+async function castDice(jp){
+  born(jp===true);
+  const ov=document.createElement("div");ov.className="overlay";
+  ov.innerHTML=`<div class="scene">${cubeHTML()}</div><div class="shadow"></div><div class="cast" id="cast">賽は投げられた<small>ALEA IACTA EST</small></div>`;
+  document.body.appendChild(ov);
+  const cube=ov.querySelector(".cube");
+  await wait(80);
+  await rollCube(cube,1800);
+  $("#cast").classList.add("on");
+  await wait(RM?300:1300);
+  ov.remove();
+  birthScreen();
+}
+
+function sourcesHTML(){
+  const L=(u,t)=>`<a href="${u}" target="_blank" rel="noopener">${t}</a>`;
+  return `<details class="src"><summary>数字の出典（クリックで開く）</summary><ul>
+    <li>生まれる国：2025年の各国の人口（国連 世界人口推計2024、合計 約82億人）で確率を決めた。同じ推計で2026年は約83億人。国ごとの割合は1年ではほとんど変わらない。${L("https://github.com/owid/co2-data","Our World in Data のデータ集")}より。人口1000万人以上の94か国は国名を出し、それより小さな国は地域ごとにまとめた。</li>
+    <li>暮らしの層：各国の「1日に使えるお金」の分かれ方（世界銀行 Poverty and Inequality Platform、2017年の購買力平価、各国の最新の調査）。${L("https://github.com/owid/poverty-data","Our World in Data poverty-data")}。調査が古い国もある（日本は2013年）。データのない国（北朝鮮、サウジアラビア、アフガニスタン、キューバ、カンボジア、アルゼンチンの全国値）は同じ地域の平均で推定。区切りは1日2.15ドル（世界銀行の極度の貧困ライン）・10ドル・30ドル。</li>
+    <li>電気 92%（2023年）：${L("https://www.who.int/publications/m/item/2025-tracking-sdg7-report--executive-summary","Tracking SDG7 2025")}</li>
+    <li>安全な飲み水 74%・インターネット 68%・高校（後期中等教育）修了 60%（いずれも2024年）：${L("https://unstats.un.org/sdgs/files/report/2025/SG-SDG-Progress-Report-2025-advanced-unedited-version.pdf","国連事務総長SDGs進捗報告2025")}</li>
+    <li>日本の高校等進学率 98.6%（2025年度）：${L("https://www.mext.go.jp/content/20260813-mxt_koukou01-000051477.pdf","文部科学省「高等学校教育の現状について」")}</li>
+    <li>日本の個人のネット利用率 85.6%（2024年）：${L("https://www.soumu.go.jp/johotsusintokei/statistics/data/250530_1.pdf","総務省「令和6年通信利用動向調査」")}</li>
+    <li>円への換算：為替レートではなく、物価の差をそろえる「購買力平価」を使った。世界銀行の家計消費の購買力平価は日本で約114円＝1ドル（2020年）。2.15ドル≒250円、10ドル≒1,100円、30ドル≒3,400円（丸めた値）。1か月は×30で計算。</li>
+    <li>電気・安全な水の「日本 ほぼ100%」は、日本はほぼ全世帯に電気と水道が届いているという意味の目安。</li>
+    <li>電気・水・ネット・高校は、国ごとのデータが手に入らなかった。そこで「世界全体の割合（上の数字）に合い、1日に使えるお金が少ない人ほど持っていない確率が高い」という簡単なモデルで振っている。実際の国ごとの数字とはずれることがある。</li>
+  </ul></details>`;
+}
+
+/* ===== pyramid (no dots; only "you" and Japan appear) ===== */
+const PY={AX:168,TOP:16,H:360,HW:162};
+const half=y=>PY.HW*(y-PY.TOP)/PY.H;
+function tiersGeom(){
+  let cum=0;const t={};
+  for(const bi of [3,2,1,0]){const a=cum;cum+=WORLDB[bi];t[bi]={y0:PY.TOP+PY.H*Math.sqrt(a),y1:PY.TOP+PY.H*Math.sqrt(Math.min(cum,1))}}
+  return t;
+}
+function villageHTML(){
+  const T=tiersGeom();let polys="",labels="";
+  for(const bi of [3,2,1,0]){
+    const t=T[bi];
+    polys+=`<polygon class="tier t${bi}" id="tier${bi}" points="${PY.AX-half(t.y0)},${t.y0} ${PY.AX+half(t.y0)},${t.y0} ${PY.AX+half(t.y1)},${t.y1} ${PY.AX-half(t.y1)},${t.y1}"/>`;
+    const thin=t.y1-t.y0<30;
+    const ly=thin?(t.y0+t.y1)/2+8:(t.y0*.35+t.y1*.65);
+    const lx=Math.min(PY.AX+half(ly)+14,PY.AX+PY.HW+14);
+    labels+=`<text x="${lx}" y="${ly-4}" class="tl">${BANDS[bi].name}</text><text x="${lx}" y="${ly+18}" class="tn">世界の${Math.round(WORLDB[bi]*100)}%</text>`;
+  }
+  return `<div class="pyr-wrap"><svg class="pyr" id="village" viewBox="0 0 520 400" role="img" aria-label="世界の所得のピラミッド。上の段ほど1日に使えるお金が多い。段の広さが人数">${polys}${labels}<g id="marks"></g></svg></div>`;
+}
+function dotIn(bi,fx){
+  const t=tiersGeom()[bi];
+  const thin=t.y1-t.y0<30;
+  const y=thin?(t.y0+t.y1)/2:t.y0+(t.y1-t.y0)*(.45+rnd()*.4);
+  const w=half(y)-16;
+  return [PY.AX+(fx==null?(rnd()*2-1):fx)*w,y];
+}
+function svgEl(tag,attrs,txt){const e=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(txt)e.textContent=txt;return e}
+
+function stackBar(name,d,hl){
+  return `<div class="sb"><span class="sbn">${name}</span><div class="sbb">${[0,1,2,3].map(i=>`<i class="t${i}${hl===i?" hl":""}" style="width:${(d[i]*100).toFixed(1)}%"></i>`).join("")}</div><span class="sbv num">${Math.round(d[3]*100)}%</span></div>`;
+}
+
+/* ===== birth screen ===== */
+async function birthScreen(back){
+  const s=S,b=s.band,c=s.country;
+  const peo=(c[2]/100).toFixed(c[2]>=1000?1:2);
+  const missing=ITEMS.filter(it=>!s.env[it.k]).length;
+  const yearTxt=c[7]>0?`${c[7]}年の調査`:c[7]===0?"調査データがないため、同じ地域の平均で推定":"同じ地域の国々の調査をまとめた値";
+  const cards=ITEMS.map((it,i)=>{
+    const ok=s.env[it.k];
+    return `<div class="die ${ok?"":"no"}"><div class="in" style="animation-delay:${i*260}ms">
+      <span class="k">${it.label}</span><span class="v">${ok?it.yes:it.no}</span>
+      <div class="cmp"><span>世界</span><div class="bar"><i style="width:${pct(it.world)}%"></i></div><span class="num">${pct(it.world)}%</span></div>
+      ${s.jp?`<div class="cmp jp"><span>日本</span><div class="bar"><i style="width:${pct(it.jp)}%"></i></div><span class="num">${it.jp===1?"≒100%":(it.jp*100).toFixed(1)+"%"}</span></div>`:""}
+      <span class="p">世界は${it.wy}の数字。${s.jp?"日本："+it.jpt:""}</span>
+    </div></div>`;
+  }).join("");
+  app.innerHTML=`
+  <section class="panel">
+    <p class="eyebrow">Age 0 ・ 誕生</p>
+    <p class="small muted">${s.jp?"あなたの本当の人生。あなたが生まれた場所は……":"あなたが生まれた場所は……"}</p>
+    <h2 class="place" id="place">${back||RM?placeName():"　"}</h2>
+    <p class="small muted" id="placeSub" ${back||RM?"":"hidden"}>${s.jp?"日本に生まれる人は、世界の約1.5%（約1.2億人）。サイコロで日本が出るのは、およそ67回に1回。":`この国（地域）に生まれる人は、世界の${(c[2]/POPTOT*100).toFixed(c[2]/POPTOT>=.01?1:2)}%（約${peo}億人）。`}</p>
+  </section>
+  <section class="panel" id="pyrPanel" ${back||RM?"":"hidden"}>
+    <h3>どの暮らしに生まれたか</h3>
+    <p class="small muted">上の段ほど、1人が1日に使えるお金が多い。段の広さが人数。</p>
+    ${villageHTML()}
+    <div class="vlegend">${s.jp?`<span><i class="sw jpm"></i>あなた（日本の高校生）</span>${PREV?`<span><i class="sw prev"></i>さっきのサイコロの人生</span>`:""}`:`<span><i class="sw me"></i>あなた</span>`}</div>
+    <div class="odds" id="land" hidden>
+      <span class="small muted">あなたが生まれた層</span>
+      <span class="big">${b.name}</span>
+      <span class="small">${b.note}。</span>
+      <div class="sbs">
+        ${s.jp?(PREV&&PREV.country[0]!=="日本"?stackBar(PREV.country[0],PREV.country.slice(3,7),PREV.bi):""):stackBar(c[0],c.slice(3,7),s.bi)}
+        ${s.jp?stackBar("日本",JAPAN.slice(3,7),3):""}
+        ${stackBar("世界",WORLDB,null)}
+        <p class="small muted">帯の色はピラミッドの段と同じ。右の数字は「1日 約3,400円以上」の人の割合。${s.jp?"":c[0]+"："+yearTxt+"。"}${s.jp?"日本：2013年の調査。":""}</p>
+      </div>
+      <span class="small muted">金額は1人あたり。「日本の物価で、同じだけの物が買える金額」に直してある。</span>
+    </div>
+  </section>
+  <section class="panel" id="cards" hidden>
+    <h3>暮らしのサイコロ</h3>
+    <div class="dice">${cards}</div>
+    <div class="tally">
+      ${s.jp&&PREV?`<div><span class="n num">${ITEMS.filter(it=>!PREV.env[it.k]).length}<small> / 4</small></span><span class="k">さっきの人生（${PREV.country[0]}）で持っていなかったもの</span></div>
+      <div><span class="n num">0<small> / 4</small></span><span class="k">今のあなたが持っていないもの</span></div>`:`<div><span class="n num">${missing}<small> / 4</small></span><span class="k">あなたが持っていないもの</span></div>`}
+    </div>
+    ${s.jp?`<div class="row"><button class="btn" id="go">日本の高校2年生として、生きる</button></div>`:`<p class="tempt">サイコロは、もう一度ふれる。<br>もっといい場所に、生まれ変われるかもしれない。</p><div class="row">${rebirthButton("re")}</div>`}
+    ${sourcesHTML()}
+  </section>`;
+  if($("#go"))$("#go").onclick=careerScreen;
+  if($("#re"))$("#re").onclick=()=>askRebirth();
+  const fast=RM||back;
+  // 1) 国のルーレット
+  if(!fast){
+    const pl=$("#place");let d=40;
+    for(let k=0;k<22;k++){const x=pickCountry();pl.innerHTML=placeHTML(x);pl.classList.add("spin");await wait(d);d*=1.12}
+    pl.classList.remove("spin");pl.innerHTML=placeName();pl.classList.add("landed");
+    $("#placeSub").hidden=false;
+    await wait(900);
+    $("#pyrPanel").hidden=false;$("#pyrPanel").scrollIntoView({behavior:"smooth",block:"start"});
+    await wait(500);
+  }
+  // 2) ピラミッドの段が順に光って、自分の段で止まる
+  const tiers=[0,1,2,3].map(i=>$("#tier"+i));
+  if(!fast){
+    let d=70,i=0;const steps=16+s.bi; // 最後が自分の段になる回数
+    for(let k=0;k<=steps;k++){tiers.forEach(t=>t.classList.remove("lit"));i=k%4;tiers[i].classList.add("lit");await wait(d);d*=1.1}
+    tiers.forEach(t=>t.classList.remove("lit"));
+  }
+  tiers[s.bi].classList.add("lit");
+  const marks=$("#marks");
+  const T3=tiersGeom()[3],jy=T3.y0+(T3.y1-T3.y0)*.72,jx=PY.AX-half(jy)*.35;
+  const jpDot=svgEl("circle",{cx:jx,cy:jy,r:9,class:"jpdot"});
+  if(s.jp){
+    marks.appendChild(jpDot);
+    const lx=PY.AX-half(jy)-14;
+    marks.appendChild(svgEl("line",{x1:lx+4,y1:jy,x2:jx-11,y2:jy,class:"lead"}));
+    marks.appendChild(svgEl("text",{x:lx,y:jy+5,"text-anchor":"end",class:"you jpl"},"日本の高校生"));
+    if(PREV&&PREV.mx!=null){
+      await wait(fast?0:700);
+      marks.appendChild(svgEl("circle",{cx:PREV.mx,cy:PREV.my,r:8,class:"prevdot"}));
+      marks.appendChild(svgEl("text",{x:PREV.mx,y:PREV.my-16,"text-anchor":"middle",class:"you prevl"},"さっきの人生"));
+    }
+  }else{
+    if(s.mx==null){const d=dotIn(s.bi,s.bi===3?.45:null);s.mx=d[0];s.my=d[1]}
+    const mx=s.mx,my=s.my;
+    marks.appendChild(svgEl("circle",{cx:mx,cy:my,r:9,class:"medot"}));
+    marks.appendChild(svgEl("text",{x:mx,y:my-18,"text-anchor":"middle",class:"you"},"あなた"));
+  }
+  $("#land").hidden=false;
+  await wait(fast?0:600);
+  $("#cards").hidden=false;
+}
+
+function statsTable(st){
+  return `<div class="gauges">${STATS.map(([k,l])=>`<div class="g"><div class="lab"><span>${l}</span><span>${st[k]}</span></div><div class="bar"><i style="width:${clamp(st[k],0,100)}%"></i></div></div>`).join("")}</div>`;
+}
+
+/* ===== 壁のこえ方：努力・才能・運 =====
+   努力：書いたこえ方に入っている工夫（チェック、0〜4）。
+   才能：進路を選んだときに決まる（1〜5）。最後の画面まで見えない。
+   運：最後のサイコロ。
+   関門は「実際の割合」をふつうの人の見こみとし、努力と才能で上下する。 */
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* 努力の自動判定（APIは使わない。文の中身を厳しめに読む） */
+const JUDGE=[
+  ["num","数字で決めている","回数・時間・期限が数字で書いてある",/[0-9０-９一二三四五六七八九十百千]+ *(回|時間|分|日|週|か月|ヶ月|カ月|ケ月|年|冊|問|本|人|点|km|キロ|ページ|曲|件|社|校)|毎(日|朝|晩|週|月)/],
+  ["who","人を使っている","だれに聞くか・頼るかが書いてある",/(先生|先輩|後輩|親|母|父|兄|姉|友|仲間|コーチ|監督|プロ|専門家|上司|同僚|医師|看護師|弁護士|農家|店長|師匠|お客|客|銀行|塾|講師|チーム|家族|地域|近所|知り合い|相談|教わ|教えて|聞きに|聞く|見てもら|頼)/],
+  ["why","原因を見ている","何がだめだったのか・なぜかを調べる",/(原因|なぜ|理由|分析|調べ|記録|比べ|確かめ|弱点|苦手|まちがい|間違い|ふり返|振り返|データ|動画で|見直)/],
+  ["chg","やり方を変えている","何かをやめる・減らす・変える・試す",/(やめ|減らす|減ら|削|捨て|変え|変更|工夫|試す|試し|切りかえ|切り替え|順番|やり方|作り直|作りなお|貯め|節約)/]];
+const VAGUE=/(がんば|頑張|努力する|根性|気合|なんとか|何とか|全力|必死|精一杯|せいいっぱい|やる気|気持ち|あきらめない|諦めない)/;
+function judgePlan(text,last){
+  const t=text.replace(/\s/g,"");
+  const hit=JUDGE.map(([k,n,d,re])=>({k,n,d,ok:re.test(t)}));
+  let e=hit.filter(h=>h.ok).length;const notes=[];
+  if(t.length<20){e=Math.min(e,1);notes.push("短すぎる。20文字未満は、努力1が上限。")}
+  if(VAGUE.test(t)&&e<2){e=0;notes.push("「がんばる」「気合」だけでは、何をするのかわからない。")}
+  if(last&&t===last.replace(/\s/g,"")){e=Math.max(0,e-2);notes.push("前と同じ文。同じやり方では、同じ結果になりやすい。")}
+  return {e,hit,notes};
+}
+const logit=p=>Math.log(p/(1-p)),sig=x=>1/(1+Math.exp(-x));
+function chanceOf(ev,effort){
+  const s=S,tw=s.career.type==="talent"?.8:.4;
+  const base=ev.gate?ev.g.rate:.35;
+  let L=logit(clamp(base,.02,.98))+.6*(effort-3)+tw*(s.talent-3)+.08*Math.min(s.exp,8);
+  if(!ev.gate)L-=.5*s.dodged;
+  else if(ev.g.job)L-=.4*s.gateFails+.3*(s.chase||0);
+  else L-=.4*(s.fails||0)+.4*s.gateFails+.3*s.dodged+.7*(s.chase||0); // こえられなかった壁・浪人・よけた壁が、関門で重くのしかかる
+  return clamp(sig(L),.01,.99);
+}
+const dots=(n,max=4)=>`<span class="edots">${Array.from({length:max},(_,i)=>`<i class="${i<n?"on":""}"></i>`).join("")}</span>`;
+function statusHTML(){
+  const s=S;
+  return `<div class="status" id="status">
+    <div class="status-top"><span class="age">${s.age}<span class="small"> 歳</span></span><span class="where">${s.job?s.job+"として働く":s.gaveUp?"別の道を歩く":s.chase?"アルバイトをしながら夢を追う":s.passed?(s.career.goal||s.career.name):s.career.name+"をめざす"}</span><span class="tot">才能 ？</span></div>
+  </div>`;
+}
+function logHTML(){
+  if(!S.log.length)return "";
+  return `<section class="panel"><h3>これまでの壁</h3><div>${S.log.map(l=>`<div class="log-row"><span class="a">${l.age}歳</span><span>${l.title}${l.gate?`<span class="small gate">（関門 ${l.rate}）</span>`:""}<br><span class="small muted">→ ${l.choice}</span>${l.res!=="stay"?`<br><span class="small muted">努力 </span>${dots(l.effort)}`:""}</span><span class="mark ${l.res}">${l.res==="ok"?"こえた":l.res==="ng"?"こえられず":l.gate?"あきらめた":"よけた"}</span></div>`).reverse().join("")}</div></section>`;
+}
+function eventScreen(){
+  const s=S,ev=s.events[s.step],g=ev.g;
+  s.age=ev.a;
+  const retry=ev.gate&&s.gateFails&&s.lastPlan;
+  const canSkip=ev.gate||ev.dodge;
+  const biz=s.career.type==="biz"&&!s.gaveUp;
+  app.innerHTML=`${statusHTML()}
+  <section class="panel fadein" id="card">
+    <div><p class="eyebrow">Age ${s.age} ・ ${ev.gate?`<span class="gate">関門：${g.name}（${s.gateFails+1}回目の挑戦）</span>`:`壁 ${s.log.length+1}`}</p>
+      <h2>${retry?"また、だめだった。":ev.t}</h2>
+      <p class="muted">${retry?`${g.name}。これで${s.gateFails}回、はね返された。同い年の人たちは、先へ進んでいる。`:ev.b}</p>
+      ${ev.gate?`<p class="small gate">ここは関門。こえないと「${s.career.goal||s.career.name}」にはなれない。</p>`:""}
+      ${s.gaveUp&&!ev.g?`<p class="small gate">夢をあきらめても、壁はなくならない。</p>`:""}${s.chase&&ev.gate&&!ev.g.job?`<p class="small gate">アルバイトをしながらの挑戦。${s.chase}回目。前よりこえにくい。</p>`:""}</div>
+    ${ev.gate?`<div class="real"><span class="rl">${g.game?"ゲームの数字":"実際の数字"}：${g.label}</span><span class="rn num">${rateTxt(g.rate)}</span><p class="small">${g.fact}</p>${g.src?`<p class="small muted">出典：<a href="${g.src[1]}" target="_blank" rel="noopener">${g.src[0]}</a></p>`:""}</div>`:""}
+    <div class="three"><div><b>努力</b><span>あなたが書く</span></div><div><b>才能</b><span>まだ見えない</span></div><div><b>運</b><span>サイコロ</span></div></div>
+    <div class="opts" id="opts">
+      <label class="plan-l" for="plan">${retry?`前は「${esc(s.lastPlan)}」と書いて、こえられなかった。<br>今度は、何を変える？`:biz?"この壁を、だれと、どうやってこえる？":"この壁を、どうやってこえる？ 自分の言葉で書こう。"}</label>
+      <textarea id="plan" rows="3" maxlength="160" placeholder="ここに書く（8文字以上）"></textarea>
+      <p class="small muted">書いた文は、ゲームが読んで「努力」を判定する。判定の基準は、教えない。</p>
+      <button class="opt try" id="try" disabled><span class="tag">挑む</span><span>書いた方法で、壁に挑む</span><span class="meta" id="pwhint">8文字以上書くと押せる</span></button>
+      ${canSkip?`<button class="opt safe" id="safe"><span class="tag">${ev.gate?"あきらめる":"よける"}</span><span>${ev.safe}</span><span class="meta">${ev.gate?"この夢は、ここで終わる":"次からの壁が、少しこえにくくなる"}</span></button>`
+              :`<p class="small gate">この壁は、よけられない。</p>`}
+    </div>
+  </section>
+  ${logHTML()}`;
+  const ta=$("#plan"),bt=$("#try");
+  const ready=()=>ta.value.trim().length>=8;
+  ta.oninput=()=>{const r=ready();bt.disabled=!r;$("#pwhint").textContent=r?"押すと、書いた文を判定する":`あと${Math.max(0,8-ta.value.trim().length)}文字`};
+  bt.onclick=()=>{if(ready())choose("try",ta.value.trim())};
+  if($("#safe"))$("#safe").onclick=()=>choose("safe","");
+  window.scrollTo({top:0});
+}
+async function choose(kind,text){
+  const s=S,ev=s.events[s.step];
+  const J=text?judgePlan(text,s.lastPlan):null,effort=J?J.e:0;
+  if(text)s.lastPlan=text;
+  app.querySelectorAll(".opt,#plan").forEach(b=>b.disabled=true);
+  let res;
+  const box=$("#opts");
+  if(kind==="try"){
+    const p=chanceOf(ev,effort);
+    box.outerHTML=`<p class="mine">「${esc(text)}」</p><div class="jread" id="jread"><span class="small muted">こえ方を読んでいる……</span></div><div class="judge" id="judge" hidden><div class="mini">${cubeHTML()}</div><div class="readout"><span class="small muted">努力 ${dots(effort)}　才能 ？　運 ……</span></div></div>`;
+    const jr=$("#jread");await wait(RM?0:700);
+    jr.innerHTML=`<span class="small muted">努力の判定</span><p class="jsum">努力 ${dots(effort)}</p>`;
+    await wait(RM?0:900);
+    $("#judge").hidden=false;
+    await rollCube($("#judge .cube"),1100);
+    await wait(60);
+    const ok=rnd()<p;
+    $("#judge .readout").innerHTML=`<span class="small muted">努力 ${dots(effort)}　才能 ？</span><span class="roll" style="color:${ok?"var(--cyan)":"var(--indigo)"}">${ok?"こえた":"だめだった"}</span>`;
+    res=ok?"ok":"ng";s.exp++;if(!ok&&!ev.gate)s.fails=(s.fails||0)+1;
+    await wait(RM?0:350);
+  }else{res="stay";box.outerHTML=`<div id="judge"></div>`;if(!ev.gate)s.dodged++}
+  s.log.push({age:s.age,title:ev.gate?ev.g.name:ev.t,choice:text?esc(text):ev.safe,res,effort,gate:ev.gate,rate:ev.gate?rateTxt(ev.g.rate):""});
+  s.hist.push({age:s.age,res,effort,gate:ev.gate});
+  let head=res==="ok"?"壁をこえた。":res==="ng"?"こえられなかった。":"壁をよけた。";
+  let note=res==="ng"?"努力が足りなかったのか、才能か、運か。今はわからない。":res==="stay"?"よけた分、次からの壁は少しこえにくくなる。":"";
+  let nextLabel=null,advance=true;
+  let cross=false;
+  const endDream=()=>{s.gaveUp=true;s.crossGate=ev;s.rest=s.events.slice(s.step+1).filter(e=>e!==s.events[s.events.length-1]);cross=true;nextLabel="これからを決める"};
+  if(ev.gate&&ev.g.job){
+    if(res==="ok"){s.job="正社員";s.gateFails=0;head="正社員になれた。";note=`${ev.g.label}は${rateTxt(ev.g.rate)}。なれた人のほうに入った。`}
+    else if(res==="ng"&&s.gateFails<2){s.gateFails++;head="不採用の通知が来た。";note="もう一度、別の会社を受ける。";
+      ev.a++;let pa=ev.a;for(let k=s.step+1;k<s.events.length;k++){if(s.events[k].a<=pa)s.events[k].a=pa+1;pa=s.events[k].a}
+      advance=false;nextLabel="次の会社へ"}
+    else{s.job="アルバイト";s.gateFails=0;head=res==="stay"?"正社員はあきらめた。":"正社員には、なれなかった。";note="アルバイトのまま、生きていく。"}
+  }else if(ev.gate){
+    if(res==="ok"){s.gatesPassed++;s.tries+=s.gateFails+1;head=`関門「${ev.g.name}」をこえた。${s.gateFails+1}回目の挑戦だった。`;s.gateFails=0;
+      if(s.events.slice(s.step+1).every(e=>!e.gate))s.passed=true}
+    else if(res==="ng"){
+      s.gateFails++;
+      if(s.gateFails>=3){s.tries+=s.gateFails;head="これ以上は、続けられない。";note=`${s.gateFails}回挑んだ。時間もお金も、もう残っていない。`;s.failedGate=ev.g.name;endDream()}
+      else{
+        head="関門に、はね返された。";note=`${ev.g.game?"":`${ev.g.label}は${rateTxt(ev.g.rate)}。`}はね返された人のほうに入った。もう1年かかる。`;
+        ev.a++;let pa=ev.a;for(let k=s.step+1;k<s.events.length;k++){if(s.events[k].a<=pa)s.events[k].a=pa+1;pa=s.events[k].a}
+        advance=false;nextLabel="1年後へ";
+      }
+    }else{s.tries+=s.gateFails;s.failedGate=ev.g.name;head="夢を、あきらめた。";note="";endDream()}
+  }
+  $("#judge").insertAdjacentHTML("afterend",`<div class="outcome ${res}"><span class="head">${head}</span>${note?`<p class="small">${note}</p>`:""}</div>
+    <div class="row"><button class="btn" id="next">${nextLabel||(s.step===s.events.length-1?"人生をふり返る":"次の壁へ")}</button></div>`);
+  $("#next").onclick=()=>{if(cross){crossScreen();return}if(!advance){eventScreen();return}if(s.step===s.events.length-1)resultScreen();else{s.step++;eventScreen()}};
+  $("#next").focus({preventScroll:true});
+}
+const JOB={name:"正社員になる",job:true,rate:.493,label:"フリーターから正社員をめざした人のうち、なれた割合",fact:"東京都の25〜29歳で、フリーターから正社員になろうとした人のうち、なれたのは49.3%（2016年）。男性61.9%、女性40.8%。半分は、なれなかった。2001年の男性は76%で、だんだん下がっている。",src:["労働政策研究・研修機構「大都市の若者の就業行動と意識の分化」（第4回 若者のワークスタイル調査）","https://www.jil.go.jp/institute/reports/2017/documents/0199_06.pdf"]};
+function crossScreen(){
+  const s=S,g=s.crossGate,goal=s.career.goal||s.career.name;
+  s.crossN=(s.crossN||0)+1;
+  app.innerHTML=`${statusHTML()}
+  <section class="panel fadein">
+    <p class="eyebrow">Age ${s.age} ・ 分かれ道</p>
+    <h2>「${goal}」の夢は、ここで止まった。</h2>
+    <p class="muted">関門「${g.g.name}」をこえられなかった。これから、どう生きる？</p>
+    <div class="opts">
+      <button class="opt safe" id="quit"><span class="tag">あきらめる</span><span>夢をあきらめて、正社員をめざす</span><span class="meta">夢は終わる。正社員になれるのは、2人に1人ほど</span></button>
+      <button class="opt try" id="chase"><span class="tag">追い続ける</span><span>アルバイトで暮らしながら、夢をもう一度追う</span><span class="meta">${s.chase?`${s.chase+1}回目。`:""}時間もお金も体力も減る。関門は前よりこえにくい</span></button>
+    </div>
+  </section>
+  ${logHTML()}`;
+  $("#quit").onclick=()=>{
+    s.events=[...s.events.slice(0,s.step+1),...mkEvents([W(s.age+1,"正社員の採用試験を受ける",`履歴書には、${s.age-18>0?s.age-18+"年分の":""}夢を追った時間しか書けない。面接で「この間、何をしていたのですか」と聞かれる。`,"正社員はあきらめて、アルバイトを続ける",JOB),...ALT(s.age+1).slice(1)],true)];
+    s.gateFails=0;s.step++;eventScreen();
+  };
+  $("#chase").onclick=()=>{
+    s.chase=(s.chase||0)+1;s.gaveUp=false;s.gateFails=0;
+    const a0=s.age+1;
+    const again={...s.crossGate,a:a0+1};
+    const rest=s.rest.map(e=>({...e}));let pa=again.a;rest.forEach(e=>{if(e.a<=pa)e.a=pa+1;pa=e.a});
+    const last={...mkEvents([LAST_WALL])[0]};if(last.a<=pa)last.a=pa+1;
+    s.events=[...s.events.slice(0,s.step+1),...mkEvents([W(a0,"アルバイトと夢の両立","昼はアルバイト、夜は夢のための時間。疲れて何も手につかない日もある。同い年の友だちは、もう正社員だ。","今月はアルバイトを増やして、夢は休む")],false),again,...rest,last];
+    s.step++;eventScreen();
+  };
+  window.scrollTo({top:0});
+}
+const FORM_URL="";
+const FORMMAP={"高校からプロへ": "就職（民間企業）に近い", "大学で力をつけてからプロへ": "進学（4年制大学）", "社会人（実業団）・独立リーグからプロへ": "就職（民間企業）", "音楽の専門学校・音大へ": "進学（専門学校）か進学（4年制大学）", "働きながら、ライブと動画で勝負": "", "高校を出て、すぐ受ける": "就職（公務員）", "大学を出てから受ける": "進学（4年制大学）", "医学部に入り、国家試験を受ける": "進学（4年制大学）", "法科大学院（ロースクール）を通る": "進学（4年制大学）", "予備試験の近道": "進学（4年制大学）に近い", "大学の工学部へ": "進学（4年制大学）", "高校を出て就職し、現場で学ぶ": "就職（民間企業）", "調理師の専門学校へ": "進学（専門学校）", "高校を出て、すぐ店で修業": "就職（民間企業）", "農業法人に就職する": "就職（民間企業）", "自分で農業を始める": "", "看護大学（4年）": "進学（4年制大学）", "看護の専門学校（3年）": "進学（専門学校）", "学生のうちに起業": "進学（4年制大学）", "会社で働いてから起業": "就職（民間企業）"};
+function effortTable(){
+  const rows=[0,1,2,3,4].map(e=>{const t=S.hist.filter(h=>h.res!=="stay"&&h.effort===e);return {e,n:t.length,ok:t.filter(h=>h.res==="ok").length}}).filter(r=>r.n);
+  if(!rows.length)return `<p class="small muted">一度も挑まなかった。</p>`;
+  return `<div class="etable">${rows.map(r=>`<div class="erow"><span>努力 ${dots(r.e)}</span><span class="ebar">${Array.from({length:r.n},(_,i)=>`<i class="${i<r.ok?"ok":"ng"}"></i>`).join("")}</span><span class="num small">${r.ok} / ${r.n}</span></div>`).join("")}</div>`;
+}
+function resultScreen(){
+  const s=S;
+  const n={ok:0,ng:0,stay:0};s.log.forEach(l=>{if(!(l.gate&&l.res==="stay"))n[l.res]++});
+  const goal=s.career.goal||s.career.name;
+  const gates=s.route.walls.filter(w=>w.g).map(w=>w.g);
+  const tname=["","とても低い","低い","ふつう","高い","とても高い"][s.talent];
+  app.innerHTML=`
+  <section class="panel fadein">
+    <p class="eyebrow">Age ${s.age} ・ ふり返り</p>
+    <h2>${s.passed?`${goal}になった、あなたの人生`:`${goal}には、なれなかった。`}</h2>
+    <p class="${s.passed?"":"locked"}">道：${s.route.name}。${s.passed?`関門を${gates.length}つ、すべてこえた。`:s.failedGate?`関門「${s.failedGate}」でとまり、そのあとは別の道を歩いた。`:""}${s.chase?`アルバイトをしながら夢を追い直したのは${s.chase}回。`:""}${s.job?`最後の仕事は「${s.job}」。`:""}</p>
+    <div class="real"><span class="rl">明かす：あなたの才能</span><span class="rn">${s.talent} <small class="small">/ 5（${tname}）</small></span><p class="small">才能は、進路を選んだ瞬間にサイコロで決まっていた。あなたには最後まで見えなかった。${s.career.type==="talent"?"「才能の道」では、才能が結果を大きく動かす。":""}</p></div>
+    <div class="card-sum">
+      <div><span class="n" style="color:var(--cyan)">${n.ok}</span><span class="k">こえた壁</span></div>
+      <div><span class="n" style="color:var(--indigo)">${n.ng}</span><span class="k">こえられなかった壁</span></div>
+      <div><span class="n" style="color:var(--muted)">${n.stay}</span><span class="k">よけた壁</span></div>
+    </div>
+    <h3>努力の量と、結果</h3>
+    <p class="small muted">四角1つが、挑んだ壁1つ。水色＝こえた、紫＝こえられなかった。</p>
+    ${effortTable()}
+  </section>
+  <section class="panel q">
+    <h3>考えよう</h3>
+    <ol>
+      <li>努力の点が多かった壁と少なかった壁。こえた割合は、ちがった？</li>
+      <li>努力の点が多くても、こえられなかった壁はある？ それは、才能のせい？ 運のせい？</li>
+      <li>才能が「${tname}」だとわかった今、もう一度同じ道を選ぶ？ 別の道を選ぶ？</li>
+      <li>${PREV?`最初のサイコロでは「${PREV.country[0]}」の「${PREV.band.name}」に生まれるはずだった。その人生だったら、`:"ちがう国に生まれていたら、"}17歳のあなたは、同じ進路を選べただろうか？</li>
+    </ol>
+    <p class="small muted">となりの人と見比べてみよう。</p>
+  </section>
+  ${logHTML()}
+  <details class="src"><summary>関門の数字の出典（クリックで開く）</summary><ul>
+    ${CAREERS.flatMap(c=>c.routes.flatMap(r=>r.walls.filter(w=>w.g).map(w=>`<li>${c.name}／${r.name}「${w.g.name}」${w.g.game?"（ゲームの数字）":rateTxt(w.g.rate)}：${w.g.fact}${w.g.src?` <a href="${w.g.src[1]}" target="_blank" rel="noopener">${w.g.src[0]}</a>`:""}</li>`))).join("")}
+    <li>正社員になれる割合 49.3%：${JOB.fact} <a href="${JOB.src[1]}" target="_blank" rel="noopener">${JOB.src[0]}</a></li>
+    <li>しくみ：関門では「実際の割合」をふつうの努力・ふつうの才能の人の見こみとして、努力と才能で上下させ、それまでにこえられなかった壁・よけた壁・浪人の年数の分だけ下げ、最後はサイコロで決める。ふつうの壁はふつうの人で35%。「才能の道」は才能の効き目を2倍にしている。この上下の大きさはゲームが決めた数字。</li>
+  </ul></details>
+  <section class="panel"><div class="row"><button class="btn" id="toepi">エピローグへ</button></div>
+    <p class="small muted">最後に、あなたの記録を使って考える。</p>
+  </section>`;
+  $("#toepi").onclick=epilogue;
+  window.scrollTo({top:0});
+}
+
+/* ===== エピローグ：あきらめずに挑戦する力とは何か ===== */
+const TAGS=[["same","前と同じ"],["learn","失敗から変えた"],["help","人の力を借りた"],["face","原因を考えた"]];
+const CARDS=[
+  {k:"stub",trap:true,t:"あきらめが悪い"},
+  {k:"learn",t:"失敗から学び、やり方を変える"},
+  {k:"conf",trap:true,t:"自分に自信がある"},
+  {k:"face",t:"自分と向き合い、原因を見る"},
+  {k:"posi",trap:true,t:"いつもポジティブに考える"},
+  {k:"help",t:"人の力を借りる"},
+  {k:"why",t:"なぜやりたいのか、目的を持っている"},
+  {k:"brave",t:"決断する勇気（道を変える・やめる勇気もふくむ）"}];
+function epiShell(n,title,body){
+  app.innerHTML=`<section class="panel fadein epi">
+    <p class="eyebrow">Epilogue ・ ${n} / 4</p>
+    <h2>${title}</h2>${body}</section>`;
+  window.scrollTo({top:0});
+}
+function epilogue(){
+  const s=S;
+  s.tried=s.log.map((l,i)=>({...l,i})).filter(l=>l.res!=="stay");
+  s.tags={};
+  if(!s.tried.length){epiCards();return}
+  epiShell(1,"自分の記録を、仕分ける。",`
+    <p class="muted">あなたが書いた「こえ方」が全部ここにある。1つずつ読んで、当てはまるタグをつけよう（いくつでも、なしでもいい）。<br>結果は、まだかくしてある。</p>
+    <div class="tlist">${s.tried.map((l,j)=>`<div class="titem"><p class="small muted">${l.age}歳 ・ ${l.title}</p><p class="tq">「${l.choice}」</p>
+      <div class="tags">${TAGS.map(([k,n])=>`<button class="tag2" data-j="${j}" data-k="${k}">${n}</button>`).join("")}</div></div>`).join("")}</div>
+    <div class="row"><button class="btn" id="e2">仕分けた。結果を見る</button></div>`);
+  app.querySelectorAll(".tag2").forEach(b=>b.onclick=()=>{
+    const j=b.dataset.j,k=b.dataset.k;s.tags[j]=s.tags[j]||{};s.tags[j][k]=!s.tags[j][k];b.classList.toggle("on",s.tags[j][k]);
+  });
+  $("#e2").onclick=epiCompare;
+}
+function epiCompare(){
+  const s=S;
+  const rows=TAGS.map(([k,n])=>{const t=s.tried.filter((l,j)=>s.tags[j]&&s.tags[j][k]);return {n,c:t.length,ok:t.filter(l=>l.res==="ok").length}});
+  const none=s.tried.filter((l,j)=>!s.tags[j]||!Object.values(s.tags[j]).some(Boolean));
+  rows.push({n:"タグなし",c:none.length,ok:none.filter(l=>l.res==="ok").length});
+  epiShell(2,"タグごとに、結果を並べた。",`
+    <p class="muted">水色がこえた壁、紫がこえられなかった壁。</p>
+    <div class="etable">${rows.map(r=>`<div class="erow"><span class="ename">${r.n}</span><span class="ebar">${r.c?Array.from({length:r.c},(_,i)=>`<i class="${i<r.ok?"ok":"ng"}"></i>`).join(""):`<span class="small muted">なし</span>`}</span><span class="num small">${r.c?r.ok+" / "+r.c:""}</span></div>`).join("")}</div>
+    <p class="small muted">見るところ：「前と同じ」の行と、ほかの行。こえた割合はちがう？ ちがわない？<br>運もあるので、1人分の記録ではっきりしないこともある。となりの人の表とも比べてみよう。</p>
+    <div class="row"><button class="btn" id="e3">次へ</button></div>`);
+  $("#e3").onclick=epiCards;
+}
+function epiCards(){
+  const s=S;s.picks=new Set();
+  epiShell(3,"「あきらめずに挑戦する力」の正体は？",`
+    <p class="muted">大事だと思うものを、3枚選ぶ。</p>
+    <div class="cards8">${CARDS.map((c,i)=>`<button class="card8" data-i="${i}">${c.t}</button>`).join("")}</div>
+    <div class="row"><button class="btn" id="e4" disabled>3枚選んだ。答え合わせ</button></div>`);
+  app.querySelectorAll(".card8").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    if(s.picks.has(i))s.picks.delete(i);else if(s.picks.size<3)s.picks.add(i);
+    app.querySelectorAll(".card8").forEach(x=>x.classList.toggle("on",s.picks.has(+x.dataset.i)));
+    $("#e4").disabled=s.picks.size!==3;
+  });
+  $("#e4").onclick=epiReveal;
+}
+function epiReveal(){
+  const s=S,tried=s.tried||[];
+  const plain=t=>String(t).replace(/&[a-z#0-9]+;/g,"_");
+  let same=0;for(let k=1;k<tried.length;k++)if(plain(tried[k].choice)===plain(tried[k-1].choice))same++;
+  const zero=tried.filter(l=>l.effort===0).length;
+  const tname=["","とても低い","低い","ふつう","高い","とても高い"][s.talent];
+  const why={
+    stub:`あきらめが悪いだけなら、同じやり方で何度もぶつかる。あなたが前と同じ文で挑んだのは${same}回。${s.gateFails||s.chase?"同じ関門に何度もはね返された人もいる。":""}同じことをくり返して、結果は変わった？`,
+    conf:`自信があっても、才能は見えない。あなたの才能は最後まで「？」で、本当は「${tname}」だった。自信は、才能の代わりにならない。`,
+    posi:`「がんばる」「あきらめない」だけの文は、努力0と判定された。あなたの記録で努力0だった挑戦は${zero}回。気持ちだけでは、壁は動かなかった。`,
+    learn:"失敗のあとに、何を変えたか。ゲームの再挑戦で「今度は、何を変える？」と聞かれたのは、このため。",
+    face:"なぜだめだったのかを見る。模試のまちがい、試合の動画、売れなかった理由。自分の弱いところから、目をそらさない。",
+    help:"先生、先輩、親、プロ、お客さん。ひとりでこえられる壁は少ない。経営の道は、とくにそうだった。",
+    why:"失敗から学び、変え、人に頼る。それを何年も続ける燃料が「なぜやりたいのか」。目的がないと、学ぶ前に折れる。",
+    brave:"分かれ道で、夢を追い続けるか、道を変えるか。どちらを選んでも勇気がいる。やめる決断も、あきらめない力の一部。"};
+  const picked=[...s.picks].map(i=>CARDS[i]);
+  const traps=picked.filter(c=>c.trap).length;
+  epiShell(4,"答え合わせ",`
+    <p class="muted">${traps?`あなたは、わなのカードを${traps}枚選んだ。`:"わなのカードは、1枚も選ばなかった。"}わなは3枚あった。</p>
+    <div class="rev">${CARDS.map((c,i)=>`<div class="revc ${c.trap?"trap":"real"} ${s.picks.has(i)?"picked":""}"><b>${c.trap?"わな":"大事"}${s.picks.has(i)?"・あなたが選んだ":""}</b><span class="rt">${c.t}</span><p class="small">${why[c.k]}</p></div>`).join("")}</div>
+    <p class="muted">わなの3つは、悪いものではない。ただ、それ<b>だけ</b>では足りない。</p>
+    <h3>あなたの言葉で、一文にする。</h3>
+    <label class="plan-l" for="def">あきらめずに挑戦する力とは、</label>
+    <textarea id="def" rows="2" maxlength="80" placeholder="＿＿＿＿＿＿＿＿＿＿だ。"></textarea>
+    <div class="row"><button class="btn" id="e5" disabled>書いた</button></div>`);
+  const d=$("#def");d.oninput=()=>{$("#e5").disabled=d.value.trim().length<4};
+  $("#e5").onclick=()=>{s.def=d.value.trim();endingScreen()};
+}
+function endingScreen(){
+  const s=S;
+  app.innerHTML=`<section class="panel ending fadein">
+    <p class="eyebrow">Game over</p>
+    <h2 class="locked">人は、生まれ変われない。</h2>
+    ${s.def?`<p class="mydef">あきらめずに挑戦する力とは、<br><b>${esc(s.def)}</b></p>`:""}
+    <p>ゲームのあなたは、何度でもやり直せた。<br>本当のあなたの人生は、1回だけ。そして、まだ1つも決まっていない。</p>
+    <p class="muted">ゲームのあなたは「${s.career.name}」を「${s.route.name}」でめざした。${FORMMAP[s.route.name]?`進路希望調査でいえば「${FORMMAP[s.route.name]}」の道だ。`:"この道は、進路希望調査の選択肢には、ぴったり当てはまるものがない。"}</p>
+    <p class="muted">それは、本当のあなたの答えでなくていい。<br>ゲームで知った数字と壁と、今書いた一文を持って、今度は自分のことを選ぼう。</p>
+    <ol class="small">
+      <li>本当のあなたが、今いちばん行きたい道は？</li>
+      <li>その道の最初の壁は、何だと思う？</li>
+      <li>その壁を、だれと、何を、どれだけやってこえる？</li>
+    </ol>
+    ${FORM_URL?`<div class="row"><a class="btn" id="toform" href="${FORM_URL}" target="_blank" rel="noopener">本当の進路希望調査に答える</a></div>
+    <p class="small muted">Googleフォームが新しいタブで開く。</p>`:`<p class="mydef">さあ、先生から配られた本当の進路希望調査に答えよう。</p>`}
+  </section>`;
+  window.scrollTo({top:0});
+}
+
+/* ===== 教師用：全体を一気に見る ===== */
+let TEACH=false,TC=3,TR=0;
+const SAMPLE=["毎日2時間、先生に聞いて苦手な原因を調べ、スマホの時間を減らす","がんばる、絶対にあきらめない","先輩に相談して練習メニューを変える","動画で自分のフォームを分析して、週3回コーチに見てもらう"];
+function teachBtn(){
+  if($("#tbtn"))return;
+  const b=document.createElement("button");b.id="tbtn";b.className="tbtn";b.textContent="教師用メニュー";
+  b.onclick=()=>{document.querySelectorAll(".overlay,.confirm,.scare").forEach(x=>x.remove());teacherScreen()};
+  document.body.appendChild(b);
+}
+function tJapan(){born(false);PREV=S;born(true)}
+function tStart(){
+  tJapan();const c=CAREERS[TC],r=c.routes[Math.min(TR,c.routes.length-1)];
+  Object.assign(S,{career:c,route:r,events:mkEvents([...r.walls,LAST_WALL]),step:0,log:[],tries:0,gateFails:0,passed:false,gaveUp:false,talent:3,dodged:0,exp:0,lastPlan:"",gatesPassed:0,chase:0,job:null,crossGate:null,failedGate:null,fails:0,crossN:0,hist:[]});
+  return S;
+}
+function tFilled(){
+  const s=tStart();
+  s.events.forEach((ev,i)=>{const res=i%3===1?"ng":"ok";const e=[4,0,2,3][i%4];
+    s.log.push({age:ev.a,title:ev.gate?ev.g.name:ev.t,choice:esc(SAMPLE[i%4]),res,effort:e,gate:ev.gate,rate:ev.gate?rateTxt(ev.g.rate):""});
+    s.hist.push({age:ev.a,res,effort:e,gate:ev.gate});s.age=ev.a});
+  s.step=s.events.length-1;s.passed=true;s.talent=4;
+  return s;
+}
+const PIN="0315";
+function askPin(){
+  const ov=document.createElement("div");ov.className="confirm";
+  ov.innerHTML=`<div class="box"><h2>暗証番号</h2><input id="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" class="pin"><p class="small gate" id="pinmsg"></p>
+    <div class="row" style="justify-content:center"><button class="btn" id="pinok">開く</button><button class="btn ghost" id="pinno">やめる</button></div></div>`;
+  document.body.appendChild(ov);$("#pin").focus();
+  const ok=()=>{if($("#pin").value===PIN){ov.remove();teacherScreen()}else{$("#pinmsg").textContent="ちがう。";$("#pin").value=""}};
+  $("#pinok").onclick=ok;$("#pin").onkeydown=e=>{if(e.key==="Enter")ok()};$("#pinno").onclick=()=>ov.remove();
+}
+function teacherScreen(){
+  TEACH=true;teachBtn();
+  const c=CAREERS[TC];
+  const J=(id,t,d)=>`<button class="tj" id="${id}"><b>${t}</b><span>${d}</span></button>`;
+  app.innerHTML=`<section class="panel fadein">
+    <p class="eyebrow">For teachers</p>
+    <h2>教師用メニュー</h2>
+    <p class="small muted">どの場面にも直接とべる。右下の「教師用メニュー」でいつでもここにもどる。生徒にはこの画面は見せない。</p>
+    <div class="tsel">
+      <label>進路 <select id="tc">${CAREERS.map((x,i)=>`<option value="${i}" ${i===TC?"selected":""}>${x.name}</option>`).join("")}</select></label>
+      <label>道 <select id="tr">${c.routes.map((x,i)=>`<option value="${i}" ${i===TR?"selected":""}>${x.name}</option>`).join("")}</select></label>
+    </div>
+    <h3>場面にとぶ</h3>
+    <div class="tjump">
+      ${J("j1","1 タイトル","「今日は、あなたの誕生日です」")}
+      ${J("j2","2 1回目のサイコロ","世界のどこかに生まれた結果")}
+      ${J("j3","3 生まれ変わりの確認","「本当に、生まれ変わりますか」")}
+      ${J("j4","4 人は、生まれ変われない","ゆっくり転がるサイコロの演出（音が出る）")}
+      ${J("j5","5 本当の人生","日本の高校生の位置が初めて出る")}
+      ${J("j6","6 進路希望調査","3つの型と10の進路")}
+      ${J("j7","7 道を選ぶ","上で選んだ進路の、進み方")}
+      ${J("j8","8 最初の壁","上で選んだ道の、17歳の壁")}
+      ${J("j9","9 関門","実際の数字が出る壁")}
+      ${J("j10","10 分かれ道","正社員をめざす／夢を追い続ける")}
+      ${J("j11","11 ふり返り","才能を明かす・努力と結果（見本の記録）")}
+      ${J("j12","12 エピローグ","仕分ける→並べる→カード→一文")}
+      ${J("j13","13 エンディング","進路希望調査フォームへ")}
+    </div>
+  </section>
+  <section class="panel">
+    <h3>判定のしくみ（生徒には伏せている）</h3>
+    <ul class="small tlist2">
+      <li><b>努力（0〜4）</b>：書いた文に次の4つがあるかを言葉で読む。数字（回数・時間・期限、「毎日」など）／人（先生・先輩・親・相談・教わる など）／原因（原因・なぜ・調べる・分析・苦手 など）／変える（やめる・減らす・変える・工夫・試す など）。20文字未満は1まで。「がんばる」「気合」「あきらめない」などだけなら0。前と同じ文は−2。</li>
+      <li><b>才能（1〜5）</b>：道を選んだときにサイコロで決まる（1:10% 2:20% 3:40% 4:20% 5:10%）。最後まで見せない。才能の道（スポーツ・音楽）は効き目が2倍。</li>
+      <li><b>運</b>：最後のサイコロ。</li>
+      <li><b>ふつうの壁</b>：努力3・才能3の人で35%。よけた壁1つごとに下がる。</li>
+      <li><b>関門</b>：実際の割合を「努力3・才能3の人」の見こみにして、努力と才能で上下。それまでにこえられなかった壁・よけた壁・浪人の年数・夢を追い直した回数の分だけ下がる。挑戦は3回まで。</li>
+      <li><b>分かれ道</b>：関門で3回落ちるか、あきらめると出る。正社員の関門は49.3%（JILPT、東京25〜29歳、2016年）。夢を追い直すたびに、夢の関門も正社員の関門も下がる。</li>
+      <li>上下の大きさ（努力1点、才能1段でどれだけ変わるか）は、ゲームが決めた数字。</li>
+    </ul>
+  </section>
+  <section class="panel">
+    <h3>全部の進路・道・壁</h3>
+    <p class="small muted">赤が関門。％は実際の統計（「ゲーム」はゲームの数字）。どの道にも最後に50歳の壁がある。</p>
+    ${CAREERS.map(x=>`<details class="tmap"><summary><b>${x.name}</b> <span class="small muted">${TYPES[x.type].name}</span></summary>
+      ${x.routes.map(r=>`<div class="troute"><p><b>${r.name}</b><br><span class="small muted">${r.desc}</span></p><ol>${r.walls.map(w=>`<li class="${w.g?"gate":""}"><span class="num">${w.a}歳</span> ${w.t}${w.g?` → 関門「${w.g.name}」${w.g.game?"ゲーム":rateTxt(w.g.rate)}`:""}</li>`).join("")}</ol></div>`).join("")}
+    </details>`).join("")}
+  </section>`;
+  $("#tc").onchange=e=>{TC=+e.target.value;TR=0;teacherScreen()};
+  $("#tr").onchange=e=>{TR=+e.target.value};
+  const go=(id,f)=>$("#"+id).onclick=f;
+  go("j1",titleScreen);
+  go("j2",()=>{born(false);birthScreen(true)});
+  go("j3",()=>{born(false);birthScreen(true);askRebirth()});
+  go("j4",()=>{born(false);scare()});
+  go("j5",()=>{tJapan();birthScreen(true)});
+  go("j6",()=>{tJapan();careerScreen()});
+  go("j7",()=>{tJapan();routeScreen(CAREERS[TC])});
+  go("j8",()=>{tStart();eventScreen()});
+  go("j9",()=>{const s=tStart();s.step=s.events.findIndex(e=>e.gate);if(s.step<0)s.step=0;eventScreen()});
+  go("j10",()=>{const s=tStart();const k=s.events.findIndex(e=>e.gate);s.step=Math.max(0,k);s.age=s.events[s.step].a;s.gaveUp=true;s.crossGate=s.events[s.step];s.failedGate=s.crossGate.g?s.crossGate.g.name:"";s.rest=s.events.slice(s.step+1,-1);crossScreen()});
+  go("j11",()=>{tFilled();resultScreen()});
+  go("j12",()=>{tFilled();epilogue()});
+  go("j13",()=>{const s=tFilled();s.def="失敗から学び、人に頼り、やり方を変え続けること";endingScreen()});
+  window.scrollTo({top:0});
+}
+
+titleScreen();
+})();
+</script>

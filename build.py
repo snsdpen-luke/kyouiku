@@ -42,6 +42,7 @@ PAGES = [
     ("テックリーダー調べ.html",    "leaders/index.html",  "時代をつくったテックリーダーの調べ学習ノート"),
     ("3つの部品RLC.html",          "rlcintro/index.html", "電気回路α：導入。世界を変えた3つの部品 R・L・C（30分）"),
     ("コイルとコンデンサ.html",    "rlc/index.html",      "電気回路α：RLC回路から学ぶコイルとコンデンサ（30分の序論）"),
+    ("生まれ変わりのサイコロ.html", "umare/index.html",   "総合的な探究 Lesson01「壁」の冒頭。生まれと進路と壁の人生ゲーム"),
 ]
 
 # 来校者に配る URL は https://kyouiku-free.github.io/mart/（個人名の出ない別の箱）。横に clone してあればそこにも写す。
