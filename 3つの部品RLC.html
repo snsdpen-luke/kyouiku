@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>世界を変えた3つの部品 R・L・C</title>
+<!--
+  kyouzai ひな形（.claude/skills/kyouzai/template.html）。写して、日本語名の本体（例：音で距離を測る.html）にして使う。
+  直すのは「★授業ごと」の所だけ。「■共通」の所は、直さない（直すならスキルのひな形のほうを直す）。
+  使わない部品は、/*== 部品名 ==*/ から /*== 部品名 おわり ==*/ までを消してよい。
+  外から何も読まない（フォント・ライブラリ・画像も中に入れる）。confirm / alert は使わない（ask / tell を使う）。
+-->
+<style>
+/* ■共通：色と文字。ライトモード固定・端末内のフォントだけ */
+:root{
+  color-scheme:light;
+  --bg:#ffffff; --card:#fff; --ink:#26292e; --sub:#6b7078; --line:#d5d8de; --panel:#f6f7f9;
+  --accent:#1a5fd0; --accent-soft:#eaf1fc;  /* つよしさんのスライド規定：白・ダークグレー・差し色は青と黄 */
+  --yellow:#f2c200; --yellow-soft:#fff7d1;          /* ★授業ごと：アクセント色はこの2つだけ変える */
+  --ok:#1d7f55; --ok-soft:#e1f3ea; --ng:#b8402b; --ng-soft:#fbe7e2; --warn:#8a5a00; --warn-soft:#fff3d6;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans CJK JP","Noto Sans JP","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  --f-num:ui-monospace,"Cascadia Mono","Menlo","Noto Sans Mono",monospace;
+  --fs:clamp(15px,0.55vw + 11px,19px);              /* 本文の大きさ：画面の幅に合わせて 15〜19px */
+  --tap:44px;                                       /* 押せる物の最小の大きさ */
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:var(--fs);line-height:1.6;
+  -webkit-text-size-adjust:100%;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+b{font-weight:700}
+
+/* ■共通：画面の枠。上（題・章）→ 進み具合 → 本文（左：カード／右：用語欄）→ 下（前へ・次へ） */
+.app{height:100%;height:100dvh;display:flex;flex-direction:column;gap:6px;
+  padding:8px max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+  max-width:1400px;margin:0 auto}
+.top{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;min-width:0}
+.top h1{font-size:1.15em;margin:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.chips{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:0}
+.chip{font-size:max(14px,.85em);padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--sub);background:var(--card);white-space:nowrap}
+.chip.now{border-color:var(--accent);color:var(--accent);font-weight:700}
+.chip.done{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.ver{font-size:max(14px,.75em);color:var(--sub);white-space:nowrap}
+.hbtn{min-height:var(--tap);padding:2px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:max(14px,.85em)}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.prog>i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.body{flex:1 1 auto;display:grid;grid-template-columns:minmax(0,1fr) clamp(200px,22vw,280px);gap:10px;min-height:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:clamp(12px,1.6vw,22px);
+  overflow:auto;min-height:0;container-type:inline-size;overscroll-behavior:contain}
+.gloss{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;overflow:auto;min-height:0;font-size:max(14px,.9em)}
+.gloss h2{font-size:.95em;margin:0 0 6px;color:var(--sub)}
+.gloss dt{font-weight:700;margin-top:10px;color:var(--accent)}
+.gloss dd{margin:2px 0 0}
+.gloss .none{color:var(--sub)}
+.foot{display:flex;align-items:center;gap:10px}
+.foot .pno{flex:1;text-align:center;color:var(--sub);font-size:max(14px,.85em)}
+.btn{min-height:var(--tap);min-width:var(--tap);padding:6px 18px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:700}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.4;cursor:default}
+#glossBtn{display:none}
+
+/* 狭い画面（縦長タブレット・スマートフォン）：用語欄は「用語」ボタンで開く引き出しにする */
+@media (max-width:820px), (max-aspect-ratio:1/1){
+  .body{grid-template-columns:minmax(0,1fr)}
+  .gloss{position:fixed;inset:auto 8px 8px 8px;max-height:55dvh;z-index:20;box-shadow:0 8px 30px #0003;display:none}
+  .gloss.open{display:block}
+  #glossBtn{display:inline-block}
+  .top h1{flex:1}
+  .chips{order:5;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+}
+
+/* ■共通：カードの中身 */
+.card h2{font-size:1.25em;margin:0 0 .3em;line-height:1.3}
+.card p{margin:.4em 0}
+.lead{color:var(--sub)}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(10px,1.5vw,20px);height:100%;min-height:0}
+.split>.fig{min-height:0;position:relative}
+.split>.txt{min-height:0;overflow:auto}
+@container (max-width:640px){
+  .split{grid-template-columns:minmax(0,1fr);height:auto}
+  .split>.fig{aspect-ratio:var(--fig-ar,4/3);max-height:60dvh}
+}
+/* このスライドだけ：シミュレーターの図を広く、SVG の図はせまく */
+@container (min-width:641px){.split:has(canvas){grid-template-columns:minmax(0,3fr) minmax(0,2fr)}.split:has(svg){grid-template-columns:minmax(0,2fr) minmax(0,3fr)}}
+.stage canvas{background:#fff}
+.goal{background:var(--yellow-soft);border-left:5px solid var(--yellow);border-radius:10px;padding:8px 12px;margin:.5em 0}
+.clear{background:var(--ok-soft);color:var(--ok);border-radius:10px;padding:8px 12px;font-weight:700;margin:.5em 0}
+
+/*== 問題 ==*/
+.qno{color:var(--sub);font-size:max(14px,.85em)}
+.qt{font-size:1.05em;margin:.2em 0 .5em}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;min-height:var(--tap);padding:8px 12px;border-radius:10px;
+  border:2px solid var(--line);background:var(--card);line-height:1.45}
+.opt .k{flex:none;font-weight:700;color:var(--sub);min-width:1.4em}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--ng);background:var(--ng-soft)}
+.opt.miss{border-color:var(--ok);border-style:dashed}
+.opt:disabled{cursor:default;color:var(--ink)}
+.bank{display:flex;flex-wrap:wrap;gap:6px}
+.bank .opt{display:inline-flex;padding:6px 12px}
+.numrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.numrow input,.wbox textarea{min-height:var(--tap);padding:6px 10px;border:2px solid var(--line);border-radius:10px;background:#fff;font-size:1em}
+.numrow input{width:9em;font-family:var(--f-num)}
+.wbox textarea{width:100%;min-height:6em}
+.fb{margin-top:8px;padding:8px 12px;border-radius:10px;line-height:1.5}
+.fb.ok{background:var(--ok-soft)} .fb.ng{background:var(--ng-soft)} .fb.mid{background:var(--warn-soft)}
+.fb b.h{display:block;margin-bottom:2px}
+.sensei-ans{font-size:max(14px,.75em);color:#fff;background:var(--warn);border-radius:6px;padding:0 6px;margin-left:6px}
+/*== 問題 おわり ==*/
+
+/*== シミュレーター ==*/
+.stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.stage canvas{display:block;background:#fbfcfd;border:1px solid var(--line);border-radius:10px;touch-action:none}
+.ctrls{display:flex;flex-wrap:wrap;gap:6px;margin:.4em 0}
+.stepper{display:inline-flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+.stepper .lab{padding:0 6px;font-size:max(14px,.85em);color:var(--sub)}
+.stepper .val{min-width:5.5em;text-align:center;font-family:var(--f-num);font-weight:700}
+.stepper button{min-width:var(--tap);min-height:var(--tap);border-radius:8px;border:1px solid var(--line);background:#fff;font-weight:700;font-size:1.1em}
+.readout{font-family:var(--f-num);background:var(--panel);border-radius:10px;padding:4px 10px;margin:.3em 0}
+/*== シミュレーター おわり ==*/
+
+/*== 小テスト ==*/
+.nobox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:.6em 0}
+.nobox input{width:6em;min-height:var(--tap);font-size:1.3em;text-align:center;font-family:var(--f-num);border:2px solid var(--line);border-radius:10px}
+.timer{font-family:var(--f-num);font-weight:700;padding:2px 10px;border-radius:8px;background:var(--panel)}
+.timer.hot{background:var(--ng-soft);color:var(--ng)}
+.jump{display:flex;flex-wrap:wrap;gap:6px;margin:.4em 0}
+.jump .btn{min-width:var(--tap);padding:4px 10px}
+.warn{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:8px 12px;margin:.5em 0}
+.rv{width:100%;border-collapse:collapse;font-size:max(14px,.9em)}
+.rv td{border-top:1px solid var(--line);padding:6px 4px;vertical-align:top}
+.mark{font-weight:700} .mark.o{color:var(--ok)} .mark.x{color:var(--ng)}
+/*== 小テスト おわり ==*/
+
+/* ■共通：まとめ（修了画面） */
+.cert{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.cert .box{background:var(--panel);border-radius:12px;padding:10px 14px}
+.cert h3{margin:0;font-size:max(14px,.85em);color:var(--sub)}
+.cert .big{font-size:1.6em;font-weight:700}
+.bars{display:grid;gap:4px;margin-top:4px}
+.bars .row{display:grid;grid-template-columns:7em 1fr 3.5em;gap:6px;align-items:center;font-size:max(14px,.85em)}
+.bars .track{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.bars .fill{height:100%;background:var(--accent)}
+
+/* ■共通：ダイアログ・先生用 */
+.veil{position:fixed;inset:0;background:#0006;display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.veil.on{display:flex}
+.modal{background:#fff;border-radius:14px;padding:18px;max-width:440px;width:100%}
+.modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.note{position:fixed;left:12px;right:12px;bottom:70px;z-index:40;background:#fffbe8;border:2px solid #e2c56b;border-radius:12px;padding:10px 14px;max-height:40dvh;overflow:auto;font-size:.9em}
+.sbar{background:var(--warn);color:#fff;border-radius:10px;padding:4px 8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:max(14px,.8em)}
+.sbar select{min-height:var(--tap);max-width:100%;flex:1 1 12em;border-radius:8px;border:0;padding:0 6px;background:#fff;color:var(--ink)}
+.sbar .btn{min-height:var(--tap);border:0;padding:0 12px;color:var(--warn)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{body{overflow:visible}.foot,.top .hbtn,.sbar{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sbar" id="sbar" hidden></div>
+  <header class="top">
+    <h1 id="ttl"></h1>
+    <nav class="chips" id="chips"></nav>
+    <button class="hbtn" id="glossBtn">用語</button>
+    <span class="ver" id="ver"></span>
+  </header>
+  <div class="prog"><i id="bar"></i></div>
+  <main class="body">
+    <section class="card" id="card" aria-live="polite"></section>
+    <aside class="gloss" id="gloss"></aside>
+  </main>
+  <footer class="foot" id="foot">
+    <button class="btn" id="prev">← 前へ</button>
+    <span class="pno" id="pno"></span>
+    <button class="btn pri" id="next">次へ →</button>
+  </footer>
+</div>
+<div class="veil" id="veil"><div class="modal" role="dialog"><div id="mMsg"></div>
+  <div class="row"><button class="btn" id="mNo">やめる</button><button class="btn pri" id="mYes">はい</button></div></div></div>
+<div class="note" id="note" hidden></div>
+
+<script>
+"use strict";
+/* ============================================================
+   ★授業ごと：ここから下の「データ」だけを書きかえる
+   ============================================================ */
+const VER = "2026-11-27a";               // 直したら必ず上げる（画面右上に出る）
+const FOLDER = "rlcintro";               // 配る場所のフォルダ名。保存の名前にも使う
+const TITLE = "世界を変えた3つの部品 R・L・C";   // 画面の題
+
+// 章（画面上の丸い札）。ページの sec に書く
+const SECS = ["導入", "抵抗 R", "コイル L", "コンデンサ C", "練習", "まとめ"];
+
+// 用語。ページの terms・問題の term に、ここの見出しと同じ文字を書く
+const TERMS = {
+  "抵抗": "電流の流れをじゃまして、電気を熱や光に変える部品。記号は R。単位は Ω（オーム）。",
+  "コイル": "電線をぐるぐる巻いた部品。電流を流すと磁石になります。記号は L。単位は H（ヘンリー）。",
+  "コンデンサ": "2枚の金属の板を向かい合わせた部品。電気をためて、一気に出せます。記号は C。単位は F（ファラド）。",
+  "電力": "1秒あたりに使う電気のエネルギー。電圧×電流で求めます。単位は W（ワット）。",
+  "電磁石": "電流を流している間だけ磁石になるもの。電流の向きを逆にすると、N極とS極が入れかわります。",
+  "整流子": "モーターの中で、半回転ごとに電流の向きを自動で切りかえるしくみ。",
+  "エネルギー": "物を動かしたり、光らせたり、温めたりするもとになる量。単位は J（ジュール）。1W を1秒間使うと 1J。",
+};
+
+// 計算のもと（モデル）。シミュレーターも問題の答えも、ここだけを使う。
+// 確認スクリプトでは、同じ式を別に書き直して突き合わせる（ここをそのまま使わない）
+const MODEL = {
+  lampR: 100,                                    // 電球の抵抗 [Ω]（明るさで変わらないものとする）
+  lampI: V => V / MODEL.lampR,                   // 電流 [A]
+  lampP: V => V * V / MODEL.lampR,               // 電力 [W]
+  lampMax: 144,                                  // これをこえる電力が1秒続くと、フィラメントが切れる [W]
+  motK: 6, motB: 0.8,                            // モーター：回す力の係数、まさつの係数
+  flashV: 300,                                   // フラッシュのコンデンサの電圧（満タン）[V]
+  battP: 5,                                      // 電池が出せるパワー [W]
+  flashT: 0.001,                                 // 発光の時間 [秒]
+  capE: CuF => 0.5 * CuF * 1e-6 * MODEL.flashV * MODEL.flashV,   // 満タンのエネルギー [J]（C：µF）
+};
+
+// 分野（採点の内訳）。問題の ch に書く
+const CH = { R: "抵抗", L: "コイル", C: "コンデンサ" };
+
+// 問題。id は保存に使うので、一度配ったら変えない。
+const Q = [
+  { id: "P1", ch: "C", t: "one", q: "スマホ1台の中に、コンデンサは何個くらい入っているでしょうか。<b>予想</b>して選びましょう。",
+    o: ["約1000個", "約100個", "約10個", "約10000個"],
+    e: "多い機種では 1000個をこえます。1つ1つは砂つぶほどの大きさです。抵抗やコイルも、たくさん入っています。", term: "コンデンサ" },
+  { id: "P2", ch: "C", t: "one", q: "カメラには電池も入っています。なぜ電池で直接光らせずに、コンデンサを使うのでしょうか。",
+    o: ["電池は一度に大きなパワーを出せないから", "電池よりもたくさんの電気をためられるから", "電池の電気を、新しくつくり足せるから", "電池がなくなっても、ずっと使えるから"],
+    e: "電池は、たくさんの電気を少しずつ長く出すのが得意です。コンデンサは、ためられる量は少ないけれど、一瞬で出し入れできます。得意なことがちがいます。", term: "コンデンサ" },
+  { id: "D1", ch: "R", t: "term", q: "電気ストーブやトースター。電気を熱に変えている、主役の部品はどれですか。", a: ["抵抗"],
+    e: "電流が流れにくい線（ニクロム線）に電流を流して、熱を出しています。", term: "抵抗" },
+  { id: "D2", ch: "L", t: "term", q: "電車や電気自動車を走らせるモーター。電気を磁石の力に変えている、主役の部品はどれですか。", a: ["コイル"],
+    e: "巻いた電線に電流を流して電磁石にし、磁石の力で回します。", term: "コイル" },
+  { id: "D3", ch: "C", t: "term", q: "AED（心臓に電気ショックを与える機器）。電気をためて一気に出している、主役の部品はどれですか。", a: ["コンデンサ"],
+    e: "電池から少しずつためて、一瞬で大きな電気を出します。カメラのフラッシュと同じです。", term: "コンデンサ" },
+  { id: "D4", ch: "L", t: "term", q: "スマホのワイヤレス充電。はなれた相手に、磁気で電気を送っている、主役の部品はどれですか。", a: ["コイル"],
+    e: "充電台とスマホの両方に、巻いた電線が入っています。IH調理器も同じなかまです。", term: "コイル" },
+  { id: "D5", ch: "C", t: "term", q: "スマホのタッチパネル。指がふれると、ためた電気の量が変わることで、ふれた位置を知ります。主役の部品はどれですか。", a: ["コンデンサ"],
+    e: "画面と指が、2枚の板の役目をします。", term: "コンデンサ" },
+  { id: "D6", ch: "R", t: "term", q: "白熱電球のフィラメント。電気を光と熱に変えている、主役の部品はどれですか。", a: ["抵抗"],
+    e: "フィラメントは、とても熱くなって光ります。", term: "抵抗" },
+];
+const EXTRA = ["電池"];        // 語群に足す、まちがいの言葉
+
+// ── シミュレーターの描き方（このページだけの道具） ──
+const INK = "#26292e", SUBC = "#6b7078", LINE = "#d5d8de", BLUE = "#1a5fd0", YEL = "#f2c200", OFF = "#e6e8eb";
+const FONT = (n, bold) => (bold ? "700 " : "") + n + 'px "BIZ UDPGothic","Hiragino Sans","Noto Sans CJK JP","Noto Sans JP",sans-serif';
+function txt(g, s, x, y, size, color, align, bold) { g.fillStyle = color || INK; g.font = FONT(size || 20, bold); g.textAlign = align || "left"; g.fillText(s, x, y); }
+function line(g, pts, color, w) { g.strokeStyle = color; g.lineWidth = w || 3; g.lineCap = "round"; g.lineJoin = "round"; g.beginPath(); pts.forEach(([x, y], k) => k ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); }
+function box(g, x, y, w, h, fill, stroke, lw) { if (fill) { g.fillStyle = fill; g.fillRect(x, y, w, h); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 3; g.strokeRect(x, y, w, h); } }
+function disc(g, x, y, r, fill, stroke, lw) { g.beginPath(); g.arc(x, y, r, 0, 7); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 3; g.stroke(); } }
+function bar(g, x, y, w, h, rate, color) { box(g, x, y, w, h, "#eef0f3"); box(g, x, y, w * clamp(rate, 0, 1), h, color); }
+const num = n => Math.round(n).toLocaleString("ja-JP");
+const NAME = { R: "抵抗", L: "コイル", C: "コンデンサ" };
+
+// シミュレーター。init：最初の状態、step：0.05秒ずつ進める、draw：描く（w×h の座標で描く）、ctrls：操作部品
+const SIMS = {
+  // ① 町から部品を消してみる
+  town: {
+    w: 800, h: 450,
+    init: () => ({ R: true, L: true, C: true, sR: false, sL: false, sC: false, t: 0, tx: 0, fan: 0 }),
+    step(S, dt) { S.t += dt; if (S.L) { S.tx = (S.tx + 70 * dt) % 420; S.fan += 5 * dt; } },
+    draw(g, S, w, h) {
+      line(g, [[20, 360], [780, 360]], INK, 3);
+      // 抵抗：家のあかりと街灯
+      box(g, 60, 220, 160, 140, "#fff", INK); line(g, [[45, 222], [140, 150], [235, 222]], INK, 3);
+      box(g, 80, 250, 48, 48, S.R ? YEL : OFF, INK, 2); box(g, 152, 250, 48, 48, S.R ? YEL : OFF, INK, 2);
+      line(g, [[262, 360], [262, 200]], INK, 4);
+      if (S.R) disc(g, 262, 188, 30, "rgba(242,194,0,.3)");
+      disc(g, 262, 188, 14, S.R ? YEL : OFF, INK, 2);
+      // コイル：電車とせんぷうき
+      g.save(); g.beginPath(); g.rect(300, 280, 270, 90); g.clip();
+      const x = 300 - 150 + S.tx;
+      box(g, x, 300, 150, 48, S.L ? BLUE : OFF, INK); [14, 56, 98].forEach(d => box(g, x + d, 310, 30, 18, "#fff", INK, 2));
+      disc(g, x + 30, 352, 8, INK); disc(g, x + 120, 352, 8, INK);
+      g.restore();
+      line(g, [[435, 250], [435, 170]], INK, 4);
+      for (let k = 0; k < 3; k++) { const a = S.fan + k * 2.094; line(g, [[435, 170], [435 + 46 * Math.cos(a), 170 + 46 * Math.sin(a)]], S.L ? BLUE : "#b9bdc4", 12); }
+      disc(g, 435, 170, 8, INK);
+      // コンデンサ：スマホとフラッシュ
+      g.fillStyle = INK; g.beginPath(); g.roundRect ? g.roundRect(630, 160, 104, 196, 14) : g.rect(630, 160, 104, 196); g.fill();
+      box(g, 640, 176, 84, 150, S.C ? BLUE : OFF);
+      txt(g, S.C ? "ON" : "…", 682, 260, 26, S.C ? "#fff" : SUBC, "center", true);
+      if (S.C) { const a = Math.pow(Math.max(0, Math.sin(S.t * 2.2)), 10); if (a > 0.02) { disc(g, 722, 172, 10 + 40 * a, `rgba(242,194,0,${0.5 * a})`); disc(g, 722, 172, 8, YEL); } }
+      // 札
+      [["R", 150, "あかり・ストーブ"], ["L", 435, "電車・せんぷうき"], ["C", 682, "スマホ・フラッシュ"]].forEach(([k, cx, lab]) => {
+        txt(g, lab, cx, 396, 20, S[k] ? INK : SUBC, "center");
+        txt(g, S[k] ? "主役：" + NAME[k] + " " + k : "× 止まりました", cx, 426, 18, S[k] ? BLUE : SUBC, "center", S[k]);
+      });
+      txt(g, "この町から、部品を1つずつ消してみましょう", 400, 50, 24, INK, "center", true);
+      txt(g, "ここを見る：消したとき、何が止まるか", 400, 84, 18, SUBC, "center");
+    },
+    ctrls(box_, S, sim) {
+      const bs = ["R", "L", "C"].map(k => { const b = button("", () => { S[k] = !S[k]; if (!S[k]) S["s" + k] = true; }); b.dataset.k = k; return b; });
+      box_.append(...bs);
+      let last = "";
+      sim.onDraw = () => {
+        const s = ["R", "L", "C"].map(k => S[k] ? 1 : 0).join("");
+        if (s === last) return; last = s;
+        bs.forEach(b => { const k = b.dataset.k; b.textContent = S[k] ? NAME[k] + " " + k + " を消す" : NAME[k] + " " + k + " をもどす"; b.classList.toggle("pri", !S[k]); });
+      };
+    },
+  },
+  // ② 電球（抵抗）：電圧を上げると光る。上げすぎると切れる
+  lamp: {
+    w: 800, h: 450,
+    init: () => ({ V: 0, hot: 0, burnt: false, n: 0 }),
+    step(S, dt) {
+      if (S.burnt) return;
+      if (MODEL.lampP(S.V) > MODEL.lampMax) { S.hot += dt; if (S.hot >= 1) { S.burnt = true; S.n++; } } else S.hot = 0;
+    },
+    draw(g, S, w, h) {
+      const P = S.burnt ? 0 : MODEL.lampP(S.V), I = S.burnt ? 0 : MODEL.lampI(S.V), b = clamp(P / 100, 0, 1.6);
+      const cx = 220, cy = 190;
+      if (b > 0.01) { const gr = g.createRadialGradient(cx, cy, 20, cx, cy, 120 + 70 * b); gr.addColorStop(0, `rgba(242,194,0,${Math.min(0.85, 0.55 * b)})`); gr.addColorStop(1, "rgba(242,194,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 440, 400); }
+      disc(g, cx, cy, 110, b > 0.01 ? `rgba(255,247,209,${Math.min(1, 0.4 + 0.5 * b)})` : "#fff", INK, 4);
+      box(g, cx - 42, cy + 100, 84, 60, "#fff", INK, 4); line(g, [[cx - 42, cy + 120], [cx + 42, cy + 120]], INK, 3); line(g, [[cx - 42, cy + 140], [cx + 42, cy + 140]], INK, 3);
+      line(g, [[cx - 24, cy + 100], [cx - 40, cy + 20]], INK, 3); line(g, [[cx + 24, cy + 100], [cx + 40, cy + 20]], INK, 3);
+      const fc = S.burnt ? "#9aa0a8" : P > MODEL.lampMax ? "#fff" : b > 0.01 ? `rgb(${Math.round(150 + 92 * Math.min(1, b))},${Math.round(110 + 84 * Math.min(1, b))},0)` : INK;
+      const zig = []; for (let k = 0; k <= 8; k++) zig.push([cx - 40 + k * 10, cy + 20 - (k % 2 ? 26 : 0)]);
+      if (S.burnt) { line(g, zig.slice(0, 4), fc, 4); line(g, zig.slice(5).map(([x, y]) => [x + 4, y + 10]), fc, 4); }
+      else { if (P > MODEL.lampMax) line(g, zig, YEL, 12); line(g, zig, fc, 5); }
+      txt(g, "フィラメント（抵抗 " + MODEL.lampR + "Ω）", cx, 400, 20, INK, "center");
+      if (S.burnt) txt(g, "フィラメントが切れました", cx, 432, 20, BLUE, "center", true);
+      else if (P > MODEL.lampMax) txt(g, "熱くなりすぎています", cx, 432, 20, BLUE, "center", true);
+      // 右：数
+      const x0 = 470, bw = 300;
+      txt(g, "電圧", x0, 70, 20); txt(g, S.V + " V", x0 + bw, 70, 22, INK, "right", true); bar(g, x0, 80, bw, 18, S.V / 150, "#9aa0a8");
+      txt(g, "電流", x0, 150, 20); txt(g, I.toFixed(2) + " A", x0 + bw, 150, 22, INK, "right", true); bar(g, x0, 160, bw, 18, I / 1.5, BLUE);
+      txt(g, "電力", x0, 230, 20); txt(g, num(P) + " W", x0 + bw, 230, 22, INK, "right", true); bar(g, x0, 240, bw, 18, P / 225, YEL);
+      txt(g, "電力のゆくえ", x0, 320, 20);
+      box(g, x0, 332, bw * 0.9, 30, P > 0 ? "#9aa0a8" : "#eef0f3"); box(g, x0 + bw * 0.9, 332, bw * 0.1, 30, P > 0 ? YEL : "#eef0f3");
+      txt(g, "熱 約9割", x0 + bw * 0.45, 354, 18, P > 0 ? "#fff" : SUBC, "center"); txt(g, "光 約1割", x0 + bw, 388, 18, SUBC, "right");
+    },
+    ctrls(box_, S, sim) {
+      const stp = stepper("電圧", () => S.V + " V", v => { if (!S.burnt) S.V = clamp(S.V + v, 0, 150); }, 10);
+      const nw = button("新しい電球にかえる", () => { S.burnt = false; S.hot = 0; S.V = 0; stp.upd(); }); nw.id = "newLamp";
+      box_.append(stp, nw);
+      let last = null;
+      sim.onDraw = () => { if (S.burnt !== last) { last = S.burnt; nw.hidden = !S.burnt; } };
+    },
+  },
+  // ③ モーター（コイル）：電磁石の向きを切りかえて回す
+  motor: {
+    w: 800, h: 450,
+    init: () => ({ th: 2.6, om: 0, dir: 1, I: 1, auto: false, acc: 0, man: 0 }),
+    step(S, dt) {
+      const sn = Math.sin(S.th);
+      if (S.auto && Math.abs(sn) > 1e-6) S.dir = sn * (S.om >= 0 ? 1 : -1) < 0 ? 1 : -1;      // 整流子：いつも回る向きに力が出るよう切りかえる
+      if (Math.abs(S.om) < 0.02 && Math.abs(sn) < 0.03 && S.dir * Math.cos(S.th) < 0) S.th += 0.06;   // 反発の位置でぴったり止まったときの、わずかなずれ
+      const tq = -MODEL.motK * S.I * S.dir * Math.sin(S.th) - MODEL.motB * S.om;              // 磁石の力 − まさつ
+      S.om += tq * dt; S.th += S.om * dt; S.acc += S.om * dt;
+      if (!S.auto) S.man = Math.max(S.man, Math.abs(S.acc) / (2 * Math.PI));
+    },
+    draw(g, S, w, h) {
+      const cx = 400, cy = 215, r = 120;
+      box(g, 120, 130, 80, 170, "#fff", INK, 4); txt(g, "N", 160, 228, 40, BLUE, "center", true);
+      box(g, 600, 130, 80, 170, "#fff", INK, 4); txt(g, "S", 640, 228, 40, INK, "center", true);
+      txt(g, "動かない磁石", 160, 330, 18, SUBC, "center"); txt(g, "動かない磁石", 640, 330, 18, SUBC, "center");
+      const ex = Math.cos(S.th), ey = -Math.sin(S.th);
+      line(g, [[cx - r * ex, cy - r * ey], [cx + r * ex, cy + r * ey]], INK, 40);
+      line(g, [[cx - r * ex, cy - r * ey], [cx + r * ex, cy + r * ey]], "#fff", 32);
+      for (let k = -4; k <= 4; k++) { const px = cx + k * 16 * ex, py = cy + k * 16 * ey; line(g, [[px - 17 * ey, py + 17 * ex], [px + 17 * ey, py - 17 * ex]], BLUE, 5); }
+      const a = S.dir === 1 ? "N" : "S", b = S.dir === 1 ? "S" : "N";
+      [[1, a], [-1, b]].forEach(([s, p]) => { const px = cx + s * r * ex, py = cy + s * r * ey; disc(g, px, py, 24, p === "N" ? BLUE : "#fff", INK, 3); txt(g, p, px, py + 9, 26, p === "N" ? "#fff" : INK, "center", true); });
+      disc(g, cx, cy, 8, INK);
+      txt(g, "回る電磁石（コイル）", cx, 400, 20, INK, "center");
+      txt(g, "ここを見る：N と S は引き合い、同じどうしは反発します", cx, 432, 18, SUBC, "center");
+      txt(g, "回る速さ", 400, 36, 18, SUBC, "right"); txt(g, (Math.abs(S.om) / (2 * Math.PI)).toFixed(1) + " 回転/秒", 410, 38, 22, INK, "left", true);
+    },
+    ctrls(box_, S, sim) {
+      const flip = button("電流の向きを切りかえる", () => { if (!S.auto) S.dir = -S.dir; }, "pri"); flip.id = "flip";
+      const au = button("", () => { S.auto = !S.auto; S.acc = 0; }); au.id = "auto";
+      box_.append(flip, stepper("電流", () => S.I + " A", v => { S.I = clamp(S.I + v, 1, 3); }, 1), au);
+      const out = el("div", "readout"); out.id = "out"; box_.append(out);
+      let last = "";
+      sim.onDraw = () => {
+        const s = (S.auto ? "1" : "0") + S.man.toFixed(1);
+        if (s === last) return; last = s;
+        au.textContent = S.auto ? "整流子（自動で切りかえ）を外す" : "整流子（自動で切りかえ）を付ける"; au.classList.toggle("pri", S.auto); flip.disabled = S.auto;
+        out.textContent = "手で切りかえて回した数 " + S.man.toFixed(1) + " 回転";
+      };
+    },
+  },
+  // ④ フラッシュ（コンデンサ）：電池から少しずつためて、一瞬で出す
+  flash: {
+    w: 800, h: 450,
+    init: () => ({ C: 200, E: 0, on: false, fl: 0, lastE: 0, best: 0, t: 0 }),
+    step(S, dt) {
+      S.t += dt; const max = MODEL.capE(S.C);
+      if (S.E > max) S.E = max;
+      if (S.on) { S.E = Math.min(max, S.E + MODEL.battP * dt); if (S.E >= max) S.on = false; }
+      if (S.fl > 0) S.fl = Math.max(0, S.fl - dt * 1.4);
+    },
+    draw(g, S, w, h) {
+      const max = MODEL.capE(S.C), tw = 60 + S.C / 1000 * 130, tx = 330 - tw / 2, ty = 90, th = 190;
+      // 電池
+      box(g, 50, 150, 90, 110, "#fff", INK, 4); box(g, 80, 138, 30, 12, INK); txt(g, "電池", 95, 200, 22, INK, "center", true); txt(g, MODEL.battP + " W", 95, 232, 20, SUBC, "center");
+      line(g, [[140, 205], [tx, 205]], INK, 3);
+      if (S.on) for (let k = 0; k < 4; k++) { const p = ((S.t * 0.8 + k / 4) % 1); disc(g, 140 + (tx - 140) * p, 205, 5, BLUE); }
+      txt(g, "少しずつ", (140 + tx) / 2, 190, 16, SUBC, "center");
+      // コンデンサ（ためる入れ物）
+      box(g, tx, ty, tw, th, "#fff"); const lv = th * (max ? S.E / max : 0); box(g, tx, ty + th - lv, tw, lv, BLUE); box(g, tx, ty, tw, th, null, INK, 4);
+      txt(g, "コンデンサ " + S.C + " µF", 330, 70, 20, INK, "center", true);
+      txt(g, S.E.toFixed(1) + " J", 330, ty + th + 30, 24, INK, "center", true); txt(g, "満タン " + max.toFixed(1) + " J", 330, ty + th + 56, 18, SUBC, "center");
+      // ランプ
+      line(g, [[tx + tw, 205], [600, 205]], INK, 8); txt(g, "一気に", (tx + tw + 600) / 2, 190, 16, SUBC, "center");
+      if (S.fl > 0) disc(g, 660, 205, 60 + 160 * S.fl, `rgba(242,194,0,${0.5 * S.fl})`);
+      disc(g, 660, 205, 58, S.fl > 0 ? `rgba(255,247,209,1)` : "#fff", INK, 4); txt(g, "ランプ", 660, 300, 20, INK, "center");
+      line(g, [[640, 220], [650, 190], [660, 220], [670, 190], [680, 220]], S.fl > 0 ? YEL : INK, 4);
+      // パワーくらべ
+      if (S.lastE > 0) {
+        const P = S.lastE / MODEL.flashT;
+        txt(g, "パワーくらべ", 50, 372, 18, INK, "left", true);
+        txt(g, "電池", 120, 400, 18, INK, "right"); bar(g, 130, 384, 440, 20, Math.max(MODEL.battP / P, 0.004), "#9aa0a8"); txt(g, MODEL.battP + " W", 580, 400, 18, INK);
+        txt(g, "発光", 120, 430, 18, BLUE, "right"); bar(g, 130, 414, 440, 20, 1, YEL); txt(g, num(P) + " W（" + num(P / MODEL.battP) + "倍）", 580, 430, 18, INK, "left", true);
+      } else txt(g, "ここを見る：ためるのにかかる時間と、出すときの明るさ", 400, 410, 18, SUBC, "center");
+      if (S.fl > 0.05) { g.fillStyle = `rgba(255,247,209,${Math.min(0.9, S.fl)})`; g.fillRect(0, 0, w, h); }
+    },
+    ctrls(box_, S, sim) {
+      const ch = button("", () => { S.on = !S.on && S.E < MODEL.capE(S.C); }, "pri"); ch.id = "charge";
+      const fire = button("発光！", () => { if (S.E <= 0) return; S.lastE = S.E; S.best = Math.max(S.best, S.E); S.E = 0; S.on = false; S.fl = 1; }); fire.id = "fire";
+      box_.append(ch, fire, stepper("C", () => S.C + " µF", v => { S.C = clamp(S.C + v, 100, 1000); }, 100));
+      const out = el("div", "readout"); out.id = "out"; box_.append(out);
+      let last = "";
+      sim.onDraw = () => {
+        const s = (S.on ? "1" : "0") + S.lastE.toFixed(1);
+        if (s === last) return; last = s;
+        ch.textContent = S.on ? "充電をとめる" : "充電する";
+        out.textContent = S.lastE > 0 ? "いまの発光 " + S.lastE.toFixed(1) + " J を " + (MODEL.flashT * 1000) + "/1000 秒で出しました" : "まだ発光していません";
+      };
+    },
+  },
+};
+
+// 図（SVG）
+const FAM = `font-family="BIZ UDPGothic,Hiragino Sans,Noto Sans CJK JP,sans-serif"`;
+const FIG_PARTS = `<svg viewBox="0 0 420 300" width="100%" height="100%" role="img" aria-label="抵抗・コイル・コンデンサの記号と役目">
+<g ${FAM} fill="#26292e" text-anchor="middle">
+<rect x="6" y="20" width="128" height="260" rx="14" fill="#fff" stroke="#26292e" stroke-width="3"/>
+<rect x="146" y="20" width="128" height="260" rx="14" fill="#fff" stroke="#26292e" stroke-width="3"/>
+<rect x="286" y="20" width="128" height="260" rx="14" fill="#fff" stroke="#26292e" stroke-width="3"/>
+<text x="70" y="70" font-size="44" font-weight="700" fill="#1a5fd0">R</text><text x="210" y="70" font-size="44" font-weight="700" fill="#1a5fd0">L</text><text x="350" y="70" font-size="44" font-weight="700" fill="#1a5fd0">C</text>
+<text x="70" y="104" font-size="20" font-weight="700">抵抗</text><text x="210" y="104" font-size="20" font-weight="700">コイル</text><text x="350" y="104" font-size="20" font-weight="700">コンデンサ</text>
+<path d="M20 150 H45 M95 150 H120" stroke="#26292e" stroke-width="4"/><rect x="45" y="136" width="50" height="28" fill="none" stroke="#26292e" stroke-width="4"/>
+<path d="M160 150 H176 a8 8 0 0 1 16 0 a8 8 0 0 1 16 0 a8 8 0 0 1 16 0 a8 8 0 0 1 16 0 H260" fill="none" stroke="#26292e" stroke-width="4"/>
+<path d="M300 150 H342 M358 150 H400 M342 126 V174 M358 126 V174" stroke="#26292e" stroke-width="4"/>
+<rect x="18" y="204" width="104" height="56" rx="8" fill="#fff7d1"/><rect x="158" y="204" width="104" height="56" rx="8" fill="#fff7d1"/><rect x="298" y="204" width="104" height="56" rx="8" fill="#fff7d1"/>
+<text x="70" y="228" font-size="17">電気を</text><text x="70" y="250" font-size="17" font-weight="700">熱と光に</text>
+<text x="210" y="228" font-size="17">電気を</text><text x="210" y="250" font-size="17" font-weight="700">磁石の力に</text>
+<text x="350" y="228" font-size="17">電気を</text><text x="350" y="250" font-size="17" font-weight="700">ためて一気に</text>
+</g></svg>`;
+const FIG_TANK = `<svg viewBox="0 0 400 300" width="100%" height="100%" role="img" aria-label="電池は大きなタンクと細いじゃ口、コンデンサは小さなバケツ">
+<g ${FAM} fill="#26292e" text-anchor="middle">
+<rect x="30" y="60" width="130" height="170" fill="#fff" stroke="#26292e" stroke-width="4"/><rect x="32" y="90" width="126" height="138" fill="#1a5fd0"/>
+<path d="M160 210 H188 V222" fill="none" stroke="#26292e" stroke-width="6"/><path d="M188 228 V262" stroke="#1a5fd0" stroke-width="3" stroke-dasharray="5 6"/>
+<text x="95" y="44" font-size="22" font-weight="700">電池</text><text x="95" y="258" font-size="17">大きなタンクと</text><text x="95" y="280" font-size="17">細いじゃ口</text>
+<path d="M262 120 L276 190 H334 L348 120" fill="#fff" stroke="#26292e" stroke-width="4"/><path d="M267 140 L276 188 H334 L343 140 Z" fill="#1a5fd0"/>
+<path d="M262 120 Q305 80 348 120" fill="none" stroke="#26292e" stroke-width="3"/>
+<text x="305" y="44" font-size="22" font-weight="700">コンデンサ</text><text x="305" y="258" font-size="17">小さなバケツ</text><text x="305" y="280" font-size="17">ひっくり返せば一瞬</text>
+</g></svg>`;
+
+// ページ（上から順に進む）
+const PAGES = [
+  { sec: "導入", kind: "sim", id: "m0", title: "もし、この3つがなかったら", sim: "town", terms: ["抵抗", "コイル", "コンデンサ"],
+    html: `<p>電気の回路には、<b>3つの主役</b>がいます。この町から1つずつ消して、何が起きるか見てみましょう。</p>`,
+    goal: "3つの部品を、それぞれ1回ずつ消してみる。",
+    ok: S => S.sR && S.sL && S.sC,
+    note: "（3分）説明せずに、まず消させる。問い「いちばん困るのはどれを消したとき？」で2〜3人に聞く。R・L・C の名前は次のページで。" },
+  { sec: "導入", kind: "slide", title: "電気回路の3大部品 R・L・C", terms: ["抵抗", "コイル", "コンデンサ"], fig: FIG_PARTS, q: "P1",
+    html: `<p>抵抗は R、コイルは L、コンデンサは C。電気の流れを整える、基本の3つの部品です。ほとんどの電気製品に入っています。</p>`,
+    note: "（2分）記号 R・L・C を板書。「電気の3要素」というと電圧・電流・抵抗を指すことが多い。今日の3つは「部品」の3つ（受動素子：電気をつくらず、流れを整える部品）という区別を一言。P1 は手をあげさせてから答えさせる。L はレンツ（Lenz）という学者の頭文字と言われる、という話を足してもよい。" },
+  { sec: "抵抗 R", kind: "sim", id: "m1", title: "抵抗：電気を熱と光に変える", sim: "lamp", terms: ["抵抗", "電力"],
+    html: `<p>エジソンは1880年ごろ、京都の竹をフィラメントに使った電球を、約1200時間光らせました。夜が明るくなりました。</p>`,
+    goal: "電力がちょうど 100W になる電圧を見つける。そのあと、もっと上げるとどうなるか試す。",
+    ok: S => !S.burnt && S.V === 100,
+    note: "（4分）見るところ：電圧を2倍（50V→100V）にすると電力は4倍（25W→100W）。光になるのは約1割で、残りは熱。上げすぎると切れる（130V以上で1秒）。ストーブ・ドライヤー・トースターは、この「熱」のほうを使っている。" },
+  { sec: "コイル L", kind: "sim", id: "m2", title: "コイル：電気を磁石の力に変える", sim: "motor", terms: ["コイル", "電磁石", "整流子"],
+    html: `<p>コイルに電流を流すと<b>電磁石</b>になります。世界で使われる電気の4〜5割は、モーターを回すために使われています。</p>`,
+    goal: "「電流の向きを切りかえる」をタイミングよく押して、手で 5回転 させる。そのあと、整流子を付けてみる。",
+    ok: S => S.man >= 5,
+    note: "（5分）最初は何もしないと、ゆれて止まる。問い「どの瞬間に押せば回り続ける？」→ 回る電磁石の N が、動かない磁石の S の前を通る瞬間。電流を 3A にすると速すぎて手では追いつかない → 整流子が自動でやっている、と気づかせる。電車・EV・せんぷうき・洗濯機。" },
+  { sec: "コンデンサ C", kind: "sim", id: "m3", title: "コンデンサ：電気をためて、一気に出す", sim: "flash", terms: ["コンデンサ", "エネルギー"],
+    html: `<p>カメラのフラッシュです。「充電する」でためて、「発光！」で出します。C（ためられる量）も変えられます。</p>`,
+    goal: "エネルギーを 20J 以上ためてから、発光させる。",
+    ok: S => S.best >= 20,
+    note: "（4分）見るところ：ためるのは数秒、出すのは 1/1000 秒。だからパワーは電池の数千倍になる。200µF では満タンでも 9J なので、C を 500µF 以上にする必要がある。AED も同じしくみ。" },
+  { sec: "コンデンサ C", kind: "slide", title: "電池と、どうちがう？", terms: ["コンデンサ"], fig: FIG_TANK, q: "P2",
+    html: `<p>コンデンサも電池も、電気を出せます。水にたとえると、左の図のようなちがいがあります。</p>`,
+    note: "（2分）「コンデンサ＝電池」ではないことを押さえる。電池は化学反応で電気をつくり、たくさん・ゆっくり。コンデンサは電気をそのままため、少し・一瞬。スマホのタッチパネルやメモリにも使われている話を1つ。" },
+  { sec: "練習", kind: "drill", title: "主役はどれ？", pick: q => q.id[0] === "D",
+    note: "（3分）6問。ドライヤーは「熱（抵抗）と風（モーター＝コイル）の両方」という話を足すとよい。" },
+  { sec: "まとめ", kind: "end", title: "まとめ",
+    html: `<table class="rv"><tr><td><b>抵抗 R</b></td><td>電気を<b>熱と光</b>に変える</td><td>電球・ストーブ</td></tr>
+<tr><td><b>コイル L</b></td><td>電気を<b>磁石の力</b>に変える</td><td>モーター・ワイヤレス充電</td></tr>
+<tr><td><b>コンデンサ C</b></td><td>電気を<b>ためて一気に</b>出す</td><td>フラッシュ・AED・タッチパネル</td></tr></table>
+<p>抵抗は電気を使い切る部品、コイルとコンデンサは電気をためて返す部品です。次は、この3つを1つの回路につなぐと何が起きるかを調べます。</p>`,
+    note: "（1分）表の真ん中の列を生徒に言わせる。エネルギーで見ると、抵抗は熱にして使う、コイルは磁気としてためる、コンデンサは電気としてためる。この3つで電気をコントロールする。次回は「コイルとコンデンサ ― RLC回路から」（/rlc/）へ。" },
+];
+
+// 小テスト（このスライドでは使わない。部品は残してある）
+const TEST = { plan: { R: 1, L: 1, C: 1 }, min: 5, types: ["one", "multi", "term", "num"], no: true };
+// まとめ画面に「この画面を先生に見せてください」を出すか
+const END_SHOW = true;
+
+/* ============================================================
+   ■共通：ここから下は直さない（直すならスキルのひな形を直す）
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const button = (label, fn, cls) => { const b = el("button", "btn " + (cls || ""), esc(label)); b.addEventListener("click", fn); return b; };
+function shuffle(a) { for (let n = a.length - 1; n > 0; n--) { const r = Math.floor(Math.random() * (n + 1)); [a[n], a[r]] = [a[r], a[n]]; } return a; }
+const norm = s => String(s).normalize("NFKC").toLowerCase().replace(/[\s・\-ー－―‐。、.,]/g, "").replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+const fixNo = v => String(v).normalize("NFKC").replace(/\s/g, "");
+const LET = "アイウエオカキク";
+const fmt = x => (Math.round(x * 1000) / 1000).toString();
+let running = null, tick = null;   // 動いているシミュレーター・小テストの時計（部品を消しても残す）
+
+// 先生用：URL の末尾に #sensei。全部開く・正解が見える・とばせる・記録は別の箱（生徒の記録は消えない）
+const SENSEI = /^#sensei\b/.test(location.hash);
+window.addEventListener("hashchange", () => location.reload());
+
+// 保存：失敗しても動く。形を変えたら KEY の v を上げる
+const KEY = FOLDER + (SENSEI ? "-sensei" : "") + "-v1";
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { } },
+};
+const blank = () => ({ p: 0, ans: {}, pos: {}, ord: {}, missions: {}, sims: {}, test: null });
+let st = Object.assign(blank(), store.get(KEY) || {});
+const save = () => store.set(KEY, st);
+
+// ダイアログ（ブラウザの confirm / alert は使わない。Classroom などでは無言で失敗する）
+let onYes = null;
+function ask(msg, fn, label) { $("mMsg").innerHTML = msg; $("mYes").textContent = label || "はい"; $("mYes").hidden = false; $("mNo").textContent = "やめる"; onYes = fn; $("veil").classList.add("on"); }
+function tell(msg) { $("mMsg").innerHTML = msg; $("mYes").hidden = true; $("mNo").textContent = "とじる"; onYes = null; $("veil").classList.add("on"); }
+$("mYes").onclick = () => { $("veil").classList.remove("on"); const f = onYes; onYes = null; if (f) f(); };
+$("mNo").onclick = () => { $("veil").classList.remove("on"); onYes = null; };
+
+/*== 問題 ==*/
+const QI = Object.fromEntries(Q.map(q => [q.id, q]));
+const BANK = [...new Set(Q.filter(q => q.t === "term").map(q => q.a[0]).concat(EXTRA))].sort((a, b) => a.localeCompare(b, "ja"));
+const tolOf = q => q.tol != null ? q.tol : Math.abs(q.a) * 0.01;
+// judge：答えが正しいか（true / false）。記述は null（自分で評価する）
+function judge(q, a) {
+  if (a == null) return false;
+  switch (q.t) {
+    case "one": return a === 0;
+    case "multi": return Array.isArray(a) && a.length === q.a.length && q.a.every(k => a.includes(k));
+    case "term": return q.a.some(x => norm(x) === norm(a));
+    case "num": { const v = typeof a === "number" ? a : parseFloat(fixNo(a)); return Number.isFinite(v) && Math.abs(v - q.a) <= tolOf(q) + 1e-9; }
+    case "w": return null;
+  }
+  return false;
+}
+// 正解の位置（1つ選ぶ問題）：ア・イ・ウ…をなるべく同じ数ずつ、同じ位置が3問続かないように配る（人ごとに違う）
+function posOf(q) {
+  if (st.pos[q.id] != null) return st.pos[q.id];
+  const used = Object.values(st.pos), last = used.slice(-2), n = q.o.length;
+  const cnt = k => used.filter(v => v === k).length;
+  let cand = shuffle([...Array(n).keys()]).filter(k => !(last.length === 2 && last[0] === k && last[1] === k));
+  cand.sort((a, b) => cnt(a) - cnt(b));
+  st.pos[q.id] = cand[0]; save(); return cand[0];
+}
+// 画面の上から順に、元の選択肢の番号を並べる
+function orderOf(q) {
+  if (st.ord[q.id]) return st.ord[q.id];
+  let a;
+  if (q.t === "one") { a = shuffle([...Array(q.o.length).keys()].slice(1)); a.splice(posOf(q), 0, 0); }
+  else a = shuffle([...Array(q.o.length).keys()]);
+  st.ord[q.id] = a; save(); return a;
+}
+// 1問を box に描く。ans：今の答え、onAns(答え)：確定したとき、show：正解と解説を出すか
+function drawQ(box, q, ans, onAns, show, label) {
+  const done = ans !== undefined && ans !== null && !(q.t === "multi" && !show);
+  box.innerHTML = `<div class="qno">${esc(label || "")}</div><div class="qt">${q.q}</div>`;
+  const ok = show ? judge(q, ans) : null;
+  if (q.t === "one" || q.t === "multi") {
+    const wrap = el("div", "opts"); const ord = orderOf(q);
+    let pick = q.t === "multi" ? (Array.isArray(ans) ? ans.slice() : []) : null;
+    ord.forEach((k, pos) => {
+      const right = q.t === "one" ? k === 0 : q.a.includes(k);
+      const chosen = q.t === "one" ? ans === k : (pick || []).includes(k);
+      const b = el("button", "opt", `<span class="k">${LET[pos]}</span><span>${q.o[k]}${SENSEI && right ? '<span class="sensei-ans">正解</span>' : ""}</span>`);
+      b.dataset.k = k;
+      if (show) { b.disabled = true; if (right && chosen) b.classList.add("right"); else if (!right && chosen) b.classList.add("wrong"); else if (right) b.classList.add("miss"); }
+      else if (chosen) b.classList.add("sel");
+      if (!show) b.addEventListener("click", () => {
+        if (q.t === "one") onAns(k);
+        else { pick = pick.includes(k) ? pick.filter(x => x !== k) : pick.concat(k).sort(); b.classList.toggle("sel"); onAns(pick, true); }
+      });
+      wrap.append(b);
+    });
+    box.append(wrap);
+    if (q.t === "multi" && !show && onAns.confirm) { const g = button("答える", () => onAns.confirm(pick), "pri"); g.id = "go"; g.style.marginTop = "8px"; box.append(g); }
+  } else if (q.t === "term") {
+    const wrap = el("div", "bank");
+    BANK.forEach(w => {
+      const right = q.a.some(x => norm(x) === norm(w)), chosen = ans != null && norm(ans) === norm(w);
+      const b = el("button", "opt", esc(w) + (SENSEI && right ? '<span class="sensei-ans">正解</span>' : "")); b.dataset.w = w;
+      if (show) { b.disabled = true; if (right && chosen) b.classList.add("right"); else if (chosen) b.classList.add("wrong"); else if (right) b.classList.add("miss"); }
+      else { if (chosen) b.classList.add("sel"); b.addEventListener("click", () => onAns(w)); }
+      wrap.append(b);
+    });
+    box.append(wrap);
+  } else if (q.t === "num") {
+    const row = el("div", "numrow");
+    const inp = el("input"); inp.type = "text"; inp.inputMode = "decimal"; inp.id = "numIn"; inp.value = ans != null ? ans : ""; inp.disabled = !!show; inp.setAttribute("aria-label", "答え");
+    row.append(inp, el("span", "", esc(q.unit || "")));
+    if (!show) { const g = button("答える", () => { if (fixNo(inp.value) === "") return; onAns(fixNo(inp.value)); }, "pri"); g.id = "go"; row.append(g); inp.addEventListener("keydown", e => { if (e.key === "Enter") g.click(); }); }
+    if (SENSEI) row.append(el("span", "sensei-ans", "正解 " + esc(fmt(q.a))));
+    box.append(row);
+  } else if (q.t === "w") {
+    const wb = el("div", "wbox"); const ta = el("textarea"); ta.id = "wIn"; ta.value = ans && ans.text || ""; wb.append(ta); box.append(wb);
+    const self = ans && ans.self != null;
+    if (!self) {
+      const g = button("模範解答を見る", () => { if (ta.value.trim().length < 10) { tell("10文字以上書いてから見ましょう。"); return; } onAns({ text: ta.value, self: null }); }, "pri"); g.id = "go";
+      if (!(ans && ans.text != null && ans.self === null)) box.append(g);
+    }
+    if (ans && ans.text != null) {
+      const fb = el("div", "fb mid", `<b class="h">模範解答</b>${q.m}<br><b class="h" style="margin-top:6px">観点</b>・${q.k.map(esc).join("<br>・")}`);
+      box.append(fb);
+      if (!self) { const r = el("div", "ctrls"); [["できた", 2], ["半分", 1], ["できなかった", 0]].forEach(([l, v]) => r.append(button(l, () => onAns({ text: ta.value, self: v })))); box.append(r); }
+      else box.append(el("p", "lead", "自己評価：" + ["できなかった", "半分", "できた"][ans.self]));
+    }
+    return;
+  }
+  if (show) {
+    let right = "";
+    if (q.t === "one") right = `正解は「${LET[orderOf(q).indexOf(0)]}」です。`;
+    else if (q.t === "multi") right = `正解は「${orderOf(q).map((k, p) => q.a.includes(k) ? LET[p] : "").filter(Boolean).join("・")}」です。`;
+    else if (q.t === "term") right = `正解は「${esc(q.a[0])}」です。`;
+    else if (q.t === "num") right = `正解は ${esc(fmt(q.a))} ${esc(q.unit || "")} です。`;
+    box.append(el("div", "fb " + (ok ? "ok" : "ng"), `<b class="h">${ok ? "正解です。" : (ans == null ? "未回答です。" : "ちがいます。")}</b>${ok ? "" : right}${q.e ? "<br>" + q.e : ""}`));
+  }
+}
+// 練習・スライドの問題：答えるとすぐ正解と解説（まちがえても次へ進める）
+function drawPracticeQ(box, q, label) {
+  const ans = st.ans[q.id];
+  const shown = ans !== undefined && (q.t !== "w");
+  const on = (a, partial) => {
+    if (q.t === "multi" && partial) return;
+    st.ans[q.id] = a; save(); render();
+  };
+  on.confirm = pick => { if (!pick || !pick.length) { tell("1つ以上選んでから「答える」を押しましょう。"); return; } st.ans[q.id] = pick; save(); render(); };
+  drawQ(box, q, ans, on, shown, label);
+  if (shown || (q.t === "w" && ans && ans.self != null)) showTerm(q.term);
+}
+/*== 問題 おわり ==*/
+
+/*== シミュレーター ==*/
+// 押せる部品（ドラッグに頼らない）：− と ＋ のボタンで値を変える
+function stepper(label, show, add, stepv) {
+  const w = el("span", "stepper"); const lab = el("span", "lab", esc(label)), val = el("span", "val");
+  const upd = () => { val.textContent = show(); };
+  const minus = el("button", "", "−"), plus = el("button", "", "＋");
+  minus.setAttribute("aria-label", label + "を下げる"); plus.setAttribute("aria-label", label + "を上げる");
+  minus.onclick = () => { add(-stepv); upd(); }; plus.onclick = () => { add(stepv); upd(); };
+  upd(); w.append(lab, minus, val, plus); w.upd = upd; return w;
+}
+// シミュレーターを fig に置く。縦横比を保って拡大縮小し、0.05秒の固定きざみで進める
+const FIX = 0.05;
+const raf = window.requestAnimationFrame ? f => window.requestAnimationFrame(f) : f => setTimeout(() => f(performance.now()), 16);
+function mountSim(fig, ctrlBox, name, keep) {
+  const def = SIMS[name];
+  const S = keep && st.sims[name] ? Object.assign(def.init(), st.sims[name]) : def.init();
+  fig.style.setProperty("--fig-ar", def.w + "/" + def.h);
+  const stage = el("div", "stage"), cv = el("canvas"); stage.append(cv); fig.append(stage);
+  const g = cv.getContext("2d");
+  const sim = { S, def, onDraw: null, acc: 0, last: 0, alive: true };
+  const fit = () => {
+    const r = fig.getBoundingClientRect(); if (!r.width || !r.height) return;
+    const k = Math.min(r.width / def.w, r.height / def.h), dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.style.width = Math.floor(def.w * k) + "px"; cv.style.height = Math.floor(def.h * k) + "px";
+    cv.width = Math.round(def.w * k * dpr); cv.height = Math.round(def.h * k * dpr); sim.scale = k * dpr; drawNow();
+  };
+  const drawNow = () => { if (!g) return; g.setTransform(sim.scale || 1, 0, 0, sim.scale || 1, 0, 0); g.clearRect(0, 0, def.w, def.h); def.draw(g, S, def.w, def.h); if (sim.onDraw) sim.onDraw(); };
+  const frame = t => {
+    if (!sim.alive) return;
+    if (!document.hidden) {
+      const dt = sim.last ? Math.min(0.25, (t - sim.last) / 1000) : 0; sim.last = t; sim.acc += dt;
+      while (sim.acc >= FIX) { def.step(S, FIX); sim.acc -= FIX; }
+      drawNow(); if (sim.tick) sim.tick();
+    } else sim.last = 0;
+    raf(frame);
+  };
+  if (ctrlBox && def.ctrls) def.ctrls(ctrlBox, S, sim);
+  if (typeof ResizeObserver === "function") { sim.ro = new ResizeObserver(fit); sim.ro.observe(fig); }
+  sim.stop = () => { sim.alive = false; if (sim.ro) sim.ro.disconnect(); if (keep) { st.sims[name] = S; save(); } };
+  setTimeout(fit, 0); raf(frame);
+  running = sim; return sim;
+}
+/*== シミュレーター おわり ==*/
+
+/*== 小テスト ==*/
+// 小テスト：出席番号4けた → くじで出題 → 制限時間（締め切りの時刻で持つ）→ 確認 → 提出（ダミー）→ 1回だけ
+function testBuild() {
+  const set = [];
+  for (const [c, n] of Object.entries(TEST.plan)) set.push(...shuffle(Q.filter(q => q.ch === c && TEST.types.includes(q.t)).map(q => q.id)).slice(0, n));
+  return set;
+}
+const tAnswered = ts => ts.set.filter(id => ts.ans[id] != null && !(Array.isArray(ts.ans[id]) && !ts.ans[id].length)).length;
+const tScore = ts => ts.set.filter(id => judge(QI[id], ts.ans[id])).length;
+function tFinish(timeUp) {
+  const ts = st.test; ts.sending = true; ts.timeUp = !!timeUp; save(); render();
+  setTimeout(() => { ts.sending = false; ts.sent = new Date().toLocaleString("ja-JP"); ts.score = tScore(ts); save(); render(); }, timeUp ? 0 : 1500);
+}
+function drawTest(card) {
+  const ts = st.test;
+  $("foot").hidden = !!(ts && !ts.sent);
+  if (!ts) {
+    const n = Object.values(TEST.plan).reduce((a, b) => a + b, 0);
+    card.innerHTML = `<h2>小テスト</h2><p>${n}問・制限時間 ${TEST.min}分。答え合わせは提出したあとです。<b>受けられるのは1回だけ</b>です。</p>`;
+    const useNo = TEST.no !== false;
+    const box = el("div", "nobox", useNo ? `<label for="no">出席番号（4けた）</label>` : ""); const inp = el("input"); inp.id = "no"; inp.inputMode = "numeric"; inp.maxLength = 4; inp.autocomplete = "off";
+    const msg = el("span", "lead"); msg.id = "nomsg";
+    const go = button("はじめる", () => {
+      const v = useNo ? fixNo(inp.value) : "—"; if (useNo && !/^\d{4}$/.test(v)) { msg.textContent = "4けたの数字で入れてください（例：0101）。"; return; }
+      st.test = { no: v, set: testBuild(), ans: {}, i: 0, dl: Date.now() + TEST.min * 60000, sent: null, warn: false }; save(); render();
+    }, "pri"); go.id = "tgo";
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
+    if (useNo) box.append(inp); box.append(go); card.append(box, msg); return;
+  }
+  if (ts.sending) { card.innerHTML = `<h2>送信しています…</h2><p class="lead">そのまま待ってください。</p>`; return; }
+  if (ts.sent) {
+    const rows = ts.set.map((id, k) => { const q = QI[id], a = ts.ans[id], ok = judge(q, a); return `<tr><td>第${k + 1}問</td><td class="mark ${ok ? "o" : "x"}">${ok ? "○" : "×"}</td><td>${q.q}${a == null ? '<br><span class="lead">未回答</span>' : ""}<br><span class="lead">${q.e || ""}</span></td></tr>`; }).join("");
+    card.innerHTML = `<h2>小テストの結果</h2><div class="cert">${TEST.no !== false ? `<div class="box"><h3>出席番号</h3><div class="big">${esc(ts.no)}</div></div>` : ""}<div class="box"><h3>点数</h3><div class="big">${ts.score} / ${ts.set.length}</div></div><div class="box"><h3>提出</h3><div>${esc(ts.sent)}${ts.timeUp ? "（時間切れ）" : ""}</div></div></div><table class="rv">${rows}</table>`;
+    if (SENSEI) card.append(button("もう一度受ける（先生用）", () => { st.test = null; save(); render(); }));
+    return;
+  }
+  const left = () => Math.max(0, Math.ceil((ts.dl - Date.now()) / 1000));
+  if (left() <= 0) { tFinish(true); return; }
+  const head = el("div", "ctrls"); const tm = el("span", "timer"); tm.id = "timer"; if (TEST.no !== false) head.append(el("span", "lead", `出席番号 ${esc(ts.no)}`)); head.append(tm); card.append(head);
+  const upd = () => { const s = left(); tm.textContent = "のこり " + Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); tm.classList.toggle("hot", s <= 60); if (s <= 0) { clearInterval(tick); tFinish(true); } };
+  upd(); clearInterval(tick); tick = setInterval(upd, 250);
+  if (ts.i >= ts.set.length) {          // 確認画面
+    const miss = ts.set.map((id, k) => ts.ans[id] == null ? k : -1).filter(k => k >= 0);
+    card.append(el("h2", "", "提出の前に"), el("p", "", `答えた数 ${tAnswered(ts)} / ${ts.set.length} 問`));
+    if (miss.length) { const j = el("div", "jump"); miss.forEach(k => { const b = button("第" + (k + 1) + "問", () => { ts.i = k; save(); render(); }); b.dataset.k = k; j.append(b); }); card.append(el("p", "lead", "答えていない問題（押すとその問題へ）"), j); }
+    if (ts.warn) card.append(el("div", "warn", `まだ ${miss.length}問 答えていません。このまま出すなら、もう一度「提出する」を押してください。`));
+    const r = el("div", "ctrls"); r.append(button("← 問題にもどる", () => { ts.i = 0; ts.warn = false; save(); render(); }));
+    const send = button("提出する", () => { if (miss.length && !ts.warn) { ts.warn = true; save(); render(); return; } clearInterval(tick); tFinish(false); }, "pri"); send.id = "send"; r.append(send);
+    card.append(r); return;
+  }
+  const q = QI[ts.set[ts.i]], box = el("div");
+  const on = (a, partial) => { ts.ans[q.id] = a; save(); if (!partial) render(); };
+  on.confirm = null;
+  drawQ(box, q, ts.ans[q.id], on, false, `第${ts.i + 1}問 / ${ts.set.length}`);
+  card.append(box);
+  if ($("numIn")) $("numIn").addEventListener("input", e => { const v = fixNo(e.target.value); if (v) ts.ans[q.id] = v; else delete ts.ans[q.id]; save(); });
+  const r = el("div", "ctrls");
+  const pv = button("← 前の問題", () => { ts.i--; save(); render(); }); pv.disabled = ts.i === 0;
+  const nx = button(ts.i === ts.set.length - 1 ? "確認へ →" : "次の問題 →", () => {
+    if (q.t === "num") { const v = $("numIn") && fixNo($("numIn").value); if (v) ts.ans[q.id] = v; }
+    ts.i++; ts.warn = false; save(); render();
+  }, "pri"); nx.id = "tnext";
+  r.append(pv, nx); card.append(r);
+}
+/*== 小テスト おわり ==*/
+
+/* ■共通：ページの組み立て */
+// drill のページは、問題1問ずつのページに広げる
+const FLOW = [];
+PAGES.forEach((P, pi) => {
+  if (P.kind === "drill") { const qs = Q.filter(P.pick); qs.forEach((q, k) => FLOW.push(Object.assign({}, P, { qid: q.id, sub: `${k + 1} / ${qs.length}` }))); }
+  else FLOW.push(P);
+});
+const MISSIONS = FLOW.filter(P => P.kind === "sim");
+st.p = clamp(st.p | 0, 0, FLOW.length - 1);
+
+function showTerm(names) {
+  const list = [...new Set(Array.isArray(names) ? names : names ? [names] : [])].filter(n => TERMS[n]);
+  $("gloss").innerHTML = `<h2>用語</h2>` + (list.length ? `<dl>${list.map(n => `<dt>${esc(n)}</dt><dd>${TERMS[n]}</dd>`).join("")}</dl>` : `<p class="none">このページの用語は、ここに出ます。</p>`);
+}
+function chrome() {
+  const P = FLOW[st.p];
+  document.title = TITLE; $("ttl").textContent = TITLE; $("ver").textContent = "版 " + VER;
+  const curSec = SECS.indexOf(P.sec);
+  $("chips").innerHTML = SECS.map((s, k) => `<span class="chip ${k === curSec ? "now" : k < curSec ? "done" : ""}">${esc(s)}</span>`).join("");
+  const nowc = $("chips").querySelector(".now"); if (nowc && nowc.scrollIntoView) nowc.scrollIntoView({ block: "nearest", inline: "nearest" });
+  $("bar").style.width = (FLOW.length > 1 ? st.p / (FLOW.length - 1) * 100 : 100) + "%";
+  $("pno").textContent = (st.p + 1) + " / " + FLOW.length;
+  $("prev").disabled = st.p === 0;
+  $("next").disabled = st.p === FLOW.length - 1 || !canNext();
+  $("foot").hidden = false;
+  $("note").textContent = P.note || "（このページの先生用メモはありません）";
+}
+// 次へ進めるか：問題は答えてから（正解でなくてよい）。先生用はいつでも
+function canNext() {
+  if (SENSEI) return true;
+  const P = FLOW[st.p];
+  const qid = P.kind === "drill" ? P.qid : P.q;
+  if (qid) { const a = st.ans[qid]; if (a === undefined) return false; if (QI[qid].t === "w" && (a == null || a.self == null)) return false; }
+  if (P.kind === "test") return !!(st.test && st.test.sent);
+  return true;
+}
+function render() {
+  if (running) { running.stop(); running = null; }
+  clearInterval(tick);
+  const P = FLOW[st.p], card = $("card");
+  card.innerHTML = ""; card.scrollTop = 0;
+  chrome(); showTerm(P.terms);
+  if (P.kind === "slide" || P.kind === "sim") {
+    const hasFig = P.fig || P.sim;
+    const wrap = el("div", hasFig ? "split" : ""); const txt = el("div", "txt");
+    txt.append(el("h2", "", esc(P.title || "")));
+    if (P.html) txt.append(el("div", "", P.html));
+    if (P.goal) txt.append(el("div", "goal", "<b>ミッション：</b>" + P.goal));
+    const ctrl = el("div", "ctrls"); txt.append(ctrl);
+    const clr = el("div", "clear", "🎉 クリア！ 次へ進みましょう。"); clr.id = "clear"; clr.hidden = !st.missions[P.id]; txt.append(clr);
+    if (P.q && QI[P.q]) { const qb = el("div"); qb.id = "qbox"; txt.append(qb); drawPracticeQ(qb, QI[P.q], "問題"); }
+    if (hasFig) { const fig = el("div", "fig"); wrap.append(fig, txt); card.append(wrap); if (P.fig) fig.innerHTML = P.fig; else { const sim = mountSim(fig, ctrl, P.sim, true); if (P.kind === "sim") sim.tick = () => { if (!st.missions[P.id] && P.ok(sim.S)) { st.missions[P.id] = true; save(); clr.hidden = false; showTerm(P.terms); } }; } }
+    else { card.append(txt); }
+    if (P.q && QI[P.q] && st.ans[P.q] !== undefined) showTerm([].concat(P.terms || [], QI[P.q].term || []));
+  } else if (P.kind === "drill") {
+    const q = QI[P.qid]; card.append(el("h2", "", esc(P.title) + ` <span class="qno">${P.sub}</span>`));
+    const qb = el("div"); qb.id = "qbox"; card.append(qb); drawPracticeQ(qb, q, CH[q.ch] || "");
+  } else if (P.kind === "test") {
+    drawTest(card);
+  } else if (P.kind === "end") {
+    card.append(el("h2", "", esc(P.title || "まとめ"))); if (P.html) card.append(el("div", "", P.html));
+    card.append(endSummary());
+  }
+  $("next").disabled = st.p === FLOW.length - 1 || !canNext();
+}
+// まとめ：数は全部ここで数える（手で書かない。「5 / 4」のような食い違いを防ぐ）
+function scoreBy() {
+  const qs = Q.filter(q => q.t !== "w" && FLOW.some(P => P.qid === q.id || P.q === q.id));
+  const by = {}; for (const q of qs) { const b = by[q.ch] || (by[q.ch] = { n: 0, ok: 0 }); b.n++; if (judge(q, st.ans[q.id])) b.ok++; }
+  return { n: qs.length, ok: qs.filter(q => judge(q, st.ans[q.id])).length, by };
+}
+function endSummary() {
+  const s = scoreBy(), ms = MISSIONS.filter(P => st.missions[P.id]).length;
+  const learned = [...new Set(FLOW.filter(P => (P.kind !== "sim" || st.missions[P.id]) && FLOW.indexOf(P) <= st.p).flatMap(P => P.terms || []))];
+  const w = el("div", "cert");
+  w.innerHTML = `<div class="box"><h3>練習の正解</h3><div class="big" id="endScore">${s.ok} / ${s.n}</div><div class="bars">${Object.entries(s.by).map(([c, b]) => `<div class="row"><span>${esc(CH[c] || c)}</span><span class="track"><span class="fill" style="width:${b.n ? b.ok / b.n * 100 : 0}%;display:block"></span></span><span>${b.ok}/${b.n}</span></div>`).join("")}</div></div>`
+    + (MISSIONS.length ? `<div class="box"><h3>クリアしたミッション</h3><div class="big" id="endMis">${ms} / ${MISSIONS.length}</div></div>` : "")
+    + (FLOW.some(P => P.kind === "test") ? `<div class="box"><h3>小テスト</h3><div class="big">${st.test && st.test.sent ? st.test.score + " / " + st.test.set.length : "未受験"}</div></div>` : "")
+    + `<div class="box"><h3>出てきた用語</h3><div>${learned.map(t => "<b>" + esc(t) + "</b>").join("・") || "—"}</div></div>`;
+  const wrap = el("div"); wrap.append(w); if (END_SHOW) wrap.append(el("p", "lead", "この画面を先生に見せてください。"));
+  wrap.append(button("記録を消して最初から", () => ask("記録を全部消して、最初からやり直します。よいですか。", () => { st = blank(); save(); render(); }, "消す")));
+  return wrap;
+}
+
+function go(d) { const n = clamp(st.p + d, 0, FLOW.length - 1); if (n === st.p) return; if (d > 0 && !canNext()) return; st.p = n; save(); render(); }
+$("prev").onclick = () => go(-1);
+$("next").onclick = () => go(1);
+$("glossBtn").onclick = () => $("gloss").classList.toggle("open");
+document.addEventListener("keydown", e => {
+  const tag = (e.target.tagName || "").toLowerCase(); if (tag === "input" || tag === "textarea") return;
+  if ($("veil").classList.contains("on")) { if (e.key === "Escape") $("mNo").click(); return; }
+  if (e.key === "ArrowRight" && !$("foot").hidden) go(1);
+  else if (e.key === "ArrowLeft" && !$("foot").hidden) go(-1);
+  else if (e.key === "n" || e.key === "N") $("note").hidden = !$("note").hidden;
+});
+// 横のスワイプでページ送り（シミュレーターの上ではしない）
+(() => { let x0 = null, y0 = 0; const c = $("card");
+  c.addEventListener("pointerdown", e => { x0 = e.target.closest("canvas,input,textarea,.stepper") ? null : e.clientX; y0 = e.clientY; });
+  c.addEventListener("pointerup", e => { if (x0 == null || $("foot").hidden) return; const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null; if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 2) go(dx < 0 ? 1 : -1); });
+})();
+if (SENSEI) {
+  const b = $("sbar"); b.hidden = false;
+  b.innerHTML = `<span>先生用（記録は別の箱）</span><select id="sJump" aria-label="ページへ">${FLOW.map((P, k) => `<option value="${k}">${k + 1}. ${esc(P.sec)}：${esc(P.title || "")}${P.sub ? " " + P.sub : ""}</option>`).join("")}</select>`;
+  b.append(button("最初から", () => ask("先生用の記録を消します。生徒の記録は消えません。", () => { st = blank(); save(); render(); }, "消す")));
+  $("sJump").onchange = e => { st.p = +e.target.value; save(); render(); };
+  const _chrome = chrome; chrome = function () { _chrome(); $("sJump").value = st.p; };
+}
+render();
+</script>
+</body>
+</html>
